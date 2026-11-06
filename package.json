@@ -1,0 +1,11 @@
+{
+  "name": "floorshift-3d",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "FLOORSHIFT 3D contact-centre career and operations simulator — professional 3D workplace vertical slice",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "node --check js/main.js && node --check js/production-world.js"
+  }
+}

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#091522" />
+  <meta name="description" content="FLOORSHIFT 3D — a contact-centre career and operations simulator." />
+  <title>FLOORSHIFT 3D · Contact Centre Simulator</title>
+  <link rel="icon" type="image/svg+xml" href="assets/floorshift-mark.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <div class="brand-mark"><span>F</span></div>
+        <div>
+          <div class="brand-name">FLOORSHIFT <span>3D</span></div>
+          <div class="brand-caption">CONTACT CENTRE CAREER SIMULATOR</div>
+        </div>
+      </div>
+      <div class="topbar-center"><span class="live-dot"></span><span id="headerStatus">RECRUITMENT PORTAL</span><span class="topbar-divider"></span><span id="shiftClock">08:00:00</span></div>
+      <div class="profile-chip"><div class="profile-avatar" id="profileInitials">AP</div><div class="profile-copy"><strong id="profileName">Applicant</strong><small id="profileRole">Candidate</small></div><span class="profile-chevron">⌄</span></div>
+    </header>
+
+    <aside class="sidebar">
+      <div class="side-section-label">WORKSPACE</div>
+      <button class="nav-item active" data-view="overview"><span class="nav-icon">◫</span><span>Overview</span></button>
+      <button class="nav-item" data-view="inbound"><span class="nav-icon">↙</span><span>Inbound desk</span><span class="nav-count" id="inboundCount">3</span></button>
+      <button class="nav-item" data-view="outbound"><span class="nav-icon">↗</span><span>Outbound campaigns</span></button>
+      <button class="nav-item" data-view="crm"><span class="nav-icon">▤</span><span>CRM & cases</span></button>
+      <button class="nav-item" data-view="knowledge"><span class="nav-icon">◈</span><span>Knowledge base</span></button>
+      <div class="side-section-label side-gap">CAREER</div>
+      <button class="nav-item" data-view="performance"><span class="nav-icon">⌁</span><span>Performance</span></button>
+      <button class="nav-item" data-view="career"><span class="nav-icon">♙</span><span>Career profile</span></button>
+      <div class="sidebar-bottom">
+        <div class="support-card"><div class="support-icon">?</div><div><strong>Simulation support</strong><small>Help with the workspace</small></div><span>↗</span></div>
+        <div class="version-label">FLOORSHIFT BUILD 0.2.0 · 3D VERTICAL SLICE</div>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <section class="world-panel">
+        <div id="worldCanvas" class="world-canvas" aria-label="Interactive 3D contact centre floor"></div>
+        <div class="world-vignette"></div>
+        <div class="world-title"><div class="eyebrow"><span class="eyebrow-line"></span> LIVE WORKPLACE SIMULATION</div><h1 id="worldHeading">Step onto a living contact-centre floor.</h1><p id="worldSubheading">Explore a detailed operations workplace, approach a workstation and begin your shift. Recruitment remains the gateway to live agent duties.</p></div>
+        <div class="world-badge"><span class="live-dot"></span><span>FLOOR 04 · CUSTOMER OPERATIONS</span><small id="assetStatus">HIGH-DETAIL ENVIRONMENT INITIALISING</small></div>
+        <div class="world-controls"><span class="control-key">DRAG</span> Rotate view <span class="control-sep">·</span><span class="control-key">SCROLL</span> Zoom</div>
+        <div class="world-people"><div class="people-stack"><i>AM</i><i>TO</i><i>KS</i><b>+09</b></div><div><strong>Customer operations</strong><small>Multi-team service floor</small></div></div>
+        <div class="world-action-bar"><button id="enterFloorButton" class="world-enter-btn" type="button" disabled>ENTER THE 3D FLOOR <span>↗</span></button><span>WALK THE FLOOR · ACCESS WORKSTATIONS · START A SHIFT</span></div>
+        <div id="immersiveHud" class="immersive-hud hidden">
+          <div class="immersive-topline"><div class="immersive-location"><span class="live-dot"></span><div><strong>FLOOR 04 · CUSTOMER OPERATIONS</strong><small>INTERACTIVE WORKPLACE SIMULATION</small></div></div><button id="exitFloorButton" class="immersive-exit" type="button">EXIT FLOOR <span>Esc</span></button></div>
+          <div class="immersive-bottomline"><div class="immersive-controls"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> MOVE</span><span><kbd>SHIFT</kbd> WALK FASTER</span><span><kbd>MOUSE</kbd> LOOK</span><span><kbd>E</kbd> USE WORKSTATION</span></div><div class="immersive-status">SIMULATED ENVIRONMENT · NO REAL CALLS</div></div>
+          <div id="stationHint" class="station-hint hidden"></div>
+          <button id="mouseLookNote" class="mouse-look-note hidden" type="button">CLICK TO RESUME MOUSE LOOK</button>
+          <div id="stationPanel" class="station-panel hidden"></div>
+        </div>
+      </section>
+
+      <div class="content-wrap">
+        <div class="page-heading"><div><div class="eyebrow dark-eyebrow" id="pageEyebrow">CAREER ENTRY</div><h2 id="pageTitle">Start your application</h2><p id="pageDescription">Complete the recruitment process to qualify for an agent position.</p></div><div class="page-actions" id="pageActions"></div></div>
+        <section id="viewRoot" class="view-root" aria-live="polite"></section>
+        <footer class="app-footer"><span>FLOORSHIFT 3D <b>·</b> Contact Centre Career & Operations Simulator</span><span>SIMULATED ENVIRONMENT · NO REAL CUSTOMER DATA OR CALLS</span></footer>
+      </div>
+    </main>
+  </div>
+  <div id="toastHost" class="toast-host" aria-live="polite"></div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
