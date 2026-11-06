@@ -248,3 +248,13 @@ table{color:#d8e6e7}th{color:#85a4ad;background:rgba(255,255,255,.035)}td{border
 .btn:disabled,.nav-item:disabled{opacity:.42;cursor:not-allowed;transform:none}
 @media(max-width:900px){.wrapup-layout{grid-template-columns:1fr}.timeline-row{grid-template-columns:110px minmax(0,1fr)}.queue-contact-row{grid-template-columns:7px minmax(0,1fr) auto}.queue-contact-row .pill{grid-column:2/-1;justify-self:start}}
 @media(max-width:520px){.ops-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.queue-contact-row{padding:9px 8px;gap:7px}.queue-contact-main small{white-space:normal}.timeline-row{grid-template-columns:1fr;gap:4px}.case-detail summary{align-items:flex-start;flex-direction:column;gap:4px}.case-detail summary span{text-align:left}.wrapup-layout .assessment-footer{align-items:stretch;flex-direction:column}.wrapup-layout .assessment-footer .btn{width:100%}}
+
+/* v0.5 workforce intelligence */
+.form-stack{display:grid;gap:10px}
+.form-field{display:grid;gap:6px;color:var(--muted);font-size:10px}
+.form-field input:not([type=checkbox]),.form-field select,.form-field textarea{width:100%;min-width:0;border:1px solid var(--line);border-radius:7px;background:#0c1b27;color:#e7f1f4;padding:10px;font:500 11px "DM Sans",sans-serif}
+.form-field textarea{min-height:76px;resize:vertical}
+.form-field input[type=checkbox]{accent-color:var(--teal);margin-right:7px}
+.form-field:has(input[type=checkbox]){display:block;padding:7px 0}
+.workforce-note{color:var(--muted);font-size:9px;line-height:1.6}
+@media(max-width:760px){.form-stack .btn{width:100%}}

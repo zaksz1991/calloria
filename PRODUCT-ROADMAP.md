@@ -53,7 +53,11 @@ The following capabilities are present in the source package and covered by auto
 - **0.2.0 — Professional 3D workplace vertical slice:** contact-centre floor layout, workstations, navigation, and initial runtime character/environment asset references.
 - **0.1.0 — Functional prototype:** recruitment gate, initial employment flow, scripted inbound/outbound scenarios and starter CRM/career systems.
 
-## Next milestone — Build 0.5.0: Voice, Character Animation & Workforce Operations
+## Build 0.5.0 — Workforce Intelligence & Enterprise Operations
+
+Implemented in this package: daily briefings, specialist departments, weighted promotion eligibility and annual exam limits, consent-based cross-selling, ethical customer commendations, and synthetic ICC/CRM/Finacle-style system events.
+
+## Next milestone — Build 0.6.0: Multi-channel Customer Operations
 
 ### Voice interaction
 - Explicit microphone permission and clear recording state.
@@ -84,7 +88,17 @@ The following capabilities are present in the source package and covered by auto
 - Agent state and shift records behave consistently across the tested workflows.
 - Regression suite and Vite production build pass; desktop and representative Android/iOS layouts receive manual browser QA.
 
-## Build 0.6.0 — Multi-channel Customer Operations
+## Build 0.6.0 — Voice, Character Animation & Workforce Operations
+
+- Explicit microphone permission and clear recording state.
+- Browser-based audio capture and playback for player practice.
+- Speech-to-text integration behind a replaceable provider interface.
+- Customer voice responses and bounded conversation context.
+- Text input fallback where microphone access is unavailable.
+- Character state transitions, workstation interaction and ambient staff behaviour.
+- Agent states, shift adherence and team leader coaching.
+
+## Build 0.7.0 — Multi-channel Customer Operations
 
 - Functional simulated email inbox with templates, replies, attachments in a controlled sandbox and CRM case links.
 - Live-chat sessions, queue assignment, response timers, transfers and escalation.
@@ -93,7 +107,7 @@ The following capabilities are present in the source package and covered by auto
 - Customer personas with controlled sentiment and scenario memory.
 - Distinct SLA, quality and workload settings per channel.
 
-## Build 0.7.0 — Organisation Platform
+## Build 0.8.0 — Organisation Platform
 
 - Supabase authentication and server-backed player profiles.
 - Tenant-scoped organisation, department, team and role model.
@@ -102,7 +116,7 @@ The following capabilities are present in the source package and covered by auto
 - Audit trails, data retention settings and report exports.
 - Cross-device progress sync with strict organisation-level access control.
 
-## Build 0.8.0 — Multiplayer Contact Centre
+## Build 0.9.0 — Multiplayer Contact Centre
 
 - Shared team floor and presence.
 - Multiple agents, supervisors and QA users in the same session.

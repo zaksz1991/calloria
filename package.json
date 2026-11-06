@@ -1,9 +1,9 @@
 {
   "name": "calloria",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
-  "description": "CALLORIA \u2014 an immersive, multi-industry contact-centre career and operations simulator with a stateful contact operations engine.",
+  "description": "CALLORIA \u2014 an immersive contact-centre career and operations simulator with workforce intelligence and synthetic enterprise systems.",
   "engines": {
     "node": ">=22.12.0"
   },
@@ -11,7 +11,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "check": "node --check js/main.js && node --check js/production-world.js && node --check js/operations-engine.js",
+    "check": "node --check js/main.js && node --check js/production-world.js && node --check js/operations-engine.js && node --check js/workforce-engine.js",
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {

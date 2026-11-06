@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0 — Workforce intelligence and enterprise operations
+
+- Added daily 07:30 morning and 14:00 afternoon briefing windows, attendance acknowledgements and local attendance history.
+- Added a configurable specialist-unit catalogue covering inbound/outbound voice, email, social, chat, IT, QA, customer experience, fraud/security and back office.
+- Added a weighted performance-based promotion eligibility model and annual promotion examination records, enforcing one attempt per calendar year and three total attempts.
+- Added consent-, relevance- and eligibility-gated cross-selling records.
+- Added customer commendation logging with mandatory referral through official customer-relations channels; private benefits are never accepted or recorded as permitted.
+- Added a synthetic enterprise systems sandbox for ICC, CRM, Finacle, FirstMobile, USSD, Postilion, JIRA and FCQA.
+- Added a People & Systems destination while preserving the recruitment gate and v0.4 customer operations.
+- Added workforce-engine regression coverage. All records remain local browser simulation data; no live banking integration or real customer data is used.
+
 ## 0.4.0 — Contact-centre operations engine
 
 - Extracted contact queue, lifecycle transitions, priority routing, callback scheduling and outbound suppression into a dedicated operations engine module.

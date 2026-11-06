@@ -3,6 +3,7 @@ import {
   transitionContact, addInteractionEvent, countQueuedContacts, queueMetrics,
   addSuppression, isContactSuppressed, scheduleCallback, completeActiveCallback
 } from './operations-engine.js';
+import { DEPARTMENTS, SYSTEMS, briefingFor, recordBriefingAttendance, promotionEligibility, recordPromotionExam, recordCrossSell, recordCommendation, createSystemEvent } from './workforce-engine.js';
 
 let THREE = null;
 
@@ -62,7 +63,9 @@ const initialState = () => ({
   applicationSubmitted: false,
   day: 1,
   nameInitials: 'AP',
-  viewedArticle: null
+  viewedArticle: null,
+  workforceDepartment: 'inbound',
+  briefingAttendance: [], promotionAttempts: [], crossSellRecords: [], commendations: [], systemEvents: []
 });
 
 let state = loadState();
@@ -76,7 +79,7 @@ function loadState() {
     if (!stored) return initialState();
     const parsed = JSON.parse(stored);
     const migrated = { ...initialState(), ...parsed };
-    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
+    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
     if (!Number.isFinite(migrated.callQueue)) migrated.callQueue = 6;
     if (!localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
     return migrated;
@@ -669,6 +672,82 @@ function renderCareer() {
   viewRoot.innerHTML = `<div class="career-banner"><div class="career-avatar">${state.nameInitials}</div><div class="career-copy"><div class="subtle-label" style="color:#9be8dc">EMPLOYEE PROFILE · MERIDIAN SERVICE GROUP</div><h3>${escapeHTML(state.applicantName)}</h3><p>${escapeHTML(state.roleTitle)} · ${escapeHTML(state.department)}</p></div><div class="career-level"><strong>LVL ${state.level}</strong><small>CAREER GRADE</small></div></div><div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Career progression</h3><p>Progress is earned through experience and reliable performance.</p></div><span class="pill green">LEVEL ${state.level}</span></div><div class="data-row"><span>Experience points</span><strong>${state.experience} XP</strong></div><div class="bar-track" style="margin:9px 0 14px"><div class="bar-fill" style="width:${progress}%"></div></div><p class="muted-note">${100-progress} XP to the next career level. Complete interactions accurately and maintain professional standards.</p><div class="step-list" style="margin-top:14px">${[['Contact Centre Agent','Entry appointment'],['Senior Contact Centre Agent','Consistent service performance'],['Subject Matter Expert','Advanced product and system capability'],['Team Leader','Coaching and queue management'],['Supervisor','Operational oversight'],['Operations Manager','Department-level responsibility']].map((r,i)=>`<div class="step-row ${i<state.level?'done':i===state.level?'active':''}"><div class="step-number">${i<state.level?'✓':i+1}</div><div class="step-copy"><strong>${r[0]}</strong><small>${r[1]}</small></div><span class="step-state">${i<state.level?'UNLOCKED':i===state.level?'NEXT':'FUTURE'}</span></div>`).join('')}</div></section><section class="panel"><div class="panel-head"><div><h3>Employment summary</h3><p>Simulated employee information.</p></div></div><div class="data-list"><div class="data-row"><span>Employment status</span><strong>Active</strong></div><div class="data-row"><span>Department</span><strong>${escapeHTML(state.department)}</strong></div><div class="data-row"><span>Monthly base salary</span><strong>${money(state.salary)}</strong></div><div class="data-row"><span>Performance bonus</span><strong>${money(state.bonus)}</strong></div><div class="data-row"><span>Days simulated</span><strong>${state.day}</strong></div><div class="data-row"><span>Inbound calls</span><strong>${state.callsHandled}</strong></div><div class="data-row"><span>Outbound contacts</span><strong>${state.outboundCalls}</strong></div></div><p class="muted-note" style="margin-top:14px">Salary and bonuses are fictional gameplay values. They are not a real employment offer or market salary benchmark.</p><button class="btn outline small" data-action="reset-simulation">Reset local simulation data</button></section></div>`;
 }
 
+
+function renderWorkforce() {
+  const currentBriefing = briefingFor(new Date());
+  const metrics = {
+    kpi: Math.min(100, Math.round((state.callsHandled + state.outboundCalls) * 5)),
+    qa: state.qaCount ? Math.round(state.totalQA/state.qaCount) : 75,
+    csat: state.csatCount ? Math.round(state.totalCSAT/state.csatCount) : 75,
+    knowledge: Math.min(100, 70 + state.experience),
+    compliance: state.incidents ? Math.max(0,100-state.incidents*12) : 95,
+    leadership: Math.min(100, 60 + Math.floor(state.level*5))
+  };
+  const eligibility = promotionEligibility({metrics, attempts:state.promotionAttempts});
+  const attended = currentBriefing && state.briefingAttendance.some(x=>x.briefingId===currentBriefing.id);
+  const dept = DEPARTMENTS.find(x=>x.id===state.workforceDepartment) || DEPARTMENTS[0];
+  viewRoot.innerHTML = `
+    <div class="ops-summary-grid">
+      <article class="metric-card"><span>DEPARTMENT</span><strong>${escapeHTML(dept.name)}</strong><small>Specialist assignment</small></article>
+      <article class="metric-card"><span>BRIEFINGS ATTENDED</span><strong>${state.briefingAttendance.length}</strong><small>Recorded locally</small></article>
+      <article class="metric-card"><span>PROMOTION SCORE</span><strong>${eligibility.score}%</strong><small>Weighted performance</small></article>
+      <article class="metric-card"><span>EXAM ATTEMPTS LEFT</span><strong>${eligibility.attemptsRemaining}/3</strong><small>Maximum career attempts</small></article>
+    </div>
+    <div class="grid two" style="margin-top:14px">
+      <section class="panel">
+        <div class="panel-head"><div><h3>Daily operations briefings</h3><p>Product, service, policy and operational updates.</p></div><span class="pill ${attended?'green':'amber'}">${attended?'ATTENDED':currentBriefing?'IN SESSION WINDOW':'SCHEDULED'}</span></div>
+        <div class="data-row"><span>Morning briefing</span><strong>07:30</strong></div>
+        <div class="data-row"><span>Afternoon briefing</span><strong>14:00</strong></div>
+        ${currentBriefing?`<div class="call-card" style="margin-top:12px"><span class="subtle-label">${currentBriefing.slot.toUpperCase()} BRIEFING · ${currentBriefing.scheduled}</span><h3>${currentBriefing.title}</h3><ul class="knowledge-list">${currentBriefing.topics.map(t=>`<li>${escapeHTML(t)}</li>`).join('')}</ul><button class="btn primary" data-action="attend-briefing" ${attended?'disabled':''}>${attended?'Attendance recorded':'Attend and acknowledge briefing'}</button></div>`:`<p class="muted-note" style="margin-top:12px">The briefing attendance window is available from 7:30 AM to 2:00 PM and 2:00 PM to 6:00 PM in this local simulation. The clock uses your device time.</p>`}
+        <h4 style="margin-top:18px">Attendance history</h4>
+        ${state.briefingAttendance.slice(-5).reverse().map(x=>`<div class="data-row"><span>${escapeHTML(x.slot)} · ${escapeHTML(x.scheduled)}</span><strong>${new Date(x.attendedAt).toLocaleString()}</strong></div>`).join('')||'<p class="muted-note">No briefing attendance recorded.</p>'}
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><h3>Department assignment</h3><p>Every specialist remains responsible for customer care.</p></div></div>
+        <label class="form-field">Assigned unit<select id="departmentSelect">${DEPARTMENTS.map(d=>`<option value="${d.id}" ${d.id===state.workforceDepartment?'selected':''}>${escapeHTML(d.name)}</option>`).join('')}</select></label>
+        <div class="call-card" style="margin-top:12px"><span class="subtle-label">SPECIALIST RESPONSIBILITY</span><h3>${escapeHTML(dept.name)}</h3><p>${escapeHTML(dept.specialty)}</p><p class="muted-note">Core customer-service standards, identity protection, accurate records and respectful communication apply to every unit.</p></div>
+        <div class="data-list" style="margin-top:12px">${DEPARTMENTS.map(d=>`<div class="data-row"><span>${escapeHTML(d.name)}</span><small>${escapeHTML(d.specialty)}</small></div>`).join('')}</div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><h3>Promotion and annual examination</h3><p>Three total annual-cycle attempts. One examination per calendar year.</p></div><span class="pill ${eligibility.eligible?'green':'amber'}">${eligibility.eligible?'ELIGIBLE':'NOT ELIGIBLE'}</span></div>
+        ${Object.entries(metrics).map(([k,v])=>`<div class="data-row"><span>${k.toUpperCase()}</span><strong>${v}/100</strong></div>`).join('')}
+        <div class="bar-track" style="margin:12px 0"><div class="bar-fill" style="width:${eligibility.score}%"></div></div>
+        <p class="muted-note">Eligibility threshold: 75%. Exam pass mark: 70%. Actual organisation policies must be configured by an authorised administrator.</p>
+        <form id="promotionExamForm" class="form-stack" style="margin-top:12px">
+          <label class="form-field">Simulated examination score (0–100)<input name="examScore" type="number" min="0" max="100" required></label>
+          <button class="btn primary" type="submit" ${eligibility.eligible?'':'disabled'}>Sit annual promotion examination</button>
+        </form>
+        <h4 style="margin-top:16px">Examination history</h4>
+        ${state.promotionAttempts.map(a=>`<div class="data-row"><span>${a.year} · ${a.examScore}%</span><strong>${a.status.toUpperCase()}</strong></div>`).join('')||'<p class="muted-note">No examination attempts recorded.</p>'}
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><h3>Customer care, cross-selling and commendations</h3><p>Consent-led recommendations and ethical customer recognition.</p></div></div>
+        <form id="crossSellForm" class="form-stack">
+          <label class="form-field">Synthetic customer reference<input name="customerId" placeholder="CUS-SIM-001" required></label>
+          <label class="form-field">Relevant product or service<input name="product" placeholder="Savings product / card / digital service" required></label>
+          <label class="form-field"><span><input name="relevant" type="checkbox"> Relevant to customer need</span></label>
+          <label class="form-field"><span><input name="eligible" type="checkbox"> Customer appears eligible (simulated check)</span></label>
+          <label class="form-field"><span><input name="consent" type="checkbox"> Customer gave permission for follow-up</span></label>
+          <button class="btn outline" type="submit">Record recommendation outcome</button>
+        </form>
+        <form id="commendationForm" class="form-stack" style="margin-top:16px">
+          <label class="form-field">Customer reference<input name="customerId" placeholder="CUS-SIM-001" required></label>
+          <label class="form-field">Customer commendation<textarea name="message" maxlength="500" required placeholder="Record the customer's words and context."></textarea></label>
+          <p class="muted-note">No private gifts, payments or personal arrangements may be accepted. Refer recognition through official customer-relations channels.</p>
+          <button class="btn outline" type="submit">Log and refer commendation</button>
+        </form>
+        <h4 style="margin-top:16px">Recent records</h4>
+        ${[...state.crossSellRecords.slice(-3).map(x=>`<div class="data-row"><span>Cross-sell · ${escapeHTML(x.product)}</span><strong>${x.outcome.replace('_',' ').toUpperCase()}</strong></div>`),...state.commendations.slice(-3).map(x=>`<div class="data-row"><span>Commendation · ${escapeHTML(x.customerId)}</span><strong>REFERRED</strong></div>`)].join('')||'<p class="muted-note">No records yet.</p>'}
+      </section>
+      <section class="panel" style="grid-column:1/-1">
+        <div class="panel-head"><div><h3>Enterprise systems sandbox</h3><p>Connected workflow practice using synthetic records only. No real banking systems or transactions.</p></div><span class="pill green">SIMULATION</span></div>
+        <div class="grid three">${SYSTEMS.map(s=>`<article class="campaign-card"><span class="subtle-label">${s.id.toUpperCase()}</span><h3>${escapeHTML(s.name)}</h3><p>${escapeHTML(s.purpose)}</p><button class="btn outline small" data-action="launch-system" data-system="${s.id}">Open simulated system</button></article>`).join('')}</div>
+        <h4 style="margin-top:16px">System activity</h4>
+        ${state.systemEvents.slice(-8).reverse().map(e=>`<div class="data-row"><span>${e.systemId.toUpperCase()} · ${escapeHTML(e.action)}</span><strong>${escapeHTML(e.reference)} · SIMULATED</strong></div>`).join('')||'<p class="muted-note">No system events recorded.</p>'}
+      </section>
+    </div>`;
+}
+
 function renderView() {
   setHeader();
   const config = {
@@ -680,7 +759,8 @@ function renderView() {
     crm:['WORKSTATION','CRM & cases','Review accurate records of completed simulated interactions.'],
     knowledge:['AGENT RESOURCES','Knowledge base','Reference the principles and procedures relevant to your role.'],
     performance:['PERFORMANCE INTELLIGENCE','Performance dashboard','Review quality, resolution and service performance.'],
-    career:['CAREER MANAGEMENT','Career profile','Track employment details, experience and progression.']
+    career:['CAREER MANAGEMENT','Career profile','Track employment details, experience and progression.'],
+    workforce:['WORKFORCE INTELLIGENCE','People & enterprise operations','Briefings, departments, promotion, customer recognition and simulated enterprise systems.']
   };
   const [eyebrow,title,desc] = config[state.currentView] || config.overview;
   $('#pageEyebrow').textContent = eyebrow; $('#pageTitle').textContent = title; $('#pageDescription').textContent = desc;
@@ -695,6 +775,7 @@ function renderView() {
     case 'knowledge': renderKnowledge(); break;
     case 'performance': renderPerformance(); break;
     case 'career': renderCareer(); break;
+    case 'workforce': renderWorkforce(); break;
     default: state.currentView='overview'; renderOverview();
   }
   saveState();
@@ -1005,6 +1086,21 @@ function handleAction(action,event={}){
     case 'next-outbound-step':state.activeOutbound.stepIndex++;state.activeOutbound.feedback=null;renderView();break;
     case 'complete-outbound-step':completeOutbound();break;
     case 'end-outbound':cancelOutbound();break;
+    case 'attend-briefing': {
+      const briefing=briefingFor(new Date());
+      if(!briefing){toast('No briefing is currently in its attendance window.','warning');break;}
+      recordBriefingAttendance(state.briefingAttendance,briefing,`EMP-${state.nameInitials}`);
+      pushOperationEvent('briefing',briefing.id,`${briefing.title} attended and acknowledged.`);
+      saveState();renderView();toast('Briefing attendance recorded.','success');break;
+    }
+    case 'launch-system': {
+      const system=SYSTEMS.find(x=>x.id===event.system);
+      if(!system)break;
+      const reference=`SIM-${system.id.toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+      createSystemEvent(state.systemEvents,system.id,'Opened synthetic workflow',reference);
+      pushOperationEvent('system',reference,`${system.name} simulation opened.`);
+      saveState();renderView();toast(`${system.name} sandbox opened. No live data accessed.`,'success');break;
+    }
     case 'reset-simulation':{const modal=openModal('<div class="subtle-label">LOCAL SAVE RESET</div><h3>Reset this simulation?</h3><p>This removes the candidate, employment and local performance data stored in this browser. It does not affect any online account because this prototype has no server-side save system.</p><div class="modal-actions"><button class="btn outline" data-close>Cancel</button><button class="btn danger" id="confirmReset">Reset simulation</button></div>');$('[data-close]',modal).onclick=()=>modal.remove();$('#confirmReset',modal).onclick=()=>{localStorage.removeItem(STORAGE_KEY);location.reload();};break;}
     case 'back-knowledge':state.viewedArticle=null;renderView();break;
   }
@@ -1012,13 +1108,36 @@ function handleAction(action,event={}){
 
 document.addEventListener('click',e=>{
   const nav=e.target.closest('.nav-item[data-view]');if(nav){if(nav.disabled){toast('Complete recruitment and accept an offer to unlock agent operations.');return;}state.currentView=nav.dataset.view;renderView();return;}
-  const action=e.target.closest('[data-action]');if(action){handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId});return;}
-  const answer=e.target.closest('[data-answer]');if(answer){const i=state.assessmentIndex;state.assessmentAnswers[i]=Number(answer.dataset.answer);renderView();return;}
+  const action=e.target.closest('[data-action]');if(action){handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId,system:action.dataset.system});return;}
+  const answer=e.target.closest('[data-answer]');
+if(answer){const i=state.assessmentIndex;state.assessmentAnswers[i]=Number(answer.dataset.answer);renderView();return;}
   const practicalAnswer=e.target.closest('[data-practical-answer]');if(practicalAnswer){state.practicalAnswers[state.practicalIndex]=Number(practicalAnswer.dataset.practicalAnswer);renderView();return;}
   const callChoice=e.target.closest('[data-call-choice]');if(callChoice){applyCallChoice(Number(callChoice.dataset.callChoice));return;}
   const outChoice=e.target.closest('[data-outbound-choice]');if(outChoice){applyOutboundChoice(Number(outChoice.dataset.outboundChoice));return;}
   const campaign=e.target.closest('[data-start-campaign]');if(campaign){beginOutboundDial(campaign.dataset.startCampaign);return;}
   const article=e.target.closest('[data-article]');if(article){state.viewedArticle=article.dataset.article;renderView();return;}
+});
+
+
+document.addEventListener('change',e=>{
+  if(e.target?.id==='departmentSelect'){state.workforceDepartment=e.target.value;saveState();renderView();}
+});
+document.addEventListener('submit',e=>{
+  if(e.target.id==='promotionExamForm'){
+    e.preventDefault();
+    const metrics={kpi:Math.min(100,Math.round((state.callsHandled+state.outboundCalls)*5)),qa:state.qaCount?Math.round(state.totalQA/state.qaCount):75,csat:state.csatCount?Math.round(state.totalCSAT/state.csatCount):75,knowledge:Math.min(100,70+state.experience),compliance:state.incidents?Math.max(0,100-state.incidents*12):95,leadership:Math.min(100,60+Math.floor(state.level*5))};
+    try{const item=recordPromotionExam(state.promotionAttempts,{metrics,examScore:Number(new FormData(e.target).get('examScore'))});pushOperationEvent('promotion',item.id,`Annual promotion examination ${item.status}.`);saveState();renderView();toast(`Examination ${item.status.replace('_',' ')}.`,'success');}catch(err){toast(err.message,'warning');}
+  }
+  if(e.target.id==='crossSellForm'){
+    e.preventDefault();const f=new FormData(e.target);
+    const item=recordCrossSell(state.crossSellRecords,{customerId:f.get('customerId'),product:f.get('product'),relevant:f.has('relevant'),eligible:f.has('eligible'),consent:f.has('consent')});
+    pushOperationEvent('cross-sell',item.id,`Recommendation recorded: ${item.outcome}.`);saveState();renderView();toast('Cross-selling outcome recorded.','success');
+  }
+  if(e.target.id==='commendationForm'){
+    e.preventDefault();const f=new FormData(e.target);
+    const item=recordCommendation(state.commendations,{customerId:f.get('customerId'),message:f.get('message')});
+    pushOperationEvent('commendation',item.id,'Customer commendation referred through official channels.');saveState();renderView();toast('Commendation logged for official review.','success');
+  }
 });
 
 function initClock(){let tick=8*3600;setInterval(()=>{tick=(tick+1)%86400;const h=String(Math.floor(tick/3600)).padStart(2,'0'),m=String(Math.floor((tick%3600)/60)).padStart(2,'0'),s=String(tick%60).padStart(2,'0');$('#shiftClock').textContent=`${h}:${m}:${s}`;},1000);}

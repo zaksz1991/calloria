@@ -1,9 +1,9 @@
 # CALLORIA — Contact Centre Career & Operations Simulator
 
-**Build:** 0.4.0 — contact-centre operations engine  
+**Build:** 0.5.0 — contact-centre operations engine  
 **Product:** A multi-industry contact-centre career and operations simulator. Recruitment is the entry gate; the main gameplay is simulated employment, customer operations, service performance and career progression.
 
-## What changed in 0.4.0
+## What changed in 0.5.0
 
 ### Inbound operations engine
 - Added structured inbound contact records with unique IDs, scenario links, queue entry timestamps, routing groups, priority and lifecycle history.
@@ -75,7 +75,7 @@ Vercel settings:
 ## Project structure
 
 ```text
-CALLORIA-v0.4.0/
+CALLORIA-v0.5.0/
 ├── index.html
 ├── styles.css
 ├── vite.config.js
@@ -101,4 +101,9 @@ CALLORIA-v0.4.0/
 - Vite production bundle: not verified. Vite was not installed in this environment; dependency installation timed out while waiting on the package registry.
 - Full browser walkthrough, GLB runtime loading, desktop 3D rendering and physical-device QA on Android/iPhone: not verified.
 
-Build 0.4.0 is an operations-engine development release, not a finished commercial product. It materially expands operational depth but does not yet deliver real voice, digital channels, server persistence or multi-user operations.
+Build 0.5.0 is an operations-engine development release, not a finished commercial product. It materially expands operational depth but does not yet deliver real voice, digital channels, server persistence or multi-user operations.
+
+
+## Build 0.5.0 workforce systems
+
+The People & Systems workspace includes simulated morning and afternoon briefings, specialist departments, weighted promotion eligibility, annual examination controls, consent-led cross-selling, official customer commendation routing and synthetic enterprise system workflows. These are local gameplay records, not integrations with a real bank or employer. The promotion weights and pass thresholds are illustrative defaults and require organisation-approved configuration before commercial use.
