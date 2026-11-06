@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.0 — Contact-centre operations engine
+
+- Extracted contact queue, lifecycle transitions, priority routing, callback scheduling and outbound suppression into a dedicated operations engine module.
+- Added prioritised inbound queue and routing group presentation.
+- Added contact lifecycle recording for queue, offer, connect, hold, resume, transfer, wrap-up, callback, completion and escalation.
+- Added active-call hold/resume, specialist transfer, supervisor assistance and return-to-queue controls.
+- Added after-contact work with disposition validation, factual case notes and mandatory completion before agent continuation.
+- Added inbound callbacks with due-time controls and callback re-queueing.
+- Added outbound dial-attempt IDs, wrap-up dispositions, customer opt-out suppression and scheduled callback continuation.
+- Added a supervisor desk for assistance requests and escalated case review.
+- Expanded CRM with disposition, case notes, owner and interaction event history.
+- Added queue wait, service-level snapshot and after-contact work indicators to performance reporting.
+- Added Queue and Supervisor destinations to the game menu and 3D workstation interactions.
+- Added nine operations-engine and integration regression tests; total automated regression tests now 18.
+- Preserved the v0.3.0 game-first shell, mobile controls, recruitment, employment, scenarios, workstation, CRM, knowledge base and career systems.
+
 ## 0.3.0 — CALLORIA game-first and mobile interaction upgrade
 
 - Rebranded visible application, browser metadata, workplace UI textures, reception signage, project metadata and documentation to CALLORIA.

@@ -1,3 +1,9 @@
+import {
+  CONTACT_STATUS, createInboundQueue, sortQueuedContacts, nextQueuedContact,
+  transitionContact, addInteractionEvent, countQueuedContacts, queueMetrics,
+  addSuppression, isContactSuppressed, scheduleCallback, completeActiveCallback
+} from './operations-engine.js';
+
 let THREE = null;
 
 const STORAGE_KEY = 'calloria.save.v1';
@@ -23,6 +29,19 @@ const initialState = () => ({
   currentCall: null,
   activeOutbound: null,
   callQueue: 6,
+  inboundQueueItems: [],
+  queueSequence: 0,
+  callbacks: [],
+  supervisorRequests: [],
+  interactionTimeline: [],
+  outboundSuppressions: [],
+  outboundAttempts: [],
+  wrapUp: null,
+  totalWaitSeconds: 0,
+  acceptedContacts: 0,
+  contactsWithinSla: 0,
+  totalACWSeconds: 0,
+  acwCount: 0,
   outboundDone: [],
   cases: [],
   callsHandled: 0,
@@ -57,6 +76,8 @@ function loadState() {
     if (!stored) return initialState();
     const parsed = JSON.parse(stored);
     const migrated = { ...initialState(), ...parsed };
+    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
+    if (!Number.isFinite(migrated.callQueue)) migrated.callQueue = 6;
     if (!localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
     return migrated;
   } catch {
@@ -65,6 +86,42 @@ function loadState() {
 }
 function saveState() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* storage may be disabled */ }
+}
+function syncQueueCount() {
+  state.callQueue = countQueuedContacts(state.inboundQueueItems);
+  $('#inboundCount').textContent = state.callQueue;
+}
+function pushOperationEvent(type, reference, message, status = 'recorded', details = {}) {
+  return addInteractionEvent(state.interactionTimeline, { type, reference, message, status, details });
+}
+function ensureInboundQueue(count = 6) {
+  if (!Array.isArray(state.inboundQueueItems)) state.inboundQueueItems = [];
+  const waiting = countQueuedContacts(state.inboundQueueItems);
+  if (waiting === 0 && state.callQueue > 0 && state.inboundQueueItems.length === 0) {
+    const items = createInboundQueue(inboundScenarios, Math.min(30, state.callQueue), { sequence: state.queueSequence });
+    state.inboundQueueItems.push(...items);
+    state.queueSequence += items.length;
+  } else if (waiting === 0 && count > 0 && state.inboundQueueItems.length === 0) {
+    const items = createInboundQueue(inboundScenarios, count, { sequence: state.queueSequence });
+    state.inboundQueueItems.push(...items);
+    state.queueSequence += items.length;
+  }
+  syncQueueCount();
+}
+function findQueueContact(contactId) {
+  return state.inboundQueueItems.find(item => item.id === contactId) || null;
+}
+function addCallTimeline(call, event, details = {}) {
+  const contact = call?.queueContactId ? findQueueContact(call.queueContactId) : null;
+  if (contact) { contact.timeline = Array.isArray(contact.timeline) ? contact.timeline : []; contact.timeline.push({ at: new Date().toISOString(), event, status: contact.status, ...details }); }
+  pushOperationEvent('call', contact?.id || call?.scenarioId || '', event, contact?.status || 'recorded', details);
+}
+function formatWait(seconds) {
+  const value = Math.max(0, Math.floor(Number(seconds) || 0));
+  return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, '0')}`;
+}
+function makeCallReference(prefix = 'CALL') {
+  return `${prefix}-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 900 + 100)}`;
 }
 function escapeHTML(value = '') {
   return String(value).replace(/[&<>"']/g, ch => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch]));
@@ -538,29 +595,58 @@ function renderOffer() {
 }
 
 function renderInbound() {
+  if (state.wrapUp?.type==='inbound') return renderWrapUp();
   if (!state.shiftActive) {
-    viewRoot.innerHTML = `<div class="panel empty-state"><div class="empty-icon">◷</div><h3>Your shift has not started</h3><p>Start your workday before answering customer contacts. This keeps shift activity and performance records consistent.</p><button class="btn primary" data-action="start-shift">Start shift</button></div>`; return;
+    viewRoot.innerHTML = `<div class="panel empty-state"><div class="empty-icon">◷</div><h3>Your shift has not started</h3><p>Start your workday before accepting inbound contacts. Queue routing and service-level records begin with the shift.</p><button class="btn primary" data-action="start-shift">Start shift</button></div>`; return;
   }
   if (!state.currentCall) {
-    viewRoot.innerHTML = `<div class="grid two"><section class="panel"><div class="panel-head"><div><h3>Inbound contact queue</h3><p>Simulated calls routed to ${escapeHTML(state.department)}.</p></div><span class="pill green"><span class="live-dot"></span> QUEUE OPEN</span></div><div class="metric-value" style="font-size:31px">${state.callQueue}</div><div class="metric-foot">Contacts waiting in this simulation</div><div class="article-box"><h4>Queue handling</h4><p>Answer the next customer, complete authentication, investigate the request and record the actual outcome. Scenarios are simulated and do not connect to real customer accounts.</p></div><button class="btn primary" style="margin-top:13px" data-action="answer-call" ${state.callQueue===0?'disabled':''}>Answer next call ↙</button></section><section class="panel"><div class="panel-head"><div><h3>Recently handled</h3><p>Your latest customer interactions.</p></div><button class="btn small outline" data-action="open-crm">View CRM</button></div>${state.cases.length?state.cases.slice(-4).reverse().map(caseRow).join(''):'<div class="empty-state"><p>No calls logged during this shift yet.</p></div>'}</section></div>`; return;
+    ensureInboundQueue(6);
+    const queue=sortQueuedContacts(state.inboundQueueItems);
+    const metrics=queueMetrics(state.inboundQueueItems);
+    const callbackRows=state.callbacks.filter(item=>item.status==='scheduled'&&item.type!=='outbound').slice().sort((a,b)=>Date.parse(a.dueAt)-Date.parse(b.dueAt));
+    viewRoot.innerHTML = `<div class="ops-summary-grid">${metricCard('WAITING CONTACTS',metrics.waiting,'Prioritised inbound queue','↙')}${metricCard('LONGEST WAIT',formatWait(metrics.longestWaitSeconds),'Current oldest queued contact','◷')}${metricCard('WITHIN 60-SECOND TARGET',metrics.waiting?Math.round(metrics.withinServiceLevel/metrics.waiting*100)+'%':'—','Queue snapshot, not a contractual SLA','⌁')}</div><div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Prioritised inbound queue</h3><p>Urgent security and fraud contacts are prioritised ahead of routine enquiries.</p></div><span class="pill green"><span class="live-dot"></span> ROUTING OPEN</span></div>${queue.length?`<div class="queue-contact-list">${queue.slice(0,8).map(item=>`<div class="queue-contact-row"><span class="priority-mark ${item.priority}"></span><div class="queue-contact-main"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${escapeHTML(item.routeGroup)}</small></div><span class="queue-wait">${formatWait(item.waitSeconds)}</span><span class="pill ${item.priority==='critical'?'red':item.priority==='high'?'amber':''}">${item.priority.toUpperCase()}</span></div>`).join('')}</div><button class="btn primary" style="margin-top:14px" data-action="answer-call">Accept highest-priority contact ↙</button>`:`<div class="empty-state"><h3>No waiting contacts</h3><p>Generate another batch of simulated arrivals to continue this shift.</p><button class="btn primary" data-action="refresh-queue">Load next arrivals</button></div>`}</section><section class="panel"><div class="panel-head"><div><h3>Callbacks due</h3><p>Customer-requested return contacts scheduled during earlier interactions.</p></div><span class="pill">${callbackRows.length} SCHEDULED</span></div>${callbackRows.length?callbackRows.map(item=>`<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · Due ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="return-callback-to-queue" data-callback-id="${escapeHTML(item.id)}" ${Date.parse(item.dueAt)<=Date.now()?'':'disabled'}>${Date.parse(item.dueAt)<=Date.now()?'Queue callback':'Not due yet'}</button></div>`).join(''):'<div class="empty-state"><p>No callbacks are scheduled.</p></div>'}<div class="panel-head" style="margin-top:18px"><div><h3>Recently handled</h3><p>Your latest customer interactions.</p></div><button class="btn small outline" data-action="open-crm">View cases</button></div>${state.cases.length?state.cases.slice(-3).reverse().map(caseRow).join(''):'<p class="muted-note">No completed interactions yet.</p>'}</section></div>`; return;
   }
-  const call = state.currentCall;
-  const scenario = inboundScenarios.find(x=>x.id===call.scenarioId);
-  const step = scenario.steps[call.stepIndex];
-  viewRoot.innerHTML = `<div class="call-layout"><section class="panel call-console"><div class="call-console-head"><div><strong>INBOUND VOICE CONTACT</strong><small>Connected · ${escapeHTML(scenario.category)} · Ref ${scenario.reference}</small></div><span class="pill green">CALL ACTIVE</span></div><div class="call-console-body"><div class="customer-strip"><div class="customer-avatar">${scenario.initials}</div><div class="customer-info"><strong>${scenario.customer}</strong><small>${scenario.profile}</small></div><div class="customer-tags"><span class="pill">${scenario.tag}</span><span class="pill amber">${scenario.amount}</span></div></div><div class="subtle-label">CUSTOMER STATEMENT</div><p class="call-prompt">“${scenario.opening}”</p><p class="call-context">${call.stepIndex===0?'The customer has just connected. Begin with the correct service procedure.':'Continue the interaction based on the case information and previous action.'}</p><div class="panel-head" style="margin:16px 0 11px"><div><div class="question-kicker">STEP ${call.stepIndex+1} OF ${scenario.steps.length} · ${step.label}</div><h3 class="call-prompt" style="margin-top:8px">${step.prompt}</h3><p class="call-context" style="margin:5px 0 0">${step.context}</p></div></div><div class="call-options">${step.options.map((opt,j)=>`<button class="call-option" data-call-choice="${j}" ${call.feedback?'disabled':''}><span>${String.fromCharCode(65+j)}</span><span>${opt.text}</span></button>`).join('')}</div>${call.feedback?`<div class="call-feedback ${call.feedbackType}">${escapeHTML(call.feedback)}</div><div class="assessment-footer"><small>${call.feedbackType==='bad'?'A quality or compliance deduction may apply.':'Decision recorded. Continue the interaction.'}</small><button class="btn primary" data-action="${call.stepIndex===scenario.steps.length-1?'complete-call':'next-call-step'}">${call.stepIndex===scenario.steps.length-1?'Complete & log case':'Continue →'}</button></div>`:''}</div></section><aside class="call-side-stack"><section class="panel"><div class="panel-head"><div><h3>Customer record</h3><p>Simulated CRM profile.</p></div><span class="pill">CRM</span></div><div class="data-list"><div class="data-row"><span>Customer</span><strong>${scenario.customer}</strong></div><div class="data-row"><span>Case reference</span><strong>${scenario.reference}</strong></div><div class="data-row"><span>Reported issue</span><strong>${scenario.issue}</strong></div><div class="data-row"><span>Location</span><strong>${scenario.location}</strong></div><div class="data-row"><span>Amount / value</span><strong>${scenario.amount}</strong></div><div class="data-row"><span>Case status</span><strong>${call.feedback?'In progress':'New contact'}</strong></div></div></section><section class="panel"><div class="panel-head"><div><h3>Interaction controls</h3><p>Agent workstation tools.</p></div></div><div class="case-item"><div class="case-symbol">▤</div><div class="case-copy"><strong>CRM case record</strong><small>Auto-created when interaction closes</small></div></div><div class="case-item"><div class="case-symbol">◈</div><div class="case-copy"><strong>Knowledge base</strong><small>Approved guidance and procedures</small></div><button class="btn small outline" data-action="open-knowledge">Open</button></div><button class="btn outline" style="width:100%;margin-top:12px" data-action="end-call">End interaction</button></section></aside></div>`;
+  const call=state.currentCall;
+  const scenario=inboundScenarios.find(item=>item.id===call.scenarioId);
+  if(!scenario){toast('Active contact scenario unavailable.','error');return;}
+  const step=scenario.steps[call.stepIndex];
+  const contact=findQueueContact(call.queueContactId);
+  const supervisorOpen=state.supervisorRequests.some(item=>item.contactId===call.queueContactId&&item.status==='open');
+  viewRoot.innerHTML = `<div class="call-layout"><section class="panel call-console"><div class="call-console-head"><div><strong>INBOUND VOICE CONTACT</strong><small>Connected · ${escapeHTML(scenario.category)} · Ref ${escapeHTML(scenario.reference)}</small></div><span class="pill ${call.held?'amber':'green'}">${call.held?'ON HOLD':'CONNECTED'}</span></div><div class="call-console-body"><div class="customer-strip"><div class="customer-avatar">${scenario.initials}</div><div class="customer-info"><strong>${escapeHTML(scenario.customer)}</strong><small>${escapeHTML(scenario.profile)}</small></div><div class="customer-tags"><span class="pill">${scenario.tag}</span><span class="pill amber">${scenario.amount}</span></div></div>${call.held?`<div class="call-feedback neutral"><strong>Customer is on hold.</strong> Resume the conversation before selecting another call action.</div>`:`<div class="subtle-label">CUSTOMER STATEMENT</div><p class="call-prompt">“${scenario.opening}”</p><p class="call-context">${call.stepIndex===0?'The customer has just connected. Begin with the correct service procedure.':'Continue the interaction based on the case information and previous action.'}</p><div class="panel-head" style="margin:16px 0 11px"><div><div class="question-kicker">STEP ${call.stepIndex+1} OF ${scenario.steps.length} · ${step.label}</div><h3 class="call-prompt" style="margin-top:8px">${step.prompt}</h3><p class="call-context" style="margin:5px 0 0">${step.context}</p></div></div><div class="call-options">${step.options.map((opt,j)=>`<button class="call-option" data-call-choice="${j}" ${call.feedback?'disabled':''}><span>${String.fromCharCode(65+j)}</span><span>${opt.text}</span></button>`).join('')}</div>${call.feedback?`<div class="call-feedback ${call.feedbackType}">${escapeHTML(call.feedback)}</div><div class="assessment-footer"><small>${call.feedbackType==='bad'?'A quality or compliance deduction may apply.':'Decision recorded. Continue the interaction.'}</small><button class="btn primary" data-action="${call.stepIndex===scenario.steps.length-1?'complete-call':'next-call-step'}">${call.stepIndex===scenario.steps.length-1?'Move to after-contact work':'Continue →'}</button></div>`:''}`}</div></section><aside class="call-side-stack"><section class="panel"><div class="panel-head"><div><h3>Customer record</h3><p>Simulated CRM profile.</p></div><span class="pill">CRM</span></div><div class="data-list"><div class="data-row"><span>Customer</span><strong>${scenario.customer}</strong></div><div class="data-row"><span>Case reference</span><strong>${scenario.reference}</strong></div><div class="data-row"><span>Reported issue</span><strong>${scenario.issue}</strong></div><div class="data-row"><span>Location</span><strong>${scenario.location}</strong></div><div class="data-row"><span>Queue route</span><strong>${contact?escapeHTML(contact.routeGroup):'General'}</strong></div><div class="data-row"><span>Queue wait</span><strong>${formatWait(call.waitSeconds||0)}</strong></div></div></section><section class="panel"><div class="panel-head"><div><h3>Interaction controls</h3><p>Contact lifecycle management.</p></div></div><div class="ops-control-stack"><button class="btn outline" data-action="toggle-call-hold">${call.held?'Resume customer':'Place on hold'}</button><button class="btn outline" data-action="request-supervisor" ${supervisorOpen?'disabled':''}>${supervisorOpen?'Supervisor requested':'Request supervisor assistance'}</button><label class="subtle-label" for="transferTarget">TRANSFER DESTINATION</label><select id="transferTarget"><option>Specialist Support</option><option>Fraud & Security</option><option>Cards & Payments</option><option>Technical Support</option><option>Complaints Management</option></select><button class="btn secondary" data-action="transfer-call" ${call.held?'disabled':''}>Transfer to specialist</button><button class="btn outline" data-action="return-call-to-queue">Return contact to queue</button></div><p class="muted-note" style="margin-top:12px">Hold, transfer, assistance and queue return are recorded in the simulated interaction timeline.</p></section></aside></div>`;
 }
+
+function renderQueue(){
+  if(!state.shiftActive){viewRoot.innerHTML=`<div class="panel empty-state"><h3>Queue control is not active</h3><p>Start your shift to open contact routing.</p><button class="btn primary" data-action="start-shift">Start shift</button></div>`;return;}
+  ensureInboundQueue(6);
+  const queue=sortQueuedContacts(state.inboundQueueItems);
+  const metrics=queueMetrics(state.inboundQueueItems);
+  const callbacks=state.callbacks.filter(item=>(item.status==='scheduled'||item.status==='queued')&&item.type!=='outbound');
+  viewRoot.innerHTML=`<div class="ops-summary-grid">${metricCard('IN QUEUE',metrics.waiting,'Queued voice contacts','↙')}${metricCard('AVERAGE WAIT',formatWait(metrics.averageWaitSeconds),'Across waiting contacts','◷')}${metricCard('ACCEPTED THIS SHIFT',state.acceptedContacts,'Includes completed and active contacts','✓')}</div><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Queue supervisor</h3><p>Priority, routing group and live wait-age snapshot.</p></div><button class="btn small secondary" data-action="refresh-queue">Add six arrivals</button></div>${queue.length?`<div class="table-wrap"><table><thead><tr><th>Priority</th><th>Customer</th><th>Issue</th><th>Route group</th><th>Wait</th><th>Status</th></tr></thead><tbody>${queue.map(item=>`<tr><td><span class="priority-label ${item.priority}">${item.priority.toUpperCase()}</span></td><td>${escapeHTML(item.customer)}</td><td>${escapeHTML(item.issue)}</td><td>${escapeHTML(item.routeGroup)}</td><td>${formatWait(item.waitSeconds)}</td><td><span class="pill green">QUEUED</span></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state"><h3>Queue clear</h3><p>No inbound contacts are waiting.</p></div>'}</section><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Scheduled callbacks</h3><p>Only customer-requested callbacks are listed.</p></div><span class="pill">${callbacks.length}</span></div>${callbacks.length?callbacks.map(item=>`<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="return-callback-to-queue" data-callback-id="${escapeHTML(item.id)}" ${item.status==='queued'||Date.parse(item.dueAt)>Date.now()?'disabled':''}>${item.status==='queued'?'In queue':Date.parse(item.dueAt)>Date.now()?'Not due yet':'Queue callback'}</button></div>`).join(''):'<p class="muted-note">No callbacks are scheduled.</p>'}</section>`;
+}
+
+function renderSupervisor(){
+  const open=state.supervisorRequests.filter(item=>item.status==='open');
+  const escalated=state.cases.filter(item=>/Escalated|review|required/i.test(item.status));
+  viewRoot.innerHTML=`<div class="ops-summary-grid">${metricCard('OPEN ASSISTANCE REQUESTS',open.length,'Agent requests awaiting supervisor review','!')}${metricCard('ESCALATED CASES',escalated.length,'Cases requiring specialist or QA attention','↗')}${metricCard('TOTAL INTERACTIONS',state.interactionTimeline.length,'Recorded operational events','◷')}</div><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Supervisor assistance desk</h3><p>Review live requests and close the assistance loop.</p></div><span class="pill ${open.length?'amber':'green'}">${open.length} OPEN</span></div>${open.length?open.map(item=>`<div class="case-item"><div class="case-symbol">!</div><div class="case-copy"><strong>${escapeHTML(item.customer)} · ${escapeHTML(item.reason)}</strong><small>${escapeHTML(item.reference)} · ${new Date(item.createdAt).toLocaleString()}</small></div><button class="btn small primary" data-action="resolve-supervisor" data-request-id="${escapeHTML(item.id)}">Mark reviewed</button></div>`).join(''):'<div class="empty-state"><h3>No open requests</h3><p>New assistance requests and escalations will appear here.</p></div>'}</section><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Escalated and review cases</h3><p>Open quality and specialist follow-up records.</p></div></div>${escalated.length?escalated.slice().reverse().map(caseRow).join(''):'<p class="muted-note">No escalated cases recorded.</p>'}</section><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Recent operations timeline</h3><p>Queue and interaction lifecycle events.</p></div></div>${state.interactionTimeline.slice(-12).reverse().map(item=>`<div class="timeline-row"><time>${new Date(item.at).toLocaleTimeString()}</time><div><strong>${escapeHTML(item.message)}</strong><small>${escapeHTML(item.reference)} · ${escapeHTML(item.status)}</small></div></div>`).join('')||'<p class="muted-note">No operations events have been recorded.</p>'}</section>`;
+}
+
 function renderOutbound() {
+  if(state.wrapUp?.type==='outbound')return renderWrapUp();
   if (!state.shiftActive) { viewRoot.innerHTML = `<div class="panel empty-state"><div class="empty-icon">◷</div><h3>Start your shift first</h3><p>Outbound campaigns are available during an active simulated shift.</p><button class="btn primary" data-action="start-shift">Start shift</button></div>`; return; }
   if (state.activeOutbound) {
     const task = outboundCampaigns.find(x=>x.id===state.activeOutbound.campaignId);
-    const step = task.script[state.activeOutbound.stepIndex];
-    viewRoot.innerHTML = `<div class="call-layout"><section class="panel call-console"><div class="call-console-head"><div><strong>OUTBOUND CAMPAIGN CONTACT</strong><small>${escapeHTML(task.type)} · ${escapeHTML(task.title)}</small></div><span class="pill green">SIMULATED DIAL</span></div><div class="call-console-body"><div class="customer-strip"><div class="customer-avatar">${task.initials}</div><div class="customer-info"><strong>${task.customer}</strong><small>Campaign contact · ${task.type}</small></div><span class="pill">OUTBOUND</span></div><div class="subtle-label">CAMPAIGN OBJECTIVE</div><p class="call-prompt">${task.objective}</p><p class="call-context">${task.context}</p><div class="question-kicker">STEP ${state.activeOutbound.stepIndex+1} OF ${task.script.length} · ${step.label}</div><h3 class="call-prompt" style="margin:9px 0 14px">${step.prompt}</h3><div class="call-options">${step.options.map((opt,j)=>`<button class="call-option" data-outbound-choice="${j}" ${state.activeOutbound.feedback?'disabled':''}><span>${String.fromCharCode(65+j)}</span><span>${opt.text}</span></button>`).join('')}</div>${state.activeOutbound.feedback?`<div class="call-feedback ${state.activeOutbound.feedbackType}">${escapeHTML(state.activeOutbound.feedback)}</div><div class="assessment-footer"><small>Record the actual result of this campaign interaction.</small><button class="btn primary" data-action="${state.activeOutbound.stepIndex===task.script.length-1?'complete-outbound-step':'next-outbound-step'}">${state.activeOutbound.stepIndex===task.script.length-1?'Finish contact':'Continue →'}</button></div>`:''}</div></section><aside class="call-side-stack"><section class="panel"><div class="panel-head"><div><h3>Campaign record</h3><p>Authorised simulated contact.</p></div></div><div class="data-list"><div class="data-row"><span>Campaign</span><strong>${task.title}</strong></div><div class="data-row"><span>Contact</span><strong>${task.customer}</strong></div><div class="data-row"><span>Purpose</span><strong>${task.type}</strong></div><div class="data-row"><span>Objective</span><strong>${task.objective}</strong></div></div></section><section class="panel"><div class="panel-head"><div><h3>Contact compliance</h3></div><span class="pill amber">REQUIRED</span></div><p class="muted-note">Identify yourself honestly, observe the approved contact rules, respect refusal and opt-out preferences, and record the true outcome. No real calls are placed.</p><button class="btn outline" style="width:100%" data-action="end-outbound">End contact</button></section></aside></div>`; return;
+    const step = task?.script[state.activeOutbound.stepIndex];
+    if(!task||!step){viewRoot.innerHTML='<div class="panel empty-state"><h3>Campaign step unavailable</h3><button class="btn secondary" data-action="open-outbound">Return to campaigns</button></div>';return;}
+    viewRoot.innerHTML = `<div class="call-layout"><section class="panel call-console"><div class="call-console-head"><div><strong>OUTBOUND CAMPAIGN CONTACT</strong><small>${escapeHTML(task.type)} · ${escapeHTML(task.title)} · ${escapeHTML(state.activeOutbound.attemptId)}</small></div><span class="pill green">SIMULATED DIAL</span></div><div class="call-console-body"><div class="customer-strip"><div class="customer-avatar">${task.initials}</div><div class="customer-info"><strong>${task.customer}</strong><small>Campaign contact · ${task.type}</small></div><span class="pill">OUTBOUND</span></div><div class="subtle-label">CAMPAIGN OBJECTIVE</div><p class="call-prompt">${task.objective}</p><p class="call-context">${task.context}</p><div class="question-kicker">STEP ${state.activeOutbound.stepIndex+1} OF ${task.script.length} · ${step.label}</div><h3 class="call-prompt" style="margin:9px 0 14px">${step.prompt}</h3><div class="call-options">${step.options.map((opt,j)=>`<button class="call-option" data-outbound-choice="${j}" ${state.activeOutbound.feedback?'disabled':''}><span>${String.fromCharCode(65+j)}</span><span>${opt.text}</span></button>`).join('')}</div>${state.activeOutbound.feedback?`<div class="call-feedback ${state.activeOutbound.feedbackType}">${escapeHTML(state.activeOutbound.feedback)}</div><div class="assessment-footer"><small>Record the actual customer response and outcome.</small><button class="btn primary" data-action="${state.activeOutbound.stepIndex===task.script.length-1?'complete-outbound-step':'next-outbound-step'}">${state.activeOutbound.stepIndex===task.script.length-1?'Move to after-contact work':'Continue →'}</button></div>`:''}</div></section><aside class="call-side-stack"><section class="panel"><div class="panel-head"><div><h3>Campaign record</h3><p>Authorised simulated contact.</p></div></div><div class="data-list"><div class="data-row"><span>Campaign</span><strong>${task.title}</strong></div><div class="data-row"><span>Contact</span><strong>${task.customer}</strong></div><div class="data-row"><span>Purpose</span><strong>${task.type}</strong></div><div class="data-row"><span>Attempt ID</span><strong>${state.activeOutbound.attemptId}</strong></div></div></section><section class="panel"><div class="panel-head"><div><h3>Contact compliance</h3></div><span class="pill amber">REQUIRED</span></div><p class="muted-note">Identify yourself honestly, observe approved contact rules, respect refusal and opt-out preferences, and record the true outcome. No real calls are placed.</p><button class="btn outline" style="width:100%" data-action="end-outbound">End contact and return to campaign desk</button></section></aside></div>`; return;
   }
-  viewRoot.innerHTML = `<div class="panel"><div class="panel-head"><div><h3>Outbound campaign desk</h3><p>Choose an assigned contact activity. Each campaign has a different customer objective.</p></div><span class="pill green">${state.outboundDone.length} COMPLETED</span></div><div class="grid three">${outboundCampaigns.map(c=>`<div class="panel" style="padding:15px;background:#fbfcfd"><div class="subtle-label">${c.type}</div><h3 style="font:700 13px Manrope;margin:9px 0 6px">${c.title}</h3><p class="muted-note">${c.context}</p><div class="data-row"><span>Contact</span><strong>${c.customer}</strong></div><button class="btn primary" style="width:100%;margin-top:12px" data-start-campaign="${c.id}" ${state.outboundDone.includes(c.id)?'disabled':''}>${state.outboundDone.includes(c.id)?'Completed':'Start simulated call →'}</button></div>`).join('')}</div><p class="muted-note" style="margin-top:14px">Campaign lists are fictional. Real-world outbound contact requires verified consent, lawful contact basis and organisation-approved suppression controls.</p></div>`;
+  const suppressed=state.outboundSuppressions||[];
+  const outboundCallbacks=state.callbacks.filter(item=>item.type==='outbound'&&item.status==='scheduled');
+  viewRoot.innerHTML = `<div class="panel"><div class="panel-head"><div><h3>Outbound campaign dialler</h3><p>Campaign contacts are simulated. Suppressed contacts are blocked before dialling.</p></div><span class="pill green">${state.outboundDone.length} COMPLETED</span></div><div class="ops-summary-grid">${metricCard('CAMPAIGN ATTEMPTS',state.outboundAttempts.length,'Recorded simulated dial attempts','↗')}${metricCard('SUPPRESSED CONTACTS',suppressed.length,'Do-not-contact preferences recorded','⊘')}${metricCard('CALLBACKS',state.callbacks.filter(item=>item.status==='scheduled').length,'Scheduled return contacts','◷')}</div><div class="grid three" style="margin-top:14px">${outboundCampaigns.map(c=>{const blocked=isContactSuppressed(c.customer,suppressed);return `<div class="panel campaign-card"><div class="subtle-label">${escapeHTML(c.type)}</div><h3>${escapeHTML(c.title)}</h3><p class="muted-note">${escapeHTML(c.context)}</p><div class="data-row"><span>Contact</span><strong>${escapeHTML(c.customer)}</strong></div><div class="campaign-status ${blocked?'blocked':''}">${blocked?'CONTACT SUPPRESSED':state.outboundDone.includes(c.id)?'ATTEMPT COMPLETED':'READY TO DIAL'}</div><button class="btn ${blocked?'outline':'primary'}" style="width:100%;margin-top:12px" data-start-campaign="${c.id}" ${blocked||state.outboundDone.includes(c.id)?'disabled':''}>${blocked?'Suppressed':state.outboundDone.includes(c.id)?'Completed':'Start simulated dial →'}</button></div>`;}).join('')}</div><p class="muted-note" style="margin-top:14px">Campaign lists are fictional. Real-world outbound contact requires verified consent, lawful contact basis and organisation-approved suppression controls.</p>${suppressed.length?`<div class="article-box"><h4>Suppression register</h4>${suppressed.map(item=>`<div class="data-row"><span>${escapeHTML(item.contactKey)}</span><strong>${escapeHTML(item.reason)}</strong></div>`).join('')}</div>`:''}<div class="article-box"><h4>Scheduled outbound callbacks</h4>${outboundCallbacks.length?outboundCallbacks.map(item=>{const due=Date.parse(item.dueAt)<=Date.now();return `<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="resume-outbound-callback" data-callback-id="${escapeHTML(item.id)}" ${due?'':'disabled'}>${due?'Call back':'Scheduled'}</button></div>`;}).join(''):'<p class="muted-note">No outbound callbacks scheduled.</p>'}</div></div>`;
 }
 function caseRow(c) { return `<div class="case-item"><div class="case-symbol">${c.channel==='Outbound'?'↗':'↙'}</div><div class="case-copy"><strong>${escapeHTML(c.title)}</strong><small>${escapeHTML(c.customer)} · ${escapeHTML(c.reference)}</small></div><span class="pill ${c.status==='Resolved'?'green':'amber'}">${escapeHTML(c.status)}</span></div>`; }
 function renderCRM() {
-  viewRoot.innerHTML = `<div class="panel"><div class="panel-head"><div><h3>CRM & case management</h3><p>All completed simulated customer interactions are recorded here.</p></div><span class="pill">${state.cases.length} TOTAL RECORDS</span></div>${state.cases.length?`<div class="table-wrap"><table><thead><tr><th>Case reference</th><th>Customer</th><th>Channel</th><th>Issue / campaign</th><th>Outcome</th><th>Quality</th></tr></thead><tbody>${state.cases.slice().reverse().map(c=>`<tr><td><strong>${escapeHTML(c.reference)}</strong></td><td>${escapeHTML(c.customer)}</td><td>${c.channel}</td><td>${escapeHTML(c.title)}</td><td><span class="status-dot"></span>${escapeHTML(c.status)}</td><td>${c.qa}%</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state"><div class="empty-icon">▤</div><h3>No cases recorded yet</h3><p>Complete an inbound or outbound interaction and its case record will appear here.</p><button class="btn secondary" data-action="open-inbound">Go to inbound desk</button></div>'}</div>`;
+  const recent=state.interactionTimeline.slice(-18).reverse();
+  viewRoot.innerHTML = `<div class="panel"><div class="panel-head"><div><h3>CRM & case management</h3><p>Completed customer interactions, wrap-up notes and operational event history.</p></div><span class="pill">${state.cases.length} TOTAL RECORDS</span></div>${state.cases.length?`<div class="table-wrap"><table><thead><tr><th>Case reference</th><th>Customer</th><th>Channel</th><th>Issue / campaign</th><th>Disposition</th><th>Outcome</th><th>Quality</th></tr></thead><tbody>${state.cases.slice().reverse().map(c=>`<tr><td><strong>${escapeHTML(c.reference)}</strong></td><td>${escapeHTML(c.customer)}</td><td>${escapeHTML(c.channel)}</td><td>${escapeHTML(c.title)}</td><td>${escapeHTML(String(c.disposition||'—').replaceAll('_',' '))}</td><td><span class="status-dot"></span>${escapeHTML(c.status)}</td><td>${c.qa}%</td></tr>`).join('')}</tbody></table></div><div class="case-detail-list">${state.cases.slice(-8).reverse().map(c=>`<details class="case-detail"><summary><strong>${escapeHTML(c.reference)}</strong><span>${escapeHTML(c.customer)} · ${escapeHTML(c.status)}</span></summary><div class="case-detail-body"><p><strong>Issue:</strong> ${escapeHTML(c.title)}</p><p><strong>Disposition:</strong> ${escapeHTML(String(c.disposition||'—').replaceAll('_',' '))}</p><p><strong>Owner:</strong> ${escapeHTML(c.owner||'Agent')}</p><p><strong>Notes:</strong> ${escapeHTML(c.notes||'No wrap-up notes retained.')}</p><p><strong>Recorded:</strong> ${new Date(c.createdAt).toLocaleString()}</p></div></details>`).join('')}</div>`:'<div class="empty-state"><div class="empty-icon">▤</div><h3>No cases recorded yet</h3><p>Complete an inbound or outbound interaction and its after-contact work to create a case record.</p><button class="btn secondary" data-action="open-inbound">Go to inbound desk</button></div>'}</div><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Interaction timeline</h3><p>Queue, call, transfer, supervisor and case events.</p></div><span class="pill">${state.interactionTimeline.length} EVENTS</span></div>${recent.length?recent.map(item=>`<div class="timeline-row"><time>${new Date(item.at).toLocaleString()}</time><div><strong>${escapeHTML(item.message)}</strong><small>${escapeHTML(item.reference)} · ${escapeHTML(item.status)}</small></div></div>`).join(''):'<p class="muted-note">No interaction events have been recorded yet.</p>'}</section>`;
 }
 function renderKnowledge() {
   if (state.viewedArticle) {
@@ -570,10 +656,13 @@ function renderKnowledge() {
   viewRoot.innerHTML = `<div class="panel"><div class="panel-head"><div><h3>Agent knowledge base</h3><p>Quick-reference material for day-to-day contact-centre operations.</p></div><span class="pill green">REFERENCE DESK</span></div><div class="kb-grid">${knowledgeArticles.map(a=>`<div class="kb-card" data-article="${a.id}"><div class="kb-icon">${a.icon}</div><div class="subtle-label">${a.category}</div><strong style="margin-top:6px">${a.title}</strong><small>${a.summary}</small></div>`).join('')}</div></div>`;
 }
 function renderPerformance() {
-  const qa = average(state.totalQA,state.qaCount,0), csat=average(state.totalCSAT,state.csatCount,0), aht=average(state.totalHandleMinutes,state.callsHandled,0);
-  const fcr = state.callsHandled ? Math.round(state.resolutions/state.callsHandled*100) : 0;
-  const conversion = state.outboundCalls ? Math.round(state.sales/state.outboundCalls*100) : 0;
-  viewRoot.innerHTML = `<div class="grid three">${metricCard('AVERAGE QA',qa?Math.round(qa)+'%':'—','Simulated call-quality score','⌁')}${metricCard('FIRST CONTACT RESOLUTION',state.callsHandled?fcr+'%':'—','Completed inbound contacts','✓')}${metricCard('CUSTOMER SATISFACTION',csat?csat.toFixed(1)+'/5':'—','Post-contact simulation rating','☆')}${metricCard('AVERAGE HANDLE TIME',aht?aht.toFixed(1)+' min':'—','Simulated inbound handling time','◷')}${metricCard('OUTBOUND CONVERSION',state.outboundCalls?conversion+'%':'—','Campaign interactions completed','↗')}${metricCard('SECURITY INCIDENTS',state.incidents,'Critical simulation errors','◇')}</div><div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Performance dimensions</h3><p>Prototype metrics. Real organisations can configure targets and weighting.</p></div></div>${[['Quality assurance',qa],['First-contact resolution',fcr],['Customer satisfaction',csat?csat*20:0],['Outbound conversion',conversion]].map(([l,v])=>`<div style="margin:15px 0"><div class="data-row"><span>${l}</span><strong>${v?Math.round(v)+'%':'Pending'}</strong></div><div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,Math.max(0,v))}%"></div></div></div>`).join('')}</section><section class="panel"><div class="panel-head"><div><h3>Performance rules</h3><p>How the simulator treats quality.</p></div></div><div class="article-box"><h4>Quality before speed</h4><p>Fast handling does not compensate for a security breach, an inaccurate record or a false resolution. Critical failures reduce the quality score and may trigger a formal review.</p></div><div class="article-box"><h4>Role-specific targets</h4><p>Sales, banking support, technical support and complaints roles require different targets. This prototype uses one baseline scorecard; production targets must be configurable by role and institution.</p></div></section></div>`;
+  const qa=average(state.totalQA,state.qaCount,0),csat=average(state.totalCSAT,state.csatCount,0),aht=average(state.totalHandleMinutes,state.callsHandled,0);
+  const fcr=state.callsHandled?Math.round(state.resolutions/state.callsHandled*100):0;
+  const conversion=state.outboundCalls?Math.round(state.sales/state.outboundCalls*100):0;
+  const avgWait=state.acceptedContacts?Math.round(state.totalWaitSeconds/state.acceptedContacts):0;
+  const acw=state.acwCount?Math.round(state.totalACWSeconds/state.acwCount):0;
+  const sla=state.acceptedContacts?Math.round(state.contactsWithinSla/state.acceptedContacts*100):0;
+  viewRoot.innerHTML=`<div class="grid three">${metricCard('AVERAGE QA',qa?Math.round(qa)+'%':'—','Simulated call-quality score','⌁')}${metricCard('FIRST CONTACT RESOLUTION',state.callsHandled?fcr+'%':'—','Completed inbound contacts','✓')}${metricCard('CUSTOMER SATISFACTION',csat?csat.toFixed(1)+'/5':'—','Post-contact simulation rating','☆')}${metricCard('AVERAGE HANDLE TIME',aht?aht.toFixed(1)+' min':'—','Simulated inbound handling time','◷')}${metricCard('AVERAGE WAIT',state.acceptedContacts?formatWait(avgWait):'—','Before the agent accepted a contact','⌛')}${metricCard('AFTER-CONTACT WORK',state.acwCount?formatWait(acw):'—','Average wrap-up time','▤')}${metricCard('SERVICE LEVEL ≤ 60 SEC',state.acceptedContacts?sla+'%':'—','Accepted contacts within simulation target','⌁')}${metricCard('OUTBOUND CONVERSION',state.outboundCalls?conversion+'%':'—','Campaign interactions completed','↗')}${metricCard('SECURITY INCIDENTS',state.incidents,'Critical simulation errors','◇')}</div><div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Performance dimensions</h3><p>Prototype metrics. Real organisations can configure targets and weighting.</p></div></div>${[['Quality assurance',qa],['First-contact resolution',fcr],['Customer satisfaction',csat?csat*20:0],['Service level',sla],['Outbound conversion',conversion]].map(([label,value])=>`<div style="margin:15px 0"><div class="data-row"><span>${label}</span><strong>${value?Math.round(value)+'%':'Pending'}</strong></div><div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,Math.max(0,value))}%"></div></div></div>`).join('')}</section><section class="panel"><div class="panel-head"><div><h3>Operational quality rules</h3><p>How the simulator treats queue and case activity.</p></div></div><div class="article-box"><h4>Queue service level</h4><p>Current prototype target: accept inbound contacts within 60 seconds of queue entry. This is a gameplay benchmark, not a contractual service-level promise.</p></div><div class="article-box"><h4>After-contact work</h4><p>Every completed or escalated interaction requires factual notes and an explicit disposition before the agent can continue.</p></div><div class="article-box"><h4>Role-specific targets</h4><p>Sales, banking support, technical support and complaints roles require different scorecards. Production targets must be configured from organisation-approved standards.</p></div></section></div>`;
 }
 function renderCareer() {
   const progress=Math.min(100,state.experience%100);
@@ -584,7 +673,9 @@ function renderView() {
   setHeader();
   const config = {
     overview:['CAREER ENTRY',state.hired?'Your shift overview':state.stage==='assessment'?'Recruitment assessment':state.stage==='offer'?'Employment offer':'Start your application',state.hired?'Your daily operations, performance and available work.':'Complete recruitment before starting agent operations.'],
-    inbound:['CUSTOMER OPERATIONS','Inbound desk','Answer, investigate and resolve incoming customer contacts.'],
+    inbound:['CUSTOMER OPERATIONS','Inbound desk','Answer, investigate, resolve, transfer and document incoming customer contacts.'],
+    queue:['OPERATIONS CONTROL','Queue management','Inspect priority, routing groups, waiting contacts and scheduled callbacks.'],
+    supervisor:['SUPERVISOR DESK','Assistance & escalations','Review agent assistance requests, escalations and operational activity.'],
     outbound:['CUSTOMER OPERATIONS','Outbound campaigns','Work authorised simulated campaigns and record true outcomes.'],
     crm:['WORKSTATION','CRM & cases','Review accurate records of completed simulated interactions.'],
     knowledge:['AGENT RESOURCES','Knowledge base','Reference the principles and procedures relevant to your role.'],
@@ -597,6 +688,8 @@ function renderView() {
   switch(state.currentView){
     case 'overview': renderOverview(); break;
     case 'inbound': renderInbound(); break;
+    case 'queue': renderQueue(); break;
+    case 'supervisor': renderSupervisor(); break;
     case 'outbound': renderOutbound(); break;
     case 'crm': renderCRM(); break;
     case 'knowledge': renderKnowledge(); break;
@@ -625,35 +718,261 @@ function openApplication() {
 }
 function beginAssessment(){state.stage='assessment';state.assessmentPhase='aptitude';state.assessmentIndex=0;state.assessmentAnswers=[];state.practicalIndex=0;state.practicalAnswers=[];selectedAnswer=null;renderView();}
 function acceptOffer(){state.stage='employee';state.hired=true;state.shiftActive=false;state.level=1;state.experience=0;state.currentView='overview';saveState();toast('Employment accepted. Welcome to the operations floor.','success');renderView();}
-function startShift(){state.shiftActive=true;state.shiftMinutes=0;state.day=state.day||1;state.currentView='overview';toast('Shift started. Customer operations are open.','success');renderView();}
-function startInboundCall(){
-  if(state.callQueue<=0){toast('No more queued contacts. Complete an outbound task or finish the shift.');return;}
-  const available=inboundScenarios.filter(s=>!state.lastScenario || s.id!==state.lastScenario);
-  const scenario=available[Math.floor(Math.random()*available.length)]||inboundScenarios[0];
-  state.lastScenario=scenario.id;state.currentCall={scenarioId:scenario.id,stepIndex:0,score:0,feedback:null,feedbackType:'neutral',breach:false,startedAt:Date.now()};
-  renderView();
+function startShift(){
+  state.shiftActive=true;state.shiftMinutes=0;state.day=state.day||1;
+  ensureInboundQueue(6);
+  state.currentView='overview';
+  pushOperationEvent('shift','SHIFT-'+state.day,'Shift started; inbound routing opened.','active');
+  saveState();toast('Shift started. Inbound routing is open.','success');renderView();
 }
+function startInboundCall(){
+  if(!state.shiftActive){toast('Start your shift before accepting contacts.','warning');return;}
+  ensureInboundQueue(6);
+  if(state.callQueue<=0){toast('The inbound queue is empty. Load the next simulated arrival batch.');return;}
+  const queued = nextQueuedContact(state.inboundQueueItems);
+  if(!queued){syncQueueCount();toast('No eligible contacts are waiting.');return;}
+  const contact = findQueueContact(queued.id);
+  const scenario = inboundScenarios.find(item=>item.id===contact?.scenarioId);
+  if(!contact || !scenario){toast('The queued scenario could not be loaded. Refresh the queue.','error');return;}
+  const acceptedAt = Date.now();
+  transitionContact(contact, CONTACT_STATUS.OFFERED, 'Contact offered to the agent', acceptedAt, { routeGroup: contact.routeGroup });
+  transitionContact(contact, CONTACT_STATUS.CONNECTED, 'Agent accepted the inbound contact', acceptedAt, { agent: state.applicantName || 'Agent' });
+  const linkedCallback=state.callbacks.find(item=>item.contactId===contact.id&&item.status==='queued');
+  if(linkedCallback){linkedCallback.status='in_progress';linkedCallback.acceptedAt=new Date(acceptedAt).toISOString();}
+  const waitSeconds = Math.max(0, Math.floor((acceptedAt - Date.parse(contact.queuedAt)) / 1000));
+  state.totalWaitSeconds += waitSeconds;
+  state.acceptedContacts++;
+  if(waitSeconds<=60)state.contactsWithinSla++;
+  state.currentCall={scenarioId:scenario.id,queueContactId:contact.id,stepIndex:0,score:0,feedback:null,feedbackType:'neutral',breach:false,held:false,startedAt:acceptedAt,waitSeconds};
+  syncQueueCount();
+  pushOperationEvent('call',contact.id,`Inbound contact connected · ${scenario.issue}`,'connected',{customer:scenario.customer,routeGroup:contact.routeGroup,priority:contact.priority,waitSeconds});
+  saveState();renderView();
+}
+
 function applyCallChoice(index){
   const call=state.currentCall;const scenario=inboundScenarios.find(s=>s.id===call.scenarioId);const option=scenario.steps[call.stepIndex].options[index];if(!option)return;
   call.score+=option.score;call.feedback=option.feedback;call.feedbackType=option.breach||option.score<0?'bad':option.score>0?'good':'neutral';call.breach=call.breach||!!option.breach;
   if(option.breach)state.incidents++;
+  addCallTimeline(call,`Agent selected: ${option.text}`,{scoreDelta:option.score,breach:!!option.breach});
   saveState();renderView();
 }
-function completeInbound(){
-  const call=state.currentCall;const scenario=inboundScenarios.find(s=>s.id===call.scenarioId);const qa=Math.max(0,Math.min(100,Math.round(70+call.score*5-(call.breach?35:0))));
-  const resolved=call.score>=4&&!call.breach;const status=resolved?'Resolved':'Escalation / review required';
-  state.callsHandled++;state.callQueue=Math.max(0,state.callQueue-1);state.totalQA+=qa;state.qaCount++;state.totalCSAT+=resolved?4.6:call.score>=0?3.4:2.2;state.csatCount++;state.totalHandleMinutes+=4.5+Math.random()*3.2;if(resolved)state.resolutions++;
-  const record={reference:scenario.reference,customer:scenario.customer,title:scenario.issue,channel:'Inbound',status,qa,createdAt:new Date().toISOString()};state.cases.push(record);state.experience+=resolved?14:7;state.bonus+=resolved?350:0;state.shiftMinutes+=7;state.currentCall=null;levelCheck();state.currentView='inbound';saveState();toast(`Interaction logged · ${status} · QA ${qa}%`,resolved?'success':'info');renderView();
+function beginInboundWrapUp(transferred = false){
+  const call=state.currentCall;
+  if(!call)return;
+  if(call.held){toast('Resume the call before moving it to wrap-up.','warning');return;}
+  const scenario=inboundScenarios.find(item=>item.id===call.scenarioId);
+  const contact=findQueueContact(call.queueContactId);
+  if(!scenario||!contact){toast('The active contact record is missing.','error');return;}
+  if(contact.status==='connected')transitionContact(contact,CONTACT_STATUS.WRAP_UP,'Customer conversation completed; after-contact work started',Date.now());
+  else if(contact.status==='transferred')transitionContact(contact,CONTACT_STATUS.WRAP_UP,'Transferred interaction entered after-contact work',Date.now());
+  const qa=Math.max(0,Math.min(100,Math.round(70+call.score*5-(call.breach?35:0))));
+  state.wrapUp={type:'inbound',contactId:contact.id,scenarioId:scenario.id,reference:scenario.reference,customer:scenario.customer,title:scenario.issue,channel:'Inbound',qa,score:call.score,breach:call.breach,transferred:!!transferred,transferTarget:call.transferredTo||'',startedAt:Date.now(),defaultDisposition:transferred||call.breach?'escalated':'resolved'};
+  pushOperationEvent('wrap-up',contact.id,'After-contact work started.','wrap_up',{qa,breach:call.breach});
+  saveState();renderView();
+}
+function beginOutboundWrapUp(){
+  const active=state.activeOutbound;
+  if(!active)return;
+  const task=outboundCampaigns.find(item=>item.id===active.campaignId);
+  if(!task)return;
+  const qa=Math.max(0,Math.min(100,Math.round(70+active.score*5-(active.breach?35:0))));
+  const good=active.score>=4&&!active.breach;
+  state.wrapUp={type:'outbound',contactId:active.attemptId,reference:active.attemptId,customer:task.customer,title:task.title,channel:'Outbound',qa,score:active.score,breach:active.breach,startedAt:Date.now(),defaultDisposition:active.suppressionRequested?'opt_out':active.disposition|| (good?'completed':'review'),suppressionRequested:!!active.suppressionRequested,campaignId:task.id};
+  pushOperationEvent('wrap-up',active.attemptId,'Outbound contact entered after-contact work.','wrap_up',{qa,breach:active.breach});
+  saveState();renderView();
+}
+function renderWrapUp(){
+  const wrap=state.wrapUp;
+  if(!wrap)return;
+  const inbound=wrap.type==='inbound';
+  const allowed = inbound
+    ? ((wrap.breach || wrap.transferred) ? [['escalated','Escalate to specialist / quality review']] : [['resolved','Resolved'],['escalated','Escalated to specialist'],['callback','Callback required']])
+    : (wrap.breach ? [['review','Compliance / quality review']] : [['completed','Completed'],['callback','Customer requested callback'],['declined','Customer declined'],...(wrap.suppressionRequested?[['opt_out','Do not contact — suppression required']]:[])]);
+  const defaultDisposition=allowed.some(([value])=>value===wrap.defaultDisposition)?wrap.defaultDisposition:allowed[0][0];
+  const contact=findQueueContact(wrap.contactId);
+  const transferLine=wrap.transferTarget?`<div class="data-row"><span>Transfer destination</span><strong>${escapeHTML(wrap.transferTarget)}</strong></div>`:'';
+  viewRoot.innerHTML=`<div class="wrapup-layout"><section class="panel assessment-card"><div class="panel-head"><div><div class="question-kicker">${inbound?'INBOUND':'OUTBOUND'} · AFTER-CONTACT WORK</div><h3 style="margin-top:7px">Complete the interaction record</h3></div><span class="pill amber">WRAP-UP</span></div><div class="customer-strip"><div class="customer-avatar">${escapeHTML(initials(wrap.customer))}</div><div class="customer-info"><strong>${escapeHTML(wrap.customer)}</strong><small>${escapeHTML(wrap.title)} · ${escapeHTML(wrap.reference)}</small></div><span class="pill">QA ${wrap.qa}%</span></div><div class="form-field" style="margin-top:18px"><label for="wrapDisposition">FINAL DISPOSITION</label><select id="wrapDisposition">${allowed.map(([value,label])=>`<option value="${value}" ${value===defaultDisposition?'selected':''}>${label}</option>`).join('')}</select></div><div class="form-field" id="callbackDueWrap" style="display:none"><label for="callbackDueAt">CALLBACK DATE & TIME</label><input id="callbackDueAt" type="datetime-local" /></div><div class="form-field"><label for="wrapNotes">FACTUAL CASE NOTES</label><textarea id="wrapNotes" rows="5" minlength="12" maxlength="1200" placeholder="Record the customer's issue, checks performed, action taken and agreed next step. A minimum of 12 characters is required.">${escapeHTML(wrap.transferred?`Transferred to ${wrap.transferTarget}. `:'')}</textarea><small class="muted-note">Do not enter PINs, passwords, one-time codes or unnecessary sensitive information.</small></div><div class="article-box"><h4>After-contact checklist</h4><p>Confirm the disposition, document the actual action, set a callback only when requested, and route unresolved or security-sensitive cases correctly.</p></div><div class="assessment-footer"><small>${wrap.breach?'A critical breach requires escalation or review.':'Saving this record updates the queue, case history and performance metrics.'}</small><button class="btn primary" data-action="save-wrap-up">Save record & finish →</button></div></section><aside class="panel"><div class="panel-head"><div><h3>Interaction summary</h3><p>Operational event data.</p></div><span class="pill green">RECORDED ACTIVITY</span></div><div class="data-list"><div class="data-row"><span>Customer</span><strong>${escapeHTML(wrap.customer)}</strong></div><div class="data-row"><span>Channel</span><strong>${wrap.channel}</strong></div><div class="data-row"><span>Reference</span><strong>${escapeHTML(wrap.reference)}</strong></div><div class="data-row"><span>Quality estimate</span><strong>${wrap.qa}%</strong></div><div class="data-row"><span>Contact priority</span><strong>${contact?escapeHTML(contact.priority.toUpperCase()):'STANDARD'}</strong></div>${transferLine}</div><p class="muted-note" style="margin-top:14px">After-contact work is part of handling time and must be completed before the next contact is accepted.</p></aside></div>`;
+  const disposition=$('#wrapDisposition');
+  const callbackWrap=$('#callbackDueWrap');
+  const updateCallback=()=>{if(callbackWrap)callbackWrap.style.display=disposition?.value==='callback'?'block':'none';};
+  disposition?.addEventListener('change',updateCallback);updateCallback();
+  const due=$('#callbackDueAt');if(due){const d=new Date(Date.now()+24*60*60*1000);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());due.value=d.toISOString().slice(0,16);}
+}
+function saveWrapUp(){
+  const wrap=state.wrapUp;if(!wrap)return;
+  const notes=$('#wrapNotes')?.value.trim()||'';
+  const disposition=$('#wrapDisposition')?.value||wrap.defaultDisposition;
+  if(notes.length<12){toast('Add factual case notes of at least 12 characters.','error');return;}
+  const inbound=wrap.type==='inbound';
+  const allowedDispositions=inbound
+    ? ((wrap.breach||wrap.transferred)?['escalated']:['resolved','escalated','callback'])
+    : (wrap.breach?['review']:['completed','callback','declined',...(wrap.suppressionRequested?['opt_out']:[])]);
+  if(!allowedDispositions.includes(disposition)){toast('Choose a permitted final disposition for this interaction.','error');return;}
+  const createdAt=new Date().toISOString();
+  let callbackDueISO=null;
+  if(disposition==='callback'){
+    const dueInput=$('#callbackDueAt')?.value||'';
+    const dueMillis=Date.parse(dueInput);
+    if(!Number.isFinite(dueMillis)||dueMillis<=Date.now()){
+      toast('Choose a valid future callback date and time.','error');return;
+    }
+    callbackDueISO=new Date(dueMillis).toISOString();
+  }
+  const started=wrap.startedAt||Date.now();
+  const acwSeconds=Math.max(1,Math.round((Date.now()-started)/1000));
+  let contact=null;
+  if(inbound){
+    contact=findQueueContact(wrap.contactId);
+    if(!contact){toast('Contact record missing; wrap-up was not saved.','error');return;}
+    let scheduledCallback=null;
+    if(disposition==='callback'){
+      try{scheduledCallback=scheduleCallback(state.callbacks,contact,callbackDueISO,Date.now());}
+      catch(error){toast(error.message,'error');return;}
+      scheduledCallback.type='inbound';
+    }
+    // Complete a previous callback only after the new disposition and due time validate.
+    completeActiveCallback(state.callbacks,{contactId:contact.id},Date.now());
+    if(disposition==='callback'){
+      transitionContact(contact,CONTACT_STATUS.CALLBACK,'Customer callback scheduled',Date.now(),{dueAt:callbackDueISO});
+    }else if(disposition==='escalated'){
+      transitionContact(contact,CONTACT_STATUS.ESCALATED,'Case escalated after wrap-up',Date.now());
+    }else{
+      transitionContact(contact,CONTACT_STATUS.COMPLETED,'Interaction completed after wrap-up',Date.now());
+    }
+    const resolved=disposition==='resolved'&&!wrap.breach;
+    const status=disposition==='resolved'?'Resolved':disposition==='callback'?'Callback scheduled':disposition==='escalated'?'Escalated / review required':'Transferred / review required';
+    const elapsedMinutes=Math.max(0.1,Math.round((((wrap.startedAt||Date.now())-(state.currentCall?.startedAt||wrap.startedAt||Date.now()))/60000)*10)/10);
+    state.callsHandled++;state.totalQA+=wrap.qa;state.qaCount++;state.totalCSAT+=resolved?4.6:wrap.breach?2.1:3.4;state.csatCount++;state.totalHandleMinutes+=elapsedMinutes;
+    if(resolved)state.resolutions++;
+    const record={reference:wrap.reference,contactId:wrap.contactId,customer:wrap.customer,title:wrap.title,channel:'Inbound',status,disposition,notes,qa:wrap.qa,acwSeconds,createdAt,owner:state.applicantName||'Agent',timeline:contact.timeline.slice()};
+    state.cases.push(record);state.experience+=resolved?14:7;state.bonus+=resolved?350:0;state.shiftMinutes+=Math.max(1,Math.round(elapsedMinutes+acwSeconds/60));
+    if(disposition==='escalated'||wrap.breach){state.supervisorRequests.push({id:makeCallReference('SUP'),contactId:wrap.contactId,reference:wrap.reference,customer:wrap.customer,reason:wrap.breach?'Critical compliance / security review':'Specialist escalation',status:'open',createdAt});}
+    pushOperationEvent('case',wrap.reference,`Inbound case saved · ${status}`,'saved',{disposition,qa:wrap.qa,acwSeconds});
+    state.currentCall=null;
+  }else{
+    const active=state.activeOutbound;
+    const task=outboundCampaigns.find(item=>item.id===wrap.campaignId);
+    if(!active||!task){toast('Outbound campaign record missing; wrap-up was not saved.','error');return;}
+    // Validate the callback date before changing a previous attempt or contact preference.
+    const outboundCallback=disposition==='callback'?{
+      id:makeCallReference('CBK'),type:'outbound',contactId:wrap.contactId,customer:task.customer,
+      campaignId:task.id,scenarioId:null,issue:task.title,dueAt:callbackDueISO,status:'scheduled',createdAt
+    }:null;
+    if(disposition==='opt_out'&&!wrap.suppressionRequested){toast('The customer has not requested suppression in this scenario.','error');return;}
+    if(disposition==='opt_out'){
+      addSuppression(state.outboundSuppressions,task.customer,'Customer requested no further campaign contact',Date.now());
+    }
+    completeActiveCallback(state.callbacks,{callbackId:active.callbackId},Date.now());
+    if(outboundCallback)state.callbacks.push(outboundCallback);
+    const good=disposition==='completed'&&active.score>=4&&!active.breach;
+    state.outboundCalls++;state.totalQA+=wrap.qa;state.qaCount++;state.totalCSAT+=good?4.5:active.score>=0?3.3:2.1;state.csatCount++;
+    if(good&&task.id==='product-offer')state.sales++;
+    if(!state.outboundDone.includes(task.id))state.outboundDone.push(task.id);
+    const status=disposition==='opt_out'?'Opt-out recorded':disposition==='callback'?'Callback scheduled':disposition==='declined'?'Customer declined':disposition==='review'?'Review required':good?'Completed':'Review required';
+    state.cases.push({reference:wrap.reference,contactId:wrap.contactId,customer:task.customer,title:task.title,channel:'Outbound',status,disposition,notes,qa:wrap.qa,acwSeconds,createdAt,owner:state.applicantName||'Agent'});
+    state.outboundAttempts.push({id:wrap.contactId,customer:task.customer,campaignId:task.id,outcome:status,createdAt,suppressed:disposition==='opt_out'});
+    state.experience+=good?12:6;state.bonus+=good?250:0;state.shiftMinutes+=6;
+    pushOperationEvent('campaign',wrap.reference,`Outbound case saved · ${status}`,'saved',{disposition,qa:wrap.qa});
+    state.activeOutbound=null;
+  }
+  state.totalACWSeconds+=acwSeconds;state.acwCount++;
+  state.wrapUp=null;levelCheck();syncQueueCount();saveState();
+  state.currentView=inbound?'inbound':'outbound';
+  toast(`After-contact work saved · ${disposition.replaceAll('_',' ')}`,'success');renderView();
+}
+function toggleCallHold(){
+  const call=state.currentCall;if(!call)return;
+  const contact=findQueueContact(call.queueContactId);if(!contact)return;
+  if(contact.status==='connected'){
+    transitionContact(contact,CONTACT_STATUS.ON_HOLD,'Agent placed the customer on hold',Date.now());call.held=true;
+    pushOperationEvent('call',contact.id,'Customer placed on hold.','on_hold');
+  }else if(contact.status==='on_hold'){
+    transitionContact(contact,CONTACT_STATUS.CONNECTED,'Agent resumed the customer conversation',Date.now());call.held=false;
+    pushOperationEvent('call',contact.id,'Customer conversation resumed.','connected');
+  }
+  saveState();renderView();
+}
+function requestSupervisor(){
+  const call=state.currentCall;if(!call)return;
+  const contact=findQueueContact(call.queueContactId);if(!contact)return;
+  if(state.supervisorRequests.some(item=>item.contactId===contact.id&&item.status==='open')){toast('A supervisor request is already open for this contact.');return;}
+  state.supervisorRequests.push({id:makeCallReference('SUP'),contactId:contact.id,reference:contact.id,customer:contact.customer,reason:'Agent assistance requested during an active contact',status:'open',createdAt:new Date().toISOString()});
+  pushOperationEvent('supervisor',contact.id,'Agent requested supervisor assistance.','open');saveState();toast('Supervisor assistance requested.','success');renderView();
+}
+function transferInboundCall(){
+  const call=state.currentCall;if(!call)return;
+  const contact=findQueueContact(call.queueContactId);if(!contact)return;
+  const target=$('#transferTarget')?.value||'Specialist Support';
+  if(!['connected','on_hold'].includes(contact.status)){toast('This contact cannot be transferred from its current state.','error');return;}
+  transitionContact(contact,CONTACT_STATUS.TRANSFERRED,`Contact transferred to ${target}`,Date.now(),{target});
+  call.transferredTo=target;call.held=false;
+  pushOperationEvent('transfer',contact.id,`Transferred to ${target}.`,'transferred',{target});
+  beginInboundWrapUp(true);
+}
+function returnCallToQueue(){
+  const call=state.currentCall;if(!call)return;
+  const contact=findQueueContact(call.queueContactId);if(!contact)return;
+  if(['connected','on_hold'].includes(contact.status)){transitionContact(contact,CONTACT_STATUS.QUEUED,'Contact returned to inbound queue',Date.now());contact.queuedAt=new Date().toISOString();}
+  state.currentCall=null;syncQueueCount();pushOperationEvent('call',contact.id,'Contact returned to queue without a completed interaction.','queued');saveState();renderView();toast('Contact returned to the inbound queue.');
+}
+function returnCallbackToQueue(callbackId){
+  const callback=state.callbacks.find(item=>item.id===callbackId&&item.status==='scheduled'&&item.type!=='outbound');
+  if(!callback){toast('Scheduled callback was not found.','error');return;}
+  if(Date.parse(callback.dueAt)>Date.now()){toast('This callback is not due yet. Keep it scheduled until the requested time.','warning');return;}
+  const contact=findQueueContact(callback.contactId);
+  if(contact&&contact.status===CONTACT_STATUS.CALLBACK){transitionContact(contact,CONTACT_STATUS.QUEUED,'Scheduled callback returned to the inbound queue',Date.now());contact.queuedAt=new Date().toISOString();}
+  callback.status='queued';callback.queuedAt=new Date().toISOString();syncQueueCount();pushOperationEvent('callback',callback.id,`Callback for ${callback.customer} moved to queue.`,'queued');saveState();renderView();toast('Callback returned to the inbound queue.','success');
+}
+function resolveSupervisorRequest(requestId){
+  const request=state.supervisorRequests.find(item=>item.id===requestId&&item.status==='open');
+  if(!request)return;
+  request.status='resolved';request.resolvedAt=new Date().toISOString();
+  pushOperationEvent('supervisor',request.reference,'Supervisor request reviewed and closed.','resolved');saveState();renderView();toast('Supervisor request closed.','success');
+}
+function resumeOutboundCallback(callbackId){
+  const callback=state.callbacks.find(item=>item.id===callbackId&&item.type==='outbound'&&item.status==='scheduled');
+  if(!callback){toast('Outbound callback was not found.','error');return;}
+  if(Date.parse(callback.dueAt)>Date.now()){toast('This callback is not due yet. Keep it scheduled until the requested time.','warning');return;}
+  if(isContactSuppressed(callback.customer,state.outboundSuppressions)){toast('Contact suppression is active; callback is blocked.','error');return;}
+  callback.status='in_progress';callback.attemptedAt=new Date().toISOString();
+  const attemptId=makeCallReference('OUT-CBK');
+  state.activeOutbound={campaignId:callback.campaignId,attemptId,callbackId,stepIndex:0,score:0,feedback:null,feedbackType:'neutral',breach:false,startedAt:Date.now(),suppressionRequested:false,disposition:null};
+  pushOperationEvent('campaign',attemptId,`Scheduled outbound callback initiated · ${callback.customer}`,'dialling',{callbackId});saveState();state.currentView='outbound';renderView();
+}
+function cancelOutbound(){
+  const active=state.activeOutbound;if(!active)return;
+  if(active.callbackId){const callback=state.callbacks.find(item=>item.id===active.callbackId);if(callback)callback.status='scheduled';}
+  pushOperationEvent('campaign',active.attemptId,'Outbound simulation attempt ended before wrap-up.','abandoned');
+  state.activeOutbound=null;saveState();renderView();toast('Outbound interaction ended; no completion credit was recorded.');
+}
+function beginOutboundDial(id){
+  const task=outboundCampaigns.find(item=>item.id===id);if(!task)return;
+  if(isContactSuppressed(task.customer,state.outboundSuppressions)){toast('This contact is suppressed and cannot be dialled by this campaign.','error');return;}
+  startOutbound(id);
 }
 function levelCheck(){const newLevel=1+Math.floor(state.experience/100);if(newLevel>state.level){state.level=newLevel;toast(`Career progression: Level ${state.level} achieved.`,'success');}}
-function startOutbound(id){state.activeOutbound={campaignId:id,stepIndex:0,score:0,feedback:null,feedbackType:'neutral',breach:false,startedAt:Date.now()};renderView();}
-function applyOutboundChoice(index){const active=state.activeOutbound;const task=outboundCampaigns.find(x=>x.id===active.campaignId);const opt=task.script[active.stepIndex].options[index];if(!opt)return;active.score+=opt.score;active.feedback=opt.feedback;active.feedbackType=opt.breach||opt.score<0?'bad':opt.score>0?'good':'neutral';active.breach=active.breach||!!opt.breach;if(opt.breach)state.incidents++;saveState();renderView();}
-function completeOutbound(){
-  const active=state.activeOutbound;const task=outboundCampaigns.find(x=>x.id===active.campaignId);const qa=Math.max(0,Math.min(100,Math.round(70+active.score*5-(active.breach?35:0))));const good=active.score>=4&&!active.breach;
-  state.outboundCalls++;state.totalQA+=qa;state.qaCount++;state.totalCSAT+=good?4.5:active.score>=0?3.3:2.1;state.csatCount++;if(good&&task.id==='product-offer')state.sales++;state.outboundDone.push(task.id);state.cases.push({reference:'OUT-'+Math.floor(100000+Math.random()*899999),customer:task.customer,title:task.title,channel:'Outbound',status:good?'Completed':'Review required',qa,createdAt:new Date().toISOString()});state.experience+=good?12:6;state.bonus+=good?250:0;state.shiftMinutes+=6;state.activeOutbound=null;levelCheck();state.currentView='outbound';saveState();toast(`Outbound contact recorded · QA ${qa}%`,good?'success':'info');renderView();
+function startOutbound(id){
+  const task=outboundCampaigns.find(item=>item.id===id);if(!task)return;
+  if(isContactSuppressed(task.customer,state.outboundSuppressions)){toast('Contact suppression is active. Campaign blocked.','error');return;}
+  const attemptId=makeCallReference('OUT');
+  state.activeOutbound={campaignId:id,attemptId,stepIndex:0,score:0,feedback:null,feedbackType:'neutral',breach:false,startedAt:Date.now(),suppressionRequested:false,disposition:null};
+  pushOperationEvent('campaign',attemptId,`Outbound dial initiated · ${task.title}`,'dialling',{customer:task.customer});
+  saveState();renderView();
 }
+function applyOutboundChoice(index){
+  const active=state.activeOutbound;const task=outboundCampaigns.find(item=>item.id===active?.campaignId);if(!active||!task)return;
+  const step=task.script[active.stepIndex];const opt=step?.options[index];if(!opt)return;
+  active.score+=opt.score;active.feedback=opt.feedback;active.feedbackType=opt.breach||opt.score<0?'bad':opt.score>0?'good':'neutral';active.breach=active.breach||!!opt.breach;
+  if(opt.breach)state.incidents++;
+  pushOperationEvent('campaign',active.attemptId,`Agent selected: ${opt.text}`,active.breach?'review':'in_progress',{scoreDelta:opt.score,breach:!!opt.breach,step:step.label});
+  if(task.id==='payment-reminder'&&active.stepIndex===2&&index===0)active.suppressionRequested=true;
+  if(task.id==='product-offer'&&active.stepIndex===2&&index===0)active.disposition='declined';
+  if(task.id==='retention'&&active.stepIndex===2&&index===0)active.disposition='declined';
+  saveState();renderView();
+}
+function completeOutbound(){beginOutboundWrapUp();}
 
-function handleAction(action){
+function handleAction(action,event={}){
   switch(action){
     case 'open-application':openApplication();break;
     case 'begin-assessment':beginAssessment();break;
@@ -666,17 +985,26 @@ function handleAction(action){
     case 'retake-assessment':state.stage='applicant';beginAssessment();break;
     case 'accept-offer':acceptOffer();break;
     case 'start-shift':startShift();break;
+    case 'refresh-queue':{const items=createInboundQueue(inboundScenarios,6,{sequence:state.queueSequence});state.inboundQueueItems.push(...items);state.queueSequence+=items.length;syncQueueCount();pushOperationEvent('queue','INBOUND','Six simulated contacts arrived in the queue.','queued');saveState();renderView();toast('Six new simulated contacts added.','success');break;}
+    case 'toggle-call-hold':toggleCallHold();break;
+    case 'request-supervisor':requestSupervisor();break;
+    case 'transfer-call':transferInboundCall();break;
+    case 'return-call-to-queue':returnCallToQueue();break;
+    case 'save-wrap-up':saveWrapUp();break;
+    case 'return-callback-to-queue':returnCallbackToQueue(event.callbackId);break;
+    case 'resume-outbound-callback':resumeOutboundCallback(event.callbackId);break;
+    case 'resolve-supervisor':resolveSupervisorRequest(event.requestId);break;
     case 'open-inbound':state.currentView='inbound';renderView();break;
     case 'open-outbound':state.currentView='outbound';renderView();break;
     case 'open-crm':state.currentView='crm';renderView();break;
     case 'open-knowledge':state.currentView='knowledge';state.viewedArticle=null;renderView();break;
     case 'answer-call':startInboundCall();break;
-    case 'next-call-step':state.currentCall.stepIndex++;state.currentCall.feedback=null;renderView();break;
-    case 'complete-call':completeInbound();break;
-    case 'end-call':state.currentCall=null;renderView();toast('Interaction ended. No case was completed.');break;
+    case 'next-call-step':if(state.currentCall?.held)return;state.currentCall.stepIndex++;state.currentCall.feedback=null;addCallTimeline(state.currentCall,'Agent progressed to the next call-handling step.');saveState();renderView();break;
+    case 'complete-call':beginInboundWrapUp(false);break;
+    case 'end-call':returnCallToQueue();break;
     case 'next-outbound-step':state.activeOutbound.stepIndex++;state.activeOutbound.feedback=null;renderView();break;
     case 'complete-outbound-step':completeOutbound();break;
-    case 'end-outbound':state.activeOutbound=null;renderView();toast('Outbound simulation ended.');break;
+    case 'end-outbound':cancelOutbound();break;
     case 'reset-simulation':{const modal=openModal('<div class="subtle-label">LOCAL SAVE RESET</div><h3>Reset this simulation?</h3><p>This removes the candidate, employment and local performance data stored in this browser. It does not affect any online account because this prototype has no server-side save system.</p><div class="modal-actions"><button class="btn outline" data-close>Cancel</button><button class="btn danger" id="confirmReset">Reset simulation</button></div>');$('[data-close]',modal).onclick=()=>modal.remove();$('#confirmReset',modal).onclick=()=>{localStorage.removeItem(STORAGE_KEY);location.reload();};break;}
     case 'back-knowledge':state.viewedArticle=null;renderView();break;
   }
@@ -684,12 +1012,12 @@ function handleAction(action){
 
 document.addEventListener('click',e=>{
   const nav=e.target.closest('.nav-item[data-view]');if(nav){if(nav.disabled){toast('Complete recruitment and accept an offer to unlock agent operations.');return;}state.currentView=nav.dataset.view;renderView();return;}
-  const action=e.target.closest('[data-action]');if(action){handleAction(action.dataset.action);return;}
+  const action=e.target.closest('[data-action]');if(action){handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId});return;}
   const answer=e.target.closest('[data-answer]');if(answer){const i=state.assessmentIndex;state.assessmentAnswers[i]=Number(answer.dataset.answer);renderView();return;}
   const practicalAnswer=e.target.closest('[data-practical-answer]');if(practicalAnswer){state.practicalAnswers[state.practicalIndex]=Number(practicalAnswer.dataset.practicalAnswer);renderView();return;}
   const callChoice=e.target.closest('[data-call-choice]');if(callChoice){applyCallChoice(Number(callChoice.dataset.callChoice));return;}
   const outChoice=e.target.closest('[data-outbound-choice]');if(outChoice){applyOutboundChoice(Number(outChoice.dataset.outboundChoice));return;}
-  const campaign=e.target.closest('[data-start-campaign]');if(campaign){startOutbound(campaign.dataset.startCampaign);return;}
+  const campaign=e.target.closest('[data-start-campaign]');if(campaign){beginOutboundDial(campaign.dataset.startCampaign);return;}
   const article=e.target.closest('[data-article]');if(article){state.viewedArticle=article.dataset.article;renderView();return;}
 });
 
@@ -746,7 +1074,7 @@ function open3dStationPanel(station){
   if(!state.hired){
     panel.innerHTML=`<div class="station-panel-top"><div><span class="panel-kicker">EMPLOYEE ACCESS CONTROL</span><h3>Station ${id} is secured</h3></div><button type="button" class="station-close" data-station-close aria-label="Close">×</button></div><p>Contact-centre operations unlock after the recruitment assessment is passed and the employment offer is accepted.</p><div class="station-panel-actions"><button class="station-action primary" type="button" data-station-action="recruitment">Continue recruitment</button><button class="station-action" type="button" data-station-close>Return to floor</button></div>`;
   }else{
-    panel.innerHTML=`<div class="station-panel-top"><div><span class="panel-kicker">AGENT WORKSTATION · STATION ${id}</span><h3>Choose an operation</h3></div><button type="button" class="station-close" data-station-close aria-label="Close">×</button></div><p>Open a simulated service application. Your actions are recorded in this browser's local employment profile.</p><div class="station-grid"><button class="station-action primary" type="button" data-station-action="inbound"><span>↙</span><b>Inbound desk</b><small>Receive and resolve customer calls</small></button><button class="station-action" type="button" data-station-action="outbound"><span>↗</span><b>Outbound campaigns</b><small>Make authorised customer calls</small></button><button class="station-action" type="button" data-station-action="crm"><span>▤</span><b>CRM & cases</b><small>Review customer records and cases</small></button><button class="station-action" type="button" data-station-action="knowledge"><span>◈</span><b>Knowledge base</b><small>Consult approved service guidance</small></button></div>`;
+    panel.innerHTML=`<div class="station-panel-top"><div><span class="panel-kicker">AGENT WORKSTATION · STATION ${id}</span><h3>Choose an operation</h3></div><button type="button" class="station-close" data-station-close aria-label="Close">×</button></div><p>Open a simulated service application. Your actions are recorded in this browser's local employment profile.</p><div class="station-grid"><button class="station-action primary" type="button" data-station-action="inbound"><span>↙</span><b>Inbound desk</b><small>Receive and resolve customer calls</small></button><button class="station-action" type="button" data-station-action="outbound"><span>↗</span><b>Outbound campaigns</b><small>Make authorised customer calls</small></button><button class="station-action" type="button" data-station-action="crm"><span>▤</span><b>CRM & cases</b><small>Review customer records and cases</small></button><button class="station-action" type="button" data-station-action="queue"><span>☷</span><b>Queue management</b><small>Priorities, wait times and callbacks</small></button><button class="station-action" type="button" data-station-action="supervisor"><span>⌂</span><b>Supervisor desk</b><small>Assistance requests and escalations</small></button><button class="station-action" type="button" data-station-action="knowledge"><span>◈</span><b>Knowledge base</b><small>Consult approved service guidance</small></button></div>`;
   }
   panel.classList.remove('hidden');
 }

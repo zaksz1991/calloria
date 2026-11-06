@@ -1,48 +1,125 @@
-# CALLORIA — Product and Commercialisation Roadmap
+# CALLORIA Product Roadmap
 
-## Product definition
+**Current source baseline:** 0.4.0 — Contact Centre Operations Engine  
+**Next milestone:** 0.5.0 — Voice, Character Animation & Workforce Operations  
+**Product definition:** A browser-first 3D contact-centre career and operations simulator. Recruitment is an entry gate; the core game is the player's working career and simulated inbound/outbound operations.
 
-CALLORIA is a multi-industry contact-centre career and operations simulator. Recruitment and role assessments are the entry gate. The main game is employment: reporting for shifts, handling inbound and outbound customer work, using enterprise-style applications, meeting service and compliance requirements, collaborating with colleagues and progressing through a career.
+## Current baseline — Build 0.4.0
 
-## Product pillars
+The following capabilities are present in the source package and covered by automated source or domain tests:
 
-1. **Career simulation:** candidate profile, recruitment, interviews, offers, employment, shifts, pay, performance, promotion and management careers.
-2. **Contact operations:** voice, email, live chat, messaging, social support, back-office requests, inbound queues, outbound campaigns and follow-up work.
-3. **Customer behaviour:** varied personas, intent, sentiment, context memory, branching dialogue and scenario outcomes.
-4. **Enterprise workstations:** CRM, dialler, ticketing, core-business applications, knowledge base, email, chat, workforce management and reporting.
-5. **Performance intelligence:** role-specific QA, CSAT, first-contact resolution, AHT, ACW, adherence, conversion, complaint outcomes and compliance gates.
-6. **Organisation administration:** tenant setup, roles, departments, policy configuration, scenario authoring, QA configuration and analytics.
-7. **Immersive 3D workplace:** authored office architecture, professional character assets, character animation, first-person movement, workstation interaction and environmental audio.
+### Contact operations
+- Inbound queue records with unique contact IDs, queue timestamps, service categories, route groups and priority.
+- Priority-first routing for fraud, suspicious activity and security issues, with higher priority for disputes and complaints.
+- Contact lifecycle rules for queued, offered, connected, on-hold, transferred, wrap-up, callback, completed, escalated and abandoned states.
+- Accept, hold/resume, specialist transfer, return-to-queue and callback return actions.
+- Queue visibility with waiting count, wait-age and service-level snapshots.
+- After-contact work with required factual notes and constrained final dispositions.
+- Future-time validation for callbacks and lifecycle completion tracking.
 
-## Current build
+### Outbound operations
+- Simulated campaign attempts with unique references and event history.
+- Customer outcome/disposition recording.
+- Contact opt-out register that blocks later simulated attempts for a suppressed contact.
+- Scheduled outbound callbacks and callback resumption controls.
+- Safe cancellation of an unfinished campaign attempt without completion credit.
 
-### Build 0.3.0 — CALLORIA game-first and mobile interaction upgrade
+### Supervision, CRM and performance
+- Supervisor assistance requests and a review desk for open requests and escalated cases.
+- CRM records containing disposition, notes, owner, channel, quality estimate and event history.
+- Shared operational event timeline.
+- Queue wait, accepted-contact, service-level and after-contact work indicators.
+- Queue and Supervisor destinations from the application navigation and 3D workstation interaction panel.
 
-Implemented in this source package:
+### Existing game foundation retained
+- CALLORIA game-first shell and current 3D contact-centre environment.
+- Desktop navigation and mobile joystick/look/run/use controls.
+- Applicant application, aptitude and practical call assessment, offer and employment gate.
+- Existing scripted inbound and outbound customer scenarios.
+- Local CRM, knowledge base, performance, salary/bonus and career progression.
+- Vite-managed Three.js dependencies and Vercel build configuration.
 
-- Rebranded all player-facing interface, browser metadata, 3D screen textures, reception signage, and application copy to CALLORIA.
-- Replaced the document-style shell with a dark, game-oriented HUD, compact navigation rail, cinematic world stage and in-world immersive overlay.
-- Added touch-first movement joystick, camera drag-look, run and workstation-use controls for touch devices.
-- Kept keyboard/mouse controls for desktop players and retained the recruitment-to-employment gate and existing customer-operation views.
-- Added device-aware rendering defaults for coarse-pointer/mobile devices.
-- Introduced Vite production bundling, npm-managed Three.js/addons and a Vercel build pipeline.
-- Added migration from the former local browser save key so existing player progress is retained.
+### v0.4.0 boundaries
+- Queue and supervisor operations are single-player simulation logic, not a live multi-agent automatic call distributor or workforce platform.
+- Player data, queue events, callbacks and suppression records remain in browser local storage; there is no server-side account or cross-device synchronisation.
+- Customer dialogue remains scripted and scenario-driven. Real voice capture, speech-to-text and generated customer voice are not implemented.
+- Email, live chat, social messaging and omnichannel conversation continuity are not implemented.
+- Current human and reception GLB models remain external runtime references. Their complete browser loading, animation clips, licensing metadata and commercial deployment suitability remain to be verified; approved assets must be first-party hosted before commercial release.
+- A successful local Vite production build and physical browser/device verification are still release requirements.
 
-**Known boundary:** this is a game-first interface and touch-control upgrade, not a full rebuild of the 3D art assets or completion of the call operations engine. Remote character and reception GLB assets still require first-party hosting and browser verification. Mobile controls are implemented in source but require physical Android/iOS browser testing before the release can be called fully mobile-verified.
+## Previous release lineage
 
-### Build 0.2.0 — Professional 3D workplace vertical slice
+- **0.3.0 — Game-first and mobile interaction upgrade:** CALLORIA branding, game-first interface, touch joystick, touch camera, run/use controls, Vite and npm-managed Three.js build.
+- **0.2.0 — Professional 3D workplace vertical slice:** contact-centre floor layout, workstations, navigation, and initial runtime character/environment asset references.
+- **0.1.0 — Functional prototype:** recruitment gate, initial employment flow, scripted inbound/outbound scenarios and starter CRM/career systems.
 
-Implemented in the current source package:
+## Next milestone — Build 0.5.0: Voice, Character Animation & Workforce Operations
 
-- Rebuilt the earlier primitive room study into a purpose-built contact-centre environment.
-- Added 12 detailed workstations across three agent pods, including dual simulated screens, keyboard, mouse, headset, phone, chair, acoustic panels, CPU, desk structure and station indicators.
-- Added reception, meeting area, supervisor/QA suite, operations wall display, daylight glazing, ceiling, lighting, surface textures and a branded operations environment.
-- Added first-person movement, mouse look, sprint, preview orbit/zoom, workstation proximity and E-key interaction.
-- Added runtime GLTF asset loading for two CC0 rigged characters and a CC0 reception-desk model, with local fallback geometry.
-- Retained the recruitment and employment gate and the existing inbound/outbound, CRM, knowledge, performance and career application views.
-- Added static regression tests and an asset register.
+### Voice interaction
+- Explicit microphone permission and clear recording state.
+- Browser-based audio capture and playback for player practice.
+- Speech-to-text integration behind a replaceable provider interface.
+- Customer voice responses and bounded conversation context.
+- Text input fallback where microphone access is unavailable.
+- Recording consent, retention and deletion controls. No audio is sent to a third party without clear user consent.
 
-**Known boundary:** remote GLB files are referenced at runtime, not bundled. The current build environment could not independently download and inspect those binaries. Publisher CORS and runtime asset loading still require browser verification. This is a professional 3D vertical slice, not a finished commercial game.
+### Character and workplace animation
+- Verify and first-party host approved character GLB assets.
+- Validate skeleton, scale, material, textures and animation clips.
+- Implement character state transitions: idle, walk, sit, stand, type, listen, speak, turn and headset handling.
+- Add workstation approach, sit/stand and interaction transitions.
+- Add restrained ambient staff behaviour while respecting device-performance budgets.
+
+### Workforce operations
+- Agent states: available, busy, wrap-up, break and offline.
+- Simulated shift schedule, break windows and adherence.
+- Workload and role-specific performance measures.
+- Team leader coaching and observation scenarios.
+
+### Acceptance criteria
+- A desktop browser can load the 3D scene and approved first-party models without external publisher runtime dependencies.
+- Animation transitions can be observed through the intended workstation workflow.
+- Microphone permission is optional, explicit and handled safely; a text fallback is available.
+- Voice interaction can complete a defined scripted customer scenario and preserve the transcript or event record according to chosen retention settings.
+- Agent state and shift records behave consistently across the tested workflows.
+- Regression suite and Vite production build pass; desktop and representative Android/iOS layouts receive manual browser QA.
+
+## Build 0.6.0 — Multi-channel Customer Operations
+
+- Functional simulated email inbox with templates, replies, attachments in a controlled sandbox and CRM case links.
+- Live-chat sessions, queue assignment, response timers, transfers and escalation.
+- Social and messaging support inbox scenarios.
+- Cross-channel customer history and case continuity.
+- Customer personas with controlled sentiment and scenario memory.
+- Distinct SLA, quality and workload settings per channel.
+
+## Build 0.7.0 — Organisation Platform
+
+- Supabase authentication and server-backed player profiles.
+- Tenant-scoped organisation, department, team and role model.
+- Organisation admin, trainer, supervisor, QA and player roles.
+- Configurable products, scripts, policies, scorecards and outbound campaigns.
+- Audit trails, data retention settings and report exports.
+- Cross-device progress sync with strict organisation-level access control.
+
+## Build 0.8.0 — Multiplayer Contact Centre
+
+- Shared team floor and presence.
+- Multiple agents, supervisors and QA users in the same session.
+- Queue distribution across simulated agents.
+- Team briefings, supervisor coaching and escalation hand-offs.
+- Collaborative shift performance and cohort reports.
+
+## Build 1.0 — Commercial Release Candidate
+
+- First-party, version-pinned and properly licensed 3D assets.
+- Character animation and facial/lip-sync work validated on supported devices.
+- Accessibility, localisation and device QA.
+- Security review, privacy assessment and tenant-isolation testing.
+- Performance, load and browser compatibility testing.
+- Organisation-approved content, product rules and legal review.
+- Licensing, subscription and tenant provisioning controls.
+- Supported-device matrix, performance budgets and operational support process.
 
 ## Industry packs
 
@@ -53,142 +130,48 @@ Implemented in the current source package:
 - Logistics and delivery.
 - Travel, hospitality and reservations.
 - Insurance.
-- Healthcare administration (non-clinical customer support only).
+- Healthcare administration (non-clinical support only).
 - Technology helpdesk and SaaS support.
 - Public-service information lines.
 
-Each industry pack must have a separate policy configuration. Procedures, disclosure permissions, consent rules and regulatory requirements must not be assumed to transfer between organisations, industries or countries.
+Every industry pack requires its own approved procedures, contact permissions, disclosures, privacy requirements and role-specific scorecards. A rule from one organisation or jurisdiction must not be assumed to apply to another.
 
-## Banking operations pack informed by the supplied timetable
+## Banking pack informed by the supplied timetable
 
-The banking pack should eventually include configurable procedures and simulations for cashless policy, cheques, IMTO services, Finacle-style core banking workflows, account and consumer products, treasury bills and fixed deposits, FirstMobile/mobile banking, USSD, online banking, BVN validation, e-statements, payment collections, card operations, ATM and POS disputes, Postilion-style switch workflows, CRM, IBPS, Arbiter-style dispute tools, diaspora banking, foreign transfers, Form A, Form M, PTA/BTA, fraud complaints, chargebacks, contact-centre controls and quality monitoring. These names are content targets only; production builds require institution permission, approved system specifications and verified current procedures.
-
-## Channel catalogue
-
-### Inbound
-
-- General enquiries and service navigation.
-- Account, product and billing support.
-- Technical troubleshooting and helpdesk.
-- Transaction, payment and card disputes.
-- Complaints, escalations and case updates.
-- Retention and cancellation requests.
-- Fraud or security incident reporting.
-- Order, delivery, booking and reservation support.
-- Email, chat, messaging and social inbox handling.
-
-### Outbound
-
-- Customer onboarding and welcome calls.
-- Service follow-ups and satisfaction surveys.
-- Appointment and delivery confirmations.
-- Authorised sales and product campaigns.
-- Lead qualification.
-- Retention and win-back.
-- Renewal and payment reminders.
-- Collections where legally permitted and appropriately controlled.
-- Case updates and complaint follow-up.
-- Market research and customer feedback.
-
-Outbound workflows require campaign purpose, permitted contact basis, suppression lists, frequency controls, contact-hour controls, opt-out handling and audit records configured for the relevant organisation and jurisdiction.
-
-## Release sequence
-
-### 0.3.0 — CALLORIA game-first and mobile interaction upgrade (current source baseline)
-
-- Full CALLORIA brand replacement across visible UI and scene texture labels.
-- Game-first visual shell, cinematic world stage, compact game navigation and immersive HUD.
-- Touch joystick, drag-to-look, run and workstation interaction controls.
-- Vite production build, npm-managed Three.js dependencies and Vercel build configuration.
-- Migration of existing FLOORSHIFT local browser progress into CALLORIA storage.
-
-### 0.2.0 — Professional 3D workplace vertical slice (superseded)
-
-- Professionally directed 3D workplace layout and detailed agent workstations.
-- First-person floor navigation and workstation interaction.
-- Runtime human GLB asset integration with a documented fallback.
-- Retained recruitment and existing agent work views.
-
-### 0.4 — Contact-centre operations engine
-
-- Queue lifecycle: offered, queued, accepted, on hold, transferred, warm hand-off, resolved, escalated and abandoned.
-- Inbound routing, skill groups, priority, callbacks and service-level simulation.
-- Outbound campaign dialler, contact outcomes, opt-outs, suppression and callback scheduling.
-- After-contact work, case ownership and interaction timeline.
-- Concurrent operations across voice, email and live chat.
-- Supervisor presence, assistance and intervention.
-- Role-specific KPI and QA scorecards.
-- Scenario authoring separated from rendering code.
-
-### 0.5 — Voice, animation and workforce operations
-
-- Browser microphone capture and playback with explicit permission and recording controls.
-- Speech-to-text, customer voice playback and bounded conversation evaluation.
-- Animation state transitions for standing, walking, sitting, typing, speaking, listening, turning and headset use.
-- Agent status, adherence, break and schedule simulation.
-- Call recording review and event timeline.
-- Team leader, QA and supervisor roles.
-
-### 0.6 — Multi-channel customer experience
-
-- Full email inbox, templates, response handling and case links.
-- Live-chat sessions, concurrent chats and escalation.
-- Messaging and social-support queues.
-- Customer context continuity across supported channels.
-- Customer behaviour engine with controllable personas, sentiment and scenario memory.
-
-### 0.7 — Organisation platform
-
-- Secure authentication and multi-tenant data model.
-- Organisation, departments, teams and role-based permissions.
-- Admin console for products, scripts, policies, scorecards and campaigns.
-- Audit trail, configurable retention and reporting exports.
-- Server-backed employee profiles and progression.
-
-### 1.0 — Commercial release candidate
-
-- First-party, version-pinned and licensed 3D assets; no production dependency on third-party model URLs.
-- Character animation, facial expression and lip-sync appropriate to selected characters.
-- Accessibility, localisation and device QA.
-- Security review, privacy impact assessment and penetration testing.
-- Load testing and real-time collaboration validation.
-- Institution-specific content approval and legal review.
-- Subscription, licensing and tenant provisioning.
-- Performance budgets and supported-device matrix.
-- Documented operational support and release process.
+The banking content roadmap includes configurable procedures and scenarios for cashless policy, cheques, IMTO, core banking workflows, account and consumer products, treasury bills, fixed deposits, mobile and online banking, USSD, BVN validation, e-statements, card operations, ATM and POS disputes, payment processing, CRM, IBPS, dispute tools, diaspora banking, foreign transfers, Form A, Form M, PTA/BTA, fraud complaints, chargebacks and quality monitoring. Product names are content targets only; real procedures, charges, rates and system behaviours require verified, organisation-approved documentation and permission.
 
 ## Production architecture target
 
-- **Client:** TypeScript, React/Next.js and Three.js for browser-first delivery; assess Unreal Engine only if visual requirements exceed a realistic web performance budget.
-- **Simulation domain:** versioned scenario definitions, deterministic scoring rules, event history and simulation state engine.
-- **Server:** authenticated API services with organisation-scoped access checks.
-- **Data:** PostgreSQL with tenant isolation, audit events and policy versioning.
-- **Realtime:** queue, presence and supervisor activity updates.
-- **Media:** secure, consent-based audio storage and retention.
-- **AI:** bounded customer dialogue and agent-assist services with deterministic policy guardrails and human-authored scenario constraints.
-- **3D pipeline:** Blender-authored assets, GLB delivery, PBR material standards, rig validation, animation retargeting, LODs, instancing, texture budgets and a first-party asset CDN.
-- **Deployment:** CDN/static frontend plus secured backend services.
+- **Client:** TypeScript, React for application interfaces and Three.js for the browser 3D world.
+- **Build:** Vite with locked dependencies and reproducible production builds.
+- **Simulation domain:** versioned scenarios, deterministic state transitions, rules, event history and role-aware scoring.
+- **Server:** authenticated APIs with organisation-scoped access checks.
+- **Data:** PostgreSQL, tenant isolation, auditable event records and policy versioning.
+- **Realtime:** queue, presence and supervisor activity.
+- **Media:** explicit consent, secured audio handling and retention.
+- **AI:** bounded customer dialogue, constrained by organisation-approved policy and authored scenario rules.
+- **3D pipeline:** Blender-authored GLB assets, PBR materials, validated rigs, animation clips, LODs, instancing and first-party asset delivery.
+- **Deployment:** CDN-delivered frontend plus secured backend services.
 
 ## Non-negotiable safety and realism requirements
 
 - No real financial transactions or access to real customer accounts.
-- No use of production customer data in public or shared scenarios.
+- No real customer data in public or shared training scenarios.
 - No real outbound calls from the game.
-- Never request or display PINs, passwords or one-time passcodes as agent tasks.
-- Security, consent and lawful-contact violations must be explicit hard gates.
-- AI dialogue must not invent official product charges, rates, laws, regulatory rules or guaranteed outcomes.
-- Scores and targets must be role-specific and configurable by authorised administrators.
+- Never instruct agents to request or disclose PINs, passwords or one-time passcodes.
+- Security, consent and lawful-contact violations are explicit hard gates.
+- AI dialogue must not invent charges, rates, laws, regulatory rules or guaranteed outcomes.
+- Performance targets must be role-specific and organisation-configurable.
 - Audio recording must be transparent, permission-based and subject to retention controls.
-- All industry packs require owner-approved policies and procedures.
+- All institutional procedures require owner approval before production use.
 
-## Immediate next engineering priorities
+## Immediate priorities
 
-1. Browser-verify all three external GLB assets, CORS, skeletons, materials, scale and animation clips; then move approved versions to first-party hosting.
-2. Establish a visual QA pass on representative desktop and integrated-GPU devices; set a minimum frame-rate and texture-memory budget.
-3. Complete employee animation states for sitting, typing, speaking, listening and transitions.
-4. Separate operational simulation data and state from rendering code.
-5. Implement inbound queue routing, callbacks, dispositions and after-contact work.
-6. Implement outbound campaign lifecycle, consent controls and contact outcomes.
-7. Add multichannel email and chat, then supervisor and QA workflows.
-8. Replace illustrative KPIs with versioned role-specific scorecards.
-9. Add a server-backed tenant-scoped account and save system before any commercial pilot.
+1. Build and browser-verify the current v0.4 source on the target toolchain before considering it a deployed release.
+2. Fix and verify callback, disposition and suppression edge cases through executable tests.
+3. Audit and first-party host approved GLB assets; verify CORS, skeletons, animation clips, scale and materials.
+4. Deliver sitting, typing, speaking, listening and headset animation states.
+5. Implement optional, consent-based microphone capture and text fallback.
+6. Add workforce states, shifts and adherence.
+7. Deliver email and chat workflows in v0.6.
+8. Establish tenant-scoped backend and administration before commercial pilots.

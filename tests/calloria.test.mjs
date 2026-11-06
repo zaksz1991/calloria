@@ -80,9 +80,37 @@ test('recruitment gate and existing operational functions remain intact', async 
 
 test('asset and roadmap documentation identifies remaining production boundaries', async () => {
   const [readme,roadmap,assets] = await Promise.all([read('README.md'),read('PRODUCT-ROADMAP.md'),read('ASSET-SOURCES.md')]);
-  assert.match(readme, /not yet a finished commercial release/i);
+  assert.match(readme, /not a finished commercial product/i);
   assert.match(readme, /physical-device QA/i);
   assert.match(roadmap, /0\.3\.0/);
   assert.match(assets, /CC0/);
   assert.match(assets, /first-party/);
+});
+
+
+test('operations engine integrates inbound and outbound after-contact callback completion safely', async () => {
+  const [main, engine] = await Promise.all([read('js/main.js'), read('js/operations-engine.js')]);
+  assert.match(main, /completeActiveCallback\(state\.callbacks,\{contactId:contact\.id\}/);
+  assert.match(main, /completeActiveCallback\(state\.callbacks,\{callbackId:active\.callbackId\}/);
+  assert.doesNotMatch(main, /item=>item\.contactId===contact\.id&&item\.status==='in_progress'\);\s*if\(priorCallback\)/);
+  assert.match(engine, /export function completeActiveCallback/);
+  assert.match(main, /Choose a permitted final disposition for this interaction/);
+  assert.match(main, /const outboundCallbacks=state\.callbacks\.filter/);
+  const saveWrapUp = main.slice(main.indexOf('function saveWrapUp(){'), main.indexOf('function toggleCallHold(){'));
+  const outboundBranch = saveWrapUp.split('}else{\n    const active=state.activeOutbound;')[1]?.split('\n  }\n  state.totalACWSeconds')[0] || '';
+  assert.ok(outboundBranch, 'outbound wrap-up branch must exist');
+  assert.doesNotMatch(outboundBranch, /\bcontact\.id\b/, 'outbound wrap-up must not reference an inbound contact variable');
+  assert.ok(saveWrapUp.indexOf('if(!Number.isFinite(dueMillis)||dueMillis<=Date.now())') < saveWrapUp.indexOf('completeActiveCallback(state.callbacks,{callbackId:active.callbackId}'), 'callback validation must happen before closing the active callback');
+});
+
+test('contact queue and supervisor tools are wired into navigation and workstation', async () => {
+  const [html, main] = await Promise.all([read('index.html'), read('js/main.js')]);
+  assert.match(html, /data-view=["']queue["']/);
+  assert.match(html, /data-view=["']supervisor["']/);
+  assert.match(main, /case 'queue': renderQueue\(\)/);
+  assert.match(main, /case 'supervisor': renderSupervisor\(\)/);
+  assert.match(main, /data-station-action="queue"/);
+  assert.match(main, /data-station-action="supervisor"/);
+  assert.match(main, /data-action="request-supervisor"/);
+  assert.match(main, /data-action="transfer-call"/);
 });
