@@ -1,8 +1,8 @@
-# FLOORSHIFT 3D — Third-party 3D asset register
+# CALLORIA — Third-party 3D asset register
 
 The following assets are referenced by `js/production-world.js`. At this build they load from their original publishers at runtime; they are not embedded in the project archive.
 
-| Asset | Publisher page | Runtime file | Published licence / details | Use in FLOORSHIFT |
+| Asset | Publisher page | Runtime file | Published licence / details | Use in CALLORIA |
 |---|---|---|---|---|
 | Businessman rigged | https://grab3d.com/models/characters/businessman/ | https://grab3d.com/dl/businessman-rigged/businessman-rigged.glb | CC0 1.0; rigged character; publisher describes 4K PBR textures and walk/run animation | Contact-centre employee / roaming staff |
 | Casual woman rigged | https://grab3d.com/models/characters/woman/ | https://grab3d.com/dl/woman-rigged/woman-rigged.glb | CC0 1.0; rigged character; publisher describes 4K PBR textures and walk/run animation | Contact-centre employee / roaming staff |

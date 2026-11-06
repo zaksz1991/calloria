@@ -1,8 +1,8 @@
-# FLOORSHIFT 3D — Product and Commercialisation Roadmap
+# CALLORIA — Product and Commercialisation Roadmap
 
 ## Product definition
 
-FLOORSHIFT 3D is a multi-industry contact-centre career and operations simulator. Recruitment and role assessments are the entry gate. The main game is employment: reporting for shifts, handling inbound and outbound customer work, using enterprise-style applications, meeting service and compliance requirements, collaborating with colleagues and progressing through a career.
+CALLORIA is a multi-industry contact-centre career and operations simulator. Recruitment and role assessments are the entry gate. The main game is employment: reporting for shifts, handling inbound and outbound customer work, using enterprise-style applications, meeting service and compliance requirements, collaborating with colleagues and progressing through a career.
 
 ## Product pillars
 
@@ -15,6 +15,20 @@ FLOORSHIFT 3D is a multi-industry contact-centre career and operations simulator
 7. **Immersive 3D workplace:** authored office architecture, professional character assets, character animation, first-person movement, workstation interaction and environmental audio.
 
 ## Current build
+
+### Build 0.3.0 — CALLORIA game-first and mobile interaction upgrade
+
+Implemented in this source package:
+
+- Rebranded all player-facing interface, browser metadata, 3D screen textures, reception signage, and application copy to CALLORIA.
+- Replaced the document-style shell with a dark, game-oriented HUD, compact navigation rail, cinematic world stage and in-world immersive overlay.
+- Added touch-first movement joystick, camera drag-look, run and workstation-use controls for touch devices.
+- Kept keyboard/mouse controls for desktop players and retained the recruitment-to-employment gate and existing customer-operation views.
+- Added device-aware rendering defaults for coarse-pointer/mobile devices.
+- Introduced Vite production bundling, npm-managed Three.js/addons and a Vercel build pipeline.
+- Added migration from the former local browser save key so existing player progress is retained.
+
+**Known boundary:** this is a game-first interface and touch-control upgrade, not a full rebuild of the 3D art assets or completion of the call operations engine. Remote character and reception GLB assets still require first-party hosting and browser verification. Mobile controls are implemented in source but require physical Android/iOS browser testing before the release can be called fully mobile-verified.
 
 ### Build 0.2.0 — Professional 3D workplace vertical slice
 
@@ -80,14 +94,22 @@ Outbound workflows require campaign purpose, permitted contact basis, suppressio
 
 ## Release sequence
 
-### 0.2.0 — Professional 3D workplace vertical slice (current)
+### 0.3.0 — CALLORIA game-first and mobile interaction upgrade (current source baseline)
+
+- Full CALLORIA brand replacement across visible UI and scene texture labels.
+- Game-first visual shell, cinematic world stage, compact game navigation and immersive HUD.
+- Touch joystick, drag-to-look, run and workstation interaction controls.
+- Vite production build, npm-managed Three.js dependencies and Vercel build configuration.
+- Migration of existing FLOORSHIFT local browser progress into CALLORIA storage.
+
+### 0.2.0 — Professional 3D workplace vertical slice (superseded)
 
 - Professionally directed 3D workplace layout and detailed agent workstations.
 - First-person floor navigation and workstation interaction.
 - Runtime human GLB asset integration with a documented fallback.
 - Retained recruitment and existing agent work views.
 
-### 0.3 — Contact-centre operations engine
+### 0.4 — Contact-centre operations engine
 
 - Queue lifecycle: offered, queued, accepted, on hold, transferred, warm hand-off, resolved, escalated and abandoned.
 - Inbound routing, skill groups, priority, callbacks and service-level simulation.
@@ -98,7 +120,7 @@ Outbound workflows require campaign purpose, permitted contact basis, suppressio
 - Role-specific KPI and QA scorecards.
 - Scenario authoring separated from rendering code.
 
-### 0.4 — Voice, animation and workforce operations
+### 0.5 — Voice, animation and workforce operations
 
 - Browser microphone capture and playback with explicit permission and recording controls.
 - Speech-to-text, customer voice playback and bounded conversation evaluation.
@@ -107,7 +129,7 @@ Outbound workflows require campaign purpose, permitted contact basis, suppressio
 - Call recording review and event timeline.
 - Team leader, QA and supervisor roles.
 
-### 0.5 — Multi-channel customer experience
+### 0.6 — Multi-channel customer experience
 
 - Full email inbox, templates, response handling and case links.
 - Live-chat sessions, concurrent chats and escalation.
@@ -115,7 +137,7 @@ Outbound workflows require campaign purpose, permitted contact basis, suppressio
 - Customer context continuity across supported channels.
 - Customer behaviour engine with controllable personas, sentiment and scenario memory.
 
-### 0.6 — Organisation platform
+### 0.7 — Organisation platform
 
 - Secure authentication and multi-tenant data model.
 - Organisation, departments, teams and role-based permissions.

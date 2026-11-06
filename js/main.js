@@ -1,6 +1,7 @@
 let THREE = null;
 
-const STORAGE_KEY = 'floorshift3d.save.v1';
+const STORAGE_KEY = 'calloria.save.v1';
+const LEGACY_STORAGE_KEY = 'floorshift3d.save.v1';
 const $ = (selector, root = document) => root.querySelector(selector);
 const viewRoot = $('#viewRoot');
 const toastHost = $('#toastHost');
@@ -52,8 +53,12 @@ let productionWorld = null;
 
 function loadState() {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? { ...initialState(), ...JSON.parse(stored) } : initialState();
+    const stored = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (!stored) return initialState();
+    const parsed = JSON.parse(stored);
+    const migrated = { ...initialState(), ...parsed };
+    if (!localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+    return migrated;
   } catch {
     return initialState();
   }
@@ -715,8 +720,11 @@ async function initWorld(){
       onNearestStation:station=>{
         const hint=$('#stationHint');
         if(!hint)return;
-        if(station){hint.classList.remove('hidden');hint.innerHTML=`<span class="prompt-key">E</span><span>Access <strong>${escapeHTML(station.label)}</strong></span>`;}
-        else hint.classList.add('hidden');
+        if(station){
+          const touch=window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints>0;
+          hint.classList.remove('hidden');
+          hint.innerHTML=`<span class="prompt-key">${touch?'USE':'E'}</span><span>Access <strong>${escapeHTML(station.label)}</strong></span>`;
+        } else hint.classList.add('hidden');
       },
       onStation:station=>open3dStationPanel(station),
       onPointerUnlock:()=>{
@@ -726,8 +734,8 @@ async function initWorld(){
     });
     const enterButton=$('#enterFloorButton');if(enterButton)enterButton.disabled=false;
   }catch(error){
-    console.error('FLOORSHIFT 3D world initialisation failed:',error);
-    host.innerHTML='<div class="world-fallback">The 3D environment could not be initialised. Check WebGL 2 and the Three.js CDN connection.</div>';
+    console.error('CALLORIA world initialisation failed:',error);
+    host.innerHTML='<div class="world-fallback">The 3D environment could not be initialised. Check WebGL 2 support and reload the game assets.</div>';
   }
 }
 

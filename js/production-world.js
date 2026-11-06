@@ -1,5 +1,5 @@
 /*
- * FLOORSHIFT 3D — Production-style contact-centre environment
+ * CALLORIA — immersive contact-centre environment
  *
  * Art direction: premium cinematic corporate realism.
  * Environment: authored real-scale architectural scene, PBR-style materials,
@@ -23,10 +23,10 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   let mergeGeometries = null;
 
   const helperResults = await Promise.allSettled([
-    import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/geometries/RoundedBoxGeometry.js'),
-    import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js'),
-    import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/utils/SkeletonUtils.js'),
-    import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/utils/BufferGeometryUtils.js')
+    import('three/addons/geometries/RoundedBoxGeometry.js'),
+    import('three/addons/loaders/GLTFLoader.js'),
+    import('three/addons/utils/SkeletonUtils.js'),
+    import('three/addons/utils/BufferGeometryUtils.js')
   ]);
   if (helperResults[0].status === 'fulfilled') RoundedBoxGeometry = helperResults[0].value.RoundedBoxGeometry;
   else console.warn('Rounded box helper unavailable; standard box geometry will be used.', helperResults[0].reason);
@@ -42,9 +42,10 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   scene.fog = new THREE.Fog('#d7e1e4', 38, 78);
 
   const camera = new THREE.PerspectiveCamera(62, 1, 0.08, 120);
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+  const touchDevice = window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+  const renderer = new THREE.WebGLRenderer({ antialias: !touchDevice, alpha: false, powerPreference: 'high-performance' });
   const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, window.innerWidth < 900 ? 1.1 : 1.5));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, touchDevice ? 1 : window.innerWidth < 900 ? 1.1 : 1.5));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -171,7 +172,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
       const cyan = '#37c7b1', muted = '#7892a2', pale = '#e1edf0';
       ctx.fillStyle = '#102a3a'; ctx.fillRect(0, 0, w, 52);
       ctx.fillStyle = cyan; ctx.fillRect(0, 0, 7, h);
-      ctx.fillStyle = pale; ctx.font = '700 20px Arial'; ctx.fillText(mode === 'queue' ? 'FLOORSHIFT · QUEUE CONTROL' : 'FLOORSHIFT · AGENT DESK', 28, 33);
+      ctx.fillStyle = pale; ctx.font = '700 20px Arial'; ctx.fillText(mode === 'queue' ? 'CALLORIA · QUEUE CONTROL' : 'CALLORIA · AGENT DESK', 28, 33);
       ctx.fillStyle = muted; ctx.font = '13px Arial'; ctx.fillText(`STATION ${String(id).padStart(2, '0')}   •   SECURE SESSION`, w - 250, 33);
       ctx.fillStyle = '#0f2635'; ctx.fillRect(24, 72, w - 48, 64);
       ctx.fillStyle = cyan; ctx.font = '700 14px Arial'; ctx.fillText(mode === 'queue' ? 'LIVE INTERACTION QUEUE' : 'CUSTOMER OVERVIEW', 42, 96);
@@ -251,7 +252,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   const brandTex = makeTexture((ctx,w,h)=>{
     ctx.fillStyle='#102738';ctx.fillRect(0,0,w,h);
     ctx.fillStyle='#49d3bb';ctx.fillRect(35,40,10,h-80);
-    ctx.fillStyle='#ecf5f4';ctx.font='800 65px Arial';ctx.fillText('FLOORSHIFT',78,118);
+    ctx.fillStyle='#ecf5f4';ctx.font='800 65px Arial';ctx.fillText('CALLORIA',78,118);
     ctx.fillStyle='#78a4ad';ctx.font='600 25px Arial';ctx.fillText('CUSTOMER OPERATIONS  •  FLOOR 04',82,160);
     ctx.fillStyle='#36c7b1';ctx.fillRect(w-170,58,105,8);
     ctx.fillStyle='#7898a3';ctx.font='700 18px Arial';ctx.fillText('LIVE',w-170,105);
@@ -286,7 +287,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   addMesh(receptionGroup,roundedBox(3.5,1.12,1.1,.14,materials.wallDark),0,.56,0);
   addMesh(receptionGroup,roundedBox(3.58,.12,1.16,.06,materials.wood),0,1.12,0);
   addMesh(receptionGroup,roundedBox(2.3,.55,.035,.025,materials.teal),0,.6,.57,false,false);
-  const receptionLabel=makeTexture((ctx,w,h)=>{ctx.fillStyle='#112d3d';ctx.fillRect(0,0,w,h);ctx.fillStyle='#6be2ce';ctx.font='800 58px Arial';ctx.textAlign='center';ctx.fillText('FLOORSHIFT',w/2,76);ctx.fillStyle='#d6e7e7';ctx.font='500 22px Arial';ctx.fillText('WELCOME  •  EMPLOYEE SERVICES',w/2,116);},512,150);
+  const receptionLabel=makeTexture((ctx,w,h)=>{ctx.fillStyle='#112d3d';ctx.fillRect(0,0,w,h);ctx.fillStyle='#6be2ce';ctx.font='800 58px Arial';ctx.textAlign='center';ctx.fillText('CALLORIA',w/2,76);ctx.fillStyle='#d6e7e7';ctx.font='500 22px Arial';ctx.fillText('WELCOME  •  EMPLOYEE SERVICES',w/2,116);},512,150);
   const receptionSign=roundedBox(2.18,.48,.025,.02,new THREE.MeshBasicMaterial({map:receptionLabel}));addMesh(receptionGroup,receptionSign,0,.62,.595,false,false);
 
   // Floor wayfinding and circulation paths.
@@ -475,7 +476,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
       bucket.geometries.forEach(item => item.dispose());
       mergedCount += bucket.originals.length;
     }
-    if (mergedCount) console.info(`FLOORSHIFT 3D: merged ${mergedCount} static workstation meshes into ${buckets.size} material groups.`);
+    if (mergedCount) console.info(`CALLORIA: merged ${mergedCount} static workstation meshes into ${buckets.size} material groups.`);
   }
   optimiseWorkstationMeshes();
 
@@ -520,7 +521,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
 
   // Window-side light and interior illumination.
   scene.add(new THREE.HemisphereLight('#e2f0f2','#1d2f3b',1.75));
-  const keyLight=new THREE.DirectionalLight('#fff4dd',4.2);keyLight.position.set(-11,17,11);keyLight.castShadow=true;keyLight.shadow.mapSize.set(2048,2048);keyLight.shadow.camera.left=-22;keyLight.shadow.camera.right=22;keyLight.shadow.camera.top=22;keyLight.shadow.camera.bottom=-22;keyLight.shadow.bias=-.00018;keyLight.shadow.normalBias=.025;scene.add(keyLight);
+  const keyLight=new THREE.DirectionalLight('#fff4dd',4.2);keyLight.position.set(-11,17,11);keyLight.castShadow=true;keyLight.shadow.mapSize.set(touchDevice ? 1024 : 2048,touchDevice ? 1024 : 2048);keyLight.shadow.camera.left=-22;keyLight.shadow.camera.right=22;keyLight.shadow.camera.top=22;keyLight.shadow.camera.bottom=-22;keyLight.shadow.bias=-.00018;keyLight.shadow.normalBias=.025;scene.add(keyLight);
   const fillLight=new THREE.DirectionalLight('#b2d5e4',1.35);fillLight.position.set(14,9,-9);scene.add(fillLight);
   const warmAccent=new THREE.PointLight('#55cdbb',18,22,2);warmAccent.position.set(-11,3.4,-10);scene.add(warmAccent);
   const receptionGlow=new THREE.PointLight('#e8b76c',11,11,2);receptionGlow.position.set(-11,3,10);scene.add(receptionGlow);
@@ -529,6 +530,8 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   const preview = { azimuth: .43, elevation: .22, radius: 27, target: new THREE.Vector3(0,1.5,-.4) };
   const player = { x: 0, z: 12.3, yaw: 0, pitch: -.025, speed: 4.4 };
   const keys = new Set();
+  if (touchDevice) document.body.classList.add('touch-device');
+  const touchMove = { x: 0, y: 0, pointerId: null, sprinting: false };
   let immersive = false;
   let dragging = false;
   let lastPointer = { x: 0, y: 0 };
@@ -715,13 +718,17 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   function setImmersive(value) {
     immersive=Boolean(value);
     host.closest('.world-panel')?.classList.toggle('is-immersive',immersive);
-    document.body.classList.toggle('floor-immersive',immersive);
+    document.body.classList.toggle('calloria-immersive',immersive);
     if(immersive){
       player.x=0;player.z=12.2;player.yaw=0;player.pitch=-.035;
+      touchMove.x=0;touchMove.y=0;touchMove.sprinting=false;
+      const stick=document.getElementById('touchStick');
+      if(stick)stick.style.transform='translate(0px,0px)';
       camera.position.set(player.x,1.68,player.z);camera.rotation.order='YXZ';camera.rotation.set(player.pitch,player.yaw,0);
       if(callbacks.onImmersiveChange)callbacks.onImmersiveChange(true);
     }else{
       if(document.pointerLockElement===renderer.domElement)document.exitPointerLock?.();
+      keys.clear();touchMove.x=0;touchMove.y=0;touchMove.sprinting=false;touchMove.pointerId=null;
       nearestStation=null;currentStation=null;setPreviewCamera();
       if(callbacks.onImmersiveChange)callbacks.onImmersiveChange(false);
     }
@@ -729,14 +736,16 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
 
   function enter(){
     setImmersive(true);
-    try{renderer.domElement.requestPointerLock?.();}catch(error){console.warn('Pointer lock not available.',error);}
+    if(!touchDevice){try{renderer.domElement.requestPointerLock?.();}catch(error){console.warn('Pointer lock not available.',error);}}
   }
   function exit(){setImmersive(false);}
 
   renderer.domElement.addEventListener('pointerdown',event=>{
     if(immersive){
-      if(document.pointerLockElement!==renderer.domElement){
+      if(!touchDevice && document.pointerLockElement!==renderer.domElement){
         try{renderer.domElement.requestPointerLock?.();}catch(error){console.warn('Pointer lock resume failed.',error);}
+      }
+      if(touchDevice || document.pointerLockElement!==renderer.domElement){
         dragging=true;lastPointer={x:event.clientX,y:event.clientY};
         renderer.domElement.setPointerCapture?.(event.pointerId);
       }
@@ -782,8 +791,48 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     }
   });
   document.addEventListener('keyup',event=>keys.delete(event.code));
+  const joystick=document.getElementById('touchJoystick');
+  const joystickKnob=document.getElementById('touchStick');
+  const sprintButton=document.getElementById('touchSprintButton');
+  const interactButton=document.getElementById('touchInteractButton');
+  const joystickRadius=()=>Math.max(24,(joystick?.clientWidth||116)*.34);
+  function updateTouchJoystick(event){
+    if(!joystick)return;
+    const rect=joystick.getBoundingClientRect();
+    const centerX=rect.left+rect.width/2,centerY=rect.top+rect.height/2;
+    const radius=joystickRadius();
+    let dx=event.clientX-centerX,dy=event.clientY-centerY;
+    const length=Math.hypot(dx,dy);
+    if(length>radius){dx=dx/length*radius;dy=dy/length*radius;}
+    touchMove.x=clamp(dx/radius,-1,1);
+    touchMove.y=clamp(dy/radius,-1,1);
+    if(joystickKnob)joystickKnob.style.transform=`translate(${dx}px, ${dy}px)`;
+  }
+  function resetTouchJoystick(){
+    touchMove.x=0;touchMove.y=0;touchMove.pointerId=null;
+    if(joystickKnob)joystickKnob.style.transform='translate(0px, 0px)';
+  }
+  joystick?.addEventListener('pointerdown',event=>{
+    if(!immersive)return;
+    event.preventDefault();touchMove.pointerId=event.pointerId;
+    joystick.setPointerCapture?.(event.pointerId);updateTouchJoystick(event);
+  });
+  joystick?.addEventListener('pointermove',event=>{
+    if(immersive && touchMove.pointerId===event.pointerId){event.preventDefault();updateTouchJoystick(event);}
+  });
+  ['pointerup','pointercancel','lostpointercapture'].forEach(type=>joystick?.addEventListener(type,event=>{
+    if(touchMove.pointerId===event.pointerId)resetTouchJoystick();
+  }));
+  sprintButton?.addEventListener('pointerdown',event=>{if(immersive){event.preventDefault();touchMove.sprinting=true;sprintButton.setPointerCapture?.(event.pointerId);}});
+  ['pointerup','pointercancel','lostpointercapture'].forEach(type=>sprintButton?.addEventListener(type,()=>{touchMove.sprinting=false;}));
+  function useNearestStation(){
+    if(immersive && nearestStation && callbacks.onStation){
+      callbacks.onStation({id:nearestStation.id,label:`Station ${String(nearestStation.id).padStart(2,'0')}`,department:'Customer Operations'});
+    }
+  }
+  interactButton?.addEventListener('click',useNearestStation);
   document.addEventListener('pointerlockchange',()=>{
-    if(immersive&&document.pointerLockElement!==renderer.domElement&&callbacks.onPointerUnlock)callbacks.onPointerUnlock();
+    if(immersive&&document.pointerLockElement!==renderer.domElement&&!touchDevice&&callbacks.onPointerUnlock)callbacks.onPointerUnlock();
   });
 
   function blocked(x,z){
@@ -800,11 +849,11 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   let lastNearestId = null;
   function updatePlayer(delta){
     if(!immersive)return;
-    const forward=(keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0);
-    const strafe=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0);
+    const forward=clamp((keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0)-touchMove.y,-1,1);
+    const strafe=clamp((keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0)+touchMove.x,-1,1);
     if(forward||strafe){
       const length=Math.hypot(forward,strafe)||1;
-      const speed=player.speed*((keys.has('ShiftLeft')||keys.has('ShiftRight'))?1.52:1);
+      const speed=player.speed*((keys.has('ShiftLeft')||keys.has('ShiftRight')||touchMove.sprinting)?1.52:1);
       const dx=(Math.sin(player.yaw)*forward+Math.cos(player.yaw)*strafe)*speed*delta/length;
       const dz=(-Math.cos(player.yaw)*forward+Math.sin(player.yaw)*strafe)*speed*delta/length;
       if(!blocked(player.x+dx,player.z))player.x+=dx;
@@ -820,6 +869,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
       station.glow.scale.setScalar(distance<2.75?1.7:1);
     });
     if(nearest>2.9)nearestStation=null;
+    if(interactButton)interactButton.disabled=!nearestStation;
     const nearestId=nearestStation?.id??null;
     if(nearestId!==lastNearestId){lastNearestId=nearestId;if(callbacks.onNearestStation)callbacks.onNearestStation(nearestStation?{id:nearestStation.id,label:`Station ${String(nearestStation.id).padStart(2,'0')}`}:null);}
   }
@@ -869,6 +919,6 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     get immersive(){return immersive;},
     get nearestStation(){return nearestStation;},
     get assetMessage(){return assetMessage;},
-    dispose(){cancelAnimationFrame(frameId);resizeObserver?.disconnect();window.removeEventListener('resize',resize);renderer.dispose();host.replaceChildren();}
+    dispose(){cancelAnimationFrame(frameId);resizeObserver?.disconnect();window.removeEventListener('resize',resize);document.body.classList.remove('touch-device','calloria-immersive');renderer.dispose();host.replaceChildren();}
   };
 }
