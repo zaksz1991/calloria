@@ -10,6 +10,7 @@ import { DIGITAL_CHANNELS, DIGITAL_STATUS, DIGITAL_SCENARIOS, createDigitalQueue
 import { ORGANIZATION_ROLES, DEFAULT_ORG_POLICY, ensureOrganizationWorkspace, createOrganization, createOrganizationMember, setOrganizationMemberStatus, updateOrganizationPolicy, getActiveOrganization, getOrganizationSnapshot } from './organization-engine.js';
 import { initializeCloudPlatform, getCloudPlatformState, canCloudRole, createCloudOrganization, createCloudInvitation, updateCloudPolicy, setCloudMemberStatus, selectCloudOrganization } from './cloud-platform.js';
 import { validateCloudPolicy } from './cloud-security.js';
+import { configureCloudEmploymentSync, markCloudEmploymentSyncReady, loadCloudEmploymentSnapshot, scheduleCloudEmploymentSave, flushCloudEmploymentSave } from './cloud-employment-sync.js';
 
 let THREE = null;
 
@@ -118,6 +119,7 @@ function loadState() {
 }
 function saveState() {
   try { localStorage.setItem(activeStorageKey, JSON.stringify(state)); } catch { /* storage may be disabled */ }
+  scheduleCloudEmploymentSave(state);
 }
 function syncQueueCount() {
   state.callQueue = countQueuedContacts(state.inboundQueueItems);
@@ -1797,6 +1799,7 @@ function open3dWorkView(view){
   document.querySelector('.content-wrap')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
+window.addEventListener('pagehide',()=>{ void flushCloudEmploymentSave(); });
 $('#enterFloorButton')?.addEventListener('click',enter3dFloor);
 $('#exitFloorButton')?.addEventListener('click',exit3dFloor);
 $('#mouseLookNote')?.addEventListener('click',()=>{try{document.querySelector('#worldCanvas canvas')?.requestPointerLock?.();$('#mouseLookNote').classList.add('hidden');}catch{}});
@@ -1805,9 +1808,12 @@ document.addEventListener('click',event=>{
   const action=event.target.closest('[data-station-action]');if(action){open3dWorkView(action.dataset.stationAction);return;}
 });
 
-window.addEventListener('calloria:cloud-context', event=>{
+window.addEventListener('calloria:cloud-context', async event=>{
   const detail=event.detail||{};
-  if(detail.signedOut){cloudScopedSave=false;activeStorageKey=STORAGE_KEY;state=loadState();ensureOrganizationWorkspace(state);setHeader();renderView();return;}
+  if(detail.signedOut){
+    configureCloudEmploymentSync(null);
+    cloudScopedSave=false;activeStorageKey=STORAGE_KEY;state=loadState();ensureOrganizationWorkspace(state);setHeader();renderView();return;
+  }
   if(detail.userId&&detail.organizationId){
     cloudScopedSave=true;
     activeStorageKey=`calloria.save.cloud.${detail.userId}.${detail.organizationId}.v1`;
@@ -1820,6 +1826,27 @@ window.addEventListener('calloria:cloud-context', event=>{
     }]};
     state.applicantName=state.applicantName||cloud.user?.user_metadata?.full_name||cloud.user?.email?.split('@')[0]||'CALLORIA user';
     state.nameInitials=initials(state.applicantName);
+    configureCloudEmploymentSync({userId:detail.userId,organizationId:detail.organizationId});
+    try {
+      const cloudSnapshot=await loadCloudEmploymentSnapshot();
+      if(cloudSnapshot&&typeof cloudSnapshot==='object'){
+        state={...initialState(),...cloudSnapshot};
+        state.organizationWorkspace={activeOrganizationId:detail.organizationId,organizations:[{
+          id:detail.organizationId,name:cloudOrg?.name||detail.organizationName||'Organisation',industry:cloudOrg?.industry||'General customer service',status:'active',createdAt:cloudOrg?.createdAt||new Date().toISOString(),policy:structuredClone(detail.policy||DEFAULT_ORG_POLICY),members:[],audit:[]
+        }]};
+        for(const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents']) if(!Array.isArray(state[key])) state[key]=[];
+        markCloudEmploymentSyncReady();
+      } else {
+        // One-time migration of this user's already-scoped browser save into the tenant record.
+        markCloudEmploymentSyncReady();
+        scheduleCloudEmploymentSave(state);
+        await flushCloudEmploymentSave();
+      }
+    } catch(error) {
+      console.error('CALLORIA employment cloud sync could not load:',error);
+      toast('Cloud employment records could not be loaded. Local progress remains available; cloud saving is paused until the connection is restored.','error');
+      configureCloudEmploymentSync(null);
+    }
     setHeader();renderView();
   }
 });

@@ -61,3 +61,11 @@ Apply variables to the correct Production and Preview scopes, save and trigger a
 Automated Node regression tests and JavaScript syntax checks are included in this release. The SQL migration was reviewed and statically tested through source-level checks, but it has not been executed against a live PostgreSQL/Supabase project in the release environment. Live RLS isolation, authentication emails, invitation acceptance, production build, deployment, browser rendering and physical Android/iOS behaviour remain unverified until the checks above are completed.
 
 No GitHub commit, Vercel deployment, Supabase migration execution or live tenant-isolation result is implied by this ZIP package.
+
+
+## v1.0.0 database release order
+1. In Supabase SQL Editor, apply `202611070002_calloria_employment_persistence.sql` after the existing tenancy migration.
+2. Confirm the `calloria_employment_records` table and `save_calloria_employment_snapshot` function exist.
+3. Deploy this application build with the existing public Supabase URL and publishable/anon key environment variables. Do not expose a service-role or secret key.
+4. Sign in with a test account, enter an organisation, complete or modify a harmless synthetic training action, reload, and confirm the progress is restored.
+5. Sign in as a second organisation member and confirm the employee cannot read another member's private snapshot unless the role has operations-read permission. Test separate organisations with separate test accounts.

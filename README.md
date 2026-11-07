@@ -19,7 +19,8 @@
 This milestone server-backs identity and organisation administration only. Recruitment progress, gameplay, simulated call records, customer interactions, shift records, voice sessions and performance history remain browser-local. Staff invitations create pending records but do not send emails; recipients must create/confirm an account using the invited email and accept the invitation. The SQL has static regression coverage but has not yet been applied to a live Supabase project or subjected to live cross-tenant RLS testing. Do not describe a deployed environment as security-verified until the tenant-isolation checklist has passed against the actual project.
 
 ### Supabase setup
-See `SUPABASE-SETUP.md` before configuring Vercel. Run the migration in `supabase/migrations/202611070001_calloria_server_tenancy.sql`, then add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to the Vercel environment. A legacy anon key is supported. Never put a service-role or secret key in a `VITE_` variable.
+See `SUPABASE-SETUP.md` before configuring Vercel. Run the migration in `supabase/migrations/202611070001_calloria_server_tenancy.sql
+supabase/migrations/202611070002_calloria_employment_persistence.sql`, then add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to the Vercel environment. A legacy anon key is supported. Never put a service-role or secret key in a `VITE_` variable.
 
 ## What changed in 0.8.0
 
@@ -106,7 +107,7 @@ The project includes automated syntax and regression checks in its package scrip
 - The digital operations desk does not connect to Gmail, Outlook, Instagram, Facebook, X, WhatsApp, live chat providers or other external channels.
 - The enterprise systems sandbox does not connect to real ICC, CRM, Finacle or other bank systems and cannot initiate real transactions.
 - The application does not place real telephone calls or connect to live customer queues.
-- In cloud mode, authentication, organisation membership, organisation profiles, invitations, policies and administrative audit records are stored in Supabase and are intended to be guarded by the supplied PostgreSQL Row Level Security migration after it has been applied. Gameplay progress, operational practice records and interaction histories remain in local storage, partitioned by user ID and selected organisation ID; they are not synchronised across devices or protected as server records. Existing unscoped local/demo progress is not automatically imported into a cloud-scoped profile; the previous browser save remains separate.
+- In cloud mode, authentication, organisation membership, organisation profiles, invitations, policies and administrative audit records are stored in Supabase and are intended to be guarded by the supplied PostgreSQL Row Level Security migration after it has been applied. The complete synthetic employment simulation snapshot is synchronised to a tenant-scoped PostgreSQL record for the signed-in user. Local storage remains a fast working cache; Supabase is loaded first when a cloud snapshot exists. Cloud writes are debounced and retried while the page remains open. Existing unscoped local/demo progress is not automatically imported into a cloud-scoped profile; the previous browser save remains separate.
 - Optional audio samples and transcripts remain in page memory only and are not persisted in the employment save. Browser speech recognition may use a browser-controlled recognition service; this is disclosed before use.
 - Do not use real customer data or enter PINs, passwords, OTPs, full account numbers or payment-card details during practice. The response filter is defensive and is not guaranteed to detect every unsafe phrase or number format.
 - Voice practice does not drive customer scenario branching or automatic voice QA scoring.
@@ -117,7 +118,7 @@ The project includes automated syntax and regression checks in its package scrip
 ## Project structure
 
 ```text
-CALLORIA-v0.9.0/
+CALLORIA-v1.0.0/
 ├── index.html
 ├── styles.css
 ├── vite.config.js
@@ -125,6 +126,7 @@ CALLORIA-v0.9.0/
 ├── vercel.json
 ├── js/
 │   ├── cloud-platform.js
+│   ├── cloud-employment-sync.js
 │   ├── cloud-security.js
 │   ├── organization-engine.js
 │   ├── main.js
@@ -136,6 +138,8 @@ CALLORIA-v0.9.0/
 │   └── production-world.js
 ├── supabase/
 │   ├── migrations/
+│   │   ├── 202611070001_calloria_server_tenancy.sql
+│   │   └── 202611070002_calloria_employment_persistence.sql
 │   └── tests/
 ├── assets/
 │   └── calloria-mark.svg
@@ -160,4 +164,11 @@ CALLORIA-v0.9.0/
 - Browser UI, message flow, screen-reader/accessibility behaviour, 3D asset loading, WebGL rendering, and physical-device QA on Android/iOS require browser/device verification.
 - No GitHub commit or Vercel deployment is implied by this ZIP package.
 
-Build 0.9.0 adds the Supabase-backed identity and organisation administration foundation. RLS is implemented in the supplied migration, but actual SQL execution, project configuration, browser sign-in, live tenant-isolation tests and production deployment remain external verification steps. This release does not yet server-sync simulated customer operations or employment progress.
+Build 1.0.0 adds tenant-scoped persistence for the employee simulation snapshot, including recruitment outcomes, employment profile, shifts, briefings, customer interaction queues and histories, CRM cases, coaching, promotion attempts, cross-sell records, commendations and performance counters. RLS is implemented in the supplied migration, but actual SQL execution, project configuration, browser sign-in, live tenant-isolation tests and production deployment remain external verification steps. This release does not yet server-sync simulated customer operations or employment progress.
+
+
+## v1.0.0 employment persistence
+
+Apply both SQL migrations in filename order. The second migration creates `calloria_employment_records`, a tenant-scoped snapshot table. Each signed-in employee has one `employment_snapshot/profile` record per organisation. The snapshot includes the current synthetic recruitment/employment and operational state arrays and counters. Client writes are debounced; initial cloud loading replaces the local cache when a server snapshot exists. If no server snapshot exists, the current user-and-organisation-scoped local cache is uploaded once as the initial cloud snapshot.
+
+The browser can read only its own snapshot unless its organisation role has `operations:read`. Writes go through a security-definer RPC that checks active membership and uses `auth.uid()` as the record owner. Direct table writes are revoked. This release does not provide conflict-free multi-device merging: the latest snapshot write wins for a given employee profile. It also does not implement scheduled retention deletion, email invitation delivery, real banking integrations or live customer data.

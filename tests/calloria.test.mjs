@@ -142,7 +142,7 @@ test('multi-channel operations are reachable and linked to existing work systems
     read('index.html'), read('js/main.js'), read('js/multichannel-engine.js'), read('styles.css'), read('package.json')
   ]);
   const pkg = JSON.parse(packageJson);
-  assert.equal(pkg.version, '0.9.0');
+  assert.equal(pkg.version, '1.0.0');
   assert.match(html, /data-view=["']digital["']/);
   assert.match(html, /BUILD 0\.9\.0/);
   for (const item of ['function renderDigital','function acceptDigital','function submitDigitalReply','function finishDigitalContact','function receiveDigitalFollowUp','case \'digital\': renderDigital()']) {
@@ -166,7 +166,7 @@ test('organisation administration is reachable and preserves the local workspace
     read('index.html'), read('js/main.js'), read('js/organization-engine.js'), read('package.json'), read('styles.css')
   ]);
   const pkg = JSON.parse(packageJson);
-  assert.equal(pkg.version, '0.9.0');
+  assert.equal(pkg.version, '1.0.0');
   assert.match(html, /data-view=["']organization["']/);
   assert.match(html, /BUILD 0\.9\.0/);
   assert.match(main, /function renderOrganizationWorkspace/);

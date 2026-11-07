@@ -33,6 +33,11 @@ export function getCloudPlatformState() {
   return state;
 }
 
+export async function getCloudSupabaseClient() {
+  if (!state.ready || !state.activeOrganization || !state.user) throw new Error('An authenticated organisation workspace is required.');
+  return requireClient();
+}
+
 export { canCloudRole, CLOUD_ROLE_PERMISSIONS };
 
 function setAppLocked(locked) {
@@ -140,7 +145,7 @@ async function requireClient() {
   const { createClient } = await import('@supabase/supabase-js');
   state.client = createClient(config.url, config.key, {
     auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true, flowType: 'pkce' },
-    global: { headers: { 'x-client-info': 'calloria-v0.9.0' } }
+    global: { headers: { 'x-client-info': 'calloria-v1.0.0' } }
   });
   return state.client;
 }

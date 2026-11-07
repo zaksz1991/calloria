@@ -80,3 +80,8 @@ This is an identity and tenant-administration milestone, not a complete cloud co
 - [Supabase JavaScript client installation](https://supabase.com/docs/reference/javascript/installing)
 - [Supabase Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
 - [Supabase Auth](https://supabase.com/docs/guides/auth)
+
+
+## v1.0.0 migration
+
+After applying `202611070001_calloria_server_tenancy.sql`, apply `202611070002_calloria_employment_persistence.sql`. This creates the tenant-scoped employment snapshot table and authenticated save RPC. No service-role key is required in the browser. Verify that the migration completes successfully before deploying the matching application build.

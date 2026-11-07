@@ -102,3 +102,11 @@
 - Direct browser writes are revoked for tenant organisation, membership, invitation, policy and audit tables; database functions perform checked mutations.
 - Gameplay state and simulated customer records remain local and are not part of the server tenancy boundary.
 - Live Supabase SQL execution, real authentication flow, SQL/RLS cross-tenant tests, browser testing and production build/deployment have not been verified in this packaging environment.
+
+
+## 1.0.0 — Persisted employment and operations
+- Added a tenant-scoped PostgreSQL employment snapshot per user and organisation.
+- Persisted recruitment/employment state, briefings, shift history, operational queues and timelines, CRM cases, coaching, promotion attempts, cross-selling, commendations and performance counters as one validated synthetic snapshot.
+- Added authenticated, active-membership-checked save RPC and RLS read policy. Direct browser writes to the records table are revoked.
+- Added debounced client saves, cloud-first snapshot restoration and one-time migration of existing user/organisation-scoped local progress when no cloud snapshot exists.
+- Added explicit size limits and sync status/error tracking.

@@ -1,43 +1,175 @@
-# CALLORIA v0.9.0 Verification Report
+# CALLORIA v1.0.0 verification report
 
-## Checks executed in the release-preparation environment
+- Automated regression tests: 75/75 passed.
+- JavaScript syntax checks: passed.
+- ZIP integrity: checked after packaging.
+- Vite production build: not run; project dependencies are not installed in this environment.
+- Supabase migration execution: not performed.
+- Live Supabase RPC/RLS and tenant-isolation tests: not performed.
+- Browser, mobile and multi-device conflict testing: not performed.
+- GitHub update and Vercel deployment: not performed.
 
-| Check | Result | Notes |
-|---|---|---|
-| `node --check` for application modules | Passed | Includes `main.js`, 3D world, operations, workforce, shift, voice, multichannel, local organisation, cloud security and cloud platform modules. |
-| `npm run check` | Passed | All configured JavaScript syntax checks completed. |
-| `npm test` | Passed: 71/71 | Node regression tests; includes cloud configuration, role-map and static SQL/migration assertions. |
-| Privileged-key configuration checks | Passed | Tests reject `sb_secret_` values and a JWT whose decoded role claim is `service_role`; accepts a legacy anon-role JWT. |
-| Password reset/recovery source checks | Passed | Checks reset request, recovery event and password update wiring. |
-| ZIP integrity | Passed | Final release archive is checked with `ZipFile.testzip()` after packaging. |
-| `npm install` | Not completed | Installation timed out in this environment. |
-| Vite production build | Not verified | Vite is not installed because dependency installation timed out. |
-| Live Supabase migration | Not performed | No project credentials or live database session were supplied. |
-| Live RLS / tenant isolation | Not verified | SQL tests in this package are source-level assertions, not PostgreSQL integration tests. |
-| Real authentication/email flow | Not performed | Requires a configured Supabase project and email provider. |
-| Browser, WebGL and mobile device QA | Not performed | No deployed browser/device test was run. |
-| GitHub push / Vercel deployment | Not performed | This ZIP does not imply any repository or production change. |
+The persistence layer stores synthetic game state only. It does not make CALLORIA suitable for real customer, employee-sensitive or banking data. Multi-device writes use last-write-wins snapshots; conflict-free merging is not implemented.
 
-## Release contents
+## Test summary
 
-- Supabase Auth sign-up, sign-in, password reset, recovery and sign-out client flows.
-- Server-side tenant schema for profiles, organisations, memberships, invitations, policies and audit events.
-- RLS policies and database RPCs for tenant creation, invitation creation/acceptance/revocation, member status and policy updates.
-- A browser access gate that blocks local demo fallback when cloud configuration is partial or a configured cloud connection fails.
-- User-and-organisation-scoped local gameplay save keys.
-- Setup instructions and a manual tenant-isolation checklist.
+```text
+issions are explicit and least-privilege definitions are available
+ok 53 - role permissions are explicit and least-privilege definitions are available
+  ---
+  duration_ms: 0.224378
+  type: 'test'
+  ...
+# Subtest: legacy player saves receive a default local workspace and snapshots remain tenant-scoped
+ok 54 - legacy player saves receive a default local workspace and snapshots remain tenant-scoped
+  ---
+  duration_ms: 0.369978
+  type: 'test'
+  ...
+# Subtest: shift state catalogue and default work schedule are coherent
+ok 55 - shift state catalogue and default work schedule are coherent
+  ---
+  duration_ms: 1.089714
+  type: 'test'
+  ...
+# Subtest: shift transitions record valid states and reject backward event time
+ok 56 - shift transitions record valid states and reject backward event time
+  ---
+  duration_ms: 1.607956
+  type: 'test'
+  ...
+# Subtest: scheduled break detection and adherence score reward matching agent states
+ok 57 - scheduled break detection and adherence score reward matching agent states
+  ---
+  duration_ms: 0.505252
+  type: 'test'
+  ...
+# Subtest: late start is counted as schedule deviation
+ok 58 - late start is counted as schedule deviation
+  ---
+  duration_ms: 0.223988
+  type: 'test'
+  ...
+# Subtest: shift closure blocks active calls and stores final adherence
+ok 59 - shift closure blocks active calls and stores final adherence
+  ---
+  duration_ms: 0.295206
+  type: 'test'
+  ...
+# Subtest: coaching record validates required fields and creates a bounded action plan
+ok 60 - coaching record validates required fields and creates a bounded action plan
+  ---
+  duration_ms: 0.250037
+  type: 'test'
+  ...
+# Subtest: shift plan rejects overlapping or out-of-window breaks
+ok 61 - shift plan rejects overlapping or out-of-window breaks
+  ---
+  duration_ms: 0.232781
+  type: 'test'
+  ...
+# Subtest: voice capability checks detect optional browser APIs without assuming support
+ok 62 - voice capability checks detect optional browser APIs without assuming support
+  ---
+  duration_ms: 0.633636
+  type: 'test'
+  ...
+# Subtest: voice session requires explicit consent and a simulated interaction reference
+ok 63 - voice session requires explicit consent and a simulated interaction reference
+  ---
+  duration_ms: 0.802471
+  type: 'test'
+  ...
+# Subtest: transcript sanitation redacts credentials, account details and payment-card numbers
+ok 64 - transcript sanitation redacts credentials, account details and payment-card numbers
+  ---
+  duration_ms: 1.423187
+  type: 'test'
+  ...
+# Subtest: transcripts append only to a consented in-memory session and are bounded
+ok 65 - transcripts append only to a consented in-memory session and are bounded
+  ---
+  duration_ms: 0.327324
+  type: 'test'
+  ...
+# Subtest: voice session sanitiser limits transcript length
+ok 66 - voice session sanitiser limits transcript length
+  ---
+  duration_ms: 0.143426
+  type: 'test'
+  ...
+# Subtest: department catalogue keeps specialist units under customer-care standards
+ok 67 - department catalogue keeps specialist units under customer-care standards
+  ---
+  duration_ms: 0.695299
+  type: 'test'
+  ...
+# Subtest: briefing schedule identifies morning and afternoon sessions using local time
+ok 68 - briefing schedule identifies morning and afternoon sessions using local time
+  ---
+  duration_ms: 0.410399
+  type: 'test'
+  ...
+# Subtest: briefing attendance is idempotent for an employee and briefing
+ok 69 - briefing attendance is idempotent for an employee and briefing
+  ---
+  duration_ms: 0.318621
+  type: 'test'
+  ...
+# Subtest: promotion score uses the published weighted KPI formula
+ok 70 - promotion score uses the published weighted KPI formula
+  ---
+  duration_ms: 0.17875
+  type: 'test'
+  ...
+# Subtest: promotion permits at most one exam per year and three attempts overall
+ok 71 - promotion permits at most one exam per year and three attempts overall
+  ---
+  duration_ms: 0.626585
+  type: 'test'
+  ...
+# Subtest: cross-selling records only qualified interest when relevance, eligibility and consent all hold
+ok 72 - cross-selling records only qualified interest when relevance, eligibility and consent all hold
+  ---
+  duration_ms: 0.243627
+  type: 'test'
+  ...
+# Subtest: commendations are routed through official review and never record private benefit acceptance
+ok 73 - commendations are routed through official review and never record private benefit acceptance
+  ---
+  duration_ms: 0.249276
+  type: 'test'
+  ...
+# Subtest: enterprise system events are synthetic and reject unknown systems
+ok 74 - enterprise system events are synthetic and reject unknown systems
+  ---
+  duration_ms: 0.188394
+  type: 'test'
+  ...
+# Subtest: People and systems workspace is reachable and existing recruitment gate remains in place
+ok 75 - People and systems workspace is reachable and existing recruitment gate remains in place
+  ---
+  duration_ms: 9.486342
+  type: 'test'
+  ...
+1..75
+# tests 75
+# suites 0
+# pass 75
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 502.676026
 
-## Security and operational boundaries
+```
 
-- The supplied migration must be applied successfully before cloud mode is enabled.
-- Client-side role checks control presentation only; the database functions and RLS policies are the intended enforcement layer.
-- Recognised Supabase service-role JWT claims and `sb_secret_` key strings are rejected by browser configuration validation. This is not a substitute for keeping privileged keys out of all client build environments.
-- Invitation creation records a pending invitation but does not send an email. The invitee must create/confirm an account with the invited address and accept it.
-- Authentication and organisation administration are designed to be server-backed after migration/configuration. Recruitment, career progression, customer simulations, CRM training cases, briefings, shifts, coaching, voice data and gameplay progress remain local browser data.
-- Retention is a stored policy setting; automatic deletion/retention jobs are not implemented.
-- RLS and SQL security have not been validated against a live Supabase project. Do not describe tenant isolation as production-verified until the complete checklist has passed on the deployed project.
+## Syntax check
 
-## Release status
+```text
 
-**Package status:** source package prepared; syntax and Node regression checks passed.  
-**Production status:** not build-verified, not browser-tested, not Supabase-verified and not deployed.
+> calloria@1.0.0 check
+> node --check js/main.js && node --check js/production-world.js && node --check js/operations-engine.js && node --check js/workforce-engine.js && node --check js/shift-engine.js && node --check js/voice-engine.js && node --check js/multichannel-engine.js && node --check js/organization-engine.js && node --check js/cloud-security.js && node --check js/cloud-platform.js && node --check js/cloud-employment-sync.js
+
+
+```
