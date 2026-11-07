@@ -3,3 +3,6 @@ verify_jwt = true
 
 [functions.calloria-game-telemetry]
 verify_jwt = false
+
+[functions.calloria-customer-care]
+verify_jwt = false

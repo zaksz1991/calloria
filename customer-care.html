@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#07121d" />
+  <meta name="description" content="CALLORIA Customer Care — RuffNeck products, services, customer support and general personal-development information." />
+  <title>CALLORIA · Customer Care</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/calloria-mark.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles/customer-care.css" />
+</head>
+<body>
+  <div class="care-shell">
+    <header class="care-header">
+      <a class="care-brand" href="/" aria-label="Return to CALLORIA game">
+        <span class="care-mark">C</span>
+        <span><strong>CALLORIA</strong><small>EVERY CALL. EVERY CUSTOMER. EVERY CAREER.</small></span>
+      </a>
+      <div class="header-meta"><span class="status-dot"></span><span>RUFFNECK CUSTOMER CARE</span><a href="/">Return to simulator</a></div>
+    </header>
+
+    <main class="care-layout">
+      <aside class="portfolio-panel" aria-label="RuffNeck products and platforms">
+        <div class="eyebrow">ONE CUSTOMER CARE CENTRE</div>
+        <h1>Every RuffNeck product. One point of support.</h1>
+        <p class="muted">Get platform guidance, service information, complaints support and general personal-development information.</p>
+        <div class="platform-list">
+          <a class="platform-card" href="https://ruffneck-lms.vercel.app/" target="_blank" rel="noopener noreferrer"><span class="platform-icon">L</span><span><strong>RuffNeck Learn</strong><small>Learning and digital skills</small></span><span class="external">↗</span></a>
+          <a class="platform-card" href="https://ruffneck-prospector.vercel.app/" target="_blank" rel="noopener noreferrer"><span class="platform-icon">P</span><span><strong>RuffNeck Prospector</strong><small>Prospecting and leads</small></span><span class="external">↗</span></a>
+          <a class="platform-card" href="https://ruffneck-connect.vercel.app/" target="_blank" rel="noopener noreferrer"><span class="platform-icon">C</span><span><strong>RuffNeck Connect</strong><small>Communities and collaboration</small></span><span class="external">↗</span></a>
+          <a class="platform-card" href="https://ruffneck-social-hub.vercel.app/" target="_blank" rel="noopener noreferrer"><span class="platform-icon">S</span><span><strong>RuffNeck Social Hub</strong><small>Social-media operations</small></span><span class="external">↗</span></a>
+          <a class="platform-card" href="https://kano-run.vercel.app/" target="_blank" rel="noopener noreferrer"><span class="platform-icon">K</span><span><strong>Kano Run / Kano Life</strong><small>Kano driving and life simulation</small></span><span class="external">↗</span></a>
+          <a class="platform-card" href="https://kano-keke.vercel.app/" target="_blank" rel="noopener noreferrer"><span class="platform-icon">K</span><span><strong>Kano Keke</strong><small>Keke life simulation and entertainment</small></span><span class="external">↗</span></a>
+        </div>
+        <div class="privacy-note"><strong>Guest access</strong><p>No account is needed. CALLORIA does not store your enquiry in its own database or browser storage. Your redacted message is sent to Groq for inference. Groq may retain inputs or outputs for up to 30 days for reliability or abuse monitoring unless Zero Data Retention is enabled. Do not submit sensitive personal details. This is automated support, not a live operator connection.</p></div>
+      </aside>
+
+      <section class="assistant-panel" aria-label="Customer Care assistant">
+        <div class="assistant-heading">
+          <div><div class="eyebrow">CUSTOMER SERVICE · SALES · GUIDANCE</div><h2>How can we assist?</h2><p class="muted">Ask about a RuffNeck platform, service, complaint or personal-development topic.</p></div>
+          <div class="assistant-avatar" aria-hidden="true">C</div>
+        </div>
+        <div class="topic-grid" aria-label="Common enquiry areas">
+          <button type="button" class="topic-chip" data-prompt="Help me choose the right RuffNeck platform for my needs.">Products & platforms</button>
+          <button type="button" class="topic-chip" data-prompt="What services does RuffNeck offer, and how can I enquire about them?">Services & quotations</button>
+          <button type="button" class="topic-chip" data-prompt="I want practical guidance on relationships, communication and personal development.">Life & personal guidance</button>
+          <button type="button" class="topic-chip" data-prompt="I have a complaint and need help with the correct escalation process.">Complaints & resolution</button>
+        </div>
+        <div id="conversation" class="conversation" role="log" aria-live="polite" aria-relevant="additions text">
+          <article class="message assistant-message">
+            <div class="message-label">CALLORIA CUSTOMER CARE</div>
+            <p>Welcome. I can help you navigate RuffNeck products and services, explain supported self-service steps, or provide general information on personal development and wellbeing topics.</p>
+            <p>I will distinguish verified information from details that need confirmation. I cannot access private accounts, process payments or make changes on your behalf.</p>
+          </article>
+        </div>
+        <div id="care-status" class="care-status" role="status" aria-live="polite">Ready for your enquiry.</div>
+        <form id="question-form" class="composer">
+          <label class="sr-only" for="question">Your question</label>
+          <textarea id="question" name="question" rows="2" maxlength="1800" placeholder="Type your question. Do not include passwords, PINs, OTPs or full account details." required></textarea>
+          <div class="composer-footer"><span>Maximum 1,800 characters · credentials and identifiers are redacted</span><button id="send-button" type="submit">Send enquiry <span aria-hidden="true">→</span></button></div>
+        </form>
+        <div class="care-disclaimer">General wellbeing information is not diagnosis, therapy or emergency care. Urgent safety concerns require direct human and local emergency support; this page cannot submit a live escalation. Platform pricing, availability and account-specific status must be confirmed through official channels.</div>
+      </section>
+    </main>
+    <footer class="care-footer"><span>CALLORIA · A RUFFNECK ENTERTAINMENT CUSTOMER CARE SERVICE</span><span>Every Call. Every Customer. Every Career.</span></footer>
+  </div>
+  <script type="module" src="/js/customer-care-workbench.js"></script>
+</body>
+</html>

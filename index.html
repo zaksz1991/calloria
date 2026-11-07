@@ -28,7 +28,6 @@
     body.calloria-game-playing .world-title,body.calloria-game-playing .world-badge,body.calloria-game-playing .world-controls,body.calloria-game-playing .world-people,body.calloria-game-playing .world-action-bar{display:none!important}
     @media(max-width:760px){body.calloria-game-launch .game-launch-copy{width:100%;max-width:100%}body.calloria-game-launch .game-launch-copy h1{font-size:clamp(36px,9vw,58px)}body.calloria-game-launch .game-launch-footer{grid-template-columns:minmax(0,1fr);gap:8px}body.calloria-game-launch .game-stats-bar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}}
   </style>
-
 </head>
 <body class="calloria-game-launch">
   <div class="app-shell calloria-shell">
@@ -43,7 +42,6 @@
       <div class="topbar-center"><span class="live-dot"></span><span id="headerStatus">CAREER ENTRY</span><span class="topbar-divider"></span><span id="shiftClock">08:00:00</span></div>
       <div class="profile-chip"><div class="profile-avatar" id="profileInitials">AP</div><div class="profile-copy"><strong id="profileName">Applicant</strong><small id="profileRole">Candidate</small></div><span class="profile-chevron">⌄</span></div>
     </header>
-
     <aside class="sidebar" aria-label="Game navigation">
       <div class="side-section-label">GAME MENU</div>
       <button class="nav-item active" data-view="overview" aria-label="Overview"><span class="nav-icon">⌂</span><span>Home</span></button>
@@ -63,11 +61,10 @@
       <button class="nav-item" data-view="workforce" aria-label="Workforce intelligence"><span class="nav-icon">▦</span><span>People & systems</span></button>
       <button class="nav-item" data-view="organization" aria-label="Organisation administration"><span class="nav-icon">▣</span><span>Organisation</span></button>
       <div class="sidebar-bottom">
-        <div class="support-card"><div class="support-icon">?</div><div><strong>Simulation support</strong><small>Game assistance</small></div><span>↗</span></div>
+        <a class="support-card" href="/customer-care" aria-label="Open CALLORIA Customer Care" style="color:inherit;text-decoration:none"><div class="support-icon">?</div><div><strong>Customer Care</strong><small>RuffNeck products and guidance</small></div><span>↗</span></a>
         <div class="version-label">CALLORIA · BUILD 1.4.0</div>
       </div>
     </aside>
-
     <main class="main-area">
       <section class="world-panel" aria-label="CALLORIA 3D workplace">
         <div id="worldCanvas" class="world-canvas" aria-label="Interactive 3D contact centre floor"></div>
@@ -75,7 +72,7 @@
         <section id="gameLaunchScreen" class="game-launch-screen" aria-label="CALLORIA game menu">
           <div class="game-launch-top">
             <a class="game-brand" href="/" aria-label="CALLORIA game home"><span class="game-brand-mark">C</span><span><strong>CALLORIA</strong><small>THE CONTACT CENTRE CAREER SIMULATOR</small></span></a>
-            <div class="game-launch-account"><span class="guest-badge">GUEST PLAY AVAILABLE</span><button type="button" class="game-account-button" data-cloud-open-account>OPTIONAL ACCOUNT</button></div>
+            <div class="game-launch-account"><span class="guest-badge">GUEST PLAY AVAILABLE</span><a class="game-account-button" href="/customer-care" aria-label="Open CALLORIA customer care" style="text-decoration:none">CUSTOMER CARE</a><button type="button" class="game-account-button" data-cloud-open-account>OPTIONAL ACCOUNT</button></div>
           </div>
           <div class="game-launch-copy">
             <span class="game-kicker"><i></i> A LIVING CUSTOMER OPERATIONS WORLD</span>
@@ -94,7 +91,6 @@
             <aside id="gameSponsorSlot" class="game-sponsor-slot" aria-label="Company sponsorship"><span class="sponsor-label">BRAND PARTNERSHIPS</span><strong>Company placements inside the CALLORIA world</strong><small>Approved company sponsorships may appear here. No campaign is currently scheduled.</small></aside>
           </div>
         </section>
-
         <div class="world-title">
           <div class="eyebrow"><span class="eyebrow-line"></span> IMMERSIVE CAREER SIMULATION</div>
           <h1 id="worldHeading">Your next shift starts here.</h1>
@@ -105,7 +101,6 @@
         <div class="world-controls"><span class="control-key">DRAG</span> Explore the floor <span class="control-sep">·</span><span class="control-key">SCROLL</span> Zoom</div>
         <div class="world-people"><div class="people-stack"><i>AM</i><i>TO</i><i>KS</i><b>+09</b></div><div><strong>Customer operations</strong><small>Multi-team service floor</small></div></div>
         <div class="world-action-bar"><button id="enterFloorButton" class="world-enter-btn" type="button" disabled>ENTER THE WORKPLACE <span>↗</span></button><span>EXPLORE · INTERACT · START YOUR CAREER</span></div>
-
         <div id="immersiveHud" class="immersive-hud hidden">
           <div class="immersive-topline"><div class="immersive-location"><span class="live-dot"></span><div><strong>CALLORIA · CUSTOMER OPERATIONS</strong><small>INTERACTIVE WORKPLACE SIMULATION</small></div></div><button id="exitFloorButton" class="immersive-exit" type="button">EXIT GAME <span>Esc</span></button></div>
           <div class="immersive-bottomline"><div class="immersive-controls"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> MOVE</span><span><kbd>SHIFT</kbd> RUN</span><span><kbd>MOUSE</kbd> LOOK</span><span><kbd>E</kbd> INTERACT</span></div><div class="immersive-status">SIMULATION · NO REAL CUSTOMER DATA OR CALLS</div></div>

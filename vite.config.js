@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { resolve } from 'node:path';
 
 export default defineConfig({
   base: '/',
@@ -11,6 +12,10 @@ export default defineConfig({
     sourcemap: true,
     assetsInlineLimit: 4096,
     rollupOptions: {
+      input: {
+        main: resolve(process.cwd(), 'index.html'),
+        customerCare: resolve(process.cwd(), 'customer-care.html')
+      },
       output: {
         manualChunks(id) {
           if (id.includes('/node_modules/three/')) return 'three-engine';
