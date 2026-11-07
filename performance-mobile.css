@@ -1,170 +1,122 @@
-/* CALLORIA launch-screen overlap repair and phone/tablet refinements. */
-html, body { max-width: 100%; }
-body.calloria-game-launch,
-body.calloria-game-launch .app-shell,
-body.calloria-game-launch .main-area,
+/* CALLORIA graphics/mobile repair — v2. The launch layer is the only visible game shell. */
+html, body { width:100%; max-width:100%; min-height:100%; margin:0; }
+body.calloria-game-launch { overflow:hidden; background:#07121d; }
+body.calloria-game-launch .topbar,
+body.calloria-game-launch .sidebar,
+body.calloria-game-launch .content-wrap { display:none !important; }
+body.calloria-game-launch .app-shell { display:block !important; width:100%; min-height:100%; margin:0; }
+body.calloria-game-launch .main-area { display:block !important; width:100%; min-width:0; margin:0 !important; padding:0 !important; }
 body.calloria-game-launch .world-panel {
-  width: 100%;
-  min-width: 0;
-  min-height: 100%;
+  position:relative !important; display:block !important; width:100% !important; height:100vh !important;
+  height:100svh !important; height:100dvh !important; min-height:520px; margin:0 !important;
+  overflow:hidden !important; border:0 !important; border-radius:0 !important;
 }
-body.calloria-game-launch .world-panel {
-  height: 100vh;
-  height: 100svh;
-  height: 100dvh;
-}
+body.calloria-game-launch #worldCanvas,
+body.calloria-game-launch .world-vignette,
+body.calloria-game-launch #gameLaunchScreen { position:absolute !important; inset:0 !important; }
+body.calloria-game-launch #worldCanvas { z-index:0; width:100%; height:100%; }
+body.calloria-game-launch #worldCanvas canvas { display:block; width:100% !important; height:100% !important; }
+body.calloria-game-launch .world-vignette { z-index:2; pointer-events:none; }
 body.calloria-game-launch .world-title,
 body.calloria-game-launch .world-badge,
 body.calloria-game-launch .world-controls,
 body.calloria-game-launch .world-people,
-body.calloria-game-launch .world-action-bar {
-  display: none !important;
-}
+body.calloria-game-launch .world-action-bar { display:none !important; visibility:hidden !important; }
 body.calloria-game-launch #gameLaunchScreen {
-  z-index: 10;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: clamp(12px, 2.5vh, 28px);
-  padding: max(22px, env(safe-area-inset-top)) clamp(18px, 3.4vw, 54px) max(18px, env(safe-area-inset-bottom));
-  overflow: auto;
-  overscroll-behavior: contain;
+  z-index:10; display:grid !important; grid-template-rows:auto minmax(0,1fr) auto;
+  gap:clamp(10px,2vh,24px); box-sizing:border-box; width:100%; height:100%;
+  padding:max(22px,env(safe-area-inset-top)) clamp(18px,3.5vw,56px) max(18px,env(safe-area-inset-bottom));
+  overflow:auto; overscroll-behavior:contain;
 }
-body.calloria-game-launch #worldCanvas { z-index: 0; }
-body.calloria-game-launch .world-vignette { z-index: 2; pointer-events: none; }
-body.calloria-game-launch .game-launch-top { min-width: 0; }
-body.calloria-game-launch .game-launch-copy {
-  width: min(560px, 56vw);
-  max-width: 100%;
-  margin: 0;
-  align-self: center;
-  transform: none;
-}
-body.calloria-game-launch .game-launch-copy h1 {
-  max-width: 10ch;
-  font-size: clamp(42px, 6.3vw, 84px);
-  line-height: .96;
-  letter-spacing: -.045em;
-  overflow-wrap: normal;
-}
-body.calloria-game-launch .game-launch-footer { min-width: 0; }
-body.calloria-game-launch .game-sponsor-slot { backdrop-filter: none; }
+body.calloria-game-launch .game-launch-top { display:flex; align-items:center; justify-content:space-between; gap:16px; min-width:0; }
+body.calloria-game-launch .game-brand { min-width:0; }
+body.calloria-game-launch .game-launch-copy { width:min(590px,56vw); max-width:100%; margin:0; align-self:center; transform:none; }
+body.calloria-game-launch .game-launch-copy h1 { max-width:10ch; font-size:clamp(42px,6.2vw,86px); line-height:.96; letter-spacing:-.05em; }
+body.calloria-game-launch .game-launch-footer { min-width:0; display:grid; grid-template-columns:minmax(0,1fr) minmax(240px,360px); align-items:end; gap:18px; }
+body.calloria-game-launch .game-stats-bar { min-width:0; display:flex; flex-wrap:wrap; align-items:end; gap:clamp(12px,2vw,28px); }
+body.calloria-game-launch .game-stat { min-width:70px; }
+body.calloria-game-launch .game-sponsor-slot { max-width:100%; backdrop-filter:none; }
 body.calloria-game-launch .game-primary-button,
 body.calloria-game-launch .game-secondary-button,
-body.calloria-game-launch .game-account-button { min-height: 46px; }
+body.calloria-game-launch .game-account-button { min-height:48px; }
+body.calloria-game-playing #gameLaunchScreen { display:none !important; }
+body.calloria-game-playing .world-title,
+body.calloria-game-playing .world-badge,
+body.calloria-game-playing .world-controls,
+body.calloria-game-playing .world-people,
+body.calloria-game-playing .world-action-bar { display:none !important; }
 
-/* Keep all non-game screens usable on narrow mobile displays. */
-@media (max-width: 760px) {
-  body.calloria-game-launch .game-launch-screen {
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    gap: 10px;
-    padding: max(12px, env(safe-area-inset-top)) 14px max(12px, env(safe-area-inset-bottom));
-  }
-  body.calloria-game-launch .game-launch-top {
-    align-items: flex-start;
-    gap: 8px;
-  }
-  body.calloria-game-launch .game-brand { gap: 8px; min-width: 0; }
-  body.calloria-game-launch .game-brand-mark { width: 36px; height: 36px; flex: 0 0 36px; }
-  body.calloria-game-launch .game-brand strong { font-size: 12px; letter-spacing: 1.4px; }
-  body.calloria-game-launch .game-brand small { max-width: 190px; font-size: 6px; line-height: 1.35; letter-spacing: .65px; }
-  body.calloria-game-launch .game-launch-account {
-    flex: 0 0 auto;
-    max-width: 48%;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 5px;
-  }
-  body.calloria-game-launch .guest-badge { display: inline-flex; padding: 6px 7px; font-size: 6px; letter-spacing: .45px; }
-  body.calloria-game-launch .game-account-button { padding: 7px 9px; font-size: 7px; letter-spacing: .45px; }
-  body.calloria-game-launch .game-launch-copy {
-    width: 100%;
-    align-self: center;
-    transform: none;
-  }
-  body.calloria-game-launch .game-kicker { font-size: 7px; letter-spacing: 1.1px; }
-  body.calloria-game-launch .game-launch-copy h1 {
-    max-width: 9ch;
-    margin: 10px 0 9px;
-    font-size: clamp(36px, 9.4vw, 55px);
-    line-height: .97;
-    letter-spacing: -.055em;
-  }
-  body.calloria-game-launch .game-launch-copy > p { max-width: 36ch; font-size: 11px; line-height: 1.5; }
-  body.calloria-game-launch .game-launch-actions { flex-wrap: wrap; gap: 8px; margin-top: 13px; }
-  body.calloria-game-launch .game-primary-button,
-  body.calloria-game-launch .game-secondary-button { min-height: 46px; padding: 0 12px; font-size: 8px; letter-spacing: .65px; }
-  body.calloria-game-launch .game-primary-button { min-width: 138px; }
-  body.calloria-game-launch .game-secondary-button { white-space: normal; }
-  body.calloria-game-launch .guest-save-note { max-width: 48ch; margin-top: 8px; font-size: 8px; line-height: 1.4; }
-  body.calloria-game-launch .game-launch-footer { grid-template-columns: minmax(0, 1fr); gap: 7px; }
-  body.calloria-game-launch .game-stats-bar {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-items: start;
-    gap: 8px;
-    padding: 4px 0;
-  }
-  body.calloria-game-launch .game-stat { min-width: 0; gap: 2px; }
-  body.calloria-game-launch .game-stat strong { font-size: 19px; }
-  body.calloria-game-launch .game-stat span { white-space: normal; font-size: 6px; line-height: 1.3; letter-spacing: .55px; }
-  body.calloria-game-launch .game-stat-status { grid-column: 1 / -1; margin: 0; text-align: left; font-size: 6px; }
-  body.calloria-game-launch .game-sponsor-slot { padding: 8px 10px; gap: 3px; border-radius: 7px; }
-  body.calloria-game-launch .game-sponsor-slot .sponsor-label { font-size: 6px; }
-  body.calloria-game-launch .game-sponsor-slot strong { font-size: 8px; }
-  body.calloria-game-launch .game-sponsor-slot small { font-size: 7px; line-height: 1.35; }
-
-  /* Existing operational workspace: compact, single-column phone layout. */
-  .main-area { min-width: 0; width: 100%; }
-  .content-wrap { min-width: 0; padding-left: 10px; padding-right: 10px; }
-  .page-heading { min-width: 0; gap: 10px; align-items: flex-start; flex-direction: column; }
-  .page-heading > div:first-child { min-width: 0; width: 100%; }
-  .page-actions { width: 100%; min-width: 0; flex-wrap: wrap; }
-  .view-root, .panel, .grid, .call-layout, .call-side-stack { min-width: 0; }
-  .grid.two, .grid.three, .call-layout, .kb-grid { grid-template-columns: minmax(0, 1fr) !important; }
-  .grid.two .panel:first-child, .grid.two .panel:nth-child(2) { grid-column: auto; }
-  .panel { padding: 12px; }
-  .panel-head, .assessment-footer, .career-banner, .ai-status-line { flex-wrap: wrap; }
-  .table-wrap { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .table-wrap table { min-width: 520px; }
-  .form-field input, .form-field select, .form-field textarea,
-  .ai-settings-form input, .ai-settings-form select, .ai-run-form select { font-size: 16px; min-height: 44px; }
-  .btn, .answer-option, .station-action { min-height: 44px; }
-  .modal-backdrop { padding: 10px; }
-  .modal { max-height: calc(100svh - 20px); overflow: auto; padding: 17px; }
-  .toast-host { left: 10px; right: 10px; bottom: calc(78px + env(safe-area-inset-bottom)); }
-  .toast { max-width: none; }
+/* Operational screens remain full-width and readable on phones. */
+@media (max-width:760px) {
+  body.calloria-game-launch .world-panel { min-height:540px; }
+  body.calloria-game-launch #gameLaunchScreen { grid-template-rows:auto minmax(0,1fr) auto; gap:8px; padding: max(12px,env(safe-area-inset-top)) 14px max(12px,env(safe-area-inset-bottom)); }
+  body.calloria-game-launch .game-launch-top { align-items:flex-start; gap:8px; }
+  body.calloria-game-launch .game-brand { gap:8px; }
+  body.calloria-game-launch .game-brand-mark { width:38px; height:38px; flex:0 0 38px; }
+  body.calloria-game-launch .game-brand strong { font-size:13px; letter-spacing:1.4px; }
+  body.calloria-game-launch .game-brand small { max-width:180px; font-size:7px; line-height:1.35; letter-spacing:.65px; }
+  body.calloria-game-launch .game-launch-account { flex:0 1 auto; max-width:48%; justify-content:flex-end; flex-wrap:wrap; gap:6px; }
+  body.calloria-game-launch .guest-badge { padding:6px 8px; font-size:7px; letter-spacing:.4px; }
+  body.calloria-game-launch .game-account-button { padding:8px 10px; font-size:8px; }
+  body.calloria-game-launch .game-launch-copy { width:100%; align-self:center; }
+  body.calloria-game-launch .game-kicker { font-size:8px; letter-spacing:1px; }
+  body.calloria-game-launch .game-launch-copy h1 { max-width:9ch; margin:9px 0; font-size:clamp(38px,9vw,58px); line-height:.97; letter-spacing:-.055em; }
+  body.calloria-game-launch .game-launch-copy > p { max-width:36ch; font-size:12px; line-height:1.5; }
+  body.calloria-game-launch .game-launch-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  body.calloria-game-launch .game-primary-button, body.calloria-game-launch .game-secondary-button { min-height:48px; padding:0 14px; font-size:9px; letter-spacing:.7px; }
+  body.calloria-game-launch .game-primary-button { min-width:144px; }
+  body.calloria-game-launch .guest-save-note { max-width:44ch; margin-top:8px; font-size:9px; line-height:1.45; }
+  body.calloria-game-launch .game-launch-footer { grid-template-columns:minmax(0,1fr); gap:8px; }
+  body.calloria-game-launch .game-stats-bar { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:start; gap:8px; padding:3px 0; }
+  body.calloria-game-launch .game-stat { min-width:0; gap:2px; }
+  body.calloria-game-launch .game-stat strong { font-size:clamp(18px,5vw,24px); }
+  body.calloria-game-launch .game-stat span { white-space:normal; font-size:7px; line-height:1.3; letter-spacing:.55px; }
+  body.calloria-game-launch .game-stat-status { grid-column:1/-1; margin:0; text-align:left; font-size:7px; }
+  body.calloria-game-launch .game-sponsor-slot { padding:9px 11px; border-radius:8px; }
+  body.calloria-game-launch .game-sponsor-slot .sponsor-label { font-size:7px; }
+  body.calloria-game-launch .game-sponsor-slot strong { font-size:9px; }
+  body.calloria-game-launch .game-sponsor-slot small { font-size:8px; line-height:1.35; }
+  .main-area { min-width:0; width:100%; }
+  .content-wrap { min-width:0; padding-left:10px; padding-right:10px; }
+  .page-heading { min-width:0; gap:10px; align-items:flex-start; flex-direction:column; }
+  .page-heading > div:first-child { min-width:0; width:100%; }
+  .page-actions { width:100%; min-width:0; flex-wrap:wrap; }
+  .view-root,.panel,.grid,.call-layout,.call-side-stack { min-width:0; }
+  .grid.two,.grid.three,.call-layout,.kb-grid { grid-template-columns:minmax(0,1fr) !important; }
+  .grid.two .panel:first-child,.grid.two .panel:nth-child(2) { grid-column:auto; }
+  .panel { padding:12px; }
+  .panel-head,.assessment-footer,.career-banner,.ai-status-line { flex-wrap:wrap; }
+  .table-wrap { max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .table-wrap table { min-width:520px; }
+  .form-field input,.form-field select,.form-field textarea,.ai-settings-form input,.ai-settings-form select,.ai-run-form select { font-size:16px; min-height:44px; }
+  .btn,.answer-option,.station-action { min-height:44px; }
+  .modal-backdrop { padding:10px; }
+  .modal { max-height:calc(100svh - 20px); overflow:auto; padding:17px; }
+  .toast-host { left:10px; right:10px; bottom:calc(78px + env(safe-area-inset-bottom)); }
+  .toast { max-width:none; }
 }
-
-@media (max-width: 380px) {
-  body.calloria-game-launch .game-launch-screen { padding-left: 11px; padding-right: 11px; }
-  body.calloria-game-launch .game-launch-account { max-width: 44%; }
-  body.calloria-game-launch .guest-badge { display: none; }
-  body.calloria-game-launch .game-launch-copy h1 { font-size: clamp(34px, 9.4vw, 42px); }
-  body.calloria-game-launch .game-sponsor-slot small { display: none; }
+@media (max-width:390px) {
+  body.calloria-game-launch .game-launch-screen { padding-left:11px; padding-right:11px; }
+  body.calloria-game-launch .guest-badge { display:none; }
+  body.calloria-game-launch .game-launch-copy h1 { font-size:clamp(35px,9vw,43px); }
+  body.calloria-game-launch .game-sponsor-slot small { display:none; }
 }
-
-@media (max-height: 690px) and (pointer: coarse) {
-  body.calloria-game-launch .game-launch-screen { gap: 6px; padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-  body.calloria-game-launch .game-launch-copy h1 { margin: 6px 0; font-size: clamp(32px, 7.7vw, 44px); }
-  body.calloria-game-launch .game-launch-copy > p { font-size: 10px; line-height: 1.35; }
-  body.calloria-game-launch .game-launch-actions { margin-top: 8px; }
-  body.calloria-game-launch .guest-save-note { margin-top: 5px; }
-  body.calloria-game-launch .game-sponsor-slot { display: none; }
+@media (max-height:690px) and (pointer:coarse) {
+  body.calloria-game-launch .game-launch-screen { gap:6px; padding-top:max(8px,env(safe-area-inset-top)); padding-bottom:max(8px,env(safe-area-inset-bottom)); }
+  body.calloria-game-launch .game-launch-copy h1 { margin:6px 0; font-size:clamp(32px,7.5vw,46px); }
+  body.calloria-game-launch .game-launch-copy > p { font-size:11px; line-height:1.35; }
+  body.calloria-game-launch .game-launch-actions { margin-top:8px; }
+  body.calloria-game-launch .game-sponsor-slot { display:none; }
 }
-
-@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
-  body.calloria-game-launch .game-launch-screen { grid-template-columns: minmax(0, 1fr) minmax(250px, .72fr); grid-template-rows: auto 1fr; column-gap: 18px; }
-  body.calloria-game-launch .game-launch-top { grid-column: 1 / -1; }
-  body.calloria-game-launch .game-launch-copy { grid-column: 1; grid-row: 2; }
-  body.calloria-game-launch .game-launch-footer { grid-column: 2; grid-row: 2; align-self: end; }
-  body.calloria-game-launch .game-launch-copy h1 { font-size: clamp(30px, 5vw, 44px); }
-  body.calloria-game-launch .game-sponsor-slot { display: none; }
+@media (orientation:landscape) and (max-height:520px) and (pointer:coarse) {
+  body.calloria-game-launch .world-panel { min-height:100svh; }
+  body.calloria-game-launch .game-launch-screen { grid-template-columns:minmax(0,1fr) minmax(220px,.72fr); grid-template-rows:auto 1fr; column-gap:16px; }
+  body.calloria-game-launch .game-launch-top { grid-column:1/-1; }
+  body.calloria-game-launch .game-launch-copy { grid-column:1; grid-row:2; }
+  body.calloria-game-launch .game-launch-footer { grid-column:2; grid-row:2; align-self:end; }
+  body.calloria-game-launch .game-launch-copy h1 { font-size:clamp(30px,5vw,44px); }
+  body.calloria-game-launch .game-sponsor-slot { display:none; }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  body.calloria-game-launch *, body.calloria-game-launch *::before, body.calloria-game-launch *::after {
-    scroll-behavior: auto !important;
-    animation-duration: .01ms !important;
-    transition-duration: .01ms !important;
-  }
+@media (prefers-reduced-motion:reduce) {
+  body.calloria-game-launch *,body.calloria-game-launch *::before,body.calloria-game-launch *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; transition-duration:.01ms !important; }
 }

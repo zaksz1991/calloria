@@ -15,33 +15,36 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   const memory = Number(navigator.deviceMemory || 0);
   const cores = Number(navigator.hardwareConcurrency || 0);
   const saveData = Boolean(navigator.connection?.saveData);
-  const constrained = saveData || (memory > 0 && memory <= 3) || (cores > 0 && cores <= 4);
   const mobile = coarsePointer || window.innerWidth <= 760;
-  const tier = constrained ? 'low' : mobile ? 'balanced' : (memory >= 8 && cores >= 8 ? 'high' : 'balanced');
+  // Touch input is not a performance diagnosis. Only classify genuinely constrained
+  // hardware as low; mid-range phones retain antialiasing and useful render density.
+  const constrained = saveData || (memory > 0 && memory <= 2) || (cores > 0 && cores <= 2);
+  const highCapability = memory >= 8 && cores >= 8;
+  const tier = constrained ? 'low' : highCapability ? 'high' : 'balanced';
   const quality = {
-    low: { pixelRatio: 0.72, minRatio: 0.58, fps: 24, antialias: false, anisotropy: 1 },
-    balanced: { pixelRatio: mobile ? 0.92 : 1.05, minRatio: 0.68, fps: mobile ? 30 : 40, antialias: !mobile, anisotropy: 2 },
-    high: { pixelRatio: 1.2, minRatio: 0.78, fps: 50, antialias: true, anisotropy: 4 }
+    low: { pixelRatio: mobile ? 0.86 : 0.92, minRatio: 0.68, fps: 26, antialias: false, anisotropy: 2 },
+    balanced: { pixelRatio: mobile ? 1.25 : 1.18, minRatio: mobile ? 0.88 : 0.84, fps: mobile ? 30 : 48, antialias: true, anisotropy: 4 },
+    high: { pixelRatio: 1.35, minRatio: 0.9, fps: 60, antialias: true, anisotropy: 8 }
   }[tier];
-  const maxAnisotropy = 4;
-  const pixelRatioCap = Math.min(quality.pixelRatio, window.devicePixelRatio || 1, maxAnisotropy);
+  const maxAnisotropy = 8;
+  const pixelRatioCap = Math.min(quality.pixelRatio, window.devicePixelRatio || 1, mobile ? 1.5 : 1.75, maxAnisotropy);
   let currentPixelRatio = pixelRatioCap;
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#132838');
-  scene.fog = new THREE.Fog('#132838', 38, 82);
-  const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 100);
+  scene.fog = new THREE.Fog('#142b39', 58, 112);
+  const camera = new THREE.PerspectiveCamera(51, 1, 0.1, 120);
   const renderer = new THREE.WebGLRenderer({
     antialias: quality.antialias,
     alpha: false,
-    powerPreference: tier === 'high' ? 'high-performance' : 'low-power',
+    powerPreference: tier === 'high' ? 'high-performance' : 'default',
     stencil: false,
     depth: true,
     failIfMajorPerformanceCaveat: false
   });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.12;
+  renderer.toneMappingExposure = 1.04;
   renderer.shadowMap.enabled = false;
   renderer.setPixelRatio(currentPixelRatio);
   renderer.domElement.className = 'production-world-canvas';
@@ -59,21 +62,27 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   const mats = {
     floor: material('#253b4b', 0.96),
     carpet: material('#304b5c', 0.98),
-    wall: material('#d1dcdd', 0.9),
-    wallDark: material('#142b3b', 0.82),
+    wall: material('#9eafb5', 0.86),
+    wallDark: material('#102635', 0.76),
     teal: material('#13b99f', 0.48, 0.08),
     tealLight: material('#7ce0c9', 0.52),
-    wood: material('#76533a', 0.84),
-    woodEdge: material('#3a2b22', 0.82),
+    wood: material('#815b3e', 0.58),
+    woodEdge: material('#3a2b22', 0.62),
     metal: material('#7c929b', 0.48, 0.35),
     darkMetal: material('#182a38', 0.54, 0.2),
     divider: material('#24495a', 0.92),
-    chair: material('#142a3a', 0.92),
+    chair: material('#183449', 0.72),
     screenFrame: material('#101c27', 0.34, 0.12),
     screen: new THREE.MeshBasicMaterial({ map: makeScreenTexture(), toneMapped: false }),
     glass: new THREE.MeshBasicMaterial({ color: '#89b7c0', transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide }),
     white: material('#e9eeee', 0.7),
-    skin: material('#8d5d49', 0.92),
+    skin: material('#a96f55', 0.78),
+    shirt: material('#e4e9e8', 0.72),
+    headset: material('#182a35', 0.42, 0.32),
+    eyeWhite: material('#f1f0e9', 0.42),
+    eyeDark: material('#1d2023', 0.35),
+    scarf: material('#567e79', 0.82),
+    shoe: material('#101d27', 0.7),
     jacketA: material('#24475b', 0.92),
     jacketB: material('#6a4b3b', 0.92),
     trousers: material('#182b3b', 0.94),
@@ -85,35 +94,67 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
 
   function makeScreenTexture() {
     const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 320;
+    canvas.width = 1024;
+    canvas.height = 640;
     const ctx = canvas.getContext('2d', { alpha: false });
-    ctx.fillStyle = '#0d2130'; ctx.fillRect(0, 0, 512, 320);
-    ctx.fillStyle = '#153b4c'; ctx.fillRect(0, 0, 512, 38);
-    ctx.fillStyle = '#73dfc8'; ctx.font = 'bold 18px Arial'; ctx.fillText('MERIDIAN  /  CUSTOMER CARE', 18, 25);
-    ctx.fillStyle = '#d6e9e8'; ctx.font = 'bold 13px Arial'; ctx.fillText('CUSTOMER PROFILE', 18, 68);
-    ctx.fillStyle = '#8eaeb8'; ctx.fillRect(18, 82, 220, 7);
-    ctx.fillRect(18, 101, 170, 7);
-    ctx.fillRect(18, 120, 250, 7);
-    ctx.fillStyle = '#0e756e'; ctx.fillRect(298, 58, 190, 86);
-    ctx.fillStyle = '#a5f1de'; ctx.font = 'bold 26px Arial'; ctx.fillText('ACTIVE', 320, 94);
-    ctx.font = '12px Arial'; ctx.fillText('SERVICE DESK', 320, 120);
+    ctx.fillStyle = '#0d2130'; ctx.fillRect(0, 0, 1024, 640);
+    ctx.fillStyle = '#153b4c'; ctx.fillRect(0, 0, 1024, 76);
+    ctx.fillStyle = '#73dfc8'; ctx.font = 'bold 34px Arial'; ctx.fillText('CALLORIA  /  CUSTOMER OPERATIONS', 36, 52);
+    ctx.fillStyle = '#d6e9e8'; ctx.font = 'bold 26px Arial'; ctx.fillText('CUSTOMER PROFILE', 36, 136);
+    ctx.fillStyle = '#8eaeb8'; ctx.fillRect(36, 164, 440, 14);
+    ctx.fillRect(36, 202, 340, 14);
+    ctx.fillRect(36, 240, 500, 14);
+    ctx.fillStyle = '#0e756e'; ctx.fillRect(596, 116, 380, 172);
+    ctx.fillStyle = '#a5f1de'; ctx.font = 'bold 52px Arial'; ctx.fillText('ACTIVE', 640, 188);
+    ctx.font = '24px Arial'; ctx.fillText('SERVICE DESK', 640, 240);
     for (let i = 0; i < 5; i++) {
       ctx.fillStyle = i % 2 ? '#173344' : '#1c4050';
-      ctx.fillRect(18, 162 + i * 27, 470, 20);
-      ctx.fillStyle = '#65d6bf'; ctx.fillRect(28, 169 + i * 27, 90 + (i % 3) * 22, 5);
-      ctx.fillStyle = '#829faa'; ctx.fillRect(150, 169 + i * 27, 190, 5);
+      ctx.fillRect(36, 324 + i * 54, 940, 40);
+      ctx.fillStyle = '#65d6bf'; ctx.fillRect(56, 338 + i * 54, 180 + (i % 3) * 44, 10);
+      ctx.fillStyle = '#829faa'; ctx.fillRect(300, 338 + i * 54, 380, 10);
     }
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = 1;
+    texture.anisotropy = Math.min(quality.anisotropy, renderer.capabilities.getMaxAnisotropy());
     return texture;
   }
 
-  const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
-  const sphereGeometry = new THREE.SphereGeometry(1, tier === 'low' ? 8 : 10, tier === 'low' ? 6 : 8);
-  const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, tier === 'low' ? 8 : 10);
+  function makeRoundedUnitBox() {
+    const shape = new THREE.Shape();
+    const r = 0.085;
+    shape.moveTo(-0.5 + r, -0.5);
+    shape.lineTo(0.5 - r, -0.5); shape.quadraticCurveTo(0.5, -0.5, 0.5, -0.5 + r);
+    shape.lineTo(0.5, 0.5 - r); shape.quadraticCurveTo(0.5, 0.5, 0.5 - r, 0.5);
+    shape.lineTo(-0.5 + r, 0.5); shape.quadraticCurveTo(-0.5, 0.5, -0.5, 0.5 - r);
+    shape.lineTo(-0.5, -0.5 + r); shape.quadraticCurveTo(-0.5, -0.5, -0.5 + r, -0.5);
+    const geometry = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.88, steps: 1, bevelEnabled: true,
+      bevelSegments: 2, bevelSize: 0.025, bevelThickness: 0.035, curveSegments: 5
+    });
+    geometry.translate(0, 0, -0.44);
+    geometry.computeVertexNormals();
+    return geometry;
+  }
+  const boxGeometry = makeRoundedUnitBox();
+  const sphereGeometry = new THREE.SphereGeometry(1, tier === 'low' ? 12 : 20, tier === 'low' ? 8 : 14);
+  const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, tier === 'low' ? 12 : 20);
   const planeGeometry = new THREE.PlaneGeometry(1, 1);
+  // One shared, soft alpha texture creates inexpensive floor contact shading.
+  // This gives desks, chairs and staff visual grounding without shadow-map passes.
+  const shadowCanvas = document.createElement('canvas');
+  shadowCanvas.width = 128; shadowCanvas.height = 128;
+  const shadowContext = shadowCanvas.getContext('2d');
+  const shadowGradient = shadowContext.createRadialGradient(64, 64, 8, 64, 64, 62);
+  shadowGradient.addColorStop(0, 'rgba(5, 12, 18, 0.48)');
+  shadowGradient.addColorStop(0.48, 'rgba(5, 12, 18, 0.24)');
+  shadowGradient.addColorStop(1, 'rgba(5, 12, 18, 0)');
+  shadowContext.fillStyle = shadowGradient;
+  shadowContext.fillRect(0, 0, 128, 128);
+  const contactShadowTexture = new THREE.CanvasTexture(shadowCanvas);
+  const contactShadowMaterial = new THREE.MeshBasicMaterial({
+    map: contactShadowTexture, transparent: true, opacity: 0.78,
+    depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -1
+  });
   const dummy = new THREE.Object3D();
   function addBox(parent, name, size, position, mat, rotationY = 0) {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), mat);
@@ -159,11 +200,11 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   // Open ceiling keeps the entire floor readable in the camera view; repeated parts are instanced.
   addBox(scene, 'main-floor', [34, 0.22, 30], [0, -0.16, 0], mats.floor);
   addBox(scene, 'central-carpet', [26, 0.025, 22], [0, -0.025, 0], mats.carpet);
-  addBox(scene, 'rear-wall', [34, 5.6, 0.32], [0, 2.75, -15], mats.wall);
-  addBox(scene, 'left-wall', [0.32, 5.6, 30], [-17, 2.75, 0], mats.wall);
-  addBox(scene, 'right-wall', [0.32, 5.6, 30], [17, 2.75, 0], mats.wall);
-  addBox(scene, 'rear-feature-band', [33.5, 1.0, 0.1], [0, 4.8, -14.78], mats.wallDark);
-  addBox(scene, 'brand-board', [7.8, 1.55, 0.12], [-3.9, 3.25, -14.73], mats.wallDark);
+  addBox(scene, 'rear-wall', [34, 3.35, 0.32], [0, 1.66, -15], mats.wall);
+  addBox(scene, 'left-wall', [0.32, 3.35, 30], [-17, 1.66, 0], mats.wall);
+  addBox(scene, 'right-wall', [0.32, 3.35, 30], [17, 1.66, 0], mats.wall);
+  addBox(scene, 'rear-feature-band', [33.5, 0.68, 0.1], [0, 3.0, -14.78], mats.wallDark);
+  addBox(scene, 'brand-board', [7.8, 1.35, 0.12], [-3.9, 2.45, -14.73], mats.wallDark);
 
   const brandCanvas = document.createElement('canvas');
   brandCanvas.width = 1024; brandCanvas.height = 220;
@@ -176,7 +217,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   const brandTexture = new THREE.CanvasTexture(brandCanvas);
   brandTexture.colorSpace = THREE.SRGBColorSpace;
   const brandSign = new THREE.Mesh(new THREE.PlaneGeometry(7.45, 1.38), new THREE.MeshBasicMaterial({ map: brandTexture, toneMapped: false }));
-  brandSign.position.set(-3.9, 3.25, -14.65);
+  brandSign.position.set(-3.9, 2.45, -14.65);
   scene.add(brandSign);
 
   // Architectural details and departmental zones.
@@ -242,6 +283,27 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   addInstances('chair-backs', boxGeometry, mats.chair, chairBacks);
   addInstances('chair-posts', cylinderGeometry, mats.metal, chairPosts);
   addInstances('chair-bases', boxGeometry, mats.darkMetal, chairBases);
+  const contactShadowTransforms = [];
+  for (const station of stations) {
+    contactShadowTransforms.push({ x: station.x, y: -0.004, z: station.z, sx: 2.7, sy: 1.55, sz: 1, rx: -Math.PI / 2 });
+    contactShadowTransforms.push({ x: station.x, y: -0.003, z: station.z + 1.86, sx: 1.05, sy: 1.15, sz: 1, rx: -Math.PI / 2 });
+  }
+  for (const [x, z] of [[-15, 12], [15, 12], [-14, -10], [15, -3], [-12.7, 10.6], [-12.4, -7]]) {
+    contactShadowTransforms.push({ x, y: -0.002, z, sx: 1.7, sy: 1.35, sz: 1, rx: -Math.PI / 2 });
+  }
+  const contactShadowMesh = new THREE.InstancedMesh(planeGeometry, contactShadowMaterial, contactShadowTransforms.length);
+  contactShadowMesh.name = 'soft-floor-contact-shadows';
+  contactShadowMesh.renderOrder = 1;
+  contactShadowMesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+  contactShadowTransforms.forEach((item, index) => {
+    dummy.position.set(item.x, item.y, item.z);
+    dummy.rotation.set(item.rx, 0, 0);
+    dummy.scale.set(item.sx, item.sy, item.sz);
+    dummy.updateMatrix();
+    contactShadowMesh.setMatrixAt(index, dummy.matrix);
+  });
+  contactShadowMesh.instanceMatrix.needsUpdate = true;
+  scene.add(contactShadowMesh);
   const glowMaterial = new THREE.MeshBasicMaterial({ color: '#55d7bf' });
   const glowMesh = new THREE.InstancedMesh(sphereGeometry, glowMaterial, stationLights.length);
   glowMesh.name = 'workstation-status-lights';
@@ -273,34 +335,108 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   for (let z = -12; z <= 12; z += 2.4) aisleMarks.push({ x: 0, y: 0.012, z, sx: 0.045, sy: 0.015, sz: 0.7 });
   addInstances('aisle-wayfinding', boxGeometry, mats.tealLight, aisleMarks);
 
-  // Light-weight staff models: shared geometry and materials, limited to six visible actors.
+  // Detailed low-poly staff: shared anatomy geometry, articulated arms and legs,
+  // facial features, headset equipment and individual uniform/scarf materials.
   const staff = [];
-  const actorBodyGeometry = new THREE.CapsuleGeometry(0.24, 0.62, tier === 'low' ? 2 : 3, tier === 'low' ? 5 : 7);
-  const actorHeadGeometry = new THREE.SphereGeometry(0.17, tier === 'low' ? 8 : 12, tier === 'low' ? 6 : 8);
-  const actorLimbGeometry = new THREE.CylinderGeometry(0.065, 0.075, 0.56, tier === 'low' ? 6 : 8);
-  const actorLegGeometry = new THREE.CylinderGeometry(0.085, 0.095, 0.66, tier === 'low' ? 6 : 8);
+  const bodyGeometry = new THREE.CapsuleGeometry(0.235, 0.54, tier === 'low' ? 3 : 5, tier === 'low' ? 10 : 16);
+  const upperArmGeometry = new THREE.CapsuleGeometry(0.073, 0.27, 3, tier === 'low' ? 8 : 12);
+  const forearmGeometry = new THREE.CapsuleGeometry(0.062, 0.25, 3, tier === 'low' ? 8 : 12);
+  const legGeometry = new THREE.CapsuleGeometry(0.087, 0.39, 3, tier === 'low' ? 8 : 12);
+  const headGeometry = new THREE.SphereGeometry(0.158, tier === 'low' ? 14 : 22, tier === 'low' ? 10 : 16);
+  const handGeometry = new THREE.SphereGeometry(0.064, 12, 9);
+  const shoeGeometry = new THREE.SphereGeometry(0.09, 14, 9);
+  const neckGeometry = new THREE.CylinderGeometry(0.07, 0.08, 0.14, 12);
+  const noseGeometry = new THREE.ConeGeometry(0.033, 0.082, 8);
+  const eyeGeometry = new THREE.SphereGeometry(0.022, 10, 8);
+  const irisGeometry = new THREE.SphereGeometry(0.010, 8, 6);
+  const hairCapGeometry = new THREE.SphereGeometry(0.166, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.62);
+  const headsetArcGeometry = new THREE.TorusGeometry(0.17, 0.012, 6, 20, Math.PI);
+  const earPadGeometry = new THREE.CylinderGeometry(0.043, 0.043, 0.035, 12);
+  const badgeGeometry = makeRoundedUnitBox();
+  const waistGeometry = new THREE.CylinderGeometry(0.19, 0.2, 0.19, 14);
+  const hairAlt = material('#30251f', 0.88);
+  const tieMaterial = material('#b78e50', 0.5);
+  const skinLight = material('#bd8768', 0.8);
+  const jacketLight = material('#365d70', 0.74);
+  const jacketDeep = material('#59443b', 0.78);
+  function addStaffMesh(parent, geometry, mat, position, scale = null, rotation = null) {
+    const mesh = new THREE.Mesh(geometry, mat);
+    mesh.position.set(...position);
+    if (scale) mesh.scale.set(...scale);
+    if (rotation) mesh.rotation.set(...rotation);
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    parent.add(mesh);
+    return mesh;
+  }
+  function createArm(root, side, jacket, seated) {
+    const arm = new THREE.Group();
+    arm.position.set(side * 0.245, seated ? 1.28 : 1.38, 0.015);
+    const upper = addStaffMesh(arm, upperArmGeometry, jacket, [0, -0.16, 0], null, [0, 0, side * -0.12]);
+    const elbow = new THREE.Group(); elbow.position.set(0, -0.30, 0.012); arm.add(elbow);
+    addStaffMesh(elbow, forearmGeometry, jacket, [0, -0.13, 0.025]);
+    addStaffMesh(elbow, handGeometry, mats.skin, [0, -0.30, 0.045], [1.0, 0.9, 1.05]);
+    arm.userData = { upper, elbow };
+    root.add(arm);
+    return arm;
+  }
   function createStaff(seed, x, z, seated = false) {
     const root = new THREE.Group();
     root.position.set(x, 0, z);
-    const jacket = seed % 2 ? mats.jacketA : mats.jacketB;
-    const torso = new THREE.Mesh(actorBodyGeometry, jacket);
-    torso.position.y = seated ? 1.0 : 1.1;
-    root.add(torso);
-    const head = new THREE.Mesh(actorHeadGeometry, mats.skin);
-    head.position.set(0, seated ? 1.68 : 1.82, 0.015);
-    root.add(head);
-    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.174, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.56), mats.hair);
-    hair.position.copy(head.position); hair.position.y += 0.035; root.add(hair);
-    const leftArm = new THREE.Group(); leftArm.position.set(-0.25, seated ? 1.28 : 1.38, 0.02);
-    const armL = new THREE.Mesh(actorLimbGeometry, jacket); armL.rotation.z = -0.25; armL.position.y = -0.22; leftArm.add(armL); root.add(leftArm);
-    const rightArm = new THREE.Group(); rightArm.position.set(0.25, seated ? 1.28 : 1.38, 0.02);
-    const armR = new THREE.Mesh(actorLimbGeometry, jacket); armR.rotation.z = 0.25; armR.position.y = -0.22; rightArm.add(armR); root.add(rightArm);
-    if (!seated) {
-      const leftLeg = new THREE.Mesh(actorLegGeometry, mats.trousers); leftLeg.position.set(-0.12, 0.34, 0); root.add(leftLeg);
-      const rightLeg = new THREE.Mesh(actorLegGeometry, mats.trousers); rightLeg.position.set(0.12, 0.34, 0); root.add(rightLeg);
+    // Staff at desks face their monitor; walking staff face into the floor.
+    root.rotation.y = Math.PI;
+    const jacket = seed % 3 === 0 ? jacketLight : seed % 2 ? mats.jacketA : jacketDeep;
+    const skin = seed % 2 ? mats.skin : skinLight;
+    const isScarf = seed % 3 === 1;
+    addStaffMesh(root, bodyGeometry, jacket, [0, seated ? 1.03 : 1.12, 0], seated ? [1.0, 0.94, 0.88] : [1, 1.04, 0.9]);
+    addStaffMesh(root, waistGeometry, mats.trousers, [0, seated ? 0.69 : 0.72, 0], [1, 1, 0.92]);
+    addStaffMesh(root, neckGeometry, skin, [0, seated ? 1.43 : 1.54, 0.005]);
+    const head = new THREE.Group(); head.position.set(0, seated ? 1.69 : 1.82, 0.015); root.add(head);
+    addStaffMesh(head, headGeometry, skin, [0, 0, 0]);
+    // Face is oriented toward local +Z: eyes, bridge, nose and a subtle mouth.
+    for (const side of [-1, 1]) {
+      addStaffMesh(head, eyeGeometry, mats.eyeWhite, [side * 0.057, 0.018, 0.139]);
+      addStaffMesh(head, irisGeometry, mats.eyeDark, [side * 0.057, 0.017, 0.158]);
+      const ear = addStaffMesh(head, handGeometry, skin, [side * 0.158, -0.012, 0], [0.48, 0.78, 0.62]);
     }
-    const badge = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.14, 0.018), mats.gold);
-    badge.position.set(0.12, seated ? 1.04 : 1.15, 0.245); root.add(badge);
+    addStaffMesh(head, noseGeometry, skin, [0, -0.02, 0.16], [0.78, 0.82, 0.72], [Math.PI / 2, 0, 0]);
+    addStaffMesh(head, new THREE.BoxGeometry(0.055, 0.008, 0.012), hairAlt, [0, -0.075, 0.144]);
+    if (isScarf) {
+      addStaffMesh(head, new THREE.SphereGeometry(0.176, 16, 12), mats.scarf, [0, 0.025, -0.008], [1.14, 1.17, 1.06]);
+      addStaffMesh(root, new THREE.CapsuleGeometry(0.17, 0.24, 3, 12), mats.scarf, [0, seated ? 1.43 : 1.56, -0.035], [1.14, 1.05, 0.9]);
+      // Keep the facial opening clear over the scarf shell.
+      addStaffMesh(head, headGeometry, skin, [0, 0, 0], [0.92, 0.96, 0.98]);
+    } else {
+      addStaffMesh(head, hairCapGeometry, seed % 2 ? mats.hair : hairAlt, [0, 0.035, -0.008]);
+      addStaffMesh(head, new THREE.SphereGeometry(0.12, 14, 9), seed % 2 ? mats.hair : hairAlt, [0, 0.105, -0.045], [1.0, 0.55, 0.9]);
+    }
+    // Contact-centre headset: ear cups, headband and a short boom microphone.
+    addStaffMesh(head, headsetArcGeometry, mats.headset, [0, 0.015, -0.004], [1.02, 1.04, 1], [0, 0, 0]);
+    for (const side of [-1, 1]) addStaffMesh(head, earPadGeometry, mats.headset, [side * 0.169, -0.005, 0.004], [1, 1, 1], [Math.PI / 2, 0, 0]);
+    const boomCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-0.16, -0.015, 0.035),
+      new THREE.Vector3(-0.19, -0.075, 0.10),
+      new THREE.Vector3(-0.14, -0.12, 0.15)
+    ]);
+    addStaffMesh(head, new THREE.TubeGeometry(boomCurve, 8, 0.009, 5, false), mats.headset, [0, 0, 0]);
+    addStaffMesh(root, new THREE.BoxGeometry(0.12, 0.16, 0.018), mats.gold, [0.105, seated ? 1.02 : 1.16, 0.22]);
+    // Seated staff retain visible legs and shoes; standing staff have separated legs.
+    const legs = [];
+    for (const side of [-1, 1]) {
+      const legRoot = new THREE.Group();
+      legRoot.position.set(side * 0.115, seated ? 0.69 : 0.56, seated ? 0.10 : 0);
+      if (seated) {
+        addStaffMesh(legRoot, legGeometry, mats.trousers, [0, -0.045, 0.18], [0.92, 0.92, 0.92], [Math.PI / 2, 0, 0]);
+        addStaffMesh(legRoot, legGeometry, mats.trousers, [0, -0.30, 0.43], [0.88, 0.86, 0.9]);
+        addStaffMesh(legRoot, shoeGeometry, mats.shoe, [0, -0.55, 0.42], [1.2, 0.72, 1.8]);
+      } else {
+        addStaffMesh(legRoot, legGeometry, mats.trousers, [0, -0.20, 0]);
+        addStaffMesh(legRoot, shoeGeometry, mats.shoe, [0, -0.47, 0.045], [1.2, 0.72, 1.8]);
+      }
+      root.add(legRoot); legs.push(legRoot);
+    }
+    const leftArm = createArm(root, -1, jacket, seated);
+    const rightArm = createArm(root, 1, jacket, seated);
     root.userData = { leftArm, rightArm, seed, seated };
     scene.add(root);
     staff.push({ root, phase: seed * 1.37, baseX: x, baseZ: z, seated, walking: !seated });
@@ -312,7 +448,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   createStaff(6, 2.0, -10.0, false);
 
   // Preview and first-person movement state.
-  const preview = { azimuth: 0.46, elevation: 0.48, radius: 29, target: new THREE.Vector3(0, 1.75, -0.6) };
+  const preview = { azimuth: 0.42, elevation: 0.38, radius: 31.5, target: new THREE.Vector3(0, 1.35, -0.8) };
   const player = { x: 0, z: 13.1, yaw: 0, pitch: -0.055, speed: 4.3 };
   const keys = new Set();
   const touchMove = { x: 0, y: 0, pointerId: null, sprinting: false };
@@ -330,7 +466,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   let hostInView = true;
   let disposed = false;
   let assetsReady = true;
-  const assetMessage = 'Optimised instanced workplace and local staff ready';
+  const assetMessage = 'CALLORIA workplace geometry and articulated local staff ready';
   const interactButton = document.getElementById('touchInteractButton');
   const joystick = document.getElementById('touchJoystick');
   const joystickKnob = document.getElementById('touchStick');
@@ -628,7 +764,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   observer?.observe(host);
 
   document.body.classList.toggle('touch-device', coarsePointer);
-  callbacks.onAssetsReady?.({ loaded: 0, fallback: 6, mode: 'instanced-local' });
+  callbacks.onAssetsReady?.({ loaded: 0, fallback: 6, mode: 'detailed-local-geometry' });
   renderStill();
 
   return {
@@ -656,11 +792,11 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
       document.body.classList.remove('touch-device', 'calloria-immersive');
       scene.traverse((object) => {
         if (object.isInstancedMesh || object.isMesh) {
-          if (object.geometry && ![boxGeometry, sphereGeometry, cylinderGeometry, planeGeometry, actorBodyGeometry, actorHeadGeometry, actorLimbGeometry, actorLegGeometry].includes(object.geometry)) object.geometry.dispose?.();
+          if (object.geometry && ![boxGeometry, sphereGeometry, cylinderGeometry, planeGeometry, bodyGeometry, upperArmGeometry, forearmGeometry, legGeometry, headGeometry, handGeometry, shoeGeometry, neckGeometry, noseGeometry, eyeGeometry, irisGeometry, hairCapGeometry, headsetArcGeometry, earPadGeometry, waistGeometry].includes(object.geometry)) object.geometry.dispose?.();
         }
         if (object.material && !Array.isArray(object.material) && !Object.values(mats).includes(object.material)) object.material.dispose?.();
       });
-      brandTexture.dispose(); mats.screen.map?.dispose?.();
+      brandTexture.dispose(); mats.screen.map?.dispose?.(); contactShadowTexture.dispose(); contactShadowMaterial.dispose();
       renderer.dispose(); host.replaceChildren();
     }
   };

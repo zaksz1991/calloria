@@ -13,6 +13,22 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
   <link rel="stylesheet" href="/performance-mobile.css" />
+  <style id="calloria-critical-launch-layout">
+    body.calloria-game-launch{overflow:hidden;background:#07121d}
+    body.calloria-game-launch .topbar,body.calloria-game-launch .sidebar,body.calloria-game-launch .content-wrap{display:none!important}
+    body.calloria-game-launch .app-shell,body.calloria-game-launch .main-area{display:block!important;width:100%;min-height:100%;margin:0!important;padding:0!important}
+    body.calloria-game-launch .world-panel{position:relative!important;width:100%!important;height:100vh!important;height:100svh!important;height:100dvh!important;min-height:520px;margin:0!important;border:0!important;border-radius:0!important;overflow:hidden!important}
+    body.calloria-game-launch #worldCanvas,body.calloria-game-launch .world-vignette,body.calloria-game-launch #gameLaunchScreen{position:absolute!important;inset:0!important}
+    body.calloria-game-launch #worldCanvas{z-index:0;width:100%;height:100%}
+    body.calloria-game-launch #worldCanvas canvas{display:block;width:100%!important;height:100%!important}
+    body.calloria-game-launch .world-vignette{z-index:2;pointer-events:none}
+    body.calloria-game-launch .world-title,body.calloria-game-launch .world-badge,body.calloria-game-launch .world-controls,body.calloria-game-launch .world-people,body.calloria-game-launch .world-action-bar{display:none!important;visibility:hidden!important}
+    body.calloria-game-launch #gameLaunchScreen{z-index:10;display:grid!important;grid-template-rows:auto minmax(0,1fr) auto;box-sizing:border-box;width:100%;height:100%;padding:max(20px,env(safe-area-inset-top)) clamp(14px,3.5vw,54px) max(14px,env(safe-area-inset-bottom));gap:clamp(8px,2vh,22px);overflow:auto}
+    body.calloria-game-playing #gameLaunchScreen{display:none!important}
+    body.calloria-game-playing .world-title,body.calloria-game-playing .world-badge,body.calloria-game-playing .world-controls,body.calloria-game-playing .world-people,body.calloria-game-playing .world-action-bar{display:none!important}
+    @media(max-width:760px){body.calloria-game-launch .game-launch-copy{width:100%;max-width:100%}body.calloria-game-launch .game-launch-copy h1{font-size:clamp(36px,9vw,58px)}body.calloria-game-launch .game-launch-footer{grid-template-columns:minmax(0,1fr);gap:8px}body.calloria-game-launch .game-stats-bar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}}
+  </style>
+
 </head>
 <body class="calloria-game-launch">
   <div class="app-shell calloria-shell">
@@ -85,7 +101,7 @@
           <p id="worldSubheading">Enter a living contact centre. Earn your role, meet customers and build a career through real-to-life simulated operations.</p>
           <div class="world-title-meta"><span>✦</span> EVERY CALL. EVERY CUSTOMER. EVERY CAREER.</div>
         </div>
-        <div class="world-badge"><span class="live-dot"></span><span>MERIDIAN SERVICE GROUP</span><small id="assetStatus">WORLD ENVIRONMENT INITIALISING</small></div>
+        <div class="world-badge"><span class="live-dot"></span><span>CALLORIA OPERATIONS CENTRE</span><small id="assetStatus">WORLD ENVIRONMENT INITIALISING</small></div>
         <div class="world-controls"><span class="control-key">DRAG</span> Explore the floor <span class="control-sep">·</span><span class="control-key">SCROLL</span> Zoom</div>
         <div class="world-people"><div class="people-stack"><i>AM</i><i>TO</i><i>KS</i><b>+09</b></div><div><strong>Customer operations</strong><small>Multi-team service floor</small></div></div>
         <div class="world-action-bar"><button id="enterFloorButton" class="world-enter-btn" type="button" disabled>ENTER THE WORKPLACE <span>↗</span></button><span>EXPLORE · INTERACT · START YOUR CAREER</span></div>
