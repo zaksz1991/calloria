@@ -1,0 +1,62 @@
+[
+  {
+    "name": "AI Solutions & Training",
+    "description": "AI literacy and fluency training; team and individual coaching; workflow automation setup; prompt engineering; AI content development; business process optimisation; AI data annotation and evaluation; AI ethics review; dataset curation and feedback; AI output review and quality assessment."
+  },
+  {
+    "name": "AI Content & Creative Services",
+    "description": "AI-assisted writing, research, content planning, graphic design and video creation. Confirm deliverables, revision limits, channels and turnaround for each quote."
+  },
+  {
+    "name": "Digital Marketing Solutions",
+    "description": "Marketing strategy, social media management, content creation and scheduling, audience growth, lead generation and campaign support."
+  },
+  {
+    "name": "Virtual Assistance",
+    "description": "Remote administrative support, email and calendar management, data entry, reporting, coordination and recurring business administration."
+  },
+  {
+    "name": "IT & Digital Services",
+    "description": "Website and landing-page development, database and cloud infrastructure support, technical troubleshooting and digital systems consulting."
+  },
+  {
+    "name": "Design & Branding",
+    "description": "Brand identity, graphic design, marketing collateral and visual assets."
+  },
+  {
+    "name": "Customer Support Services",
+    "description": "Customer-facing support operations, service workflows, response handling and support-system improvement."
+  },
+  {
+    "name": "Operations & Logistics Support",
+    "description": "Operational coordination, SOP development, warehouse/logistics administration and process improvement."
+  },
+  {
+    "name": "Data Management, Mining & Analysis",
+    "description": "Data collection support, cleaning, structuring, analysis, reporting and decision-support dashboards."
+  },
+  {
+    "name": "Career & Professional Services",
+    "description": "CV/resume, cover letter and LinkedIn profile support; career-document improvement and professional development guidance."
+  },
+  {
+    "name": "Business Consultation Services",
+    "description": "Business growth, AI adoption, operational improvement and digital transformation advisory."
+  },
+  {
+    "name": "Computer Setup & Support",
+    "description": "Computer setup, troubleshooting, maintenance, operating-system installation, performance tuning, malware cleanup and data backup."
+  },
+  {
+    "name": "Microsoft Office & Excel Support",
+    "description": "Office productivity support, Excel data entry, cleaning, analysis, spreadsheet design and staff training."
+  },
+  {
+    "name": "Network, Wi-Fi & Printer Support",
+    "description": "Wi-Fi configuration, printer setup and connectivity troubleshooting."
+  },
+  {
+    "name": "Business IT & Remote Technical Support",
+    "description": "Remote technical assistance, cloud basics, small-business IT support and technology consulting."
+  }
+]

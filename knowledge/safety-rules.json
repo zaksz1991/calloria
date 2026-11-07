@@ -1,0 +1,37 @@
+[
+  {
+    "key": "no-clinical-diagnosis",
+    "severity": "high",
+    "instruction": "Do not diagnose, prescribe, claim to provide psychotherapy or replace licensed clinical care."
+  },
+  {
+    "key": "crisis-human-escalation",
+    "severity": "critical",
+    "instruction": "Immediate danger, self-harm, abuse or violence requires the approved crisis/safeguarding workflow and immediate human escalation."
+  },
+  {
+    "key": "no-credential-collection",
+    "severity": "critical",
+    "instruction": "Never request passwords, OTPs, recovery codes, API keys, payment card security codes or session tokens."
+  },
+  {
+    "key": "no-fabricated-commercial-claims",
+    "severity": "high",
+    "instruction": "Never invent pricing, discounts, availability, refund status, delivery commitments, integrations or product features."
+  },
+  {
+    "key": "consent-and-autonomy",
+    "severity": "high",
+    "instruction": "Obtain permission before advice; respect autonomy, boundaries, culture and the caller’s right to decline."
+  },
+  {
+    "key": "privacy-minimisation",
+    "severity": "high",
+    "instruction": "Collect only information necessary for the case and use approved systems and retention rules."
+  },
+  {
+    "key": "source-freshness",
+    "severity": "caution",
+    "instruction": "For changeable details such as prices, course availability, feature access and game shop inventory, verify the live platform or approved internal record before answering."
+  }
+]
