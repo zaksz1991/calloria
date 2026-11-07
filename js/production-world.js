@@ -579,8 +579,103 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     );
     camera.lookAt(preview.target);
   }
+  // Performance Lab: browser-observable metrics only. WebGL does not expose
+  // portable GPU milliseconds, so GPU time is explicitly reported as unavailable.
+  const perfSamples = [];
+  let perfLastUiAt = 0;
+  let perfFrames = 0;
+  let perfCpuMs = 0;
+  let perfPanel = null;
+  let perfButton = null;
+  let perfVisible = false;
+  const perfMetrics = { fps: 0, frameMs: 0, p95Ms: 0, cpuMs: 0, calls: 0, triangles: 0, geometries: 0, textures: 0, heapMb: null };
+  function createPerformanceLab() {
+    const panelRoot = host.closest('.world-panel') || host.parentElement || document.body;
+    perfButton = document.createElement('button');
+    perfButton.type = 'button';
+    perfButton.className = 'calloria-perf-toggle';
+    perfButton.textContent = 'PERF';
+    perfButton.setAttribute('aria-label', 'Toggle Performance Lab');
+    perfButton.setAttribute('aria-expanded', 'false');
+    perfPanel = document.createElement('section');
+    perfPanel.className = 'calloria-perf-panel';
+    perfPanel.hidden = true;
+    perfPanel.setAttribute('aria-label', 'Performance Lab diagnostics');
+    perfPanel.innerHTML = '<div class="calloria-perf-head"><strong>PERFORMANCE LAB</strong><span>F3</span><button type="button" aria-label="Close Performance Lab">×</button></div><div class="calloria-perf-grid"></div><div class="calloria-perf-foot">GPU timing unavailable in this browser. Memory figures are estimates where supported.</div>';
+    panelRoot.append(perfButton, perfPanel);
+    perfButton.addEventListener('click', togglePerformanceLab);
+    perfPanel.querySelector('.calloria-perf-head button')?.addEventListener('click', () => togglePerformanceLab(false));
+    listen(window, 'keydown', (event) => {
+      if (event.code === 'F3') { event.preventDefault(); togglePerformanceLab(); }
+    });
+    if (new URLSearchParams(location.search).has('perf')) togglePerformanceLab(true);
+  }
+  function togglePerformanceLab(force) {
+    perfVisible = typeof force === 'boolean' ? force : !perfVisible;
+    if (perfPanel) perfPanel.hidden = !perfVisible;
+    if (perfButton) { perfButton.setAttribute('aria-expanded', String(perfVisible)); perfButton.classList.toggle('is-active', perfVisible); }
+    if (perfVisible) updatePerformanceLab(true);
+  }
+  function estimateSceneMemory() {
+    const geometries = new Set(); const textures = new Set();
+    let geometryBytes = 0; let textureBytes = 0;
+    scene.traverse((object) => {
+      if (object.geometry && !geometries.has(object.geometry)) {
+        geometries.add(object.geometry);
+        for (const attribute of Object.values(object.geometry.attributes || {})) {
+          const array = attribute?.array;
+          if (array?.byteLength) geometryBytes += array.byteLength;
+        }
+        for (const attribute of Object.values(object.geometry.morphAttributes || {})) for (const item of attribute || []) if (item?.array?.byteLength) geometryBytes += item.array.byteLength;
+      }
+      const materials = Array.isArray(object.material) ? object.material : object.material ? [object.material] : [];
+      for (const mat of materials) for (const value of Object.values(mat)) {
+        if (value?.isTexture && !textures.has(value)) {
+          textures.add(value);
+          const image = value.image || value.source?.data;
+          const width = image?.width || image?.videoWidth || 0;
+          const height = image?.height || image?.videoHeight || 0;
+          if (width && height) textureBytes += width * height * 4 * (value.generateMipmaps ? 1.34 : 1);
+        }
+      }
+    });
+    return { geometryCount: geometries.size, textureCount: textures.size, estimateMb: (geometryBytes + textureBytes) / 1048576 };
+  }
+  function updatePerformanceLab(force = false) {
+    if (!perfVisible || !perfPanel) return;
+    const now = performance.now();
+    if (!force && now - perfLastUiAt < 450) return;
+    perfLastUiAt = now;
+    const sorted = perfSamples.slice().sort((a, b) => a - b);
+    const p95 = sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))] : 0;
+    const memory = performance.memory?.usedJSHeapSize;
+    const sceneMemory = estimateSceneMemory();
+    const info = renderer.info;
+    const rows = [
+      ['FPS', `${perfMetrics.fps.toFixed(1)} / ${quality.fps} target`],
+      ['Frame time', `${perfMetrics.frameMs.toFixed(1)} ms`],
+      ['Frame p95', `${p95.toFixed(1)} ms`],
+      ['CPU update + render submit', `${perfMetrics.cpuMs.toFixed(1)} ms`],
+      ['Draw calls', String(info.render.calls)],
+      ['Triangles', info.render.triangles.toLocaleString()],
+      ['Geometries / textures', `${info.memory.geometries} / ${info.memory.textures}`],
+      ['Scene memory estimate', `${sceneMemory.estimateMb.toFixed(1)} MB`],
+      ['JS heap', memory ? `${(memory / 1048576).toFixed(1)} MB` : 'Not exposed'],
+      ['Render scale / DPR', `${currentPixelRatio.toFixed(2)} / ${(window.devicePixelRatio || 1).toFixed(2)}`],
+      ['Device tier / input', `${tier.toUpperCase()} / ${mobile ? 'MOBILE' : 'DESKTOP'}`],
+      ['Staff / stations', `${staff.length} / ${stations.length}`]
+    ];
+    const grid = perfPanel.querySelector('.calloria-perf-grid');
+    if (grid) grid.innerHTML = rows.map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`).join('');
+  }
+  createPerformanceLab();
+
   function renderStill() {
-    if (!disposed && !document.hidden && host.clientWidth > 0 && host.clientHeight > 0) renderer.render(scene, camera);
+    if (!disposed && !document.hidden && host.clientWidth > 0 && host.clientHeight > 0) {
+      const start = performance.now(); renderer.render(scene, camera); perfCpuMs = performance.now() - start;
+      perfMetrics.calls = renderer.info.render.calls; perfMetrics.triangles = renderer.info.render.triangles;
+      updatePerformanceLab();
+    }
   }
   setPreviewCamera();
 
@@ -712,9 +807,22 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     const delta = Math.min(frameMs / 1000, 0.05);
     lastFrameAt = timestamp;
     const elapsed = timestamp / 1000;
+    const cpuStart = performance.now();
     updatePlayer(delta);
     updateStaff(delta, elapsed);
     renderer.render(scene, camera);
+    perfCpuMs = performance.now() - cpuStart;
+    perfSamples.push(frameMs); if (perfSamples.length > 120) perfSamples.shift();
+    perfFrames++;
+    if (!perfLastUiAt || timestamp - perfLastUiAt >= 450) {
+      const windowMs = perfSamples.reduce((sum, value) => sum + value, 0);
+      perfMetrics.fps = windowMs > 0 ? perfSamples.length * 1000 / windowMs : 0;
+      perfMetrics.frameMs = perfSamples.length ? windowMs / perfSamples.length : frameMs;
+      perfMetrics.cpuMs = perfCpuMs;
+      perfMetrics.calls = renderer.info.render.calls;
+      perfMetrics.triangles = renderer.info.render.triangles;
+      updatePerformanceLab();
+    }
     adaptResolution(frameMs, timestamp);
     frameId = requestAnimationFrame(animate);
   }
@@ -890,6 +998,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
       disposed = true;
       stopRenderLoop(); observer?.disconnect(); resizeObserver?.disconnect();
       listeners.forEach((remove) => remove());
+      perfButton?.remove(); perfPanel?.remove();
       document.body.classList.remove('touch-device', 'calloria-immersive');
       scene.traverse((object) => {
         if (object.isInstancedMesh || object.isMesh) {

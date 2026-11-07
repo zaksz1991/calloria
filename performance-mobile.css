@@ -153,3 +153,32 @@ body.calloria-game-playing button { -webkit-tap-highlight-color:transparent; tou
   body.calloria-game-launch .game-launch-copy > p { font-size:11px; }
   body.calloria-game-launch .game-stat span { font-size:6.5px; }
 }
+
+/* Performance Lab diagnostics overlay — hidden unless opened with PERF or F3. */
+.calloria-perf-toggle {
+  position:absolute; z-index:40; top:12px; right:12px; min-width:48px; min-height:36px;
+  border:1px solid rgba(113,224,205,.55); border-radius:8px; padding:7px 10px;
+  background:rgba(8,25,35,.88); color:#8ce9d6; font:800 10px/1 system-ui,sans-serif;
+  letter-spacing:1px; cursor:pointer; backdrop-filter:blur(8px);
+}
+.calloria-perf-toggle.is-active { background:#0e776e; color:#fff; }
+.calloria-perf-panel {
+  position:absolute; z-index:41; top:54px; right:12px; width:min(340px,calc(100% - 24px));
+  max-height:min(72%,520px); overflow:auto; padding:12px; border:1px solid rgba(105,222,203,.38);
+  border-radius:12px; background:rgba(5,18,27,.95); color:#e8f4f3; box-shadow:0 14px 42px rgba(0,0,0,.38);
+  font:12px/1.35 system-ui,sans-serif; backdrop-filter:blur(12px);
+}
+.calloria-perf-panel[hidden] { display:none !important; }
+.calloria-perf-head { display:flex; align-items:center; gap:10px; margin-bottom:9px; color:#83e5d2; font-size:10px; letter-spacing:1.2px; }
+.calloria-perf-head span { margin-left:auto; color:#9bb0b7; }
+.calloria-perf-head button { width:30px; height:30px; border:0; border-radius:6px; background:#1a3541; color:#fff; font-size:20px; }
+.calloria-perf-grid { display:grid; grid-template-columns:1fr auto; gap:0 12px; }
+.calloria-perf-grid > div { display:contents; }
+.calloria-perf-grid span,.calloria-perf-grid strong { padding:6px 0; border-bottom:1px solid rgba(160,195,200,.12); }
+.calloria-perf-grid span { color:#9db5bc; }
+.calloria-perf-grid strong { text-align:right; color:#f0f7f5; font-variant-numeric:tabular-nums; }
+.calloria-perf-foot { margin-top:9px; color:#92a9b1; font-size:10px; }
+@media(max-width:480px) {
+  .calloria-perf-toggle { top:max(8px,env(safe-area-inset-top)); right:8px; min-height:40px; }
+  .calloria-perf-panel { top:54px; right:8px; width:min(320px,calc(100% - 16px)); max-height:65%; }
+}
