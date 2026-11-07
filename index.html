@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/performance-mobile.css" />
 </head>
 <body class="calloria-game-launch">
   <div class="app-shell calloria-shell">
@@ -65,7 +66,7 @@
             <h1>Step inside.<br><em>Build your career.</em></h1>
             <p>Explore a working contact centre, learn the role, serve customers and progress from new recruit to operations leader.</p>
             <div class="game-launch-actions">
-              <button id="launchPlayButton" class="game-primary-button" type="button" disabled><span>PLAY NOW</span><b>↗</b></button>
+              <button id="launchPlayButton" class="game-primary-button" type="button" disabled><span>LOADING WORLD</span><b>↗</b></button>
               <button id="launchDeskButton" class="game-secondary-button" type="button">OPERATIONS DESK</button>
             </div>
             <small class="guest-save-note">No registration required. Guest progress stays on this device. Anonymous play statistics use a random browser ID.</small>
@@ -77,6 +78,7 @@
             <aside id="gameSponsorSlot" class="game-sponsor-slot" aria-label="Company sponsorship"><span class="sponsor-label">BRAND PARTNERSHIPS</span><strong>Company placements inside the CALLORIA world</strong><small>Approved company sponsorships may appear here. No campaign is currently scheduled.</small></aside>
           </div>
         </section>
+
         <div class="world-title">
           <div class="eyebrow"><span class="eyebrow-line"></span> IMMERSIVE CAREER SIMULATION</div>
           <h1 id="worldHeading">Your next shift starts here.</h1>
@@ -87,29 +89,20 @@
         <div class="world-controls"><span class="control-key">DRAG</span> Explore the floor <span class="control-sep">·</span><span class="control-key">SCROLL</span> Zoom</div>
         <div class="world-people"><div class="people-stack"><i>AM</i><i>TO</i><i>KS</i><b>+09</b></div><div><strong>Customer operations</strong><small>Multi-team service floor</small></div></div>
         <div class="world-action-bar"><button id="enterFloorButton" class="world-enter-btn" type="button" disabled>ENTER THE WORKPLACE <span>↗</span></button><span>EXPLORE · INTERACT · START YOUR CAREER</span></div>
+
         <div id="immersiveHud" class="immersive-hud hidden">
           <div class="immersive-topline"><div class="immersive-location"><span class="live-dot"></span><div><strong>CALLORIA · CUSTOMER OPERATIONS</strong><small>INTERACTIVE WORKPLACE SIMULATION</small></div></div><button id="exitFloorButton" class="immersive-exit" type="button">EXIT GAME <span>Esc</span></button></div>
           <div class="immersive-bottomline"><div class="immersive-controls"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> MOVE</span><span><kbd>SHIFT</kbd> RUN</span><span><kbd>MOUSE</kbd> LOOK</span><span><kbd>E</kbd> INTERACT</span></div><div class="immersive-status">SIMULATION · NO REAL CUSTOMER DATA OR CALLS</div></div>
           <div class="touch-controls" id="touchControls" aria-label="Touch game controls">
-            <div class="touch-movement">
-              <div class="touch-joystick" id="touchJoystick" role="group" aria-label="Movement joystick">
-                <div class="touch-joystick-ring"></div>
-                <div class="touch-joystick-knob" id="touchStick"></div>
-              </div>
-              <span class="touch-control-caption">MOVE</span>
-            </div>
+            <div class="touch-movement"><div class="touch-joystick" id="touchJoystick" role="group" aria-label="Movement joystick"><div class="touch-joystick-ring"></div><div class="touch-joystick-knob" id="touchStick"></div></div><span class="touch-control-caption">MOVE</span></div>
             <div class="touch-look-caption" id="touchLookCaption">DRAG THE SCENE TO LOOK AROUND</div>
-            <div class="touch-actions">
-              <button id="touchSprintButton" class="touch-game-button sprint" type="button" aria-label="Run">RUN</button>
-              <button id="touchInteractButton" class="touch-game-button interact" type="button" aria-label="Use nearby workstation" disabled><span>＋</span><small>USE</small></button>
-            </div>
+            <div class="touch-actions"><button id="touchSprintButton" class="touch-game-button sprint" type="button" aria-label="Run">RUN</button><button id="touchInteractButton" class="touch-game-button interact" type="button" aria-label="Use nearby workstation" disabled><span>＋</span><small>USE</small></button></div>
           </div>
           <div id="stationHint" class="station-hint hidden"></div>
           <button id="mouseLookNote" class="mouse-look-note hidden" type="button">CLICK TO RESUME MOUSE LOOK</button>
           <div id="stationPanel" class="station-panel hidden"></div>
         </div>
       </section>
-
       <div class="content-wrap">
         <div class="page-heading"><div><div class="eyebrow dark-eyebrow" id="pageEyebrow">CAREER ENTRY</div><h2 id="pageTitle">Start your application</h2><p id="pageDescription">Complete recruitment before starting agent operations.</p></div><div class="page-actions" id="pageActions"></div></div>
         <section id="viewRoot" class="view-root" aria-live="polite"></section>
