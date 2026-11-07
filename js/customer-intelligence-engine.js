@@ -71,7 +71,7 @@ export function createCustomerScenario({ seed = Date.now(), personaId = null, is
   return {
     id, seed: Number(seed), channel: String(channel), persona: { ...persona }, issue: { ...issue },
     customer: pick(['Aisha Bello', 'Daniel Okoro', 'Fatima Sani', 'Ibrahim Musa', 'Ngozi Eze', 'Samuel Adeyemi', 'Zainab Garba', 'Peter James'], seed, 3),
-    turn: 0, patience: persona.patience, status: 'active', scorecards: [], transcript: [],
+    turn: 0, patience: persona.patience, status: 'active', scorecards: [], transcript: [], aiTranscript: [],
     statement: issue.opener,
     followUps: followUps[persona.emotion] || followUps.calm,
     branch: 'opening', createdAt: new Date(Number(seed) || Date.now()).toISOString()
@@ -121,7 +121,11 @@ export function submitCustomerTurn(scenario, response, now = Date.now()) {
   if (!scenario || scenario.status !== 'active') throw new Error('This customer interaction is not active.');
   const result = evaluateCustomerResponse(response, scenario, { requireGreeting: scenario.turn === 0 });
   scenario.scorecards.push(result);
-  scenario.transcript.push({ speaker: 'agent', text: String(response).trim(), at: new Date(now).toISOString(), qa: result });
+  const eventTime = new Date(now).toISOString();
+  if (!Array.isArray(scenario.aiTranscript)) scenario.aiTranscript = [];
+  scenario.aiTranscript.push({ speaker: 'customer', text: String(scenario.statement || '').trim(), at: eventTime });
+  scenario.aiTranscript.push({ speaker: 'agent', text: String(response).trim(), at: eventTime });
+  scenario.transcript.push({ speaker: 'agent', text: String(response).trim(), at: eventTime, qa: result });
   scenario.patience = result.customerPatience;
   scenario.turn += 1;
   if (result.criticalBreaches.length) {
@@ -145,7 +149,8 @@ export function finalizeCustomerScenario(scenario) {
   const average = cards.length ? Math.round(cards.reduce((sum, item) => sum + item.score, 0) / cards.length) : 0;
   const breaches = cards.flatMap(item => item.criticalBreaches || []);
   return {
-    id: scenario.id, issueId: scenario.issue.id, personaId: scenario.persona.id,
+    id: scenario.id, dataOrigin: 'calloria_customer_lab_synthetic',
+    issueId: scenario.issue.id, personaId: scenario.persona.id,
     channel: scenario.channel, status: scenario.status, turns: cards.length,
     averageScore: average, criticalBreaches: [...new Set(breaches)],
     outcome: breaches.length ? 'mandatory_review' : average >= 80 ? 'strong' : average >= 60 ? 'coaching' : 'remediation',
@@ -156,6 +161,7 @@ export function finalizeCustomerScenario(scenario) {
     }, {}),
     recommendations: [...new Set(cards.flatMap(item => item.recommendations || []))],
     transcript: (scenario.transcript || []).map(line => ({ speaker: line.speaker, text: line.text, at: line.at })),
+    aiTranscript: (scenario.aiTranscript || scenario.transcript || []).map(line => ({ speaker: line.speaker, text: line.text, at: line.at })),
     completedAt: new Date().toISOString()
   };
 }

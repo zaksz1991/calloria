@@ -20,3 +20,7 @@ The following assets are referenced by `js/production-world.js`. At this build t
 ## Runtime fallback
 
 When GLTF loading or a third-party request fails, the module uses locally generated detailed character geometry and a locally modelled reception desk. The fallback exists to preserve interaction testing; it is not a substitute for the approved final character models in a commercial release.
+
+
+## v1.3.0 AI integration
+No new visual assets are introduced. AI provider integration uses the organisation's server-side OpenAI API configuration through a Supabase Edge Function. API model names and supported endpoints are documented in `SUPABASE-SETUP.md`.

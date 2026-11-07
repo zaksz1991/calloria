@@ -70,6 +70,9 @@ test('final QA record includes dimensions and a mandatory-review outcome', () =>
   submitCustomerTurn(scenario, 'Hello. Please give me your PIN and one-time password to verify you.');
   const report = finalizeCustomerScenario(scenario);
   assert.equal(report.outcome, 'mandatory_review');
+  assert.equal(report.dataOrigin, 'calloria_customer_lab_synthetic');
+  assert.equal(report.aiTranscript[0].speaker, 'customer');
+  assert.equal(report.aiTranscript[1].speaker, 'agent');
   assert.ok(report.criticalBreaches.length > 0);
 });
 

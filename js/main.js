@@ -8,10 +8,11 @@ import { AGENT_STATES, createShiftRecord, recordAgentState, calculateShiftAdhere
 import { speechRecognitionAvailable, mediaRecordingAvailable, createVoiceSession, appendVoiceTranscript, finishVoiceSession, sanitizeTranscript } from './voice-engine.js';
 import { DIGITAL_CHANNELS, DIGITAL_STATUS, DIGITAL_SCENARIOS, createDigitalQueue, sortDigitalQueue, findDigitalContact, acceptDigitalContact, recordDigitalReply, deliverDigitalFollowUp, completeDigitalContact, digitalQueueMetrics, appendDigitalEvent } from './multichannel-engine.js';
 import { ORGANIZATION_ROLES, DEFAULT_ORG_POLICY, ensureOrganizationWorkspace, createOrganization, createOrganizationMember, setOrganizationMemberStatus, updateOrganizationPolicy, getActiveOrganization, getOrganizationSnapshot } from './organization-engine.js';
-import { initializeCloudPlatform, getCloudPlatformState, canCloudRole, createCloudOrganization, createCloudInvitation, updateCloudPolicy, setCloudMemberStatus, selectCloudOrganization } from './cloud-platform.js';
+import { initializeCloudPlatform, getCloudPlatformState, getCloudSupabaseClient, canCloudRole, createCloudOrganization, createCloudInvitation, updateCloudPolicy, setCloudMemberStatus, selectCloudOrganization } from './cloud-platform.js';
 import { validateCloudPolicy } from './cloud-security.js';
 import { CUSTOMER_PERSONAS, CUSTOMER_ISSUES, createCustomerScenario, submitCustomerTurn, finalizeCustomerScenario, customerIntelligenceMetrics } from './customer-intelligence-engine.js';
 import { DEFAULT_QA_SCORECARD, createScorecard, createHumanQAReview, createQADispute, resolveQADispute, createCalibrationSession, humanQAMetrics } from './qa-workspace-engine.js';
+import { AI_MODEL_OPTIONS, loadTenantAIAssistSettings, saveTenantAIAssistSettings, requestAIAssist } from './ai-assist-engine.js';
 import { configureCloudEmploymentSync, markCloudEmploymentSyncReady, loadCloudEmploymentSnapshot, scheduleCloudEmploymentSave, flushCloudEmploymentSave } from './cloud-employment-sync.js';
 
 let THREE = null;
@@ -77,7 +78,7 @@ const initialState = () => ({
   viewedArticle: null,
   workforceDepartment: 'inbound',
   shiftRecord: null, shiftElapsedMinutes: 0, agentStatus: 'offline', shiftHistory: [], coachingSessions: [], simulationClockSeconds: 7 * 3600, lastShiftDay: 0,
-  briefingAttendance: [], promotionAttempts: [], crossSellRecords: [], commendations: [], systemEvents: [], digitalQueue: [], digitalSequence: 0, digitalActiveId: null, digitalChannelFilter: 'all', digitalEvents: [], customerLabSession: null, customerQaHistory: [], qaScorecards: [], humanQaReviews: [], qaDisputes: [], qaCalibrations: [], qaSelectedInteractionId: '', qaSelectedScorecardId: '', organizationWorkspace: null
+  briefingAttendance: [], promotionAttempts: [], crossSellRecords: [], commendations: [], systemEvents: [], digitalQueue: [], digitalSequence: 0, digitalActiveId: null, digitalChannelFilter: 'all', digitalEvents: [], customerLabSession: null, customerQaHistory: [], qaScorecards: [], humanQaReviews: [], qaDisputes: [], qaCalibrations: [], aiQaSuggestions: [], qaSelectedInteractionId: '', qaSelectedScorecardId: '', organizationWorkspace: null
 });
 
 let state = loadState();
@@ -97,6 +98,12 @@ let voiceAudioUrl = null;
 let voiceRecordingTimer = null;
 let simulationClockTicker = 7 * 3600;
 let lastShiftSaveBucket = 0;
+let aiSettingsOrgId = '';
+let aiSettingsLoading = false;
+let aiSettingsLoaded = false;
+let aiSettingsError = '';
+let aiTenantSettings = null;
+let aiAssistBusy = false;
 
 function loadState() {
   try {
@@ -104,7 +111,7 @@ function loadState() {
     if (!stored) return initialState();
     const parsed = JSON.parse(stored);
     const migrated = { ...initialState(), ...parsed };
-    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
+    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations','aiQaSuggestions']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
     if (!Number.isFinite(migrated.callQueue)) migrated.callQueue = 6;
     if (migrated.shiftActive && (!migrated.shiftRecord || migrated.shiftRecord.status !== 'active')) migrated.shiftRecord = createShiftRecord({ day: migrated.day || 1 });
     if (!Number.isFinite(migrated.shiftElapsedMinutes)) migrated.shiftElapsedMinutes = 0;
@@ -1163,6 +1170,57 @@ function renderCustomerIntelligence() {
 }
 
 
+function activeAICloudContext() {
+  const cloud = getCloudPlatformState();
+  if (cloud.mode !== 'active' || !cloud.ready || !cloud.user?.id || !cloud.activeOrganization?.id) return null;
+  return cloud;
+}
+
+async function ensureAIAssistSettingsLoaded(force = false) {
+  const cloud = activeAICloudContext();
+  if (!cloud) {
+    aiSettingsOrgId = '';
+    aiSettingsLoaded = false;
+    aiSettingsLoading = false;
+    aiSettingsError = '';
+    aiTenantSettings = null;
+    return;
+  }
+  const orgId = cloud.activeOrganization.id;
+  if (!force && aiSettingsOrgId === orgId && (aiSettingsLoaded || aiSettingsLoading)) return;
+  aiSettingsOrgId = orgId;
+  aiSettingsLoading = true;
+  aiSettingsLoaded = false;
+  aiSettingsError = '';
+  try {
+    const client = await getCloudSupabaseClient();
+    aiTenantSettings = await loadTenantAIAssistSettings(client, orgId);
+    aiSettingsLoaded = true;
+  } catch (error) {
+    aiTenantSettings = null;
+    aiSettingsError = String(error?.message || error).slice(0, 360);
+    aiSettingsLoaded = true;
+  } finally {
+    aiSettingsLoading = false;
+    if (state.currentView === 'qa') renderQAWorkspace();
+  }
+}
+
+function renderAIAssistPanel(reviewable) {
+  const cloud = activeAICloudContext();
+  if (!cloud) return `<section class="panel ai-assist-panel"><div class="panel-head"><div><h3>AI-assisted customer intelligence</h3><p>Tenant-controlled analysis, suggested QA observations and coaching.</p></div><span class="pill amber">CLOUD REQUIRED</span></div><p class="muted-note">Sign in to a Supabase organisation workspace before using AI assistance. Local demo mode never sends transcripts to an external service.</p></section>`;
+  if (aiSettingsLoading || (aiSettingsOrgId !== cloud.activeOrganization.id && !aiSettingsLoaded)) return `<section class="panel ai-assist-panel"><div class="panel-head"><div><h3>AI-assisted customer intelligence</h3><p>Loading organisation AI policy…</p></div><span class="pill">LOADING</span></div></section>`;
+  if (aiSettingsError) return `<section class="panel ai-assist-panel"><div class="panel-head"><div><h3>AI-assisted customer intelligence</h3><p>Tenant AI settings could not be loaded.</p></div><span class="pill red">SETUP REQUIRED</span></div><p class="muted-note">${escapeHTML(aiSettingsError)}. Apply Supabase migration 003 and redeploy the CALLORIA AI Edge Function.</p></section>`;
+  const settings = aiTenantSettings || { enabled:false, model:'gpt-6-luna', dailyRequestLimit:100, configured:false };
+  const canManage = canCloudRole(cloud.membership?.role, 'policies:manage');
+  const modelOptions = AI_MODEL_OPTIONS.map(item => `<option value="${escapeHTML(item.id)}" ${settings.model===item.id?'selected':''}>${escapeHTML(item.label)}</option>`).join('');
+  const interactionOptions = reviewable.map(item => `<option value="${escapeHTML(item.id)}" ${item.id===state.qaSelectedInteractionId?'selected':''}>${escapeHTML(item.id)} · ${escapeHTML(item.issueId)} · ${escapeHTML(item.channel)}</option>`).join('');
+  const latest = (state.aiQaSuggestions || []).slice().reverse().find(item => item.organizationId === cloud.activeOrganization.id);
+  const result = latest?.analysis;
+  const resultMarkup = result ? `<div class="ai-result-block"><div class="ai-result-heading"><div><span class="subtle-label">MODEL-GENERATED DRAFT</span><h4>${escapeHTML(latest.interactionId)} · ${escapeHTML(latest.model)}</h4></div><span class="pill amber">HUMAN APPROVAL REQUIRED</span></div><div class="ai-result-meta"><span>SENTIMENT <b>${escapeHTML(result.sentiment.toUpperCase())}</b></span><span>INTENT <b>${escapeHTML(result.customerIntent || 'Not established')}</b></span></div><p>${escapeHTML(result.interactionSummary)}</p>${result.riskFlags.length?`<div class="ai-risk-flags"><strong>Potential risks to verify</strong>${result.riskFlags.map(item=>`<span>${escapeHTML(item)}</span>`).join('')}</div>`:''}<h5>Suggested QA observations</h5><div class="ai-suggestion-list">${result.qaSuggestions.map(item=>`<article><div><b>${escapeHTML(item.criterion)}</b><strong>${item.suggestedRating===null?'—':`${item.suggestedRating}/5`}</strong></div><p>${escapeHTML(item.rationale)}</p><small class="${item.evidenceVerified?'evidence-good':'evidence-warning'}">${item.evidenceVerified?'Transcript quote matched':'Evidence not verified against transcript'}${item.evidenceQuote?` · “${escapeHTML(item.evidenceQuote)}”`:''}</small></article>`).join('')||'<p class="muted-note">No criterion-level suggestions were returned.</p>'}</div>${result.coachingRecommendations.length?`<h5>Coaching ideas</h5><ul>${result.coachingRecommendations.map(item=>`<li>${escapeHTML(item)}</li>`).join('')}</ul>`:''}${result.followUpChecklist.length?`<h5>Suggested follow-up checks</h5><ul>${result.followUpChecklist.map(item=>`<li>${escapeHTML(item)}</li>`).join('')}</ul>`:''}<p class="ai-disclaimer">${escapeHTML(result.disclaimer)}${latest.usageRemaining!==null?` · Daily requests remaining: ${latest.usageRemaining}`:''}</p></div>`:'';
+  return `<section class="panel ai-assist-panel"><div class="panel-head"><div><h3>AI-assisted customer intelligence</h3><p>Transcript analysis, sentiment, intent, QA observations and coaching suggestions.</p></div><span class="pill ${settings.enabled?'green':'amber'}">${settings.enabled?'TENANT AI ENABLED':'TENANT AI DISABLED'}</span></div><div class="ai-boundary"><strong>Data and decision boundary</strong><span>Use synthetic training transcripts only. You must explicitly approve each transcript transfer. Credentials and common identifiers are redacted before transmission. Audio is never sent. AI suggestions are not official QA results and cannot automatically change a score, employee record or promotion decision.</span></div>${canManage?`<form id="aiAssistSettingsForm" class="ai-settings-form"><div class="form-field"><label><input type="checkbox" name="enabled" ${settings.enabled?'checked':''}> ENABLE AI ASSISTANCE FOR THIS ORGANISATION</label></div><div class="ai-settings-grid"><label class="form-field"><span>MODEL</span><select name="model">${modelOptions}</select></label><label class="form-field"><span>DAILY REQUEST LIMIT · ORGANISATION</span><input name="dailyRequestLimit" type="number" min="1" max="5000" required value="${settings.dailyRequestLimit}"></label></div><p class="muted-note">Provider credentials stay in Supabase Edge Function secrets. They are never stored in this browser or tenant settings. Redaction is mandatory and cannot be disabled.</p><button class="btn outline" type="submit">Save tenant AI policy</button></form>`:`<div class="ai-status-line"><span>Organisation AI policy</span><strong>${settings.enabled?'Enabled':'Disabled'} · ${escapeHTML(settings.model)} · ${settings.dailyRequestLimit} requests/day</strong></div>`}${settings.enabled?`<form id="aiAssistRunForm" class="ai-run-form"><div class="form-field"><label for="aiInteractionSelect">COMPLETED INTERACTION TO ANALYSE</label><select id="aiInteractionSelect" name="interactionId" required ${reviewable.length?'':'disabled'}>${interactionOptions||'<option value="">No completed transcript available</option>'}</select></div><label class="ai-consent"><input type="checkbox" name="consent" required><span>I authorise CALLORIA to send this redacted synthetic transcript to the organisation-configured AI provider for this one analysis.</span></label><button class="btn primary" type="submit" ${!reviewable.length||aiAssistBusy?'disabled':''}>${aiAssistBusy?'Analysing transcript…':'Analyse transcript with AI'}</button></form>`:`<p class="muted-note">An organisation owner or administrator must enable AI assistance and configure the provider secret before this feature can run.</p>`}${aiSettingsLoaded && settings.configured===false && !aiSettingsError?'<p class="muted-note">No tenant AI policy exists yet. Save one above to initialise the setting.</p>':''}${resultMarkup}</section>`;
+}
+
 function renderQAWorkspace() {
   if (!Array.isArray(state.qaScorecards)) state.qaScorecards = [];
   if (!state.qaScorecards.length) state.qaScorecards.push(JSON.parse(JSON.stringify(DEFAULT_QA_SCORECARD)));
@@ -1188,6 +1246,7 @@ function renderQAWorkspace() {
   viewRoot.innerHTML = `
     <div class="ops-summary-grid">${metricCard('HUMAN QA REVIEWS',metrics.reviews,'Completed reviewer scorecards','▤')}${metricCard('AVERAGE HUMAN SCORE',metrics.averageScore===null?'—':`${metrics.averageScore}%`,'Weighted score across completed reviews','⌁')}${metricCard('OPEN DISPUTES',metrics.openDisputes,'Awaiting independent resolution','!')}${metricCard('CALIBRATIONS',metrics.calibrations,'Reviewer comparison sessions','⇄')}</div>
     <div class="qa-boundary-note"><strong>Human review workspace · synthetic training records</strong><span>Reviewers select evidence from the saved practice transcript. These records are training workflow data, not a certified scorecard or a live employee-performance decision. The current reviewer identity is entered manually; shared supervisor permissions are not enforced by this local workspace.</span></div>
+    ${renderAIAssistPanel(reviewable)}
     <div class="grid two qa-workspace-grid">
       <section class="panel"><div class="panel-head"><div><h3>Review an interaction</h3><p>Score each criterion and attach an exact transcript line as evidence.</p></div><span class="pill green">EVIDENCE REQUIRED</span></div>
         ${reviewable.length ? `<form id="humanQaReviewForm"><div class="form-field"><label>COMPLETED CUSTOMER INTERACTION</label><select id="qaInteractionSelect" name="interactionId">${interactionOptions}</select></div><div class="form-field"><label>QA SCORECARD</label><select id="qaScorecardSelect" name="scorecardId">${scorecardOptions}</select></div><div class="form-field"><label>REVIEWER NAME</label><input name="reviewer" minlength="2" maxlength="80" required value="${escapeHTML(state.applicantName || '')}" placeholder="Reviewer name"></div><div class="qa-criteria-list">${criterionRows}</div><div class="form-field"><label>REVIEWER NOTES</label><textarea name="notes" rows="3" maxlength="2000" placeholder="Record factual observations and context."></textarea></div><div class="form-field"><label>COACHING ACTION FOR LOW-RATED CRITERIA</label><textarea name="coachingAction" rows="2" maxlength="500" placeholder="Specific action the agent should practise."></textarea></div><button class="btn primary" type="submit" ${selectedInteraction && selectedScorecard ? '' : 'disabled'}>Save human QA review</button></form>` : '<div class="empty-state"><h3>No reviewable interaction</h3><p>Complete and finalise a Customer Lab interaction first. New records retain their synthetic transcript for evidence review.</p></div>'}
@@ -1209,6 +1268,7 @@ function renderQAWorkspace() {
         <div class="data-list" style="margin-top:12px">${calibrations.slice().reverse().map(item=>`<div class="data-row"><span>${escapeHTML(item.interactionId)}<small>${escapeHTML(item.reviewers.join(' · '))} · score spread ${item.scoreSpread} points</small></span><strong class="${item.requiresDiscussion?'text-warning':''}">${item.requiresDiscussion?'DISCUSS':'ALIGNED'}</strong></div>`).join('') || '<p class="muted-note">No calibration sessions recorded.</p>'}</div>
       </section>
     </div>`;
+  void ensureAIAssistSettingsLoaded();
 }
 
 function renderView() {
@@ -1760,7 +1820,7 @@ document.addEventListener('change',e=>{
   if(e.target?.id==='qaInteractionSelect'){state.qaSelectedInteractionId=e.target.value;saveState();renderView();}
   if(e.target?.id==='qaScorecardSelect'){state.qaSelectedScorecardId=e.target.value;saveState();renderView();}
 });
-document.addEventListener('submit',e=>{
+document.addEventListener('submit',async e=>{
   if(e.target.id==='customerLabReplyForm'){e.preventDefault();const value=new FormData(e.target).get('reply');try{submitCustomerTurn(state.customerLabSession,String(value||''));if(state.customerLabSession.status==='escalated')pushOperationEvent('customer-intelligence',state.customerLabSession.id,'Critical practice QA breach triggered mandatory review.','escalated');saveState();renderView();}catch(error){toast(error.message,'warning');}return;}
   if(e.target.id==='qaScorecardForm'){
     e.preventDefault();try{const f=new FormData(e.target);const base=state.qaScorecards.find(item=>item.id===state.qaSelectedScorecardId)||state.qaScorecards.find(item=>item.active!==false)||DEFAULT_QA_SCORECARD;const criteria=base.criteria.map(item=>({...item,weight:Number(f.get(`weight_${item.id}`))}));const created=createScorecard(state.qaScorecards,{name:f.get('name'),criteria});state.qaSelectedScorecardId=created.id;saveState();renderView();toast('New QA scorecard version created.','success');}catch(error){toast(error.message,'warning');}return;
@@ -1776,6 +1836,37 @@ document.addEventListener('submit',e=>{
   }
   if(e.target.id==='qaCalibrationForm'){
     e.preventDefault();try{const f=new FormData(e.target);const [interactionId,scorecardId]=String(f.get('group')).split('::');const matched=state.humanQaReviews.filter(item=>item.interactionId===interactionId&&item.scorecardId===scorecardId);const calibration=createCalibrationSession(matched,{facilitator:f.get('facilitator'),notes:f.get('notes')});state.qaCalibrations.push(calibration);state.qaCalibrations=state.qaCalibrations.slice(-100);pushOperationEvent('qa-calibration',calibration.id,`Reviewer calibration completed. Score spread: ${calibration.scoreSpread}.`,calibration.requiresDiscussion?'discussion_required':'aligned');saveState();renderView();toast('Reviewer calibration saved.','success');}catch(error){toast(error.message,'warning');}return;
+  }
+  if(e.target.id==='aiAssistSettingsForm'){
+    e.preventDefault();
+    const cloud=activeAICloudContext();
+    if(!cloud||!canCloudRole(cloud.membership?.role,'policies:manage')){toast('Only organisation owners and administrators can change tenant AI settings.','error');return;}
+    const f=new FormData(e.target);
+    try{
+      const client=await getCloudSupabaseClient();
+      aiTenantSettings=await saveTenantAIAssistSettings(client,cloud.activeOrganization.id,cloud.user.id,{enabled:f.get('enabled')==='on',model:f.get('model'),dailyRequestLimit:Number(f.get('dailyRequestLimit'))});
+      aiSettingsLoaded=true;aiSettingsError='';renderView();toast('Organisation AI policy saved.','success');
+    }catch(error){toast(error.message,'error');}
+    return;
+  }
+  if(e.target.id==='aiAssistRunForm'){
+    e.preventDefault();
+    if(!e.target.elements.consent?.checked){toast('Explicit transcript-transfer consent is required.','warning');return;}
+    const cloud=activeAICloudContext();
+    const interaction=(state.customerQaHistory||[]).find(item=>item.id===e.target.elements.interactionId?.value);
+    if(!cloud||!interaction){toast('Select a completed interaction in an authenticated organisation workspace.','error');return;}
+    if(!aiTenantSettings?.enabled){toast('AI assistance is disabled by this organisation.','warning');return;}
+    aiAssistBusy=true;renderView();
+    try{
+      const client=await getCloudSupabaseClient();
+      const result=await requestAIAssist(client,{organizationId:cloud.activeOrganization.id,interaction});
+      state.aiQaSuggestions=Array.isArray(state.aiQaSuggestions)?state.aiQaSuggestions:[];
+      state.aiQaSuggestions.push({...result,organizationId:cloud.activeOrganization.id});
+      state.aiQaSuggestions=state.aiQaSuggestions.slice(-40);
+      saveState();toast('AI practice analysis completed. It remains advisory until reviewed by a human.','success');
+    }catch(error){toast(error.message,'error');}
+    finally{aiAssistBusy=false;renderView();}
+    return;
   }
   if(e.target.id==='cloudOrgCreateForm'){
     e.preventDefault();const f=new FormData(e.target);createCloudOrganization({name:f.get('name'),industry:f.get('industry')}).then(()=>renderView()).catch(error=>toast(error.message,'error'));return;
@@ -1910,10 +2001,12 @@ document.addEventListener('click',event=>{
 window.addEventListener('calloria:cloud-context', async event=>{
   const detail=event.detail||{};
   if(detail.signedOut){
+    aiSettingsOrgId='';aiSettingsLoaded=false;aiSettingsLoading=false;aiSettingsError='';aiTenantSettings=null;aiAssistBusy=false;
     configureCloudEmploymentSync(null);
     cloudScopedSave=false;activeStorageKey=STORAGE_KEY;state=loadState();ensureOrganizationWorkspace(state);setHeader();renderView();return;
   }
   if(detail.userId&&detail.organizationId){
+    aiSettingsOrgId='';aiSettingsLoaded=false;aiSettingsLoading=false;aiSettingsError='';aiTenantSettings=null;aiAssistBusy=false;
     cloudScopedSave=true;
     activeStorageKey=`calloria.save.cloud.${detail.userId}.${detail.organizationId}.v1`;
     state=loadState();
@@ -1933,7 +2026,7 @@ window.addEventListener('calloria:cloud-context', async event=>{
         state.organizationWorkspace={activeOrganizationId:detail.organizationId,organizations:[{
           id:detail.organizationId,name:cloudOrg?.name||detail.organizationName||'Organisation',industry:cloudOrg?.industry||'General customer service',status:'active',createdAt:cloudOrg?.createdAt||new Date().toISOString(),policy:structuredClone(detail.policy||DEFAULT_ORG_POLICY),members:[],audit:[]
         }]};
-        for(const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations']) if(!Array.isArray(state[key])) state[key]=[];
+        for(const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations','aiQaSuggestions']) if(!Array.isArray(state[key])) state[key]=[];
         markCloudEmploymentSyncReady();
       } else {
         // One-time migration of this user's already-scoped browser save into the tenant record.

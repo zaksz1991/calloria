@@ -1,4 +1,4 @@
-# CALLORIA 1.2.0 — GUI deployment guide
+# CALLORIA 1.3.0 — GUI deployment guide
 
 Target repository: `zaksz1991/calloria`  
 Target Vercel site: `https://calloria.vercel.app`  
@@ -6,13 +6,13 @@ Production branch: `main`
 
 ## 1. Replace the repository files
 
-1. Download and extract `CALLORIA-v1.2.0.zip` in Windows File Explorer.
+1. Download and extract `CALLORIA-v1.3.0.zip` in Windows File Explorer.
 2. Open the existing `zaksz1991/calloria` repository in GitHub Desktop. If it is not on this computer, clone the existing repository using GitHub Desktop.
 3. In GitHub Desktop, choose **Repository → Show in Explorer**.
-4. Copy the contents of the extracted `CALLORIA-v1.2.0` folder into the existing repository root. Do not copy an outer wrapper folder and do not delete the hidden `.git` folder.
+4. Copy the contents of the extracted `CALLORIA-v1.3.0` folder into the existing repository root. Do not copy an outer wrapper folder and do not delete the hidden `.git` folder.
 5. Allow File Explorer to replace matching files and add the new cloud modules, tests and Supabase migration folder.
-6. Review the changed-file list in GitHub Desktop. The release should include the updated `package.json`, `index.html`, `js/main.js`, new `js/cloud-platform.js` and `js/cloud-security.js`, `supabase/`, `SUPABASE-SETUP.md`, and updated documentation/tests.
-7. Use the summary `CALLORIA v1.2.0 — Customer intelligence and adaptive contact simulation`, commit to `main` and push.
+6. Review the changed-file list in GitHub Desktop. The release should include the updated `package.json`, `index.html`, `js/main.js`, `js/ai-assist-engine.js`, `js/customer-intelligence-engine.js`, `supabase/migrations/202611070003_calloria_ai_assistance.sql`, `supabase/functions/calloria-ai-assist/index.ts`, `supabase/config.toml`, and updated documentation/tests.
+7. Use the summary `CALLORIA v1.3.0 — AI-assisted customer intelligence`, commit to `main` and push.
 
 ## 2. Apply Supabase setup before adding Vercel variables
 
@@ -42,7 +42,7 @@ Apply variables to the correct Production and Preview scopes, save and trigger a
 
 ## 4. First deployment checks
 
-1. Confirm CALLORIA branding and Build 1.2.0 are visible.
+1. Confirm CALLORIA branding and Build 1.3.0 are visible.
 2. Confirm the sign-in/create-account gate appears when cloud variables are configured.
 3. Create an account, confirm the email and sign in.
 4. Create the first organisation; confirm the user becomes owner.
@@ -69,3 +69,16 @@ No GitHub commit, Vercel deployment, Supabase migration execution or live tenant
 3. Deploy this application build with the existing public Supabase URL and publishable/anon key environment variables. Do not expose a service-role or secret key.
 4. Sign in with a test account, enter an organisation, complete or modify a harmless synthetic training action, reload, and confirm the progress is restored.
 5. Sign in as a second organisation member and confirm the employee cannot read another member's private snapshot unless the role has operations-read permission. Test separate organisations with separate test accounts.
+
+
+## 6. Apply v1.3 AI assistance setup before enabling the feature
+
+1. Follow sections 7–10 of `SUPABASE-SETUP.md`. Apply migration `202611070003_calloria_ai_assistance.sql` after migrations 001 and 002.
+2. Deploy the `calloria-ai-assist` Supabase Edge Function from `supabase/functions/calloria-ai-assist/index.ts`. Keep JWT verification on.
+3. Add `OPENAI_API_KEY` to Supabase Edge Function secrets, not Vercel. Add `CALLORIA_ALLOWED_ORIGINS` with the exact production origin.
+4. Confirm the Edge Function deployment is healthy and a signed-in owner/admin can load the tenant AI settings panel.
+5. Only then enable the feature for a test organisation. Run an explicit-consent synthetic interaction analysis and confirm that it appears only as an advisory draft.
+6. Confirm that no AI result is inserted into the Human QA register until a human completes the normal review form.
+7. Test an agent role and a second organisation. Direct setting updates must be denied by PostgreSQL RLS and usage quota must remain tenant-scoped.
+
+Do not add the OpenAI API key to Vercel or to any `VITE_` environment variable. The app's browser bundle must contain only the Supabase URL and publishable/anon key.

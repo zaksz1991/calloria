@@ -1,6 +1,6 @@
 # CALLORIA — Contact Centre Career & Operations Simulator
 
-**Build:** 1.2.0 — Human QA & Supervisor Intelligence  
+**Build:** 1.3.0 — AI-Assisted Customer Intelligence  
 **Product:** A browser-first contact-centre career and operations simulator. Recruitment is the entry gate; the main experience is simulated employment, multi-channel customer operations, workforce routines and career progression.
 
 ## Release history and capabilities
@@ -19,9 +19,38 @@
 This milestone server-backs identity and organisation administration only. Recruitment progress, gameplay, simulated call records, customer interactions, shift records, voice sessions and performance history remain browser-local. Staff invitations create pending records but do not send emails; recipients must create/confirm an account using the invited email and accept the invitation. The SQL has static regression coverage but has not yet been applied to a live Supabase project or subjected to live cross-tenant RLS testing. Do not describe a deployed environment as security-verified until the tenant-isolation checklist has passed against the actual project.
 
 ### Supabase setup
-See `SUPABASE-SETUP.md` before configuring Vercel. Run the migration in `supabase/migrations/202611070001_calloria_server_tenancy.sql
-supabase/migrations/202611070002_calloria_employment_persistence.sql`, then add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to the Vercel environment. A legacy anon key is supported. Never put a service-role or secret key in a `VITE_` variable.
+See `SUPABASE-SETUP.md` before configuring Vercel. Run migrations `supabase/migrations/202611070001_calloria_server_tenancy.sql` and `supabase/migrations/202611070002_calloria_employment_persistence.sql`, and for v1.3 apply `202611070003_calloria_ai_assistance.sql`. Deploy `supabase/functions/calloria-ai-assist/index.ts` and configure its secret before enabling AI. Then add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to the Vercel environment. A legacy anon key is supported. Never put a service-role or secret key in a `VITE_` variable.
 
+
+
+## v1.3.0 — AI-Assisted Customer Intelligence
+
+The Human QA workspace now includes an optional tenant-configured AI assistant. An organisation owner or administrator can enable the feature, choose the model and set a daily request limit. AI assistance remains disabled until the v1.3 Supabase migration, server-side provider secret and authenticated Supabase Edge Function are deployed.
+
+### AI-assisted workflow
+
+1. Complete and finalise a synthetic Customer Lab interaction.
+2. Open **Quality assurance**. Sign in to a Supabase organisation workspace.
+3. An organisation owner/admin saves the AI policy. Provider credentials are configured only as Supabase Edge Function secrets; they are not entered in the browser.
+4. Select a completed synthetic practice interaction and tick the explicit consent checkbox for that one transfer.
+5. CALLORIA sends the Customer Lab's separate speaker-balanced transcript (customer prompts and agent responses); the existing human scorecard evidence transcript remains unchanged. It redacts common credential-like strings, long numeric identifiers and email addresses before invoking the authenticated `calloria-ai-assist` Edge Function.
+6. The Edge Function verifies the Supabase user, active organisation membership, tenant AI policy and daily quota before calling the OpenAI Responses API. The provider request sets `store: false`.
+7. The interface displays sentiment, customer intent, a concise summary, potential risk flags, suggested QA observations and coaching/follow-up ideas. A suggested evidence quote is marked verified only when it matches the redacted transcript text.
+8. A human reviewer completes the existing scorecard workflow independently. AI analysis never publishes, adjusts or finalises an official human QA review.
+
+### AI and data boundaries
+
+- The feature is off by default and requires cloud mode. Local demo mode never sends transcripts to an external provider.
+- Only synthetic training transcripts are permitted. Do not submit actual customer, employee, account, card, identity or health information.
+- Audio files and voice recordings are never sent by this feature.
+- The browser does not contain an OpenAI API key. The Edge Function reads `OPENAI_API_KEY` from server-side Supabase secrets.
+- Tenant configuration controls enablement, model and daily quota. PostgreSQL enforces the quota atomically per organisation and UTC day. Failed provider attempts also count after quota consumption.
+- The usage table records only organisation/date/request count. The function does not persist transcript content or provider output to that table and does not log request bodies. The Edge Function also checks the Customer Lab source marker, `CIL-` interaction ID and known persona/issue/channel identifiers. This is a source check, not cryptographic proof; never paste live customer or employee information into a practice transcript.
+- `store: false` controls response storage in the API request; it does not guarantee zero provider-side processing or retention. Review the organisation's provider terms, data controls, account configuration and legal obligations.
+- AI sentiment/risk labels and QA suggestions may be wrong or incomplete. They are not factual findings, compliance determinations, regulated advice, employee performance decisions or an official QA score.
+- The model list in this build is intentionally limited to `gpt-6-luna` and `gpt-6.1-terra`. Availability depends on the provider account.
+
+See `SUPABASE-SETUP.md` and `DEPLOYMENT-GUIDE.md` for migration 003, Edge Function deployment and secret configuration.
 
 ## v1.2.0 — Human QA & Supervisor Intelligence
 
@@ -154,6 +183,7 @@ CALLORIA-v1.2.0/
 │   ├── cloud-security.js
 │   ├── organization-engine.js
 │   ├── main.js
+│   ├── ai-assist-engine.js
 │   ├── operations-engine.js
 │   ├── multichannel-engine.js
 │   ├── workforce-engine.js
@@ -163,7 +193,10 @@ CALLORIA-v1.2.0/
 ├── supabase/
 │   ├── migrations/
 │   │   ├── 202611070001_calloria_server_tenancy.sql
-│   │   └── 202611070002_calloria_employment_persistence.sql
+│   │   ├── 202611070002_calloria_employment_persistence.sql
+│   │   └── 202611070003_calloria_ai_assistance.sql
+│   └── functions/
+│       └── calloria-ai-assist/index.ts
 │   └── tests/
 ├── assets/
 │   └── calloria-mark.svg
@@ -174,17 +207,19 @@ CALLORIA-v1.2.0/
 │   ├── multichannel-engine.test.mjs
 │   ├── workforce-engine.test.mjs
 │   ├── shift-engine.test.mjs
-│   └── voice-engine.test.mjs
+│   ├── voice-engine.test.mjs
+│   ├── ai-assist-engine.test.mjs
+│   └── ai-assist-integration.test.mjs
 └── project documentation
 ```
 
 ## Release verification
 
-- JavaScript syntax checks: passed in the release preparation environment.
-- Automated regression tests: 71/71 passed in release preparation.
-- ZIP integrity: checked when the release archive is packaged.
+- JavaScript syntax checks (`npm run check`): passed.
+- Automated regression tests (`npm test`): 106/106 passed.
 - Production dependency installation: timed out in the preparation environment; Vite remains unavailable.
-- Vite production bundle: only reported as passed if dependencies are available and `vite build` completes.
+- Vite production bundle: not verified.
+- ZIP integrity: checked after packaging.
 - Browser UI, message flow, screen-reader/accessibility behaviour, 3D asset loading, WebGL rendering, and physical-device QA on Android/iOS require browser/device verification.
 - No GitHub commit or Vercel deployment is implied by this ZIP package.
 

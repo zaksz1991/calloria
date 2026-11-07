@@ -1,4 +1,4 @@
-# CALLORIA 1.2.0 — Supabase setup
+# CALLORIA 1.3.0 — Supabase setup and AI gateway
 
 This release moves user identity and organisation administration to Supabase. Follow these steps before enabling cloud mode on the Vercel deployment.
 
@@ -90,3 +90,45 @@ After applying `202611070001_calloria_server_tenancy.sql`, apply `202611070002_c
 ## v1.2.0 QA data behaviour
 
 Human QA reviews, scorecard versions, disputes and calibration sessions are stored in the employee's existing `employment_snapshot` payload. No new SQL migration is required for this release. This is not a shared QA register: one employee snapshot is not a substitute for a tenant-wide QA schema or server-enforced reviewer permissions.
+
+
+## 7. v1.3.0 AI assistance migration
+
+1. In Supabase **SQL Editor**, create a new query.
+2. Open `supabase/migrations/202611070003_calloria_ai_assistance.sql` from this package, copy the complete contents and run it after migrations 001 and 002.
+3. In **Table Editor**, confirm `calloria_ai_settings` and `calloria_ai_usage` exist. Confirm RLS is enabled on both. `calloria_ai_usage` has no direct browser grants; its quota is changed through an authenticated security-definer function that checks active organisation membership and the tenant's enabled policy.
+4. Confirm an initial disabled settings row exists for each existing organisation. New organisations created after this migration do not automatically get a settings row; the first owner/admin save creates it.
+5. Do not enable the AI setting yet. Deploy the Edge Function and configure its secret first.
+
+## 8. Deploy the AI Edge Function and secret
+
+The new function is `supabase/functions/calloria-ai-assist/index.ts`. It validates the signed-in Supabase user, active organisation membership, tenant policy and atomic daily quota. It uses the server-side `OPENAI_API_KEY`; no provider key is required or permitted in Vercel client variables.
+
+1. Open the Supabase project and go to **Edge Functions**.
+2. Create a function named `calloria-ai-assist` using the dashboard's function editor/deployment flow. Use the complete `index.ts` source from this package. If the editor does not support importing `npm:@supabase/supabase-js@2`, deploy the same function through the Supabase CLI/CI flow supported by your project; do not replace the source with a browser-side OpenAI call.
+3. Keep JWT verification enabled. The package includes `supabase/config.toml` with `verify_jwt = true`; the function also calls `auth.getUser()` and checks active membership itself.
+4. In **Edge Functions → Secrets** (or the project's Edge Function secrets settings), add `OPENAI_API_KEY` with the secret from the organisation's authorised OpenAI API project. Never add it to Vercel, `.env.example`, `VITE_` variables, browser storage, GitHub source or client code.
+5. Add `CALLORIA_ALLOWED_ORIGINS` containing the comma-separated exact CALLORIA origins, for example `https://calloria.vercel.app`. Add only the preview origins that should be allowed. The function fails closed when this setting is missing and rejects requests whose browser origin is not on the list; do not use `*`.
+6. Confirm Supabase supplies `SUPABASE_URL` and a publishable/anon key to the Edge Function runtime. The code reads `SUPABASE_PUBLISHABLE_KEYS.default` or `SUPABASE_ANON_KEY`; it does not need a service-role key.
+7. Deploy the function and verify its name is exactly `calloria-ai-assist`. Do not set `verify_jwt = false`.
+
+## 9. Enable and test tenant AI policy
+
+1. Sign in as an organisation owner/admin and open **Quality assurance**.
+2. Confirm the AI panel loads the organisation's disabled default policy.
+3. Enable the feature, choose `gpt-6-luna` or `gpt-6.1-terra`, set a daily limit between 1 and 5,000 and save.
+4. Complete a synthetic Customer Lab interaction. In QA, select it, explicitly tick the transcript transfer consent and run one analysis.
+5. Confirm an AI suggestion appears in the AI draft panel, and that the label says **Human approval required**.
+6. Confirm it did not create an entry in the human QA review register, change a review, modify a promotion attempt or create an employee decision. A human reviewer must still complete the normal scorecard.
+7. Confirm request usage increments for the organisation and the next allowed request count decreases. Test the configured quota with a small limit on a non-production test organisation.
+8. Sign in as a user in a different organisation and confirm the AI settings and quota are not visible or mutable across tenants.
+9. Sign in as an agent and confirm the agent cannot change tenant AI settings, even if the browser attempts a direct upsert.
+10. Disable AI in the tenant policy and confirm the Edge Function rejects any further request for that organisation.
+
+## 10. AI provider privacy and usage boundary
+
+Only completed Customer Lab practice records are accepted by the interface and Edge Function. The request must carry the Customer Lab source marker, a completed `CIL-` interaction ID and one of the known synthetic persona, issue and channel identifiers. The AI-specific transcript contains both customer prompts and agent replies; the existing human QA evidence transcript remains unchanged. These client-generated identifiers are a source check, not cryptographic proof that transcript text was never edited or copied. CALLORIA redacts common credential-like strings, long numbers and email addresses before sending the transcript, and the Edge Function repeats redaction. Redaction is a precaution, not a guarantee that every sensitive value can be detected. Never paste or use real customer or employee records in Customer Lab or AI assistance.
+
+The API request sets `store: false` and the Edge Function does not save prompt or response content into the CALLORIA usage table or log request bodies. This does not promise zero provider-side processing or retention. Review the provider's current terms, data controls, API account settings and the organisation's legal requirements before enabling it. Usage quota increments when a request is admitted, including requests where the provider subsequently fails.
+
+The provided AI assistant is an advisory training aid. It may hallucinate, misclassify sentiment or miss a risk. Evidence is only visually marked verified when a suggested quote can be found in the redacted transcript; this is not proof that the model's conclusion is correct. Human review remains required.

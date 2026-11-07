@@ -1,24 +1,30 @@
-# CALLORIA v1.2.0
+# CALLORIA v1.3.0 — AI-Assisted Customer Intelligence
 
-## Human QA & Supervisor Intelligence
+## Added
+- Tenant-controlled AI assistance in the Human QA workspace.
+- Supabase Edge Function gateway using the OpenAI Responses API; provider credentials remain server-side.
+- Two supported tenant model selections: `gpt-6-luna` and `gpt-6.1-terra`.
+- Explicit per-analysis consent before a redacted synthetic transcript is transmitted.
+- A dedicated AI transcript preserves both customer prompts and agent replies while keeping the existing human QA evidence transcript unchanged.
+- Client- and server-side redaction for credential-like strings, long numeric identifiers and email addresses.
+- AI-generated sentiment, intent, interaction summary, possible risk flags, QA observations, coaching ideas and follow-up checklist.
+- Exact transcript quote verification before an AI QA evidence suggestion is displayed as verified.
+- Mandatory human approval boundary: AI output never creates or changes an official human QA review, dispute, promotion score or employee decision.
+- Organisation-level enable/disable setting, model selection and daily usage limit (1–5,000 requests).
+- Atomic tenant daily quota enforcement in PostgreSQL.
+- Usage counter stores request counts only; transcript text and provider response are not written to the AI usage table.
 
-- Added a dedicated Quality Assurance workspace accessible from management navigation.
-- Added a versioned, weight-configurable six-dimension human QA scorecard; criterion weights must total exactly 100%.
-- Added manual review of completed synthetic Customer Lab interactions.
-- Added transcript-line evidence selection for every scored criterion; evidence must match the saved interaction transcript.
-- Added weighted human scores, mandatory-review precedence for critical conduct/security breaches, and review status labels.
-- Added evidence-linked coaching actions for criteria rated 3/5 or lower.
-- Added a dispute workflow with substantive reason validation, duplicate-open-dispute prevention, independent resolution notes, upheld/adjusted decisions and explicit adjusted-score validation.
-- Added reviewer calibration across independent reviews of the same interaction and scorecard, including per-criterion spread and discussion flags.
-- Added QA metrics and audit events for review, dispute and calibration activity.
-- Added completed Customer Lab transcript retention to enable later evidence-based review.
-- Added regression tests for scorecard validation, transcript evidence, weighted scoring, critical-breach handling, disputes, calibration and UI wiring.
+## Security and data limits
+- AI requests require a valid Supabase user session and an active membership in the selected organisation.
+- Tenant settings are readable by active members and writable only by users with organisation policy-management permission.
+- The Edge Function requires a server-side `OPENAI_API_KEY`, enforces organisation settings and redaction, and does not log request bodies.
+- The browser contains no provider API key and calls only the authenticated Supabase Edge Function.
+- Only synthetic training transcripts are in scope. Audio is not sent.
+- Provider request uses `store: false`; this is not a promise of zero provider-side processing or retention. Review provider contractual terms and data controls before enabling the feature for any non-synthetic data.
+- The feature is disabled by default. It is unavailable until migration 003 and the Edge Function are deployed.
 
-## Data and operational boundaries
+## Preserved
+All recruitment, 3D workplace, voice and digital operations, workforce/briefing, promotion, CRM, organisation tenancy, employment snapshot, human QA, dispute and calibration workflows from v1.2.0 remain in the package.
 
-- QA records are included in the existing employment snapshot and therefore follow its current user-and-organisation cloud snapshot behaviour when cloud sync is configured. They are not stored in a dedicated QA table.
-- Reviewer identity is manually entered in the UI. This release does not implement shared supervisor RBAC, reviewer assignment, dual-control approval or an immutable enterprise audit ledger.
-- Evidence is linked to transcript lines, not playable call audio. Voice recordings remain temporary browser-memory samples and are not attached to Customer Lab records.
-- Scorecard criterion labels are based on the standard six dimensions; this release lets administrators configure their weights and version the scorecard, but does not provide arbitrary criterion authoring.
-- Dispute adjustments are recorded as resolution outcomes; they do not overwrite the original reviewer score.
-- All customer and interaction records remain synthetic training data.
+## Verification boundary
+The Node regression suite and syntax checks are run for this package. SQL is statically inspected by regression tests, not executed against a live Supabase database. The Deno Edge Function, live provider request, Vite production build, browser/mobile behaviour, live tenant isolation and deployment must be validated in the target project before production use.
