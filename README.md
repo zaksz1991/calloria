@@ -1,81 +1,81 @@
 # CALLORIA — Contact Centre Career & Operations Simulator
 
-**Build:** 0.5.0 — contact-centre operations engine  
-**Product:** A multi-industry contact-centre career and operations simulator. Recruitment is the entry gate; the main gameplay is simulated employment, customer operations, service performance and career progression.
+**Build:** 0.6.0 — Voice Practice, Workforce Operations & Character Activity  
+**Product:** A browser-first contact-centre career and operations simulator. Recruitment is the entry gate; the main experience is simulated employment, customer operations, workforce routines and career progression.
 
-## What changed in 0.5.0
+## What changed in 0.6.0
 
-### Inbound operations engine
-- Added structured inbound contact records with unique IDs, scenario links, queue entry timestamps, routing groups, priority and lifecycle history.
-- Added priority-first routing: fraud, suspicious activity and security reports are routed ahead of routine contacts; higher-risk service issues are elevated above normal enquiries.
-- Added lifecycle states for queued, offered, connected, on hold, transferred, wrap-up, callback, completed, escalated and abandoned contacts.
-- Added hold/resume, return-to-queue, specialist transfer and supervisor assistance controls during active calls.
-- Added after-contact work. Agents must choose a final disposition and provide factual notes before an interaction can be completed.
-- Added callback scheduling with future-time validation and return-to-queue controls. Scheduled callbacks cannot be placed into the queue early.
+### Optional voice practice
+- Added an optional customer-statement playback action using the browser's speech synthesis capability.
+- Added explicit microphone consent before any audio capture or live transcription.
+- Added up to 30 seconds of local microphone sample recording and in-page playback using `MediaRecorder` when supported.
+- Added optional browser speech recognition with an `en-NG` language hint when the browser exposes the API.
+- Added a typed-response fallback for browsers and devices without microphone or speech-recognition support.
+- Added transcript sanitation for PINs, OTPs, passwords, account/card details and long payment-card digit sequences.
+- Kept audio blobs, object URLs and transcripts in temporary page memory only. They are not added to the employment save or uploaded by CALLORIA. Voice tools are stopped and temporary media references are cleared when the page is hidden or unloaded.
+- Added a visible privacy notice explaining that browser speech recognition may be processed by the browser's speech service.
 
-### Outbound campaign controls
-- Added unique simulated dial-attempt references and event history.
-- Added mandatory after-contact notes and disposition recording.
-- Added a contact suppression register. A recorded customer opt-out blocks further simulated campaign attempts for that contact.
-- Added scheduled outbound callbacks with due-time checks, callback continuation and suppression checks.
-- Ensured a callback is only marked complete after the replacement disposition and any requested callback time pass validation.
-- Corrected outbound callback completion to resolve by callback ID instead of depending on an inbound queue record.
-- Recorded an explicit customer cancellation decision as a declined retention outcome.
-- Added safe cancellation of an incomplete outbound attempt; it does not receive completion credit.
+### Agent state and shift operations
+- Added agent states: Available, Busy, Wrap-up, Break and Offline.
+- Added an 08:00–17:00 simulated work schedule with morning, lunch and afternoon break windows.
+- Added minute-based schedule adherence, including late-start and break deviations.
+- Added state transitions when inbound/outbound contacts begin, enter after-contact work, complete or are cancelled.
+- Added a single-shift-per-simulated-workday rule and an explicit next-workday action so players are not forced to wait through an overnight clock cycle.
+- Added shift history with recorded adherence results.
+- Added team-leader coaching records with feedback, action plans, score and follow-up date.
 
-### Supervisor, CRM and performance
-- Added a supervisor assistance desk for open requests, escalated cases and recent operational events.
-- Expanded CRM case records with disposition, factual notes, owner and event history.
-- Added a searchable-by-history interaction timeline view in CRM.
-- Added queue wait, service-level snapshot, after-contact work and accepted-contact metrics.
-- Added Queue and Supervisor entries to the game navigation and 3D workstation interaction panel.
+### Character activity
+- Added agent activity state updates to the 3D workplace layer.
+- Desk GLB characters can cross-fade between available animation clips whose names match working, typing, writing, idle, seated or rest states.
+- Local fallback desk characters have restrained arm motion for working and listening states.
+- Existing GLB asset references remain external runtime assets; their licensing, browser loading and animation coverage are not verified in this release.
 
-### Engineering
-- Extracted queue and contact lifecycle rules into `js/operations-engine.js` so operational state is separated from screen rendering.
-- Added unit tests for contact creation, queue priority, lifecycle transitions, metrics, suppression and callback validation.
-- Preserved the v0.3.0 game shell, mobile controls, recruitment flow, existing inbound/outbound scenarios, CRM, knowledge base, performance and career progression.
+### Preserved capabilities
+- Recruitment application, assessment, practical call simulation and employment acceptance.
+- Prioritised inbound queue, scripted customer scenarios, hold/resume, transfer, supervisor requests and after-contact work.
+- Outbound campaigns, callbacks, suppression controls and dispositions.
+- CRM cases, operational timeline, knowledge base, performance and career views.
+- Morning and afternoon briefings, specialist department assignment, annual promotion attempts, cross-selling, commendations and synthetic enterprise-system workflow records.
+- Desktop movement, first-person 3D workplace and mobile touch controls.
 
-## Existing experience retained
+## Current operating model
 
-- CALLORIA game-first interface and immersive 3D contact-centre workplace.
-- Desktop WASD/arrow movement, mouse look, sprint and workstation interaction.
-- Touch joystick, drag-to-look, run and workstation-use controls.
-- Candidate application, aptitude/judgement/security assessment and practical call assessment.
-- Employment offer and acceptance gate.
-- Existing inbound scenarios and outbound campaign scripts.
-- Simulated CRM, knowledge base, performance dashboard, salary/bonus and career progression.
-- Vite-managed Three.js and Vercel build configuration.
+The simulation clock advances 30 in-game seconds for each real second. A full nine-hour shift therefore takes 18 real minutes when left running continuously. The player begins at 07:00, can attend the 07:30 morning briefing, and may start the scheduled shift from 08:00. The 14:00 afternoon briefing is available in its scheduled in-game window.
 
-## Run and build
+Default break windows are 10:00–10:15, 12:30–13:00 and 15:00–15:15. The player must manually start and end each break. Break adherence is calculated against the configured schedule.
 
-Requires Node.js 22.12 or later.
+Voice practice is supplemental to the existing scripted call decision flow. A recorded sample or speech transcript does not currently drive scenario branching or automatic QA scoring. Customer statement playback depends on the browser's speech synthesis voice availability. Microphone recording and speech recognition depend on browser/device support and explicit permission.
 
-- `npm run dev` — local Vite development server.
-- `npm run check` — JavaScript syntax checks.
-- `npm test` — automated regression and operations-engine tests.
-- `npm run build` — Vite production build.
-- `npm run preview` — preview the production bundle.
+## Build and hosting
+
+Requires Node.js 22.12 or later. The application is configured for Vite production builds and Vercel hosting.
 
 Vercel settings:
 
 - Framework: Vite
+- Root directory: `./`
 - Install command: `npm install`
 - Build command: `npm run build`
 - Output directory: `dist`
 
-## Important simulation boundaries
+The project includes automated syntax and regression checks in its package scripts. The supplied deployment guide uses GitHub Desktop and the Vercel dashboard for the normal GUI-based release path.
 
-- All calls, customers, accounts, cases, campaigns, callbacks, salary and performance data are simulated. The game does not place real calls or access real customer records.
-- Queue routing and supervisor actions are single-player simulation logic. They are not a real multi-agent ACD, workforce platform or live supervisor connection.
-- Contact records, callback schedules and suppression preferences are stored in browser local storage. They are not synchronised across devices and are not protected server-side records.
-- Voice conversations, microphone capture, email, live chat, social messaging, multiplayer and multi-organisation administration are not implemented in this release.
-- Customer dialogue remains scenario-driven rather than live AI-generated voice dialogue.
-- Current human and reception GLB assets are still external runtime references. They have not been bundled or independently browser-verified; approved commercial assets must be versioned and hosted first-party.
+## Simulation and privacy boundaries
+
+- All customers, calls, account records, cases, campaigns, callbacks, salaries and performance values are synthetic gameplay data.
+- The enterprise systems sandbox does not connect to real ICC, CRM, Finacle or other bank systems and cannot initiate real transactions.
+- The application does not place real telephone calls or connect to live customer queues.
+- Local profile and operational records remain in browser local storage. They are not server-backed, tenant-scoped or synchronised across devices.
+- Optional audio samples and transcripts remain in page memory only and are not persisted in the employment save. Browser speech recognition may use a browser-controlled recognition service; this is disclosed before use.
+- Do not use real customer data or speak PINs, passwords, OTPs, full account numbers or payment-card details during practice. Redaction is a defensive filter, not a guarantee that every sensitive phrase can be detected.
+- Voice practice currently supports player sample capture and browser transcription, not a live AI customer conversation or automatic voice-based call scoring.
+- Animation switching depends on matching clips in the loaded character GLB. If the selected third-party model has no matching clips, the corresponding animation cannot be shown. Approved first-party assets must replace external runtime references before commercial release.
+- This is a development simulator, not a finished commercial product or a certified contact-centre workforce platform.
 
 ## Project structure
 
 ```text
-CALLORIA-v0.5.0/
+CALLORIA-v0.6.0/
 ├── index.html
 ├── styles.css
 ├── vite.config.js
@@ -84,26 +84,27 @@ CALLORIA-v0.5.0/
 ├── js/
 │   ├── main.js
 │   ├── operations-engine.js
+│   ├── workforce-engine.js
+│   ├── shift-engine.js
+│   ├── voice-engine.js
 │   └── production-world.js
 ├── assets/
 │   └── calloria-mark.svg
 ├── tests/
 │   ├── calloria.test.mjs
-│   └── operations-engine.test.mjs
+│   ├── operations-engine.test.mjs
+│   ├── workforce-engine.test.mjs
+│   ├── shift-engine.test.mjs
+│   └── voice-engine.test.mjs
 └── project documentation
 ```
 
 ## Release verification
 
 - JavaScript syntax checks: passed.
-- Automated tests: 18/18 passed.
-- ZIP integrity: to be checked when release archive is produced.
-- Vite production bundle: not verified. Vite was not installed in this environment; dependency installation timed out while waiting on the package registry.
-- Full browser walkthrough, GLB runtime loading, desktop 3D rendering and physical-device QA on Android/iPhone: not verified.
+- Automated tests: 40/40 passed.
+- ZIP integrity: checked when the release archive is packaged.
+- Vite production bundle: not verified in this environment unless the final dependency installation and build succeed.
+- Browser microphone permissions, actual speech recognition, audio output, 3D animation-clip transitions, GLB runtime loading and Android/iOS physical-device QA: not independently verified.
 
-Build 0.5.0 is an operations-engine development release, not a finished commercial product. It materially expands operational depth but does not yet deliver real voice, digital channels, server persistence or multi-user operations.
-
-
-## Build 0.5.0 workforce systems
-
-The People & Systems workspace includes simulated morning and afternoon briefings, specialist departments, weighted promotion eligibility, annual examination controls, consent-led cross-selling, official customer commendation routing and synthetic enterprise system workflows. These are local gameplay records, not integrations with a real bank or employer. The promotion weights and pass thresholds are illustrative defaults and require organisation-approved configuration before commercial use.
+Build 0.6.0 is a development milestone. It adds optional local voice practice and workforce routines while retaining scripted customer interactions. Multi-channel email/chat/social operations, server persistence and multi-user organisation support remain future milestones.

@@ -258,3 +258,15 @@ table{color:#d8e6e7}th{color:#85a4ad;background:rgba(255,255,255,.035)}td{border
 .form-field:has(input[type=checkbox]){display:block;padding:7px 0}
 .workforce-note{color:var(--muted);font-size:9px;line-height:1.6}
 @media(max-width:760px){.form-stack .btn{width:100%}}
+
+
+/* v0.6.0 — optional local voice practice and workforce controls */
+.voice-practice-panel{display:grid;gap:12px;margin-top:18px;padding:15px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.025)}
+.voice-practice-panel .panel-head{margin:0 0 2px}
+.voice-consent{display:flex;align-items:flex-start;gap:9px;color:var(--muted);font-size:10px;line-height:1.55}
+.voice-consent input{flex:0 0 auto;margin-top:2px;accent-color:var(--teal)}
+.button-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.voice-audio-player{display:block;width:100%;min-height:38px}
+.voice-transcript{min-height:54px;max-height:190px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:11px;border:1px solid var(--line);border-radius:7px;background:rgba(0,0,0,.18);color:var(--ink);font-size:11px;line-height:1.6}
+.voice-privacy-note{padding:10px 11px;border-left:2px solid var(--teal);background:rgba(89,224,202,.045);color:var(--muted);font-size:9px;line-height:1.6}
+@media(max-width:520px){.button-row>.btn{flex:1 1 100%;width:100%}.voice-practice-panel{padding:11px}}

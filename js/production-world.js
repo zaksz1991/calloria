@@ -542,6 +542,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   const mixers = [];
   const walkers = [];
   const deskActors = [];
+  let agentActivity = 'offline';
   const loader = GLTFLoader ? new GLTFLoader() : null;
   const fallbackCharacters = [];
 
@@ -643,7 +644,13 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
         actor.rotation.y=Math.PI;
         actor.scale.multiplyScalar(.94);
         actor.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
-        scene.add(actor);deskActors.push({root:actor,phase:seedOffset*.8});
+        scene.add(actor);
+        const actorMixer=new THREE.AnimationMixer(actor);
+        const actions=gltf.animations.map(clip=>({clip,action:actorMixer.clipAction(clip)}));
+        const idle=actions.find(item=>/idle|sit|seated|rest/i.test(item.clip.name));
+        if(idle) idle.action.play();
+        if(actions.length) mixers.push(actorMixer);
+        deskActors.push({root:actor,phase:seedOffset*.8,mixer:actorMixer,actions,activeAction:idle?.action||null});
       }else{
         const route=routes[(i+seedOffset)%routes.length];
         addWalker(actor,route,walkClip,.035+(i%2)*.009,(i/count)*.72+seedOffset*.16);
@@ -890,10 +897,24 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
       root.rotation.y=Math.PI+(desk?Math.sin(elapsed*.22+phase)*.035:Math.sin(elapsed*.35+phase)*.18);
       root.position.y=desk?Math.abs(Math.sin(elapsed*1.1+phase))*.006:Math.abs(Math.sin(elapsed*2.2+phase))*.014;
       root.userData.armParts?.forEach(({upper,fore,side})=>{
-        upper.rotation.x=.11*Math.sin(elapsed*2.2+phase+side);
-        fore.rotation.x=.08*Math.cos(elapsed*2.0+phase+side);
+        const working=desk && ['busy','wrap-up'].includes(agentActivity);
+        const listening=desk && agentActivity==='available';
+        upper.rotation.x=(working?.34:listening?.12:.04)*Math.sin(elapsed*(working?3.2:1.1)+phase+side);
+        fore.rotation.x=working?.34*Math.cos(elapsed*3.0+phase+side):.06*Math.cos(elapsed*1.2+phase+side);
       });
       root.userData.legParts?.forEach(({leg,side})=>{leg.rotation.x=desk?0:.16*Math.sin(elapsed*2.2+phase+side);});
+    });
+  }
+
+  function setAgentActivity(status='available'){
+    agentActivity=['available','busy','wrap-up','break','offline'].includes(status)?status:'available';
+    const pattern=agentActivity==='busy'?/type|typing|work|keyboard/i:agentActivity==='wrap-up'?/type|write|work|idle|sit/i:agentActivity==='break'?/idle|sit|rest/i:/idle|sit|listen/i;
+    deskActors.forEach(actor=>{
+      const match=actor.actions.find(item=>pattern.test(item.clip.name)) || actor.actions.find(item=>/idle|sit|rest/i.test(item.clip.name));
+      if(!match || match.action===actor.activeAction)return;
+      match.action.reset().fadeIn(.22).play();
+      actor.actions.forEach(item=>{if(item.action!==match.action)item.action.fadeOut(.22);});
+      actor.activeAction=match.action;
     });
   }
 
@@ -915,7 +936,8 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
 
   return {
     scene,camera,renderer,stations,
-    enter,exit,
+    enter,exit,setAgentActivity,
+    get agentActivity(){return agentActivity;},
     get immersive(){return immersive;},
     get nearestStation(){return nearestStation;},
     get assetMessage(){return assetMessage;},

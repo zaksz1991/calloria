@@ -114,3 +114,23 @@ test('contact queue and supervisor tools are wired into navigation and workstati
   assert.match(main, /data-action="request-supervisor"/);
   assert.match(main, /data-action="transfer-call"/);
 });
+
+
+test('voice practice and shift operations are wired with explicit privacy controls', async () => {
+  const [main, world, shift, voice, css] = await Promise.all([
+    read('js/main.js'), read('js/production-world.js'), read('js/shift-engine.js'), read('js/voice-engine.js'), read('styles.css')
+  ]);
+  for (const feature of [
+    'function renderVoicePractice', 'getUserMedia', 'SpeechRecognition', 'voiceFallbackForm',
+    'data-action="start-voice-recording"', 'data-action="start-voice-transcription"',
+    'data-action="advance-workday"', 'function startShift', 'function endShift',
+    'briefingFor(simulationDateNow())', 'visibilitychange', 'pagehide'
+  ]) assert.ok(main.includes(feature), `missing v0.6 behaviour: ${feature}`);
+  assert.match(main, /if\s*\(!voiceConsent\)/);
+  assert.match(main, /shiftElapsedMinutes\)<540/);
+  assert.match(voice, /no_calloria_upload/);
+  assert.match(voice, /REDACTED PAYMENT CARD/);
+  assert.match(shift, /calculateShiftAdherence/);
+  assert.match(world, /setAgentActivity/);
+  assert.match(css, /\.voice-practice-panel/);
+});

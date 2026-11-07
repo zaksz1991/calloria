@@ -4,6 +4,8 @@ import {
   addSuppression, isContactSuppressed, scheduleCallback, completeActiveCallback
 } from './operations-engine.js';
 import { DEPARTMENTS, SYSTEMS, briefingFor, recordBriefingAttendance, promotionEligibility, recordPromotionExam, recordCrossSell, recordCommendation, createSystemEvent } from './workforce-engine.js';
+import { AGENT_STATES, createShiftRecord, recordAgentState, calculateShiftAdherence, expectedShiftMode, nextScheduledBreak, closeShift, createCoachingRecord } from './shift-engine.js';
+import { speechRecognitionAvailable, mediaRecordingAvailable, createVoiceSession, appendVoiceTranscript, finishVoiceSession, sanitizeTranscript } from './voice-engine.js';
 
 let THREE = null;
 
@@ -65,6 +67,7 @@ const initialState = () => ({
   nameInitials: 'AP',
   viewedArticle: null,
   workforceDepartment: 'inbound',
+  shiftRecord: null, shiftElapsedMinutes: 0, agentStatus: 'offline', shiftHistory: [], coachingSessions: [], simulationClockSeconds: 7 * 3600, lastShiftDay: 0,
   briefingAttendance: [], promotionAttempts: [], crossSellRecords: [], commendations: [], systemEvents: []
 });
 
@@ -72,6 +75,18 @@ let state = loadState();
 let selectedAnswer = null;
 let threeWorld = null;
 let productionWorld = null;
+let voiceConsent = false;
+let voiceStatus = 'inactive';
+let voiceTranscript = '';
+let voiceSession = null;
+let speechRecognition = null;
+let voiceMediaStream = null;
+let voiceRecorder = null;
+let voiceChunks = [];
+let voiceAudioUrl = null;
+let voiceRecordingTimer = null;
+let simulationClockTicker = 7 * 3600;
+let lastShiftSaveBucket = 0;
 
 function loadState() {
   try {
@@ -79,8 +94,12 @@ function loadState() {
     if (!stored) return initialState();
     const parsed = JSON.parse(stored);
     const migrated = { ...initialState(), ...parsed };
-    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
+    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
     if (!Number.isFinite(migrated.callQueue)) migrated.callQueue = 6;
+    if (migrated.shiftActive && (!migrated.shiftRecord || migrated.shiftRecord.status !== 'active')) migrated.shiftRecord = createShiftRecord({ day: migrated.day || 1 });
+    if (!Number.isFinite(migrated.shiftElapsedMinutes)) migrated.shiftElapsedMinutes = 0;
+    if (!Number.isFinite(migrated.lastShiftDay)) migrated.lastShiftDay = 0;
+    if (!AGENT_STATES.includes(migrated.agentStatus)) migrated.agentStatus = migrated.shiftActive ? 'available' : 'offline';
     if (!localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
     return migrated;
   } catch {
@@ -597,17 +616,180 @@ function renderOffer() {
   viewRoot.innerHTML = `<div class="grid two"><section class="panel welcome-card"><div class="subtle-label">MERIDIAN SERVICE GROUP · PEOPLE & OPERATIONS</div><h3>Employment offer approved.</h3><p>Your recruitment assessment has been passed. You have been selected for the ${escapeHTML(state.department)} team. Accept the appointment to enter the operations floor and start your first shift.</p><button class="btn primary" data-action="accept-offer">Accept employment offer →</button></section><section class="panel"><div class="panel-head"><div><h3>Appointment details</h3><p>Simulated employment contract summary.</p></div><span class="pill green">APPROVED</span></div><div class="data-list"><div class="data-row"><span>Candidate</span><strong>${escapeHTML(state.applicantName)}</strong></div><div class="data-row"><span>Position</span><strong>${escapeHTML(state.roleTitle)}</strong></div><div class="data-row"><span>Department</span><strong>${escapeHTML(state.department)}</strong></div><div class="data-row"><span>Monthly base salary</span><strong>${money(state.salary)}</strong></div><div class="data-row"><span>Aptitude assessment</span><strong>${state.assessmentScore}/7</strong></div><div class="data-row"><span>Practical call assessment</span><strong>${state.practicalScore}/3 · Passed</strong></div><div class="data-row"><span>Employment status</span><strong>Offer pending acceptance</strong></div></div></section></div>`;
 }
 
+function renderVoicePractice(call, customerPrompt) {
+  const recording = voiceStatus === 'recording';
+  const transcribing = voiceStatus === 'transcribing';
+  const busy = recording || transcribing;
+  const supportedRecord = mediaRecordingAvailable();
+  const supportedSpeech = speechRecognitionAvailable();
+  return `<section class="voice-practice-panel">
+    <div class="panel-head"><div><h3>Voice practice & customer audio</h3><p>Optional local microphone practice for this simulated interaction.</p></div><span class="pill ${busy?'amber':voiceStatus==='ready'?'green':''}">${voiceStatus.toUpperCase()}</span></div>
+    <button class="btn small outline" type="button" data-action="play-customer-prompt" data-text="${escapeHTML(customerPrompt)}">Play customer statement</button>
+    <label class="voice-consent"><input type="checkbox" id="voiceConsent" ${voiceConsent?'checked':''}> I consent to microphone use for this practice interaction. I understand browser speech recognition may be processed by the browser's speech service.</label>
+    <div class="button-row">
+      <button class="btn primary" type="button" data-action="start-voice-recording" ${!voiceConsent||!supportedRecord||busy?'disabled':''}>Record a local voice sample</button>
+      <button class="btn outline" type="button" data-action="stop-voice-recording" ${!recording?'disabled':''}>Stop recording</button>
+      ${supportedSpeech?`<button class="btn secondary" type="button" data-action="start-voice-transcription" ${!voiceConsent||busy?'disabled':''}>Start live transcription</button><button class="btn outline" type="button" data-action="stop-voice-transcription" ${!transcribing?'disabled':''}>Stop transcription</button>`:''}
+    </div>
+    ${voiceAudioUrl?`<audio class="voice-audio-player" controls preload="none" src="${voiceAudioUrl}">Your browser cannot play this recording.</audio>`:''}
+    <div class="form-field"><label for="voiceTranscriptText">TEMPORARY PRACTICE TRANSCRIPT</label><div class="voice-transcript" id="voiceTranscriptText">${escapeHTML(voiceTranscript||'No transcript captured yet.')}</div></div>
+    <form id="voiceFallbackForm" class="form-stack"><label class="form-field">Text fallback<input name="utterance" maxlength="1200" placeholder="Type what you would say to the customer…" autocomplete="off"></label><button class="btn outline" type="submit">Record text response</button></form>
+    <div class="voice-privacy-note">Recording stays in this page's memory and is not uploaded or written to the employment save. Clear it before leaving a shared device. Never speak or enter a PIN, password, one-time code or full payment-card number.</div>
+    <button class="btn small outline" type="button" data-action="clear-voice-practice">Clear microphone sample and transcript</button>
+  </section>`;
+}
+
+async function startVoiceRecording() {
+  if (!voiceConsent) { toast('Give explicit microphone consent before recording.','warning'); return; }
+  if (!mediaRecordingAvailable()) { toast('Local microphone recording is not supported in this browser. Use the text fallback.','warning'); return; }
+  if (voiceStatus==='recording'||voiceStatus==='transcribing') return;
+  try {
+    voiceMediaStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    if(document.visibilityState==='hidden'||!voiceConsent){stopVoiceTracks();voiceStatus='inactive';return;}
+    voiceChunks = [];
+    voiceSession = createVoiceSession({ interactionRef: state.currentCall?.queueContactId || 'PRACTICE', consent: true });
+    const options = {};
+    if (MediaRecorder.isTypeSupported?.('audio/webm;codecs=opus')) options.mimeType = 'audio/webm;codecs=opus';
+    voiceRecorder = new MediaRecorder(voiceMediaStream, options);
+    voiceRecorder.ondataavailable = event => { if (event.data?.size) voiceChunks.push(event.data); };
+    voiceRecorder.onerror = () => { voiceStatus='error'; stopVoiceTracks(); renderView(); toast('Microphone recording failed.','error'); };
+    voiceRecorder.onstop = () => {
+      clearTimeout(voiceRecordingTimer);voiceRecordingTimer=null;
+      const mimeType = voiceRecorder?.mimeType || voiceChunks[0]?.type || 'audio/webm';
+      if (voiceChunks.length) {
+        const blob = new Blob(voiceChunks, { type: mimeType });
+        if (voiceAudioUrl) URL.revokeObjectURL(voiceAudioUrl);
+        voiceAudioUrl = URL.createObjectURL(blob);
+      }
+      finishVoiceSession(voiceSession);
+      stopVoiceTracks();
+      voiceStatus='ready';
+      voiceRecorder=null;
+      renderView();
+    };
+    voiceRecorder.start(250);
+    voiceRecordingTimer=setTimeout(()=>{if(voiceRecorder&&voiceRecorder.state!=='inactive')voiceRecorder.stop();},30000);
+    voiceStatus='recording';
+    renderView();
+  } catch (error) {
+    stopVoiceTracks();
+    voiceStatus='error';
+    toast(error?.name==='NotAllowedError'?'Microphone permission was denied. Use the text fallback.':'Microphone could not be opened. Check browser permissions and device availability.','error');
+    renderView();
+  }
+}
+
+function stopVoiceTracks() {
+  voiceMediaStream?.getTracks?.().forEach(track=>track.stop());
+  voiceMediaStream=null;
+}
+
+function stopVoiceRecording() {
+  if (voiceRecorder && voiceRecorder.state!=='inactive') voiceRecorder.stop();
+  else { stopVoiceTracks(); voiceStatus=voiceAudioUrl?'ready':'inactive'; renderView(); }
+}
+
+function startVoiceTranscription() {
+  if (!voiceConsent) { toast('Give explicit microphone consent before transcription.','warning'); return; }
+  if (!speechRecognitionAvailable()) { toast('Live speech recognition is unavailable. Use the text fallback.','warning'); return; }
+  if (voiceStatus==='recording'||voiceStatus==='transcribing') return;
+  try {
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    speechRecognition = new Recognition();
+    const recognitionInstance = speechRecognition;
+    const session = createVoiceSession({ interactionRef: state.currentCall?.queueContactId || 'PRACTICE', consent: true });
+    voiceSession = session;
+    speechRecognition.lang = 'en-NG';
+    speechRecognition.continuous = true;
+    speechRecognition.interimResults = true;
+    speechRecognition.onresult = event => {
+      if(voiceSession!==session||speechRecognition!==recognitionInstance)return;
+      let finalText='';
+      for(let i=event.resultIndex;i<event.results.length;i++) if(event.results[i].isFinal) finalText += `${event.results[i][0]?.transcript||''} `;
+      if(finalText.trim()) {
+        appendVoiceTranscript(session, finalText.trim());
+        voiceTranscript=session.transcript;
+        renderView();
+      }
+    };
+    speechRecognition.onerror = event => {
+      if(voiceSession!==session)return;
+      voiceStatus='error';
+      try { recognitionInstance.stop(); } catch {}
+      if(speechRecognition===recognitionInstance) speechRecognition=null;
+      finishVoiceSession(session);
+      toast(`Speech recognition: ${event.error||'unavailable'}. Use the text fallback.`, 'warning');
+      renderView();
+    };
+    speechRecognition.onend = () => {
+      if(voiceSession!==session)return;
+      if(voiceStatus==='transcribing') voiceStatus='ready';
+      finishVoiceSession(session);
+      renderView();
+    };
+    voiceStatus='transcribing';
+    speechRecognition.start();
+    renderView();
+  } catch (error) {
+    try { speechRecognition?.stop?.(); } catch {}
+    speechRecognition=null;
+    if(voiceSession)finishVoiceSession(voiceSession);
+    voiceStatus='error';
+    toast('Speech recognition could not start. Use the text fallback.','warning');
+    renderView();
+  }
+}
+
+function stopVoiceTranscription() {
+  if (speechRecognition) {
+    voiceStatus='ready';
+    try { speechRecognition.stop(); } catch {}
+    speechRecognition=null;
+  }
+  if (voiceSession) finishVoiceSession(voiceSession);
+  renderView();
+}
+
+function speakCustomerPrompt(textValue) {
+  if (!('speechSynthesis' in window) || !textValue) { toast('Customer audio playback is unavailable in this browser.','warning'); return; }
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(String(textValue).slice(0,1000));
+  utterance.lang='en-NG'; utterance.rate=.94; utterance.pitch=1;
+  window.speechSynthesis.speak(utterance);
+}
+
+function clearVoicePractice() {
+  window.speechSynthesis?.cancel?.();
+  clearTimeout(voiceRecordingTimer);voiceRecordingTimer=null;
+  if (speechRecognition) { try { speechRecognition.stop(); } catch {} speechRecognition=null; }
+  if (voiceRecorder && voiceRecorder.state!=='inactive') { voiceRecorder.onstop=null;try { voiceRecorder.stop(); } catch {} }
+  voiceRecorder=null;stopVoiceTracks();
+  if (voiceAudioUrl) URL.revokeObjectURL(voiceAudioUrl);
+  voiceAudioUrl=null;voiceChunks=[];voiceSession=null;voiceTranscript='';voiceConsent=false;voiceStatus='inactive';
+  renderView();
+}
+
+function stopVoiceTools() {
+  window.speechSynthesis?.cancel?.();
+  clearTimeout(voiceRecordingTimer);voiceRecordingTimer=null;
+  if (speechRecognition) { try { speechRecognition.stop(); } catch {} speechRecognition=null; }
+  if (voiceRecorder && voiceRecorder.state!=='inactive') { voiceRecorder.onstop=null;try { voiceRecorder.stop(); } catch {} }
+  voiceRecorder=null;stopVoiceTracks();
+  if (voiceAudioUrl) URL.revokeObjectURL(voiceAudioUrl);
+  voiceAudioUrl=null;voiceChunks=[];voiceSession=null;voiceTranscript='';voiceConsent=false;voiceStatus='inactive';
+}
+
 function renderInbound() {
   if (state.wrapUp?.type==='inbound') return renderWrapUp();
   if (!state.shiftActive) {
-    viewRoot.innerHTML = `<div class="panel empty-state"><div class="empty-icon">◷</div><h3>Your shift has not started</h3><p>Start your workday before accepting inbound contacts. Queue routing and service-level records begin with the shift.</p><button class="btn primary" data-action="start-shift">Start shift</button></div>`; return;
+    viewRoot.innerHTML = renderShiftEntryPanel('Your shift has not started','Start your workday before accepting inbound contacts. Queue routing and service-level records begin with the shift.'); return;
   }
   if (!state.currentCall) {
     ensureInboundQueue(6);
     const queue=sortQueuedContacts(state.inboundQueueItems);
     const metrics=queueMetrics(state.inboundQueueItems);
     const callbackRows=state.callbacks.filter(item=>item.status==='scheduled'&&item.type!=='outbound').slice().sort((a,b)=>Date.parse(a.dueAt)-Date.parse(b.dueAt));
-    viewRoot.innerHTML = `<div class="ops-summary-grid">${metricCard('WAITING CONTACTS',metrics.waiting,'Prioritised inbound queue','↙')}${metricCard('LONGEST WAIT',formatWait(metrics.longestWaitSeconds),'Current oldest queued contact','◷')}${metricCard('WITHIN 60-SECOND TARGET',metrics.waiting?Math.round(metrics.withinServiceLevel/metrics.waiting*100)+'%':'—','Queue snapshot, not a contractual SLA','⌁')}</div><div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Prioritised inbound queue</h3><p>Urgent security and fraud contacts are prioritised ahead of routine enquiries.</p></div><span class="pill green"><span class="live-dot"></span> ROUTING OPEN</span></div>${queue.length?`<div class="queue-contact-list">${queue.slice(0,8).map(item=>`<div class="queue-contact-row"><span class="priority-mark ${item.priority}"></span><div class="queue-contact-main"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${escapeHTML(item.routeGroup)}</small></div><span class="queue-wait">${formatWait(item.waitSeconds)}</span><span class="pill ${item.priority==='critical'?'red':item.priority==='high'?'amber':''}">${item.priority.toUpperCase()}</span></div>`).join('')}</div><button class="btn primary" style="margin-top:14px" data-action="answer-call">Accept highest-priority contact ↙</button>`:`<div class="empty-state"><h3>No waiting contacts</h3><p>Generate another batch of simulated arrivals to continue this shift.</p><button class="btn primary" data-action="refresh-queue">Load next arrivals</button></div>`}</section><section class="panel"><div class="panel-head"><div><h3>Callbacks due</h3><p>Customer-requested return contacts scheduled during earlier interactions.</p></div><span class="pill">${callbackRows.length} SCHEDULED</span></div>${callbackRows.length?callbackRows.map(item=>`<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · Due ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="return-callback-to-queue" data-callback-id="${escapeHTML(item.id)}" ${Date.parse(item.dueAt)<=Date.now()?'':'disabled'}>${Date.parse(item.dueAt)<=Date.now()?'Queue callback':'Not due yet'}</button></div>`).join(''):'<div class="empty-state"><p>No callbacks are scheduled.</p></div>'}<div class="panel-head" style="margin-top:18px"><div><h3>Recently handled</h3><p>Your latest customer interactions.</p></div><button class="btn small outline" data-action="open-crm">View cases</button></div>${state.cases.length?state.cases.slice(-3).reverse().map(caseRow).join(''):'<p class="muted-note">No completed interactions yet.</p>'}</section></div>`; return;
+    viewRoot.innerHTML = `<div class="ops-summary-grid">${metricCard('WAITING CONTACTS',metrics.waiting,'Prioritised inbound queue','↙')}${metricCard('LONGEST WAIT',formatWait(metrics.longestWaitSeconds),'Current oldest queued contact','◷')}${metricCard('WITHIN 60-SECOND TARGET',metrics.waiting?Math.round(metrics.withinServiceLevel/metrics.waiting*100)+'%':'—','Queue snapshot, not a contractual SLA','⌁')}</div><div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Prioritised inbound queue</h3><p>Urgent security and fraud contacts are prioritised ahead of routine enquiries.</p></div><span class="pill ${shiftTimeAvailable()?'green':'amber'}"><span class="live-dot"></span> ${shiftTimeAvailable()?'ROUTING OPEN':'SHIFT WINDOW CLOSED'}</span></div>${queue.length?`<div class="queue-contact-list">${queue.slice(0,8).map(item=>`<div class="queue-contact-row"><span class="priority-mark ${item.priority}"></span><div class="queue-contact-main"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${escapeHTML(item.routeGroup)}</small></div><span class="queue-wait">${formatWait(item.waitSeconds)}</span><span class="pill ${item.priority==='critical'?'red':item.priority==='high'?'amber':''}">${item.priority.toUpperCase()}</span></div>`).join('')}</div><button class="btn primary" style="margin-top:14px" data-action="answer-call" ${state.agentStatus==='available'&&shiftTimeAvailable()?'':'disabled'}>Accept highest-priority contact ↙</button>`:`<div class="empty-state"><h3>No waiting contacts</h3><p>Generate another batch of simulated arrivals to continue this shift.</p><button class="btn primary" data-action="refresh-queue">Load next arrivals</button></div>`}</section><section class="panel"><div class="panel-head"><div><h3>Callbacks due</h3><p>Customer-requested return contacts scheduled during earlier interactions.</p></div><span class="pill">${callbackRows.length} SCHEDULED</span></div>${callbackRows.length?callbackRows.map(item=>`<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · Due ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="return-callback-to-queue" data-callback-id="${escapeHTML(item.id)}" ${Date.parse(item.dueAt)<=Date.now()?'':'disabled'}>${Date.parse(item.dueAt)<=Date.now()?'Queue callback':'Not due yet'}</button></div>`).join(''):'<div class="empty-state"><p>No callbacks are scheduled.</p></div>'}<div class="panel-head" style="margin-top:18px"><div><h3>Recently handled</h3><p>Your latest customer interactions.</p></div><button class="btn small outline" data-action="open-crm">View cases</button></div>${state.cases.length?state.cases.slice(-3).reverse().map(caseRow).join(''):'<p class="muted-note">No completed interactions yet.</p>'}</section></div>`; return;
   }
   const call=state.currentCall;
   const scenario=inboundScenarios.find(item=>item.id===call.scenarioId);
@@ -615,11 +797,11 @@ function renderInbound() {
   const step=scenario.steps[call.stepIndex];
   const contact=findQueueContact(call.queueContactId);
   const supervisorOpen=state.supervisorRequests.some(item=>item.contactId===call.queueContactId&&item.status==='open');
-  viewRoot.innerHTML = `<div class="call-layout"><section class="panel call-console"><div class="call-console-head"><div><strong>INBOUND VOICE CONTACT</strong><small>Connected · ${escapeHTML(scenario.category)} · Ref ${escapeHTML(scenario.reference)}</small></div><span class="pill ${call.held?'amber':'green'}">${call.held?'ON HOLD':'CONNECTED'}</span></div><div class="call-console-body"><div class="customer-strip"><div class="customer-avatar">${scenario.initials}</div><div class="customer-info"><strong>${escapeHTML(scenario.customer)}</strong><small>${escapeHTML(scenario.profile)}</small></div><div class="customer-tags"><span class="pill">${scenario.tag}</span><span class="pill amber">${scenario.amount}</span></div></div>${call.held?`<div class="call-feedback neutral"><strong>Customer is on hold.</strong> Resume the conversation before selecting another call action.</div>`:`<div class="subtle-label">CUSTOMER STATEMENT</div><p class="call-prompt">“${scenario.opening}”</p><p class="call-context">${call.stepIndex===0?'The customer has just connected. Begin with the correct service procedure.':'Continue the interaction based on the case information and previous action.'}</p><div class="panel-head" style="margin:16px 0 11px"><div><div class="question-kicker">STEP ${call.stepIndex+1} OF ${scenario.steps.length} · ${step.label}</div><h3 class="call-prompt" style="margin-top:8px">${step.prompt}</h3><p class="call-context" style="margin:5px 0 0">${step.context}</p></div></div><div class="call-options">${step.options.map((opt,j)=>`<button class="call-option" data-call-choice="${j}" ${call.feedback?'disabled':''}><span>${String.fromCharCode(65+j)}</span><span>${opt.text}</span></button>`).join('')}</div>${call.feedback?`<div class="call-feedback ${call.feedbackType}">${escapeHTML(call.feedback)}</div><div class="assessment-footer"><small>${call.feedbackType==='bad'?'A quality or compliance deduction may apply.':'Decision recorded. Continue the interaction.'}</small><button class="btn primary" data-action="${call.stepIndex===scenario.steps.length-1?'complete-call':'next-call-step'}">${call.stepIndex===scenario.steps.length-1?'Move to after-contact work':'Continue →'}</button></div>`:''}`}</div></section><aside class="call-side-stack"><section class="panel"><div class="panel-head"><div><h3>Customer record</h3><p>Simulated CRM profile.</p></div><span class="pill">CRM</span></div><div class="data-list"><div class="data-row"><span>Customer</span><strong>${scenario.customer}</strong></div><div class="data-row"><span>Case reference</span><strong>${scenario.reference}</strong></div><div class="data-row"><span>Reported issue</span><strong>${scenario.issue}</strong></div><div class="data-row"><span>Location</span><strong>${scenario.location}</strong></div><div class="data-row"><span>Queue route</span><strong>${contact?escapeHTML(contact.routeGroup):'General'}</strong></div><div class="data-row"><span>Queue wait</span><strong>${formatWait(call.waitSeconds||0)}</strong></div></div></section><section class="panel"><div class="panel-head"><div><h3>Interaction controls</h3><p>Contact lifecycle management.</p></div></div><div class="ops-control-stack"><button class="btn outline" data-action="toggle-call-hold">${call.held?'Resume customer':'Place on hold'}</button><button class="btn outline" data-action="request-supervisor" ${supervisorOpen?'disabled':''}>${supervisorOpen?'Supervisor requested':'Request supervisor assistance'}</button><label class="subtle-label" for="transferTarget">TRANSFER DESTINATION</label><select id="transferTarget"><option>Specialist Support</option><option>Fraud & Security</option><option>Cards & Payments</option><option>Technical Support</option><option>Complaints Management</option></select><button class="btn secondary" data-action="transfer-call" ${call.held?'disabled':''}>Transfer to specialist</button><button class="btn outline" data-action="return-call-to-queue">Return contact to queue</button></div><p class="muted-note" style="margin-top:12px">Hold, transfer, assistance and queue return are recorded in the simulated interaction timeline.</p></section></aside></div>`;
+  viewRoot.innerHTML = `<div class="call-layout"><section class="panel call-console"><div class="call-console-head"><div><strong>INBOUND VOICE CONTACT</strong><small>Connected · ${escapeHTML(scenario.category)} · Ref ${escapeHTML(scenario.reference)}</small></div><span class="pill ${call.held?'amber':'green'}">${call.held?'ON HOLD':'CONNECTED'}</span></div><div class="call-console-body"><div class="customer-strip"><div class="customer-avatar">${scenario.initials}</div><div class="customer-info"><strong>${escapeHTML(scenario.customer)}</strong><small>${escapeHTML(scenario.profile)}</small></div><div class="customer-tags"><span class="pill">${scenario.tag}</span><span class="pill amber">${scenario.amount}</span></div></div>${call.held?`<div class="call-feedback neutral"><strong>Customer is on hold.</strong> Resume the conversation before selecting another call action.</div>`:`<div class="subtle-label">CUSTOMER STATEMENT</div><p class="call-prompt">“${scenario.opening}”</p><p class="call-context">${call.stepIndex===0?'The customer has just connected. Begin with the correct service procedure.':'Continue the interaction based on the case information and previous action.'}</p><div class="panel-head" style="margin:16px 0 11px"><div><div class="question-kicker">STEP ${call.stepIndex+1} OF ${scenario.steps.length} · ${step.label}</div><h3 class="call-prompt" style="margin-top:8px">${step.prompt}</h3><p class="call-context" style="margin:5px 0 0">${step.context}</p></div></div><div class="call-options">${step.options.map((opt,j)=>`<button class="call-option" data-call-choice="${j}" ${call.feedback?'disabled':''}><span>${String.fromCharCode(65+j)}</span><span>${opt.text}</span></button>`).join('')}</div>${call.feedback?`<div class="call-feedback ${call.feedbackType}">${escapeHTML(call.feedback)}</div><div class="assessment-footer"><small>${call.feedbackType==='bad'?'A quality or compliance deduction may apply.':'Decision recorded. Continue the interaction.'}</small><button class="btn primary" data-action="${call.stepIndex===scenario.steps.length-1?'complete-call':'next-call-step'}">${call.stepIndex===scenario.steps.length-1?'Move to after-contact work':'Continue →'}</button></div>`:''}${renderVoicePractice(call,scenario.opening)}</div>`}</div></section><aside class="call-side-stack"><section class="panel"><div class="panel-head"><div><h3>Customer record</h3><p>Simulated CRM profile.</p></div><span class="pill">CRM</span></div><div class="data-list"><div class="data-row"><span>Customer</span><strong>${scenario.customer}</strong></div><div class="data-row"><span>Case reference</span><strong>${scenario.reference}</strong></div><div class="data-row"><span>Reported issue</span><strong>${scenario.issue}</strong></div><div class="data-row"><span>Location</span><strong>${scenario.location}</strong></div><div class="data-row"><span>Queue route</span><strong>${contact?escapeHTML(contact.routeGroup):'General'}</strong></div><div class="data-row"><span>Queue wait</span><strong>${formatWait(call.waitSeconds||0)}</strong></div></div></section><section class="panel"><div class="panel-head"><div><h3>Interaction controls</h3><p>Contact lifecycle management.</p></div></div><div class="ops-control-stack"><button class="btn outline" data-action="toggle-call-hold">${call.held?'Resume customer':'Place on hold'}</button><button class="btn outline" data-action="request-supervisor" ${supervisorOpen?'disabled':''}>${supervisorOpen?'Supervisor requested':'Request supervisor assistance'}</button><label class="subtle-label" for="transferTarget">TRANSFER DESTINATION</label><select id="transferTarget"><option>Specialist Support</option><option>Fraud & Security</option><option>Cards & Payments</option><option>Technical Support</option><option>Complaints Management</option></select><button class="btn secondary" data-action="transfer-call" ${call.held?'disabled':''}>Transfer to specialist</button><button class="btn outline" data-action="return-call-to-queue">Return contact to queue</button></div><p class="muted-note" style="margin-top:12px">Hold, transfer, assistance and queue return are recorded in the simulated interaction timeline.</p></section></aside></div>`;
 }
 
 function renderQueue(){
-  if(!state.shiftActive){viewRoot.innerHTML=`<div class="panel empty-state"><h3>Queue control is not active</h3><p>Start your shift to open contact routing.</p><button class="btn primary" data-action="start-shift">Start shift</button></div>`;return;}
+  if(!state.shiftActive){viewRoot.innerHTML=renderShiftEntryPanel('Queue control is not active','Start your shift to open contact routing.');return;}
   ensureInboundQueue(6);
   const queue=sortQueuedContacts(state.inboundQueueItems);
   const metrics=queueMetrics(state.inboundQueueItems);
@@ -635,7 +817,7 @@ function renderSupervisor(){
 
 function renderOutbound() {
   if(state.wrapUp?.type==='outbound')return renderWrapUp();
-  if (!state.shiftActive) { viewRoot.innerHTML = `<div class="panel empty-state"><div class="empty-icon">◷</div><h3>Start your shift first</h3><p>Outbound campaigns are available during an active simulated shift.</p><button class="btn primary" data-action="start-shift">Start shift</button></div>`; return; }
+  if (!state.shiftActive) { viewRoot.innerHTML = renderShiftEntryPanel('Start your shift first','Outbound campaigns are available during an active simulated shift.'); return; }
   if (state.activeOutbound) {
     const task = outboundCampaigns.find(x=>x.id===state.activeOutbound.campaignId);
     const step = task?.script[state.activeOutbound.stepIndex];
@@ -644,7 +826,7 @@ function renderOutbound() {
   }
   const suppressed=state.outboundSuppressions||[];
   const outboundCallbacks=state.callbacks.filter(item=>item.type==='outbound'&&item.status==='scheduled');
-  viewRoot.innerHTML = `<div class="panel"><div class="panel-head"><div><h3>Outbound campaign dialler</h3><p>Campaign contacts are simulated. Suppressed contacts are blocked before dialling.</p></div><span class="pill green">${state.outboundDone.length} COMPLETED</span></div><div class="ops-summary-grid">${metricCard('CAMPAIGN ATTEMPTS',state.outboundAttempts.length,'Recorded simulated dial attempts','↗')}${metricCard('SUPPRESSED CONTACTS',suppressed.length,'Do-not-contact preferences recorded','⊘')}${metricCard('CALLBACKS',state.callbacks.filter(item=>item.status==='scheduled').length,'Scheduled return contacts','◷')}</div><div class="grid three" style="margin-top:14px">${outboundCampaigns.map(c=>{const blocked=isContactSuppressed(c.customer,suppressed);return `<div class="panel campaign-card"><div class="subtle-label">${escapeHTML(c.type)}</div><h3>${escapeHTML(c.title)}</h3><p class="muted-note">${escapeHTML(c.context)}</p><div class="data-row"><span>Contact</span><strong>${escapeHTML(c.customer)}</strong></div><div class="campaign-status ${blocked?'blocked':''}">${blocked?'CONTACT SUPPRESSED':state.outboundDone.includes(c.id)?'ATTEMPT COMPLETED':'READY TO DIAL'}</div><button class="btn ${blocked?'outline':'primary'}" style="width:100%;margin-top:12px" data-start-campaign="${c.id}" ${blocked||state.outboundDone.includes(c.id)?'disabled':''}>${blocked?'Suppressed':state.outboundDone.includes(c.id)?'Completed':'Start simulated dial →'}</button></div>`;}).join('')}</div><p class="muted-note" style="margin-top:14px">Campaign lists are fictional. Real-world outbound contact requires verified consent, lawful contact basis and organisation-approved suppression controls.</p>${suppressed.length?`<div class="article-box"><h4>Suppression register</h4>${suppressed.map(item=>`<div class="data-row"><span>${escapeHTML(item.contactKey)}</span><strong>${escapeHTML(item.reason)}</strong></div>`).join('')}</div>`:''}<div class="article-box"><h4>Scheduled outbound callbacks</h4>${outboundCallbacks.length?outboundCallbacks.map(item=>{const due=Date.parse(item.dueAt)<=Date.now();return `<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="resume-outbound-callback" data-callback-id="${escapeHTML(item.id)}" ${due?'':'disabled'}>${due?'Call back':'Scheduled'}</button></div>`;}).join(''):'<p class="muted-note">No outbound callbacks scheduled.</p>'}</div></div>`;
+  viewRoot.innerHTML = `<div class="panel"><div class="panel-head"><div><h3>Outbound campaign dialler</h3><p>Campaign contacts are simulated. Suppressed contacts are blocked before dialling.</p></div><span class="pill green">${state.outboundDone.length} COMPLETED</span></div><div class="ops-summary-grid">${metricCard('CAMPAIGN ATTEMPTS',state.outboundAttempts.length,'Recorded simulated dial attempts','↗')}${metricCard('SUPPRESSED CONTACTS',suppressed.length,'Do-not-contact preferences recorded','⊘')}${metricCard('CALLBACKS',state.callbacks.filter(item=>item.status==='scheduled').length,'Scheduled return contacts','◷')}</div><div class="grid three" style="margin-top:14px">${outboundCampaigns.map(c=>{const blocked=isContactSuppressed(c.customer,suppressed);return `<div class="panel campaign-card"><div class="subtle-label">${escapeHTML(c.type)}</div><h3>${escapeHTML(c.title)}</h3><p class="muted-note">${escapeHTML(c.context)}</p><div class="data-row"><span>Contact</span><strong>${escapeHTML(c.customer)}</strong></div><div class="campaign-status ${blocked?'blocked':''}">${blocked?'CONTACT SUPPRESSED':state.outboundDone.includes(c.id)?'ATTEMPT COMPLETED':'READY TO DIAL'}</div><button class="btn ${blocked?'outline':'primary'}" style="width:100%;margin-top:12px" data-start-campaign="${c.id}" ${blocked||state.outboundDone.includes(c.id)||state.agentStatus!=='available'||!shiftTimeAvailable()?'disabled':''}>${blocked?'Suppressed':state.outboundDone.includes(c.id)?'Completed':'Start simulated dial →'}</button></div>`;}).join('')}</div><p class="muted-note" style="margin-top:14px">Campaign lists are fictional. Real-world outbound contact requires verified consent, lawful contact basis and organisation-approved suppression controls.</p>${suppressed.length?`<div class="article-box"><h4>Suppression register</h4>${suppressed.map(item=>`<div class="data-row"><span>${escapeHTML(item.contactKey)}</span><strong>${escapeHTML(item.reason)}</strong></div>`).join('')}</div>`:''}<div class="article-box"><h4>Scheduled outbound callbacks</h4>${outboundCallbacks.length?outboundCallbacks.map(item=>{const due=Date.parse(item.dueAt)<=Date.now();return `<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="resume-outbound-callback" data-callback-id="${escapeHTML(item.id)}" ${due?'':'disabled'}>${due?'Call back':'Scheduled'}</button></div>`;}).join(''):'<p class="muted-note">No outbound callbacks scheduled.</p>'}</div></div>`;
 }
 function caseRow(c) { return `<div class="case-item"><div class="case-symbol">${c.channel==='Outbound'?'↗':'↙'}</div><div class="case-copy"><strong>${escapeHTML(c.title)}</strong><small>${escapeHTML(c.customer)} · ${escapeHTML(c.reference)}</small></div><span class="pill ${c.status==='Resolved'?'green':'amber'}">${escapeHTML(c.status)}</span></div>`; }
 function renderCRM() {
@@ -673,8 +855,14 @@ function renderCareer() {
 }
 
 
+function simulationSecondsNow(){const stored=Number(state.simulationClockSeconds);return Number.isFinite(stored)?Math.max(0,Math.min(86399,stored)):7*3600;}
+function simulationMinuteNow(){return Math.floor(simulationSecondsNow()/60);}
+function shiftTimeAvailable(){return state.shiftActive&&Number(state.shiftElapsedMinutes)<540;}
+function simulationDateNow(){const date=new Date();date.setDate(date.getDate()+Math.max(0,(Number(state.day)||1)-1));const seconds=simulationSecondsNow();date.setHours(Math.floor(seconds/3600),Math.floor((seconds%3600)/60),seconds%60,0);return date;}
+function renderShiftEntryPanel(title, description){const next=state.lastShiftDay===state.day||simulationMinuteNow()>=17*60;return `<div class="panel empty-state"><div class="empty-icon">◷</div><h3>${escapeHTML(title)}</h3><p>${escapeHTML(description)}</p><button class="btn primary" data-action="${next?'advance-workday':'start-shift'}">${next?'Advance to next workday':'Start shift'}</button></div>`;}
+
 function renderWorkforce() {
-  const currentBriefing = briefingFor(new Date());
+  const currentBriefing = briefingFor(simulationDateNow());
   const metrics = {
     kpi: Math.min(100, Math.round((state.callsHandled + state.outboundCalls) * 5)),
     qa: state.qaCount ? Math.round(state.totalQA/state.qaCount) : 75,
@@ -698,7 +886,7 @@ function renderWorkforce() {
         <div class="panel-head"><div><h3>Daily operations briefings</h3><p>Product, service, policy and operational updates.</p></div><span class="pill ${attended?'green':'amber'}">${attended?'ATTENDED':currentBriefing?'IN SESSION WINDOW':'SCHEDULED'}</span></div>
         <div class="data-row"><span>Morning briefing</span><strong>07:30</strong></div>
         <div class="data-row"><span>Afternoon briefing</span><strong>14:00</strong></div>
-        ${currentBriefing?`<div class="call-card" style="margin-top:12px"><span class="subtle-label">${currentBriefing.slot.toUpperCase()} BRIEFING · ${currentBriefing.scheduled}</span><h3>${currentBriefing.title}</h3><ul class="knowledge-list">${currentBriefing.topics.map(t=>`<li>${escapeHTML(t)}</li>`).join('')}</ul><button class="btn primary" data-action="attend-briefing" ${attended?'disabled':''}>${attended?'Attendance recorded':'Attend and acknowledge briefing'}</button></div>`:`<p class="muted-note" style="margin-top:12px">The briefing attendance window is available from 7:30 AM to 2:00 PM and 2:00 PM to 6:00 PM in this local simulation. The clock uses your device time.</p>`}
+        ${currentBriefing?`<div class="call-card" style="margin-top:12px"><span class="subtle-label">${currentBriefing.slot.toUpperCase()} BRIEFING · ${currentBriefing.scheduled}</span><h3>${currentBriefing.title}</h3><ul class="knowledge-list">${currentBriefing.topics.map(t=>`<li>${escapeHTML(t)}</li>`).join('')}</ul><button class="btn primary" data-action="attend-briefing" ${attended?'disabled':''}>${attended?'Attendance recorded':'Attend and acknowledge briefing'}</button></div>`:`<p class="muted-note" style="margin-top:12px">Briefings follow the in-game clock: morning attendance 07:30–08:30 and afternoon attendance 14:00–15:00. The simulation advances 30 game-seconds per real second.</p>`}
         <h4 style="margin-top:18px">Attendance history</h4>
         ${state.briefingAttendance.slice(-5).reverse().map(x=>`<div class="data-row"><span>${escapeHTML(x.slot)} · ${escapeHTML(x.scheduled)}</span><strong>${new Date(x.attendedAt).toLocaleString()}</strong></div>`).join('')||'<p class="muted-note">No briefing attendance recorded.</p>'}
       </section>
@@ -707,6 +895,18 @@ function renderWorkforce() {
         <label class="form-field">Assigned unit<select id="departmentSelect">${DEPARTMENTS.map(d=>`<option value="${d.id}" ${d.id===state.workforceDepartment?'selected':''}>${escapeHTML(d.name)}</option>`).join('')}</select></label>
         <div class="call-card" style="margin-top:12px"><span class="subtle-label">SPECIALIST RESPONSIBILITY</span><h3>${escapeHTML(dept.name)}</h3><p>${escapeHTML(dept.specialty)}</p><p class="muted-note">Core customer-service standards, identity protection, accurate records and respectful communication apply to every unit.</p></div>
         <div class="data-list" style="margin-top:12px">${DEPARTMENTS.map(d=>`<div class="data-row"><span>${escapeHTML(d.name)}</span><small>${escapeHTML(d.specialty)}</small></div>`).join('')}</div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><h3>Agent state, shift adherence and coaching</h3><p>Scheduled shift operations, break adherence and team-leader support.</p></div><span class="pill ${state.shiftActive?'green':'amber'}">${escapeHTML(state.agentStatus.toUpperCase())}</span></div>
+        <div class="data-list"><div class="data-row"><span>Shift status</span><strong>${state.shiftActive?'ACTIVE':'CLOSED'}</strong></div><div class="data-row"><span>Elapsed simulation time</span><strong>${Math.floor(state.shiftElapsedMinutes)} minutes</strong></div><div class="data-row"><span>Live schedule adherence</span><strong>${state.shiftRecord?.status==='active'?calculateShiftAdherence(state.shiftRecord,state.shiftElapsedMinutes).adherence+'%':'—'}</strong></div><div class="data-row"><span>Shift hours</span><strong>08:00–17:00</strong></div></div>
+        ${state.shiftActive?`<div class="call-card" style="margin-top:12px"><span class="subtle-label">NEXT SCHEDULED BREAK</span>${(()=>{const b=nextScheduledBreak(state.shiftRecord,state.shiftElapsedMinutes);return b?`<h3>${escapeHTML(b.label)} · ${b.startLabel}</h3><p>${b.active?'Current scheduled break window.':`${Math.max(0,Math.ceil(b.startsInMinutes))} simulated minutes remaining.`}</p>`:'<h3>No further scheduled breaks</h3><p>The planned shift schedule has reached its final break window.</p>';})()}<div class="button-row"><button class="btn outline" data-action="take-break" ${expectedShiftMode(state.shiftRecord,state.shiftElapsedMinutes)==='break'&&state.agentStatus!=='break'&&!['busy','wrap-up'].includes(state.agentStatus)?'':'disabled'}>Start scheduled break</button><button class="btn outline" data-action="return-from-break" ${state.agentStatus==='break'?'':'disabled'}>Return from break</button><button class="btn danger" data-action="end-shift" ${state.currentCall||state.activeOutbound||state.wrapUp?'disabled':''}>End shift</button></div></div>`:state.lastShiftDay===state.day||simulationMinuteNow()>=17*60?`<button class="btn primary" style="margin-top:12px" data-action="advance-workday">Advance to next workday</button>`:`<button class="btn primary" style="margin-top:12px" data-action="start-shift">Start a new shift</button>`}
+        <h4 style="margin-top:18px">Shift history</h4>
+        ${state.shiftHistory.slice(-4).reverse().map(x=>`<div class="data-row"><span>Day ${x.day} · ${new Date(x.startedAt).toLocaleDateString()}</span><strong>${x.adherence}% adherence</strong></div>`).join('')||'<p class="muted-note">No completed shifts recorded.</p>'}
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><h3>Team leader coaching</h3><p>Document observable feedback, a measurable action plan and follow-up.</p></div></div>
+        <form id="coachingForm" class="form-stack"><label class="form-field">Coach / team leader<input name="coach" maxlength="80" required placeholder="Team leader name"></label><label class="form-field">Coaching topic<input name="topic" maxlength="120" required placeholder="Call control, product knowledge, QA, empathy"></label><label class="form-field">Feedback<textarea name="feedback" maxlength="600" placeholder="Specific behaviour observed and its customer impact."></textarea></label><label class="form-field">Action plan<textarea name="actionPlan" maxlength="600" required placeholder="What will change, how it will be measured, and by when."></textarea></label><label class="form-field">Coaching score<select name="score"><option value="5">5 · Strong</option><option value="4">4 · Good</option><option value="3" selected>3 · Meets expectations</option><option value="2">2 · Improvement required</option><option value="1">1 · Critical support required</option></select></label><label class="form-field">Follow-up date<input name="followUpDate" type="date"></label><button class="btn outline" type="submit">Record coaching session</button></form>
+        <h4 style="margin-top:16px">Coaching history</h4>${state.coachingSessions.slice(-5).reverse().map(x=>`<div class="case-detail"><strong>${escapeHTML(x.topic)} · ${escapeHTML(x.coach)}</strong><p>${escapeHTML(x.actionPlan)}</p><small>Score ${x.score}/5 · ${new Date(x.recordedAt).toLocaleDateString()} · ${escapeHTML(x.status.replaceAll('_',' '))}</small></div>`).join('')||'<p class="muted-note">No coaching sessions recorded.</p>'}
       </section>
       <section class="panel">
         <div class="panel-head"><div><h3>Promotion and annual examination</h3><p>Three total annual-cycle attempts. One examination per calendar year.</p></div><span class="pill ${eligibility.eligible?'green':'amber'}">${eligibility.eligible?'ELIGIBLE':'NOT ELIGIBLE'}</span></div>
@@ -798,16 +998,86 @@ function openApplication() {
   };
 }
 function beginAssessment(){state.stage='assessment';state.assessmentPhase='aptitude';state.assessmentIndex=0;state.assessmentAnswers=[];state.practicalIndex=0;state.practicalAnswers=[];selectedAnswer=null;renderView();}
-function acceptOffer(){state.stage='employee';state.hired=true;state.shiftActive=false;state.level=1;state.experience=0;state.currentView='overview';saveState();toast('Employment accepted. Welcome to the operations floor.','success');renderView();}
+function acceptOffer(){state.stage='employee';state.hired=true;state.shiftActive=false;state.level=1;state.experience=0;state.agentStatus='offline';state.currentView='overview';saveState();toast('Employment accepted. Welcome to the operations floor.','success');renderView();}
+function setAgentState(status, reason = '') {
+  if (!AGENT_STATES.includes(status)) throw new TypeError('Unknown agent state.');
+  if (!state.shiftActive || !state.shiftRecord || state.shiftRecord.status !== 'active') {
+    if (status !== 'offline') throw new Error('Start an active shift before changing agent state.');
+    state.agentStatus = 'offline';
+    productionWorld?.setAgentActivity?.('offline');
+    return null;
+  }
+  const event = recordAgentState(state.shiftRecord, status, state.shiftElapsedMinutes, reason);
+  state.agentStatus = status;
+  productionWorld?.setAgentActivity?.(status);
+  return event;
+}
 function startShift(){
-  state.shiftActive=true;state.shiftMinutes=0;state.day=state.day||1;
+  if(!state.hired){toast('Complete recruitment and accept the employment offer before starting a shift.','warning');return;}
+  if (state.shiftActive) { toast('Your shift is already active.'); return; }
+  if(state.lastShiftDay===state.day){toast('You have already completed or closed a shift for this simulated workday. Advance to the next workday.','warning');return;}
+  const simulatedMinute=simulationMinuteNow();
+  if(simulatedMinute<8*60){toast('The scheduled shift begins at 08:00. Attend the morning briefing before starting.','warning');return;}
+  if(simulatedMinute>=17*60){toast('The scheduled shift has ended for today. Start the next simulated workday.','warning');return;}
+  state.day=state.day||1;
+  state.shiftElapsedMinutes=simulatedMinute-(8*60);
+  state.shiftRecord=createShiftRecord({day:state.day,startedAt:Date.now()});
+  if(state.shiftElapsedMinutes>0){state.shiftRecord.events=[{status:'offline',elapsedMinute:0,at:new Date().toISOString(),reason:'Before scheduled shift start'}];recordAgentState(state.shiftRecord,'available',state.shiftElapsedMinutes,'Late shift start');}
+  state.shiftActive=true;
+  state.agentStatus='available';
+  productionWorld?.setAgentActivity?.('available');
+  state.shiftMinutes=0;
   ensureInboundQueue(6);
   state.currentView='overview';
   pushOperationEvent('shift','SHIFT-'+state.day,'Shift started; inbound routing opened.','active');
   saveState();toast('Shift started. Inbound routing is open.','success');renderView();
 }
+function takeScheduledBreak(){
+  if(!state.shiftActive||state.currentCall||state.activeOutbound||state.wrapUp){toast('Finish the current interaction before taking a break.','warning');return;}
+  if(state.agentStatus==='break'){toast('You are already on a scheduled break.','warning');return;}
+  const mode=expectedShiftMode(state.shiftRecord,state.shiftElapsedMinutes);
+  if(mode!=='break'){toast('This is not a scheduled break window.','warning');return;}
+  setAgentState('break','Scheduled break started');
+  pushOperationEvent('workforce',state.shiftRecord.id,'Agent started a scheduled break.','break');
+  saveState();renderView();
+}
+function returnFromBreak(){
+  if(state.agentStatus!=='break'){toast('The agent is not currently on break.');return;}
+  setAgentState('available','Returned from scheduled break');
+  pushOperationEvent('workforce',state.shiftRecord?.id||'SHIFT','Agent returned from break.','available');
+  saveState();renderView();
+}
+function endShift(){
+  if(!state.shiftActive||!state.shiftRecord){toast('There is no active shift.');return;}
+  if(state.currentCall||state.activeOutbound||state.wrapUp){toast('Complete or safely close the active customer interaction before ending the shift.','warning');return;}
+  setAgentState('offline','Shift ended by employee');
+  const completed=closeShift(state.shiftRecord,Date.now(),state.shiftElapsedMinutes);
+  state.shiftHistory.push({id:completed.id,day:completed.day,startedAt:completed.startedAt,endedAt:completed.endedAt,elapsedMinutes:completed.elapsedMinutes,adherence:completed.adherence?.adherence??0,status:completed.status});
+  state.shiftHistory=state.shiftHistory.slice(-20);
+  state.lastShiftDay=state.day;
+  state.shiftActive=false;state.agentStatus='offline';
+  pushOperationEvent('shift',completed.id,`Shift ended. Adherence ${completed.adherence?.adherence??0}%.`,'completed');
+  saveState();renderView();toast(`Shift closed · ${completed.adherence?.adherence??0}% adherence.`,'success');
+}
+function advanceWorkday(){
+  if(!state.hired){toast('Employment is required before advancing a workday.','warning');return;}
+  if(state.shiftActive||state.currentCall||state.activeOutbound||state.wrapUp){toast('Close the current shift and customer interactions before advancing the workday.','warning');return;}
+  if(state.lastShiftDay!==state.day&&simulationMinuteNow()<17*60){toast('The current workday has not ended. Finish or close this shift before advancing.','warning');return;}
+  state.day=Math.max(1,Number(state.day)||1)+1;
+  state.simulationClockSeconds=7*3600;
+  simulationClockTicker=7*3600;
+  lastShiftSaveBucket=0;
+  state.shiftElapsedMinutes=0;
+  state.shiftRecord=null;
+  state.agentStatus='offline';
+  saveState();renderView();
+  toast(`Workday ${state.day} is ready. Morning briefing begins at 07:30.`,'success');
+}
+
 function startInboundCall(){
   if(!state.shiftActive){toast('Start your shift before accepting contacts.','warning');return;}
+  if(!shiftTimeAvailable()){toast('The scheduled 08:00–17:00 shift window has ended. Close the shift before starting another contact.','warning');return;}
+  if(state.agentStatus!=='available'){toast(`Your agent status is ${state.agentStatus}. Return to Available before accepting a contact.`,'warning');return;}
   ensureInboundQueue(6);
   if(state.callQueue<=0){toast('The inbound queue is empty. Load the next simulated arrival batch.');return;}
   const queued = nextQueuedContact(state.inboundQueueItems);
@@ -825,6 +1095,8 @@ function startInboundCall(){
   state.acceptedContacts++;
   if(waitSeconds<=60)state.contactsWithinSla++;
   state.currentCall={scenarioId:scenario.id,queueContactId:contact.id,stepIndex:0,score:0,feedback:null,feedbackType:'neutral',breach:false,held:false,startedAt:acceptedAt,waitSeconds};
+  setAgentState('busy','Inbound customer contact accepted');
+  voiceConsent=false;voiceStatus='inactive';voiceTranscript='';
   syncQueueCount();
   pushOperationEvent('call',contact.id,`Inbound contact connected · ${scenario.issue}`,'connected',{customer:scenario.customer,routeGroup:contact.routeGroup,priority:contact.priority,waitSeconds});
   saveState();renderView();
@@ -847,6 +1119,8 @@ function beginInboundWrapUp(transferred = false){
   if(contact.status==='connected')transitionContact(contact,CONTACT_STATUS.WRAP_UP,'Customer conversation completed; after-contact work started',Date.now());
   else if(contact.status==='transferred')transitionContact(contact,CONTACT_STATUS.WRAP_UP,'Transferred interaction entered after-contact work',Date.now());
   const qa=Math.max(0,Math.min(100,Math.round(70+call.score*5-(call.breach?35:0))));
+  stopVoiceTools();
+  setAgentState('wrap-up','Inbound call entered after-contact work');
   state.wrapUp={type:'inbound',contactId:contact.id,scenarioId:scenario.id,reference:scenario.reference,customer:scenario.customer,title:scenario.issue,channel:'Inbound',qa,score:call.score,breach:call.breach,transferred:!!transferred,transferTarget:call.transferredTo||'',startedAt:Date.now(),defaultDisposition:transferred||call.breach?'escalated':'resolved'};
   pushOperationEvent('wrap-up',contact.id,'After-contact work started.','wrap_up',{qa,breach:call.breach});
   saveState();renderView();
@@ -858,6 +1132,7 @@ function beginOutboundWrapUp(){
   if(!task)return;
   const qa=Math.max(0,Math.min(100,Math.round(70+active.score*5-(active.breach?35:0))));
   const good=active.score>=4&&!active.breach;
+  setAgentState('wrap-up','Outbound call entered after-contact work');
   state.wrapUp={type:'outbound',contactId:active.attemptId,reference:active.attemptId,customer:task.customer,title:task.title,channel:'Outbound',qa,score:active.score,breach:active.breach,startedAt:Date.now(),defaultDisposition:active.suppressionRequested?'opt_out':active.disposition|| (good?'completed':'review'),suppressionRequested:!!active.suppressionRequested,campaignId:task.id};
   pushOperationEvent('wrap-up',active.attemptId,'Outbound contact entered after-contact work.','wrap_up',{qa,breach:active.breach});
   saveState();renderView();
@@ -957,7 +1232,9 @@ function saveWrapUp(){
     state.activeOutbound=null;
   }
   state.totalACWSeconds+=acwSeconds;state.acwCount++;
-  state.wrapUp=null;levelCheck();syncQueueCount();saveState();
+  state.wrapUp=null;
+  if(state.shiftActive)setAgentState('available','After-contact work completed');
+  levelCheck();syncQueueCount();saveState();
   state.currentView=inbound?'inbound':'outbound';
   toast(`After-contact work saved · ${disposition.replaceAll('_',' ')}`,'success');renderView();
 }
@@ -965,6 +1242,7 @@ function toggleCallHold(){
   const call=state.currentCall;if(!call)return;
   const contact=findQueueContact(call.queueContactId);if(!contact)return;
   if(contact.status==='connected'){
+    stopVoiceTools();
     transitionContact(contact,CONTACT_STATUS.ON_HOLD,'Agent placed the customer on hold',Date.now());call.held=true;
     pushOperationEvent('call',contact.id,'Customer placed on hold.','on_hold');
   }else if(contact.status==='on_hold'){
@@ -994,7 +1272,7 @@ function returnCallToQueue(){
   const call=state.currentCall;if(!call)return;
   const contact=findQueueContact(call.queueContactId);if(!contact)return;
   if(['connected','on_hold'].includes(contact.status)){transitionContact(contact,CONTACT_STATUS.QUEUED,'Contact returned to inbound queue',Date.now());contact.queuedAt=new Date().toISOString();}
-  state.currentCall=null;syncQueueCount();pushOperationEvent('call',contact.id,'Contact returned to queue without a completed interaction.','queued');saveState();renderView();toast('Contact returned to the inbound queue.');
+  state.currentCall=null;stopVoiceTools();if(state.shiftActive)setAgentState('available','Contact returned to queue');syncQueueCount();pushOperationEvent('call',contact.id,'Contact returned to queue without a completed interaction.','queued');saveState();renderView();toast('Contact returned to the inbound queue.');
 }
 function returnCallbackToQueue(callbackId){
   const callback=state.callbacks.find(item=>item.id===callbackId&&item.status==='scheduled'&&item.type!=='outbound');
@@ -1014,17 +1292,19 @@ function resumeOutboundCallback(callbackId){
   const callback=state.callbacks.find(item=>item.id===callbackId&&item.type==='outbound'&&item.status==='scheduled');
   if(!callback){toast('Outbound callback was not found.','error');return;}
   if(Date.parse(callback.dueAt)>Date.now()){toast('This callback is not due yet. Keep it scheduled until the requested time.','warning');return;}
+  if(!shiftTimeAvailable()||state.agentStatus!=='available'){toast('An active shift within 08:00–17:00 and Available agent status are required for this callback.','warning');return;}
   if(isContactSuppressed(callback.customer,state.outboundSuppressions)){toast('Contact suppression is active; callback is blocked.','error');return;}
   callback.status='in_progress';callback.attemptedAt=new Date().toISOString();
   const attemptId=makeCallReference('OUT-CBK');
   state.activeOutbound={campaignId:callback.campaignId,attemptId,callbackId,stepIndex:0,score:0,feedback:null,feedbackType:'neutral',breach:false,startedAt:Date.now(),suppressionRequested:false,disposition:null};
+  setAgentState('busy','Scheduled outbound callback started');
   pushOperationEvent('campaign',attemptId,`Scheduled outbound callback initiated · ${callback.customer}`,'dialling',{callbackId});saveState();state.currentView='outbound';renderView();
 }
 function cancelOutbound(){
   const active=state.activeOutbound;if(!active)return;
   if(active.callbackId){const callback=state.callbacks.find(item=>item.id===active.callbackId);if(callback)callback.status='scheduled';}
   pushOperationEvent('campaign',active.attemptId,'Outbound simulation attempt ended before wrap-up.','abandoned');
-  state.activeOutbound=null;saveState();renderView();toast('Outbound interaction ended; no completion credit was recorded.');
+  state.activeOutbound=null;if(state.shiftActive)setAgentState('available','Outbound interaction cancelled');saveState();renderView();toast('Outbound interaction ended; no completion credit was recorded.');
 }
 function beginOutboundDial(id){
   const task=outboundCampaigns.find(item=>item.id===id);if(!task)return;
@@ -1034,9 +1314,11 @@ function beginOutboundDial(id){
 function levelCheck(){const newLevel=1+Math.floor(state.experience/100);if(newLevel>state.level){state.level=newLevel;toast(`Career progression: Level ${state.level} achieved.`,'success');}}
 function startOutbound(id){
   const task=outboundCampaigns.find(item=>item.id===id);if(!task)return;
+  if(!shiftTimeAvailable()||state.agentStatus!=='available'){toast('An active shift within 08:00–17:00 and Available agent status are required before an outbound contact.','warning');return;}
   if(isContactSuppressed(task.customer,state.outboundSuppressions)){toast('Contact suppression is active. Campaign blocked.','error');return;}
   const attemptId=makeCallReference('OUT');
   state.activeOutbound={campaignId:id,attemptId,stepIndex:0,score:0,feedback:null,feedbackType:'neutral',breach:false,startedAt:Date.now(),suppressionRequested:false,disposition:null};
+  setAgentState('busy','Outbound campaign contact started');
   pushOperationEvent('campaign',attemptId,`Outbound dial initiated · ${task.title}`,'dialling',{customer:task.customer});
   saveState();renderView();
 }
@@ -1066,6 +1348,16 @@ function handleAction(action,event={}){
     case 'retake-assessment':state.stage='applicant';beginAssessment();break;
     case 'accept-offer':acceptOffer();break;
     case 'start-shift':startShift();break;
+    case 'advance-workday':advanceWorkday();break;
+    case 'take-break':takeScheduledBreak();break;
+    case 'return-from-break':returnFromBreak();break;
+    case 'end-shift':endShift();break;
+    case 'start-voice-recording':startVoiceRecording();break;
+    case 'stop-voice-recording':stopVoiceRecording();break;
+    case 'start-voice-transcription':startVoiceTranscription();break;
+    case 'stop-voice-transcription':stopVoiceTranscription();break;
+    case 'play-customer-prompt':speakCustomerPrompt(event.text||'');break;
+    case 'clear-voice-practice':clearVoicePractice();break;
     case 'refresh-queue':{const items=createInboundQueue(inboundScenarios,6,{sequence:state.queueSequence});state.inboundQueueItems.push(...items);state.queueSequence+=items.length;syncQueueCount();pushOperationEvent('queue','INBOUND','Six simulated contacts arrived in the queue.','queued');saveState();renderView();toast('Six new simulated contacts added.','success');break;}
     case 'toggle-call-hold':toggleCallHold();break;
     case 'request-supervisor':requestSupervisor();break;
@@ -1087,7 +1379,7 @@ function handleAction(action,event={}){
     case 'complete-outbound-step':completeOutbound();break;
     case 'end-outbound':cancelOutbound();break;
     case 'attend-briefing': {
-      const briefing=briefingFor(new Date());
+      const briefing=briefingFor(simulationDateNow());
       if(!briefing){toast('No briefing is currently in its attendance window.','warning');break;}
       recordBriefingAttendance(state.briefingAttendance,briefing,`EMP-${state.nameInitials}`);
       pushOperationEvent('briefing',briefing.id,`${briefing.title} attended and acknowledged.`);
@@ -1107,8 +1399,8 @@ function handleAction(action,event={}){
 }
 
 document.addEventListener('click',e=>{
-  const nav=e.target.closest('.nav-item[data-view]');if(nav){if(nav.disabled){toast('Complete recruitment and accept an offer to unlock agent operations.');return;}state.currentView=nav.dataset.view;renderView();return;}
-  const action=e.target.closest('[data-action]');if(action){handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId,system:action.dataset.system});return;}
+  const nav=e.target.closest('.nav-item[data-view]');if(nav){if(nav.disabled){toast('Complete recruitment and accept an offer to unlock agent operations.');return;}if(nav.dataset.view!=='inbound'&&voiceStatus!=='inactive')stopVoiceTools();state.currentView=nav.dataset.view;renderView();return;}
+  const action=e.target.closest('[data-action]');if(action){handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId,system:action.dataset.system,text:action.dataset.text});return;}
   const answer=e.target.closest('[data-answer]');
 if(answer){const i=state.assessmentIndex;state.assessmentAnswers[i]=Number(answer.dataset.answer);renderView();return;}
   const practicalAnswer=e.target.closest('[data-practical-answer]');if(practicalAnswer){state.practicalAnswers[state.practicalIndex]=Number(practicalAnswer.dataset.practicalAnswer);renderView();return;}
@@ -1138,9 +1430,23 @@ document.addEventListener('submit',e=>{
     const item=recordCommendation(state.commendations,{customerId:f.get('customerId'),message:f.get('message')});
     pushOperationEvent('commendation',item.id,'Customer commendation referred through official channels.');saveState();renderView();toast('Commendation logged for official review.','success');
   }
+  if(e.target.id==='coachingForm'){
+    e.preventDefault();const f=new FormData(e.target);
+    try{const item=createCoachingRecord(state.coachingSessions,{coach:f.get('coach'),topic:f.get('topic'),feedback:f.get('feedback'),actionPlan:f.get('actionPlan'),score:f.get('score'),followUpDate:f.get('followUpDate')||null});pushOperationEvent('coaching',item.id,`Coaching recorded: ${item.topic}.`);saveState();renderView();toast('Coaching session recorded.','success');}catch(err){toast(err.message,'error');}
+  }
+  if(e.target.id==='voiceFallbackForm'){
+    e.preventDefault();const textValue=new FormData(e.target).get('utterance');
+    if(!String(textValue||'').trim()){toast('Enter the practice response first.','warning');return;}
+    voiceTranscript=sanitizeTranscript(String(textValue));
+    toast('Text fallback captured in temporary practice memory.','success');renderView();
+  }
 });
 
-function initClock(){let tick=8*3600;setInterval(()=>{tick=(tick+1)%86400;const h=String(Math.floor(tick/3600)).padStart(2,'0'),m=String(Math.floor((tick%3600)/60)).padStart(2,'0'),s=String(tick%60).padStart(2,'0');$('#shiftClock').textContent=`${h}:${m}:${s}`;},1000);}
+document.addEventListener('change',e=>{if(e.target?.id==='voiceConsent'){voiceConsent=!!e.target.checked;if(!voiceConsent&&voiceStatus!=='inactive')stopVoiceTools();renderView();}});
+window.addEventListener('pagehide',()=>{stopVoiceTools();});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&voiceStatus!=='inactive')stopVoiceTools();});
+
+function initClock(){const savedTick=Number(state.simulationClockSeconds);simulationClockTicker=Number.isFinite(savedTick)?Math.max(0,Math.min(86399,savedTick)):7*3600;lastShiftSaveBucket=Math.floor((Number(state.shiftElapsedMinutes)||0)/15);setInterval(()=>{simulationClockTicker=(simulationClockTicker+30)%86400;state.simulationClockSeconds=simulationClockTicker;const h=String(Math.floor(simulationClockTicker/3600)).padStart(2,'0'),m=String(Math.floor((simulationClockTicker%3600)/60)).padStart(2,'0'),s=String(simulationClockTicker%60).padStart(2,'0');$('#shiftClock').textContent=`${h}:${m}:${s}`;if(state.shiftActive&&state.shiftRecord?.status==='active'){state.shiftElapsedMinutes=Math.min(540,state.shiftElapsedMinutes+.5);const bucket=Math.floor(state.shiftElapsedMinutes/15);if(bucket!==lastShiftSaveBucket){lastShiftSaveBucket=bucket;saveState();}}else if(Math.floor(simulationClockTicker/30)%30===0)saveState();},1000);}
 
 // Production-style 3D workplace. The scene is isolated from business logic so it can
 // evolve independently without disturbing recruitment, calls, CRM or career records.
@@ -1179,6 +1485,7 @@ async function initWorld(){
         if(note&&productionWorld?.immersive)note.classList.remove('hidden');
       }
     });
+    productionWorld.setAgentActivity?.(state.agentStatus||'offline');
     const enterButton=$('#enterFloorButton');if(enterButton)enterButton.disabled=false;
   }catch(error){
     console.error('CALLORIA world initialisation failed:',error);
@@ -1207,7 +1514,7 @@ function open3dWorkView(view){
     exit3dFloor();state.currentView='overview';renderView();document.querySelector('.content-wrap')?.scrollIntoView({behavior:'smooth',block:'start'});return;
   }
   if(!state.hired){toast('Complete recruitment and accept an employment offer before handling customer interactions.','warning');return;}
-  if((view==='inbound'||view==='outbound')&&!state.shiftActive){state.shiftActive=true;state.shiftMinutes=0;state.day=state.day||1;}
+  if((view==='inbound'||view==='outbound')&&!state.shiftActive)startShift();
   state.currentView=view;
   saveState();
   exit3dFloor();
