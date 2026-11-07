@@ -82,3 +82,8 @@ No GitHub commit, Vercel deployment, Supabase migration execution or live tenant
 7. Test an agent role and a second organisation. Direct setting updates must be denied by PostgreSQL RLS and usage quota must remain tenant-scoped.
 
 Do not add the OpenAI API key to Vercel or to any `VITE_` environment variable. The app's browser bundle must contain only the Supabase URL and publishable/anon key.
+
+
+## v1.3.1 email registration hotfix
+
+This release changes client-side email normalisation and registration error presentation only. It adds no SQL migration. Do not rerun migrations 001, 002 or 003 when deploying this hotfix. A fresh Vercel deployment is required for the updated browser bundle to take effect.

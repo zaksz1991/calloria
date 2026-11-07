@@ -51,11 +51,58 @@ export function resolveSupabaseConfig(env = {}) {
 }
 
 export function normaliseInvitationEmail(value) {
-  const email = String(value ?? '').trim().toLowerCase();
-  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new TypeError('Enter a valid email address.');
+  // Browser autofill and copy/paste can introduce non-breaking spaces,
+  // full-width punctuation or invisible format characters. Normalise those
+  // without deleting visible characters from the address.
+  const email = String(value ?? '')
+    .normalize('NFKC')
+    .replace(/[\u200B-\u200D\u2060\uFEFF]/g, '')
+    .trim()
+    .toLowerCase();
+
+  const invalid = () => new TypeError(
+    'Enter an email address in the format name@example.com. Check for spaces, extra @ characters or a missing domain.'
+  );
+
+  if (!email || email.length > 254 || /\s/.test(email)) throw invalid();
+
+  const at = email.indexOf('@');
+  if (at <= 0 || at !== email.lastIndexOf('@') || at === email.length - 1) throw invalid();
+
+  const local = email.slice(0, at);
+  const rawDomain = email.slice(at + 1);
+  const atomPattern = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$/i;
+  if (
+    local.length > 64 ||
+    !atomPattern.test(local) ||
+    local.startsWith('.') || local.endsWith('.') || local.includes('..')
+  ) throw invalid();
+
+  let domain;
+  try {
+    // URL.hostname applies the browser's IDN-to-ASCII conversion for
+    // internationalised domain names before DNS-label validation.
+    const parsed = new URL(`https://${rawDomain}`);
+    if (parsed.username || parsed.password || parsed.port || parsed.pathname !== '/' || parsed.search || parsed.hash) {
+      throw invalid();
+    }
+    domain = parsed.hostname.toLowerCase();
+  } catch {
+    throw invalid();
   }
-  return email;
+
+  const labels = domain.split('.');
+  if (
+    labels.length < 2 ||
+    labels.some(label =>
+      !label || label.length > 63 ||
+      !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i.test(label)
+    )
+  ) throw invalid();
+
+  const normalised = `${local}@${domain}`;
+  if (normalised.length > 254) throw invalid();
+  return normalised;
 }
 
 export function validateCloudPolicy(input) {

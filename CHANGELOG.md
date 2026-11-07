@@ -1,3 +1,11 @@
+# CALLORIA v1.3.1 — Email Registration Validation Hotfix
+
+- Improved email normalisation for copy/paste and browser autofill edge cases.
+- Added IDN domain conversion, plus-addressing and multi-part domain coverage.
+- Replaced the vague email error with actionable format guidance.
+- Preserved the Create account tab after sign-up errors.
+- No Supabase migration changes. This hotfix does not alter shared database objects.
+
 # CALLORIA v1.3.0 — AI-Assisted Customer Intelligence
 
 ## Added

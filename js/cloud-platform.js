@@ -84,7 +84,7 @@ function renderAuthGate(activeTab = 'signin') {
     ${gateNotice()}
     <div class="cloud-tabs"><button type="button" data-cloud-tab="signin" class="${activeTab==='signin'?'active':''}">Sign in</button><button type="button" data-cloud-tab="signup" class="${activeTab==='signup'?'active':''}">Create account</button></div>
     <form id="cloudSignInForm" class="cloud-form ${activeTab==='signin'?'':'hidden'}"><label>Email address<input name="email" type="email" autocomplete="username" required maxlength="254" placeholder="you@organisation.com"></label><label>Password<input name="password" type="password" autocomplete="current-password" required minlength="8"></label><button class="cloud-primary" type="submit">Sign in securely</button><button class="cloud-text-button" type="button" data-cloud-action="reset-password">Send password reset email</button></form>
-    <form id="cloudSignUpForm" class="cloud-form ${activeTab==='signup'?'':'hidden'}"><label>Full name<input name="fullName" type="text" autocomplete="name" required minlength="2" maxlength="100" placeholder="Your full name"></label><label>Work email<input name="email" type="email" autocomplete="email" required maxlength="254" placeholder="you@organisation.com"></label><label>Password<input name="password" type="password" autocomplete="new-password" required minlength="10" placeholder="At least 10 characters"></label><button class="cloud-primary" type="submit">Create account</button><p class="cloud-muted">Email confirmation may be required before you can enter an organisation.</p></form>
+    <form id="cloudSignUpForm" class="cloud-form ${activeTab==='signup'?'':'hidden'}"><label>Full name<input name="fullName" type="text" autocomplete="name" required minlength="2" maxlength="100" placeholder="Your full name"></label><label>Email address<input name="email" type="email" inputmode="email" autocapitalize="none" spellcheck="false" autocomplete="email" required maxlength="254" placeholder="name@example.com"></label><label>Password<input name="password" type="password" autocomplete="new-password" required minlength="10" placeholder="At least 10 characters"></label><button class="cloud-primary" type="submit">Create account</button><p class="cloud-muted">Email confirmation may be required before you can enter an organisation.</p></form>
     <div class="cloud-security-foot"><span class="cloud-lock">●</span> PostgreSQL Row Level Security is part of the required tenant migration.</div>`);
 }
 
@@ -145,7 +145,7 @@ async function requireClient() {
   const { createClient } = await import('@supabase/supabase-js');
   state.client = createClient(config.url, config.key, {
     auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true, flowType: 'pkce' },
-    global: { headers: { 'x-client-info': 'calloria-v1.3.0' } }
+    global: { headers: { 'x-client-info': 'calloria-v1.3.1' } }
   });
   return state.client;
 }
@@ -411,7 +411,12 @@ function bindGateEvents() {
     if (!action || busy) return;
     event.preventDefault(); setBusy(true); setMessage();
     try { await action(form); }
-    catch (error) { setMessage('', errorText(error)); showGate(); bindGateEvents(); }
+    catch (error) {
+      setMessage('', errorText(error));
+      if (form.id === 'cloudSignUpForm' && !state.session) renderAuthGate('signup');
+      else showGate();
+      bindGateEvents();
+    }
     finally { setBusy(false); }
   });
 }

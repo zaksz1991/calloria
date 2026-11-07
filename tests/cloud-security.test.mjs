@@ -38,10 +38,23 @@ test('organisation roles use a least-privilege client permission map', () => {
   assert.ok(CLOUD_ROLE_PERMISSIONS.owner.includes('policies:manage'));
 });
 
-test('invitation email is normalised and validates format and length', () => {
+test('invitation email normalisation supports normal addresses, plus tags and multi-part domains', () => {
   assert.equal(normaliseInvitationEmail('  AGENT@Example.com '), 'agent@example.com');
-  assert.throws(() => normaliseInvitationEmail('not-an-email'), /valid email/);
-  assert.throws(() => normaliseInvitationEmail(`${'a'.repeat(250)}@b.com`), /valid email/);
+  assert.equal(normaliseInvitationEmail('First.Last+Support@Sub.Example.co.uk'), 'first.last+support@sub.example.co.uk');
+});
+
+test('email normalisation removes invisible paste characters and converts IDN domains', () => {
+  assert.equal(normaliseInvitationEmail('\u200BFirst.Last+tag@Example.com\uFEFF'), 'first.last+tag@example.com');
+  assert.equal(normaliseInvitationEmail('user@exämple.com'), 'user@xn--exmple-cua.com');
+  assert.equal(normaliseInvitationEmail('user＠example.com'), 'user@example.com');
+});
+
+test('email validation rejects missing, malformed and overlong addresses with useful guidance', () => {
+  assert.throws(() => normaliseInvitationEmail(''), /name@example.com/);
+  assert.throws(() => normaliseInvitationEmail('not-an-email'), /name@example.com/);
+  assert.throws(() => normaliseInvitationEmail('a@@example.com'), /name@example.com/);
+  assert.throws(() => normaliseInvitationEmail('first last@example.com'), /name@example.com/);
+  assert.throws(() => normaliseInvitationEmail(`${'a'.repeat(250)}@b.com`), /name@example.com/);
 });
 
 test('tenant policy validator enforces numeric boundaries and a bounded department list', () => {

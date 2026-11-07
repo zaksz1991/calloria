@@ -1,6 +1,6 @@
 # CALLORIA — Contact Centre Career & Operations Simulator
 
-**Build:** 1.3.0 — AI-Assisted Customer Intelligence  
+**Build:** 1.3.1 — Email Registration Validation Hotfix  
 **Product:** A browser-first contact-centre career and operations simulator. Recruitment is the entry gate; the main experience is simulated employment, multi-channel customer operations, workforce routines and career progression.
 
 ## Release history and capabilities
@@ -22,6 +22,14 @@ This milestone server-backs identity and organisation administration only. Recru
 See `SUPABASE-SETUP.md` before configuring Vercel. Run migrations `supabase/migrations/202611070001_calloria_server_tenancy.sql` and `supabase/migrations/202611070002_calloria_employment_persistence.sql`, and for v1.3 apply `202611070003_calloria_ai_assistance.sql`. Deploy `supabase/functions/calloria-ai-assist/index.ts` and configure its secret before enabling AI. Then add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to the Vercel environment. A legacy anon key is supported. Never put a service-role or secret key in a `VITE_` variable.
 
 
+
+## v1.3.1 — Email Registration Validation Hotfix
+
+- Normalises invisible copy/paste characters and full-width email punctuation before validation.
+- Supports plus-addressing, multi-part domains and internationalised domain names.
+- Shows a more actionable validation message without displaying the submitted address.
+- Keeps the account-creation tab open when registration validation or Supabase Auth returns an error.
+- No database migration is added; existing Supabase migrations are not rerun by this hotfix.
 
 ## v1.3.0 — AI-Assisted Customer Intelligence
 
