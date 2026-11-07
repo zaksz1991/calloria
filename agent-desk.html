@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#07121d" />
+  <meta name="description" content="CALLORIA restricted staff omnichannel agent workspace." />
+  <title>CALLORIA · Agent Desk</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/calloria-mark.svg" />
+  <link rel="stylesheet" href="/styles/agent-desk.css" />
+</head>
+<body>
+  <div class="desk-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="CALLORIA home"><span class="brand-mark">C</span><span><b>CALLORIA</b><small>OMNICHANNEL OPERATIONS</small></span></a>
+      <nav class="topnav"><a href="/case-desk">Case desk</a><a href="/customer-360">Customer 360</a><a href="/customer-care">Customer care</a><a href="/">Simulator</a><button id="sign-out" class="button quiet" hidden>Sign out</button></nav>
+    </header>
+
+    <main>
+      <section id="login-panel" class="login-wrap">
+        <div class="login-card">
+          <div class="eyebrow">RESTRICTED STAFF ACCESS</div>
+          <h1>Agent Desk</h1>
+          <p class="muted">One work queue for voice, email, live chat, social, WhatsApp, platform support and back-office work.</p>
+          <form id="login-form" class="stack-form">
+            <label>Staff email<input id="staff-email" type="email" autocomplete="username" required maxlength="180"></label>
+            <label>Password<input id="staff-password" type="password" autocomplete="current-password" required maxlength="200"></label>
+            <button class="button primary" type="submit">Sign in to operations</button>
+            <div id="login-status" class="status" role="status" aria-live="polite"></div>
+          </form>
+          <p class="security-note">Access is checked by Supabase Auth and the server-side CALLORIA agent-desk permission map. No public registration.</p>
+        </div>
+      </section>
+
+      <section id="workspace" hidden>
+        <div class="workspace-heading">
+          <div><div class="eyebrow">RUFFNECK ENTERTAINMENT · CUSTOMER OPERATIONS</div><h1>Agent Desk</h1><p class="muted">Take ownership, handle the interaction, document the outcome and close the work correctly.</p></div>
+          <div class="staff-panel"><span id="staff-name">Staff member</span><small id="staff-scope">Department permissions</small></div>
+        </div>
+
+        <div class="metric-row" id="queue-metrics" aria-label="Queue summary">
+          <article><span>Waiting</span><strong id="metric-pending">0</strong></article>
+          <article><span>In progress</span><strong id="metric-active">0</strong></article>
+          <article><span>On hold</span><strong id="metric-hold">0</strong></article>
+          <article><span>Escalated</span><strong id="metric-escalated">0</strong></article>
+          <article><span>Resolved in view</span><strong id="metric-resolved">0</strong></article>
+        </div>
+
+        <div class="desk-grid">
+          <aside class="queue-panel panel">
+            <div class="panel-head"><div><div class="eyebrow">WORK DISTRIBUTION</div><h2>Interaction queue</h2></div><button id="refresh-queue" class="button outline" type="button">Refresh</button></div>
+            <div class="queue-filters">
+              <label>Department<select id="department-filter"><option value="all">All permitted departments</option></select></label>
+              <label>Status<select id="status-filter"><option value="open">Open work</option><option value="all">All statuses</option><option value="pending">Waiting</option><option value="claimed">Claimed</option><option value="active">In progress</option><option value="on_hold">On hold</option><option value="after_contact_work">After-contact work</option><option value="escalated">Escalated</option><option value="resolved">Resolved</option></select></label>
+              <label>Channel<select id="channel-filter"><option value="all">All channels</option><option value="voice">Voice</option><option value="email">Email</option><option value="live_chat">Live chat</option><option value="social">Social</option><option value="whatsapp">WhatsApp</option><option value="website">Website / portal</option><option value="game">Game support</option><option value="back_office">Back office</option></select></label>
+            </div>
+            <div id="queue-list" class="queue-list"><div class="empty-state">Your permitted queues will appear here after sign-in.</div></div>
+            <button id="new-item-button" class="button primary full" type="button">Create logged interaction</button>
+          </aside>
+
+          <section class="interaction-panel panel">
+            <div id="no-item" class="empty-interaction"><div class="empty-symbol">◎</div><h2>Select an interaction</h2><p>Interaction details, ownership and handling controls will appear here.</p></div>
+            <div id="item-content" hidden>
+              <div class="item-title-row"><div><div class="eyebrow" id="item-ref">WORK ITEM</div><h2 id="item-subject">Interaction subject</h2><p id="item-subline" class="muted"></p></div><span id="item-status" class="status-chip">Pending</span></div>
+              <div class="item-info-grid" id="item-info"></div>
+              <section class="summary-card"><h3>Interaction summary</h3><p id="item-summary"></p></section>
+              <section class="controls-card"><div class="panel-head"><div><div class="eyebrow">WORK CONTROLS</div><h3>Handling workflow</h3></div><span id="ownership-label" class="muted small"></span></div><div class="control-buttons" id="work-controls"></div><p class="control-disclaimer">These controls update CALLORIA's work state only. They do not connect to a telephone carrier, place calls, send messages or control an external WhatsApp/social account.</p></section>
+              <section id="wrapup-panel" class="wrapup-card" hidden>
+                <h3>After-contact work</h3>
+                <form id="wrapup-form" class="stack-form">
+                  <label>Disposition<select id="wrapup-disposition" required><option value="">Select outcome</option><option value="information_provided">Information provided</option><option value="self_service_guided">Self-service guidance completed</option><option value="technical_resolution">Technical resolution</option><option value="case_created">Case created</option><option value="referred_to_specialist">Referred to specialist</option><option value="complaint_escalated">Complaint escalated</option><option value="sales_enquiry_recorded">Sales enquiry recorded</option><option value="customer_requested_follow_up">Customer requested follow-up</option><option value="no_response">No response</option><option value="resolved_without_action">Resolved without action</option></select></label>
+                  <label>Outcome summary<textarea id="wrapup-summary" rows="3" maxlength="600" placeholder="Record only the service outcome. Do not enter passwords, OTPs, payment details or sensitive personal narratives." required></textarea></label>
+                  <button class="button primary" type="submit">Complete and resolve</button>
+                  <div id="wrapup-status" class="status" role="status"></div>
+                </form>
+              </section>
+              <section class="timeline-card"><div class="panel-head"><div><h3>Activity history</h3><p class="muted small">System events only. Sensitive free-text notes are not supported here.</p></div></div><div id="event-list" class="event-list"></div></section>
+            </div>
+          </section>
+
+          <aside class="tools-panel panel">
+            <div class="eyebrow">SERVICE KNOWLEDGE</div><h2>RuffNeck quick reference</h2>
+            <p class="muted small">Search the portfolio snapshot for customer-requested information. Verify current availability, pricing and account status on the owning platform before promising an outcome.</p>
+            <input id="knowledge-search" class="search-input" type="search" placeholder="Search products and services" aria-label="Search RuffNeck product knowledge">
+            <div id="knowledge-results" class="knowledge-results"><div class="empty-state">Search the six RuffNeck platforms and games.</div></div>
+            <div class="quick-links"><a href="https://ruffneck-lms.vercel.app/" target="_blank" rel="noopener noreferrer">RuffNeck Learn ↗</a><a href="https://ruffneck-prospector.vercel.app/" target="_blank" rel="noopener noreferrer">Prospector ↗</a><a href="https://ruffneck-connect.vercel.app/" target="_blank" rel="noopener noreferrer">Connect ↗</a><a href="https://ruffneck-social-hub.vercel.app/" target="_blank" rel="noopener noreferrer">Social Hub ↗</a><a href="https://kano-run.vercel.app/" target="_blank" rel="noopener noreferrer">Kano Run ↗</a><a href="https://kano-keke.vercel.app/" target="_blank" rel="noopener noreferrer">Kano Keke ↗</a></div>
+            <div class="safety-box"><strong>Customer-care boundary</strong><p>Never request or record passwords, OTPs, PINs, payment card details or API secrets. Personal guidance is not clinical diagnosis or therapy. Escalate clinical risk and immediate danger to qualified human support.</p></div>
+          </aside>
+        </div>
+        <div id="global-status" class="global-status status" role="status" aria-live="polite">Ready.</div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="new-item-dialog" class="modal">
+    <form id="new-item-form" class="modal-form">
+      <div class="panel-head"><div><div class="eyebrow">MANUAL WORK ITEM</div><h2>Create logged interaction</h2></div><button class="icon-button" type="button" data-close="new-item-dialog" aria-label="Close">×</button></div>
+      <label>Department<select id="new-department" required></select></label>
+      <div class="two-col"><label>Channel<select id="new-channel" required><option value="voice">Voice</option><option value="email">Email</option><option value="live_chat">Live chat</option><option value="social">Social media</option><option value="whatsapp">WhatsApp</option><option value="website">Website</option><option value="portal">Portal</option><option value="game">Game support</option><option value="back_office">Back office</option></select></label><label>Direction<select id="new-direction"><option value="inbound">Inbound</option><option value="outbound">Outbound</option><option value="internal">Internal</option></select></label></div>
+      <div class="two-col"><label>Priority<select id="new-priority"><option value="normal">Normal</option><option value="low">Low</option><option value="high">High</option><option value="urgent">Urgent</option></select></label><label>RuffNeck product<select id="new-platform"><option value="">Not product-specific</option><option value="ruffneck-learn">RuffNeck Learn</option><option value="ruffneck-prospector">RuffNeck Prospector</option><option value="ruffneck-connect">RuffNeck Connect</option><option value="ruffneck-social-hub">RuffNeck Social Hub</option><option value="kano-run">Kano Run / Kano Life</option><option value="kano-keke">Kano Keke</option></select></label></div>
+      <label>Subject<input id="new-subject" maxlength="140" required placeholder="Short description of the customer's request"></label>
+      <label>Non-sensitive summary<textarea id="new-summary" maxlength="600" rows="3" required placeholder="Describe the issue without personal identifiers or credentials."></textarea></label>
+      <div class="two-col"><label>Customer 360 CRM record ID (optional)<input id="new-crm-id" maxlength="64" placeholder="UUID only; do not enter email or phone"></label><label>Existing Case Desk reference (optional)<input id="new-case-reference" maxlength="24" placeholder="CC-YYMMDD-XXXXXX"></label></div>
+      <p class="modal-warning">This creates a CALLORIA work record; it does not ingest a live call, email, social post or WhatsApp message. Do not include customer contact details, credentials, payment data or sensitive personal narratives.</p>
+      <div id="new-item-status" class="status" role="status"></div><button class="button primary full" type="submit">Create work item</button>
+    </form>
+  </dialog>
+  <script type="module" src="/js/agent-desk-workbench.js"></script>
+</body>
+</html>

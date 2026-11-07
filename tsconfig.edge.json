@@ -2,12 +2,12 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "lib": ["ES2022", "DOM"],
-    "strict": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "noEmit": true,
+    "strict": false,
     "skipLibCheck": true,
-    "allowImportingTsExtensions": true
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "files": ["supabase/functions/calloria-customer-360/deno-globals.d.ts", "supabase/functions/calloria-customer-360/index.ts"]
+  "include": ["supabase/functions/calloria-agent-desk/**/*.ts", "supabase/functions/calloria-agent-desk/**/*.d.ts"]
 }

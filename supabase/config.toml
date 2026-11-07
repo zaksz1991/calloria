@@ -1,16 +1,3 @@
-# CALLORIA function configuration. Merge these entries with the existing file;
-# retain all unrelated Supabase function settings.
-[functions.calloria-ai-assist]
-verify_jwt = true
-
-[functions.calloria-game-telemetry]
-verify_jwt = false
-
-[functions.calloria-customer-care]
-verify_jwt = false
-
-[functions.calloria-case-desk]
-verify_jwt = false
-
-[functions.calloria-customer-360]
+# Merge the Phase 8 entry into the existing config.toml; retain all other entries.
+[functions.calloria-agent-desk]
 verify_jwt = false
