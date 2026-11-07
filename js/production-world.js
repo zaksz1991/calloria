@@ -28,7 +28,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   const tierDefaults = {
     low:      { ratio: mobile ? 0.98 : 1.0, minRatio: 0.78, fps: mobile ? 24 : 30, anisotropy: 2, people: 6, antialias: false },
     balanced: { ratio: mobile ? 1.2 : 1.28, minRatio: mobile ? 0.92 : 0.98, fps: mobile ? 30 : 45, anisotropy: 4, people: 9, antialias: true },
-    high:     { ratio: mobile ? 1.38 : 1.55, minRatio: 1.05, fps: mobile ? 40 : 60, anisotropy: 8, people: 11, antialias: true }
+    high:     { ratio: mobile ? 1.38 : 1.55, minRatio: 1.05, fps: mobile ? 40 : 60, anisotropy: 8, people: 12, antialias: true }
   }[tier];
 
   let profile = 'auto';
@@ -114,6 +114,9 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     scarfC: mat('hijab-sand', '#c4a879', 0.9),
     headset: mat('headset', '#101b23', 0.46, 0.22),
     eye: mat('eye', '#161b20', 0.42),
+    eyeWhite: mat('eye-white', '#f1eee6', 0.58),
+    lip: mat('lip-muted', '#653c3c', 0.86),
+    badge: mat('staff-badge', '#eff5f1', 0.48, 0.04),
     shoe: mat('shoes', '#121e27', 0.75),
     plant: mat('plant-green', '#3e7958', 0.95),
     plantLight: mat('plant-leaf-light', '#73a86a', 0.94),
@@ -189,6 +192,50 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     mesh.name = name; mesh.position.set(...position); mesh.scale.set(...scale);
     if (rotation) mesh.rotation.set(...rotation);
     parent.add(mesh); return mesh;
+  }
+
+  // Staff anatomy is composed once, then merged into vertex-coloured batches.
+  // This keeps the richer characters while avoiding a separate draw call for
+  // every eye, shoe, badge and limb component.
+  const staffCompositeMaterial = new THREE.MeshStandardMaterial({
+    color: '#ffffff', vertexColors: true, roughness: 0.84, metalness: 0.015
+  });
+  staffCompositeMaterial.name = 'calloria-staff-composite';
+  materials.push(staffCompositeMaterial);
+  function mergeStaffParts(group) {
+    const parts = group.children.filter(child => child.isMesh && child.geometry && child.material && !child.userData.keepSeparate);
+    if (parts.length < 2) return null;
+    const positions = [], normals = [], colors = [];
+    for (const part of parts) {
+      part.updateMatrix();
+      const transformed = part.geometry.clone();
+      transformed.applyMatrix4(part.matrix);
+      const flat = transformed.index ? transformed.toNonIndexed() : transformed;
+      const position = flat.getAttribute('position');
+      const normal = flat.getAttribute('normal');
+      const tint = part.material.color?.clone?.() || new THREE.Color('#ffffff');
+      for (let i = 0; i < position.count; i++) {
+        positions.push(position.getX(i), position.getY(i), position.getZ(i));
+        if (normal) normals.push(normal.getX(i), normal.getY(i), normal.getZ(i));
+        colors.push(tint.r, tint.g, tint.b);
+      }
+      if (flat !== transformed) flat.dispose();
+      transformed.dispose();
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    if (normals.length === positions.length) geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    else geometry.computeVertexNormals();
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geometry.computeBoundingSphere();
+    geometry.name = `${group.name || 'staff'}-merged-geometry`;
+    geometries.push(geometry);
+    for (const part of parts) group.remove(part);
+    const merged = new THREE.Mesh(geometry, staffCompositeMaterial);
+    merged.name = `${group.name || 'staff'}-merged-mesh`;
+    merged.castShadow = false; merged.receiveShadow = false;
+    group.add(merged);
+    return merged;
   }
   function addInstances(name, geometry, material, transforms) {
     if (!transforms.length) return null;
@@ -394,76 +441,130 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   const shirtMaterials = [mats.shirtA, mats.shirtB, mats.shirtC, mats.shirtD];
   const scarfMaterials = [mats.scarfA, mats.scarfB, mats.scarfC];
   const staff = [];
-  function buildStaff(station, index, seated = true) {
+  function buildStaff(station, index, seated = true, walking = !seated) {
     const root = new THREE.Group();
     root.name = `staff-${String(index + 1).padStart(2, '0')}`;
     root.position.set(station.x, 0, station.z + (seated ? 1.36 : 0));
-    root.rotation.y = Math.PI; // Face the workstation / central floor.
+    root.rotation.y = Math.PI; // Character faces the workstation / central floor.
     const skin = skinMaterials[index % skinMaterials.length];
     const shirt = shirtMaterials[(index * 3 + 1) % shirtMaterials.length];
     const scarf = scarfMaterials[(index + 1) % scarfMaterials.length];
-
-    addSphere(root, 'uniform-torso', [0, 1.04, 0], [0.32, 0.4, 0.2], shirt);
-    addSphere(root, 'uniform-collar', [0, 1.36, -0.025], [0.17, 0.09, 0.17], mats.white, smallSphereGeo);
-    addCylinder(root, 'neck', [0, 1.47, 0.01], [0.105, 0.18, 0.105], skin, lowCylinderGeo);
-    addSphere(root, 'head', [0, 1.73, 0.015], [0.235, 0.29, 0.22], skin);
     const isHijab = index % 4 === 1 || index % 4 === 3;
+
+    // Tailored torso, collar, placket, lanyard and employee ID badge.
+    addSphere(root, 'uniform-torso', [0, 1.04, 0], [0.32, 0.4, 0.2], shirt);
+    addSphere(root, 'uniform-collar-left', [-0.085, 1.355, 0.095], [0.095, 0.105, 0.12], mats.white, smallSphereGeo);
+    addSphere(root, 'uniform-collar-right', [0.085, 1.355, 0.095], [0.095, 0.105, 0.12], mats.white, smallSphereGeo);
+    addCylinder(root, 'neck', [0, 1.47, 0.01], [0.105, 0.18, 0.105], skin, lowCylinderGeo);
+    addBox(root, 'shirt-placket', [0.026, 0.23, 0.018], [0, 1.15, 0.198], mats.white);
+    addBox(root, 'staff-lanyard', [0.018, 0.28, 0.018], [0.12, 1.235, 0.203], mats.gold, 0, [0, 0, -0.22]);
+    addBox(root, 'staff-id-card', [0.145, 0.18, 0.028], [0.17, 1.105, 0.205], mats.badge);
+    addBox(root, 'staff-id-card-accent', [0.105, 0.026, 0.032], [0.17, 1.16, 0.224], mats.teal);
+
+    // Head pivot allows subtle listening, speaking and attention shifts.
+    const headPivot = new THREE.Group();
+    headPivot.name = 'staff-head-pivot';
+    headPivot.position.set(0, 1.73, 0.015);
+    root.add(headPivot);
+    addSphere(headPivot, 'head', [0, 0, 0], [0.235, 0.29, 0.22], skin);
     if (isHijab) {
-      addSphere(root, 'hijab-crown', [0, 1.82, -0.005], [0.265, 0.32, 0.245], scarf);
+      addSphere(headPivot, 'hijab-crown', [0, 0.085, -0.005], [0.265, 0.32, 0.245], scarf);
       addSphere(root, 'hijab-drape', [0, 1.48, -0.005], [0.29, 0.34, 0.22], scarf);
-      addSphere(root, 'face-opening', [0, 1.72, 0.19], [0.17, 0.205, 0.045], skin, smallSphereGeo);
     } else {
-      addSphere(root, 'hair-cap', [0, 1.91, -0.015], [0.245, 0.17, 0.225], mats.hair);
-      addSphere(root, 'hair-back', [0, 1.72, -0.12], [0.24, 0.27, 0.16], mats.hair);
+      addSphere(headPivot, 'hair-cap', [0, 0.18, -0.015], [0.245, 0.17, 0.225], mats.hair);
+      addSphere(headPivot, 'hair-back', [0, -0.01, -0.12], [0.24, 0.27, 0.16], mats.hair);
     }
     for (const side of [-1, 1]) {
-      addSphere(root, 'ear', [side * 0.226, 1.73, 0.005], [0.045, 0.065, 0.05], skin, smallSphereGeo);
-      addSphere(root, 'eye', [side * 0.082, 1.755, 0.214], [0.027, 0.032, 0.016], mats.eye, smallSphereGeo);
-      addSphere(root, 'headset-earcup', [side * 0.255, 1.73, 0.015], [0.065, 0.085, 0.06], mats.headset, smallSphereGeo);
+      addSphere(headPivot, 'ear', [side * 0.226, -0.005, 0.005], [0.045, 0.065, 0.05], skin, smallSphereGeo);
+      addSphere(headPivot, 'eye-white', [side * 0.082, 0.025, 0.202], [0.034, 0.028, 0.018], mats.eyeWhite, smallSphereGeo);
+      addSphere(headPivot, 'eye-iris', [side * 0.082, 0.023, 0.218], [0.017, 0.019, 0.009], mats.eye, smallSphereGeo);
+      addBox(headPivot, 'eyebrow', [0.068, 0.012, 0.014], [side * 0.082, 0.073, 0.201], mats.hair, 0, [0, 0, side * 0.06]);
+      addSphere(headPivot, 'headset-earcup', [side * 0.255, -0.005, 0.015], [0.065, 0.085, 0.06], mats.headset, smallSphereGeo);
     }
-    addSphere(root, 'nose', [0, 1.69, 0.225], [0.035, 0.055, 0.04], skin, smallSphereGeo);
+    addSphere(headPivot, 'nose', [0, -0.035, 0.224], [0.035, 0.055, 0.04], skin, smallSphereGeo);
+    addBox(headPivot, 'mouth', [0.064, 0.012, 0.014], [0, -0.105, 0.207], mats.lip);
     const headband = new THREE.Mesh(torusGeo, mats.headset);
-    headband.name = 'headset-headband'; headband.position.set(0, 1.84, -0.015); headband.rotation.z = Math.PI; root.add(headband);
-    addCylinder(root, 'headset-microphone', [0.18, 1.62, 0.2], [0.018, 0.18, 0.018], mats.headset, lowCylinderGeo, [0, 0, -0.65]);
+    headband.name = 'headset-headband'; headband.position.set(0, 0.12, -0.015); headband.rotation.z = Math.PI; headPivot.add(headband);
+    addCylinder(headPivot, 'headset-microphone', [0.18, -0.085, 0.18], [0.018, 0.18, 0.018], mats.headset, lowCylinderGeo, [0, 0, -0.65]);
+    mergeStaffParts(headPivot);
 
-    // Seated legs are visible below the desk; standing staff retain full legs.
-    if (seated) {
-      for (const side of [-1, 1]) {
-        addSphere(root, 'thigh', [side * 0.13, 0.62, -0.16], [0.13, 0.15, 0.32], mats.trousers);
-        addSphere(root, 'lower-leg', [side * 0.13, 0.31, -0.43], [0.105, 0.25, 0.11], mats.trousers);
-        addBox(root, 'shoe', [0.19, 0.11, 0.31], [side * 0.13, 0.09, -0.58], mats.shoe);
+    // Seated and standing legs use separate pivots so walking staff do not slide.
+    const legs = [];
+    for (const side of [-1, 1]) {
+      const leg = new THREE.Group();
+      leg.name = side < 0 ? 'staff-left-leg' : 'staff-right-leg';
+      if (seated) {
+        leg.position.set(side * 0.13, 0.67, 0.0);
+        addSphere(leg, 'thigh', [0, -0.035, 0.16], [0.13, 0.15, 0.30], mats.trousers);
+        addSphere(leg, 'lower-leg', [0, -0.30, 0.41], [0.105, 0.25, 0.11], mats.trousers);
+        addBox(leg, 'shoe', [0.19, 0.11, 0.31], [0, -0.55, 0.49], mats.shoe);
+      } else {
+        leg.position.set(side * 0.13, 0.70, 0);
+        addSphere(leg, 'standing-leg', [0, -0.22, 0], [0.12, 0.34, 0.13], mats.trousers);
+        addBox(leg, 'standing-shoe', [0.2, 0.11, 0.3], [0, -0.58, 0.07], mats.shoe);
       }
-    } else {
-      for (const side of [-1, 1]) {
-        addSphere(root, 'standing-leg', [side * 0.13, 0.38, 0], [0.12, 0.37, 0.13], mats.trousers);
-        addBox(root, 'standing-shoe', [0.2, 0.11, 0.3], [side * 0.13, 0.08, 0.07], mats.shoe);
-      }
+      mergeStaffParts(leg);
+      root.add(leg); legs.push(leg);
     }
 
+    // Arms are merged per pivot but remain articulated for typing and walking.
     const arms = [];
     for (const side of [-1, 1]) {
       const arm = new THREE.Group();
-      arm.position.set(side * 0.29, 1.32, -0.005);
-      const upper = new THREE.Mesh(capsuleGeo, shirt); upper.position.set(0, -0.15, -0.08); upper.rotation.x = -0.88; arm.add(upper);
-      const lower = new THREE.Mesh(capsuleGeo, shirt); lower.scale.set(0.8, 0.78, 0.8); lower.position.set(0, -0.28, -0.28); lower.rotation.x = -1.16; arm.add(lower);
-      addSphere(arm, 'hand', [0, -0.35, -0.51], [0.085, 0.055, 0.095], skin, smallSphereGeo);
+      arm.name = side < 0 ? 'staff-left-arm' : 'staff-right-arm';
+      arm.position.set(side * 0.29, seated ? 1.32 : 1.30, -0.005);
+      if (seated) {
+        const upper = new THREE.Mesh(capsuleGeo, shirt);
+        upper.name = 'upper-arm'; upper.position.set(0, -0.13, 0.22); upper.rotation.x = 0.9; arm.add(upper);
+        const lower = new THREE.Mesh(capsuleGeo, shirt);
+        lower.name = 'forearm'; lower.scale.set(0.8, 0.78, 0.8); lower.position.set(0, -0.245, 0.59); lower.rotation.x = 1.08; arm.add(lower);
+        addSphere(arm, 'hand', [0, -0.30, 0.90], [0.085, 0.055, 0.095], skin, smallSphereGeo);
+        for (let finger = 0; finger < 3; finger++) {
+          addSphere(arm, 'finger', [(finger - 1) * 0.035, -0.318, 0.985], [0.018, 0.018, 0.06], skin, smallSphereGeo);
+        }
+      } else {
+        const upper = new THREE.Mesh(capsuleGeo, shirt);
+        upper.name = 'upper-arm'; upper.position.set(0, -0.16, 0); upper.rotation.x = 0.06; arm.add(upper);
+        const lower = new THREE.Mesh(capsuleGeo, shirt);
+        lower.name = 'forearm'; lower.scale.set(0.8, 0.78, 0.8); lower.position.set(0, -0.39, 0.015); lower.rotation.x = 0.02; arm.add(lower);
+        addSphere(arm, 'hand', [0, -0.60, 0.04], [0.085, 0.055, 0.095], skin, smallSphereGeo);
+      }
+      mergeStaffParts(arm);
       root.add(arm); arms.push(arm);
     }
+
+    // Merge all remaining torso and clothing parts into one draw call.
+    mergeStaffParts(root);
     scene.add(root);
     const shadow = new THREE.Mesh(shadowGeo, shadowMat);
-    shadow.rotation.x = -Math.PI / 2; shadow.position.set(station.x, 0.006, station.z + (seated ? 1.36 : 0));
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.set(station.x, 0.006, station.z + (seated ? 1.36 : 0));
     shadow.scale.set(1.6, 1.1, 1); scene.add(shadow); personShadows.push(shadow);
-    staff.push({ root, arms, shadow, seated, baseX: root.position.x, baseZ: root.position.z, phase: index * 1.73, index, walking: !seated });
+    staff.push({
+      root, arms, legs, headPivot, shadow, seated, walking,
+      baseX: root.position.x, baseZ: root.position.z,
+      pathRadiusX: seated ? 0 : (walking ? 1.15 : 0),
+      pathRadiusZ: seated ? 0 : (walking ? 0.68 : 0),
+      phase: index * 1.73, index
+    });
     return root;
   }
 
-  const occupied = [0, 1, 2, 4, 5, 7, 8, 9, 11].slice(0, tierDefaults.people);
-  occupied.forEach((stationIndex, index) => buildStaff(stations[stationIndex], index, true));
+  const occupied = Array.from({ length: 12 }, (_, index) => index).slice(0, tierDefaults.people);
+  occupied.forEach((stationIndex, index) => buildStaff(stations[stationIndex], index, true, false));
   const roamingPosts = [
     { id: 0, x: -14.9, z: 9.0 },
     { id: 0, x: 5.5, z: -11.0 }
   ];
-  roamingPosts.forEach((post, index) => buildStaff(post, occupied.length + index, false));
+  roamingPosts.forEach((post, index) => buildStaff(post, occupied.length + index, false, true));
+  // Department support personnel are present on balanced/high profiles without
+  // crowding the floor on constrained phones.
+  const supportPosts = tier === 'high'
+    ? [{ x: 12.6, z: -1.0 }, { x: 13.2, z: 8.0 }, { x: -12.4, z: -9.0 }, { x: 12.7, z: -8.9 }]
+    : tier === 'balanced'
+      ? [{ x: 12.6, z: -1.0 }, { x: 13.2, z: 8.0 }]
+      : [];
+  supportPosts.forEach((post, index) => buildStaff(post, occupied.length + roamingPosts.length + index, false, false));
 
   // A few small props reinforce the contact-centre setting without filling the floor.
   const planters = [];
@@ -624,21 +725,42 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   function updateStaff(delta, elapsed) {
     for (const person of staff) {
       const phase = person.phase;
+      if (person.headPivot) {
+        person.headPivot.rotation.y = Math.sin(elapsed * 0.74 + phase) * (person.seated ? 0.045 : 0.085);
+        person.headPivot.rotation.x = Math.sin(elapsed * 1.12 + phase * 0.7) * 0.018;
+      }
       if (person.seated) {
         const typing = Math.sin(elapsed * 5.2 + phase);
-        person.arms[0].rotation.x = -0.08 + typing * 0.08;
-        person.arms[1].rotation.x = -0.08 - typing * 0.07;
+        person.arms[0].rotation.x = -0.05 + typing * 0.065;
+        person.arms[1].rotation.x = -0.05 - typing * 0.06;
         person.arms[0].rotation.z = 0.04 + Math.sin(elapsed * 2.4 + phase) * 0.025;
         person.arms[1].rotation.z = -0.04 - Math.sin(elapsed * 2.4 + phase) * 0.025;
         person.root.position.y = Math.sin(elapsed * 1.7 + phase) * 0.006;
+        person.legs[0].rotation.x = Math.sin(elapsed * 1.45 + phase) * 0.018;
+        person.legs[1].rotation.x = -Math.sin(elapsed * 1.45 + phase) * 0.018;
+      } else if (person.walking) {
+        const stride = elapsed * 0.72 + phase;
+        const wave = Math.sin(stride);
+        person.root.position.x = person.baseX + Math.sin(stride) * person.pathRadiusX;
+        person.root.position.z = person.baseZ + Math.cos(stride * 0.72) * person.pathRadiusZ;
+        const velocityX = Math.cos(stride) * person.pathRadiusX;
+        const velocityZ = -Math.sin(stride * 0.72) * 0.72 * person.pathRadiusZ;
+        person.root.rotation.y = Math.atan2(velocityX, velocityZ);
+        person.legs[0].rotation.x = wave * 0.30;
+        person.legs[1].rotation.x = -wave * 0.30;
+        person.arms[0].rotation.x = -wave * 0.20;
+        person.arms[1].rotation.x = wave * 0.20;
+        if (person.shadow) {
+          person.shadow.position.x = person.root.position.x;
+          person.shadow.position.z = person.root.position.z;
+        }
       } else {
-        const stride = elapsed * 0.35 + phase;
-        person.root.position.x = person.baseX + Math.sin(stride) * 1.35;
-        person.root.position.z = person.baseZ + Math.cos(stride * 0.7) * 0.75;
-        person.root.rotation.y = Math.PI + Math.sin(stride) * 0.55;
-        if (person.shadow) { person.shadow.position.x = person.root.position.x; person.shadow.position.z = person.root.position.z; }
-        person.arms[0].rotation.x = Math.sin(elapsed * 3.2 + phase) * 0.25;
-        person.arms[1].rotation.x = -Math.sin(elapsed * 3.2 + phase) * 0.25;
+        // Stationary supervisors and support staff look around and gesture subtly.
+        const gesture = Math.sin(elapsed * 1.8 + phase);
+        person.arms[0].rotation.x = -0.04 + gesture * 0.045;
+        person.arms[1].rotation.x = -0.04 - gesture * 0.045;
+        person.arms[0].rotation.z = 0.02 + gesture * 0.018;
+        person.arms[1].rotation.z = -0.02 - gesture * 0.018;
       }
     }
   }
@@ -831,7 +953,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
 
   document.body.classList.toggle('touch-device', coarsePointer);
   if (interactButton) interactButton.disabled = true;
-  callbacks.onAssetsReady?.({ loaded: 0, fallback: staff.length, mode: 'articulated-local-staff', tier });
+  callbacks.onAssetsReady?.({ loaded: 0, fallback: staff.length, mode: 'merged-articulated-local-staff', tier });
   callbacks.onRenderStatus?.({ state: 'ready', tier, stations: stations.length, staff: staff.length });
   renderStill();
 
@@ -841,7 +963,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     get agentActivity() { return agentActivity; },
     get immersive() { return immersive; },
     get nearestStation() { return nearestStation; },
-    get assetMessage() { return 'CALLORIA 3D workplace geometry and articulated local staff ready'; },
+    get assetMessage() { return 'CALLORIA 3D workplace and draw-call-merged articulated staff ready'; },
     get lowEndDevice() { return lowTier; },
     get pixelRatio() { return currentRatio; },
     get assetsReady() { return true; },

@@ -1,15 +1,18 @@
-# Phase 1 verification report
+# Phase 2 verification
 
 ## Completed
-- Confirmed current repository integration expects a dynamically imported `js/production-world.js` module and consumes the existing callback/method contract.
-- Preserved the exported `initProductionWorld(THREE, host, callbacks)` function, 12 station IDs, entry/exit methods, activity setter, touch-control element IDs and callback names.
-- Ran `node --check` against the complete replacement file successfully.
-- Confirmed the package contains a complete replacement file at the original repository path.
+- Created a complete replacement `js/production-world.js` based on the Phase 1 module.
+- Added a vertex-colour geometry merger for static staff body parts, head details, arm segments and leg segments.
+- Added staff face, uniform and ID-card details.
+- Added independent head/arm/leg pivots and staff activity animation.
+- Added tier-scaled staff density and support roles.
+- Preserved exported entry point and public world interface.
+- `node --check` passed.
 
 ## Not completed
-- The complete GitHub repository was not available as a local checkout in this environment, so `npm test`, `npm run check`, and `npm run build` were not run against the application.
-- No browser rendering test, physical Android test, FPS benchmark, or Vercel deployment was performed.
+- Full repository `npm test`, `npm run check` and `npm run build` were not run because the full repository checkout is not mounted in this environment.
+- No browser visual comparison, draw-call measurement, physical Android benchmark or Vercel deployment was performed.
 - No GitHub commit was made.
 
-## Risk note
-The replacement uses the Three.js API expected by the repository's pinned Three.js 0.170.0 dependency. Runtime validation in the deployed page remains necessary before treating this as production-verified.
+## Integration note
+This Phase 2 replacement expects the Phase 1 `production-world.js` from the immediately preceding package as its base. Do not apply it over a different module version without reviewing the integration first.
