@@ -1,6 +1,6 @@
 # CALLORIA — Contact Centre Career & Operations Simulator
 
-**Build:** 1.1.0 — Customer Intelligence & Adaptive Contact Simulation  
+**Build:** 1.2.0 — Human QA & Supervisor Intelligence  
 **Product:** A browser-first contact-centre career and operations simulator. Recruitment is the entry gate; the main experience is simulated employment, multi-channel customer operations, workforce routines and career progression.
 
 ## Release history and capabilities
@@ -21,6 +21,29 @@ This milestone server-backs identity and organisation administration only. Recru
 ### Supabase setup
 See `SUPABASE-SETUP.md` before configuring Vercel. Run the migration in `supabase/migrations/202611070001_calloria_server_tenancy.sql
 supabase/migrations/202611070002_calloria_employment_persistence.sql`, then add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to the Vercel environment. A legacy anon key is supported. Never put a service-role or secret key in a `VITE_` variable.
+
+
+## v1.2.0 — Human QA & Supervisor Intelligence
+
+The Quality Assurance workspace is available from the Management navigation after employment is accepted. It supports manual reviews of completed Customer Lab interactions, versioned scorecards with configurable weights, transcript-line evidence for each criterion, weighted human scores, evidence-linked coaching actions, reviewer calibration and an agent score-dispute workflow.
+
+### Human QA workflow
+
+1. Complete and finalise a Customer Lab interaction. New finalised records retain the synthetic transcript.
+2. Open **Quality assurance** from the management navigation.
+3. Select the interaction and active scorecard. Rate every criterion from 0 to 5 and attach an exact transcript line as evidence.
+4. Save the review. Criteria rated 3/5 or lower generate evidence-linked coaching actions. Critical practice breaches retain mandatory-review status regardless of the numeric score.
+5. An agent can submit a reasoned dispute. A reviewer records an upheld or adjusted decision with a written rationale; adjusted decisions require an explicit score.
+6. Two or more reviewers can be calibrated against the same interaction and scorecard. The workspace reports overall score spread and per-criterion differences.
+
+### QA scope limits
+
+- Scorecard versions use the standard six criterion labels with configurable weights totalling 100%; arbitrary criterion authoring is not included.
+- Transcript evidence is available; playable call-audio review is not. Voice samples remain temporary browser-memory data and are not attached to Customer Lab records.
+- QA records are stored in the existing employment snapshot, not a dedicated QA table. When cloud employment sync is configured, they follow the snapshot's current user-and-organisation scoping.
+- Reviewer names are manually entered. Shared supervisor RBAC, reviewer assignment, dual-control approval and immutable enterprise audit logging are not implemented.
+- Dispute adjustments are appended as resolution outcomes and do not overwrite the original review score.
+- Human review is a training workflow and is not a certified organisational scorecard or employment decision system.
 
 ## What changed in 0.8.0
 
@@ -118,13 +141,14 @@ The project includes automated syntax and regression checks in its package scrip
 ## Project structure
 
 ```text
-CALLORIA-v1.1.0/
+CALLORIA-v1.2.0/
 ├── index.html
 ├── styles.css
 ├── vite.config.js
 ├── package.json
 ├── vercel.json
 ├── js/
+│   ├── qa-workspace-engine.js
 │   ├── cloud-platform.js
 │   ├── cloud-employment-sync.js
 │   ├── cloud-security.js
@@ -177,3 +201,7 @@ The browser can read only its own snapshot unless its organisation role has `ope
 ## v1.1.0 Customer Intelligence
 
 Open **Customer Lab** after accepting employment. Generate a synthetic customer by persona, issue and channel, respond to up to three adaptive turns, review deterministic QA evidence, and finalise a coaching or mandatory-review record. The evaluator is transparent rule-based practice logic, not an external AI model or an approved organisational scorecard.
+
+## v1.2.0 release verification
+
+Node.js v22.16.0 syntax checks passed. Automated regression tests: 96 passed, 0 failed. `npm run build` was attempted but could not execute because Vite is not installed in the release environment. Live Supabase, tenant-isolation, browser, mobile and deployment checks were not performed. See `VERIFICATION-REPORT.md` for the exact boundary.

@@ -1,17 +1,18 @@
-# CALLORIA v1.1.0 Verification Report
+# CALLORIA v1.2.0 Verification Report
 
 ## Executed checks
+- Node.js runtime: v22.16.0.
 - JavaScript syntax checks (`npm run check`): passed.
-- Automated regression tests (`npm test`): **85 passed, 0 failed**.
-- ZIP integrity test: passed.
-- Release archive contains 42 files, excluding dependency, Git and build-output folders.
+- Automated regression tests (`npm test`): **96 passed, 0 failed**.
+- QA engine tests cover scorecard validation, transcript evidence matching, weighted scoring, critical-breach precedence, dispute creation and resolution, reviewer calibration and metrics.
+- ZIP integrity: passed after packaging.
 
 ## Not verified
-- Vite production build: not run successfully because Vite is not installed in the available environment (`vite: not found`).
-- Live Supabase migration or cloud sync of Customer Lab history.
-- Tenant isolation in a live database.
-- Browser rendering, microphone support or physical mobile-device behaviour.
-- Production deployment.
+- Vite production build: attempted with `npm run build`, but could not run because Vite is not installed (`vite: not found`).
+- Live Supabase migration or cross-tenant testing: not performed for this release.
+- Shared multi-reviewer access and supervisor permissions: not implemented.
+- Browser rendering, audio playback, screen-reader/accessibility behaviour, 3D asset loading and physical Android/iOS validation: not performed.
+- Production deployment: not performed.
 
-## Scope boundary
-The Customer Lab engine is deterministic and uses synthetic data. It is not connected to a generative AI service or live customer systems. Customer Lab history is saved inside the existing local employment snapshot; a dedicated server-side QA table and cross-device conflict handling remain future work.
+## Data boundary
+Human QA reviews, scorecard versions, disputes and calibration sessions are stored in the existing employment snapshot. The current sync design is one snapshot per signed-in user and organisation; it is not a shared team QA database. Reviewer names are entered manually and do not establish authenticated reviewer identity. Transcript lines are evidence references; no playable recording is attached. No new Supabase migration is required for this snapshot-only release.

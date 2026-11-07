@@ -155,6 +155,7 @@ export function finalizeCustomerScenario(scenario) {
       return out;
     }, {}),
     recommendations: [...new Set(cards.flatMap(item => item.recommendations || []))],
+    transcript: (scenario.transcript || []).map(line => ({ speaker: line.speaker, text: line.text, at: line.at })),
     completedAt: new Date().toISOString()
   };
 }

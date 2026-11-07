@@ -1,19 +1,24 @@
-# CALLORIA v1.1.0
+# CALLORIA v1.2.0
 
-## Customer Intelligence & Adaptive Contact Simulation
+## Human QA & Supervisor Intelligence
 
-- Added eight synthetic customer personas: calm, angry, confused, older customer needing a slower pace, technically challenged, suspicious, repeat complainant and time-pressured business customer.
-- Added six scenario families covering duplicate debits, mobile access, suspected fraud, failed transfers, service information and repeat complaints.
-- Added a Customer Lab workspace with configurable persona, issue and contact channel.
-- Added adaptive customer reactions and up to three interaction turns. Critical unsafe conduct ends the interaction and triggers mandatory review.
-- Added transparent deterministic practice QA for greeting, acknowledgement, ownership, probing, next-step clarity and communication clarity.
-- Added flags for credential solicitation, full card-detail solicitation, unverified guarantees and dismissive language.
-- Added final QA reports, coaching recommendations, aggregate practice metrics and recent history.
-- Preserved the v1.0.0 recruitment, employment, voice, digital, workforce, organisation and cloud modules.
+- Added a dedicated Quality Assurance workspace accessible from management navigation.
+- Added a versioned, weight-configurable six-dimension human QA scorecard; criterion weights must total exactly 100%.
+- Added manual review of completed synthetic Customer Lab interactions.
+- Added transcript-line evidence selection for every scored criterion; evidence must match the saved interaction transcript.
+- Added weighted human scores, mandatory-review precedence for critical conduct/security breaches, and review status labels.
+- Added evidence-linked coaching actions for criteria rated 3/5 or lower.
+- Added a dispute workflow with substantive reason validation, duplicate-open-dispute prevention, independent resolution notes, upheld/adjusted decisions and explicit adjusted-score validation.
+- Added reviewer calibration across independent reviews of the same interaction and scorecard, including per-criterion spread and discussion flags.
+- Added QA metrics and audit events for review, dispute and calibration activity.
+- Added completed Customer Lab transcript retention to enable later evidence-based review.
+- Added regression tests for scorecard validation, transcript evidence, weighted scoring, critical-breach handling, disputes, calibration and UI wiring.
 
-## Boundaries
+## Data and operational boundaries
 
-- Customer identities and all scenario data are synthetic.
-- The evaluator is rule-based; it does not call an AI provider and is not certified QA.
-- Customer Lab history is currently stored in the existing local employment snapshot. It is not a separate server-backed table.
-- No live calls, messages, customer records or bank systems are accessed.
+- QA records are included in the existing employment snapshot and therefore follow its current user-and-organisation cloud snapshot behaviour when cloud sync is configured. They are not stored in a dedicated QA table.
+- Reviewer identity is manually entered in the UI. This release does not implement shared supervisor RBAC, reviewer assignment, dual-control approval or an immutable enterprise audit ledger.
+- Evidence is linked to transcript lines, not playable call audio. Voice recordings remain temporary browser-memory samples and are not attached to Customer Lab records.
+- Scorecard criterion labels are based on the standard six dimensions; this release lets administrators configure their weights and version the scorecard, but does not provide arbitrary criterion authoring.
+- Dispute adjustments are recorded as resolution outcomes; they do not overwrite the original reviewer score.
+- All customer and interaction records remain synthetic training data.

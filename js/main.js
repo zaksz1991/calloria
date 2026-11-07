@@ -11,6 +11,7 @@ import { ORGANIZATION_ROLES, DEFAULT_ORG_POLICY, ensureOrganizationWorkspace, cr
 import { initializeCloudPlatform, getCloudPlatformState, canCloudRole, createCloudOrganization, createCloudInvitation, updateCloudPolicy, setCloudMemberStatus, selectCloudOrganization } from './cloud-platform.js';
 import { validateCloudPolicy } from './cloud-security.js';
 import { CUSTOMER_PERSONAS, CUSTOMER_ISSUES, createCustomerScenario, submitCustomerTurn, finalizeCustomerScenario, customerIntelligenceMetrics } from './customer-intelligence-engine.js';
+import { DEFAULT_QA_SCORECARD, createScorecard, createHumanQAReview, createQADispute, resolveQADispute, createCalibrationSession, humanQAMetrics } from './qa-workspace-engine.js';
 import { configureCloudEmploymentSync, markCloudEmploymentSyncReady, loadCloudEmploymentSnapshot, scheduleCloudEmploymentSave, flushCloudEmploymentSave } from './cloud-employment-sync.js';
 
 let THREE = null;
@@ -76,7 +77,7 @@ const initialState = () => ({
   viewedArticle: null,
   workforceDepartment: 'inbound',
   shiftRecord: null, shiftElapsedMinutes: 0, agentStatus: 'offline', shiftHistory: [], coachingSessions: [], simulationClockSeconds: 7 * 3600, lastShiftDay: 0,
-  briefingAttendance: [], promotionAttempts: [], crossSellRecords: [], commendations: [], systemEvents: [], digitalQueue: [], digitalSequence: 0, digitalActiveId: null, digitalChannelFilter: 'all', digitalEvents: [], customerLabSession: null, customerQaHistory: [], organizationWorkspace: null
+  briefingAttendance: [], promotionAttempts: [], crossSellRecords: [], commendations: [], systemEvents: [], digitalQueue: [], digitalSequence: 0, digitalActiveId: null, digitalChannelFilter: 'all', digitalEvents: [], customerLabSession: null, customerQaHistory: [], qaScorecards: [], humanQaReviews: [], qaDisputes: [], qaCalibrations: [], qaSelectedInteractionId: '', qaSelectedScorecardId: '', organizationWorkspace: null
 });
 
 let state = loadState();
@@ -103,12 +104,14 @@ function loadState() {
     if (!stored) return initialState();
     const parsed = JSON.parse(stored);
     const migrated = { ...initialState(), ...parsed };
-    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
+    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
     if (!Number.isFinite(migrated.callQueue)) migrated.callQueue = 6;
     if (migrated.shiftActive && (!migrated.shiftRecord || migrated.shiftRecord.status !== 'active')) migrated.shiftRecord = createShiftRecord({ day: migrated.day || 1 });
     if (!Number.isFinite(migrated.shiftElapsedMinutes)) migrated.shiftElapsedMinutes = 0;
     if (!Number.isFinite(migrated.lastShiftDay)) migrated.lastShiftDay = 0;
     if (!Number.isFinite(migrated.digitalSequence)) migrated.digitalSequence = 0;
+    if (!migrated.qaScorecards.length) migrated.qaScorecards = [JSON.parse(JSON.stringify(DEFAULT_QA_SCORECARD))];
+    if (!migrated.qaSelectedScorecardId) migrated.qaSelectedScorecardId = migrated.qaScorecards.find(item => item.active !== false)?.id || DEFAULT_QA_SCORECARD.id;
     if (!['all', ...Object.keys(DIGITAL_CHANNELS)].includes(migrated.digitalChannelFilter)) migrated.digitalChannelFilter = 'all';
     if (migrated.digitalActiveId && !migrated.digitalQueue.some(item => item.id === migrated.digitalActiveId && [DIGITAL_STATUS.ACTIVE, DIGITAL_STATUS.AWAITING_CUSTOMER].includes(item.status))) migrated.digitalActiveId = null;
     if (!AGENT_STATES.includes(migrated.agentStatus)) migrated.agentStatus = migrated.shiftActive ? 'available' : 'offline';
@@ -1159,6 +1162,55 @@ function renderCustomerIntelligence() {
   viewRoot.innerHTML = `${metricsMarkup}<div class="grid two" style="margin-top:14px">${startPanel}${activePanel}<section class="panel"><div class="panel-head"><div><h3>Customer intelligence model</h3><p>Scenario behaviour and quality evidence.</p></div><span class="pill">RULE-BASED</span></div><div class="data-list"><div class="data-row"><span>Customer profiles</span><strong>${CUSTOMER_PERSONAS.length}</strong></div><div class="data-row"><span>Issue templates</span><strong>${CUSTOMER_ISSUES.length}</strong></div><div class="data-row"><span>Adaptive conversation turns</span><strong>Up to 3</strong></div><div class="data-row"><span>Critical breach handling</span><strong>Immediate review</strong></div></div><div class="article-box"><h4>Scoring boundary</h4><p>Practice QA checks observable wording for acknowledgement, ownership, probing, next-step clarity and safety. It is a transparent deterministic evaluator, not an AI language model, a certified organisational scorecard or a replacement for human QA.</p></div></section><section class="panel"><div class="panel-head"><div><h3>Recent practice history</h3><p>Locally stored synthetic practice records.</p></div><span class="pill">${history.length} RECORDS</span></div><div class="data-list">${recent}</div></section></div>`;
 }
 
+
+function renderQAWorkspace() {
+  if (!Array.isArray(state.qaScorecards)) state.qaScorecards = [];
+  if (!state.qaScorecards.length) state.qaScorecards.push(JSON.parse(JSON.stringify(DEFAULT_QA_SCORECARD)));
+  const activeScorecards = state.qaScorecards.filter(item => item.active !== false);
+  const selectedScorecard = activeScorecards.find(item => item.id === state.qaSelectedScorecardId) || activeScorecards[0];
+  if (selectedScorecard) state.qaSelectedScorecardId = selectedScorecard.id;
+  const reviewable = (state.customerQaHistory || []).filter(item => Array.isArray(item.transcript) && item.transcript.length);
+  const selectedInteraction = reviewable.find(item => item.id === state.qaSelectedInteractionId) || reviewable.at(-1) || null;
+  if (selectedInteraction) state.qaSelectedInteractionId = selectedInteraction.id;
+  const reviews = state.humanQaReviews || [];
+  const disputes = state.qaDisputes || [];
+  const calibrations = state.qaCalibrations || [];
+  const metrics = humanQAMetrics(reviews, disputes, calibrations);
+  const scorecardOptions = activeScorecards.map(item => `<option value="${escapeHTML(item.id)}" ${item.id === selectedScorecard?.id ? 'selected' : ''}>${escapeHTML(item.name)} · v${item.version || 1}</option>`).join('');
+  const interactionOptions = reviewable.map(item => `<option value="${escapeHTML(item.id)}" ${item.id === selectedInteraction?.id ? 'selected' : ''}>${escapeHTML(item.id)} · ${escapeHTML(item.issueId)} · ${escapeHTML(item.channel)}</option>`).join('');
+  const transcriptLines = selectedInteraction?.transcript || [];
+  const evidenceOptions = transcriptLines.map((line, index) => `<option value="${index}">${escapeHTML(String(line.speaker || 'unknown').toUpperCase())}: ${escapeHTML(line.text)}</option>`).join('');
+  const criterionRows = selectedScorecard?.criteria.map(item => `<div class="qa-criterion-row"><div class="qa-criterion-copy"><strong>${escapeHTML(item.label)}</strong><small>${item.weight}% of total · ${escapeHTML(item.guidance || 'Evaluate against the interaction evidence.')}</small></div><label>RATING<select name="rating_${escapeHTML(item.id)}" required><option value="">Choose</option>${[0,1,2,3,4,5].map(n=>`<option value="${n}">${n} / 5</option>`).join('')}</select></label><label class="qa-evidence-field">TRANSCRIPT EVIDENCE<select name="evidence_${escapeHTML(item.id)}" required><option value="">Select an exact transcript line</option>${evidenceOptions}</select></label></div>`).join('') || '<p class="muted-note">Create or activate a scorecard to begin a review.</p>';
+  const reviewCards = reviews.slice().reverse().slice(0,15).map(review => `<article class="qa-review-card"><div class="qa-review-head"><div><strong>${escapeHTML(review.interactionId)} · ${escapeHTML(review.reviewer)}</strong><small>${escapeHTML(review.scorecardName)} v${review.scorecardVersion} · ${new Date(review.createdAt).toLocaleString()}</small></div><div class="qa-review-score"><b>${review.score}%</b><span class="pill ${review.status==='pass'?'green':review.status==='mandatory_review'?'red':'amber'}">${escapeHTML(review.status.replaceAll('_',' ').toUpperCase())}</span></div></div><div class="qa-review-evidence">${review.criteria.map(item=>`<div><span>${escapeHTML(item.label)} · ${item.rating}/5</span><small>“${escapeHTML(item.evidence.quote)}”</small></div>`).join('')}</div>${review.notes?`<p class="muted-note">Reviewer notes: ${escapeHTML(review.notes)}</p>`:''}${review.coaching?.length?`<div class="qa-coaching-list"><strong>Evidence-linked coaching actions</strong>${review.coaching.map(item=>`<p><b>${escapeHTML(item.criterion)}</b> — ${escapeHTML(item.action)}<small>Evidence: “${escapeHTML(item.evidence)}”</small></p>`).join('')}</div>`:''}</article>`).join('') || '<div class="empty-state"><p>No human QA reviews have been recorded.</p></div>';
+  const openDisputes = disputes.filter(item => item.status === 'open');
+  const disputeRows = disputes.slice().reverse().map(item => `<div class="data-row"><span>${escapeHTML(item.id)} · ${escapeHTML(item.raisedBy)}<small>${escapeHTML(item.reason)}</small></span><strong>${escapeHTML(item.status.toUpperCase())}</strong></div>`).join('') || '<p class="muted-note">No QA disputes recorded.</p>';
+  const calibratable = [...new Set(reviews.filter(item => reviews.some(other => other.id !== item.id && other.interactionId === item.interactionId && other.scorecardId === item.scorecardId)).map(item => `${item.interactionId}::${item.scorecardId}`))];
+  viewRoot.innerHTML = `
+    <div class="ops-summary-grid">${metricCard('HUMAN QA REVIEWS',metrics.reviews,'Completed reviewer scorecards','▤')}${metricCard('AVERAGE HUMAN SCORE',metrics.averageScore===null?'—':`${metrics.averageScore}%`,'Weighted score across completed reviews','⌁')}${metricCard('OPEN DISPUTES',metrics.openDisputes,'Awaiting independent resolution','!')}${metricCard('CALIBRATIONS',metrics.calibrations,'Reviewer comparison sessions','⇄')}</div>
+    <div class="qa-boundary-note"><strong>Human review workspace · synthetic training records</strong><span>Reviewers select evidence from the saved practice transcript. These records are training workflow data, not a certified scorecard or a live employee-performance decision. The current reviewer identity is entered manually; shared supervisor permissions are not enforced by this local workspace.</span></div>
+    <div class="grid two qa-workspace-grid">
+      <section class="panel"><div class="panel-head"><div><h3>Review an interaction</h3><p>Score each criterion and attach an exact transcript line as evidence.</p></div><span class="pill green">EVIDENCE REQUIRED</span></div>
+        ${reviewable.length ? `<form id="humanQaReviewForm"><div class="form-field"><label>COMPLETED CUSTOMER INTERACTION</label><select id="qaInteractionSelect" name="interactionId">${interactionOptions}</select></div><div class="form-field"><label>QA SCORECARD</label><select id="qaScorecardSelect" name="scorecardId">${scorecardOptions}</select></div><div class="form-field"><label>REVIEWER NAME</label><input name="reviewer" minlength="2" maxlength="80" required value="${escapeHTML(state.applicantName || '')}" placeholder="Reviewer name"></div><div class="qa-criteria-list">${criterionRows}</div><div class="form-field"><label>REVIEWER NOTES</label><textarea name="notes" rows="3" maxlength="2000" placeholder="Record factual observations and context."></textarea></div><div class="form-field"><label>COACHING ACTION FOR LOW-RATED CRITERIA</label><textarea name="coachingAction" rows="2" maxlength="500" placeholder="Specific action the agent should practise."></textarea></div><button class="btn primary" type="submit" ${selectedInteraction && selectedScorecard ? '' : 'disabled'}>Save human QA review</button></form>` : '<div class="empty-state"><h3>No reviewable interaction</h3><p>Complete and finalise a Customer Lab interaction first. New records retain their synthetic transcript for evidence review.</p></div>'}
+      </section>
+      <section class="panel"><div class="panel-head"><div><h3>Scorecard configuration</h3><p>Create a weighted version for this practice workspace. Weights must total 100%.</p></div><span class="pill">VERSIONED</span></div>
+        <div class="data-list">${activeScorecards.map(item=>`<div class="data-row"><span>${escapeHTML(item.name)}<small>Version ${item.version || 1} · ${item.criteria.length} criteria</small></span><strong>${item.criteria.reduce((sum,c)=>sum+c.weight,0)}%</strong></div>`).join('')}</div>
+        <form id="qaScorecardForm" class="qa-scorecard-form"><div class="form-field"><label>SCORECARD NAME</label><input name="name" required minlength="3" maxlength="80" placeholder="e.g. Banking voice QA standard"></div><div class="qa-weight-grid">${selectedScorecard.criteria.map(item=>`<label><span>${escapeHTML(item.label)}</span><input type="number" name="weight_${escapeHTML(item.id)}" min="1" max="100" required value="${item.weight}"></label>`).join('')}</div><p class="muted-note">The six criterion labels remain aligned to the standard template in this release. Configure their relative weights; the total must equal exactly 100.</p><button class="btn outline" type="submit">Create new scorecard version</button></form>
+      </section>
+    </div>
+    <section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Human QA review register</h3><p>Scores, transcript evidence and linked coaching recommendations.</p></div><span class="pill">${reviews.length} REVIEWS</span></div><div class="qa-review-list">${reviewCards}</div></section>
+    <div class="grid two qa-workspace-grid" style="margin-top:14px">
+      <section class="panel"><div class="panel-head"><div><h3>Agent score dispute</h3><p>Submit a reasoned challenge to a completed human review.</p></div><span class="pill">DUE PROCESS</span></div>
+        ${reviews.length?`<form id="qaDisputeForm"><div class="form-field"><label>REVIEW TO DISPUTE</label><select name="reviewId">${reviews.slice().reverse().map(item=>`<option value="${escapeHTML(item.id)}">${escapeHTML(item.interactionId)} · ${item.score}% · ${escapeHTML(item.reviewer)}</option>`).join('')}</select></div><div class="form-field"><label>PERSON RAISING DISPUTE</label><input name="raisedBy" required minlength="2" maxlength="80" value="${escapeHTML(state.applicantName || '')}"></div><div class="form-field"><label>REASON · MINIMUM 20 CHARACTERS</label><textarea name="reason" required minlength="20" maxlength="2000"></textarea></div><button class="btn outline" type="submit">Submit QA dispute</button></form>`:'<p class="muted-note">A human review is required before a dispute can be raised.</p>'}
+        <h4 class="qa-subheading">Dispute register</h4><div class="data-list">${disputeRows}</div>
+        ${openDisputes.length?`<form id="qaResolveDisputeForm" class="qa-resolve-form"><h4>Independent dispute resolution</h4><div class="form-field"><label>OPEN DISPUTE</label><select name="disputeId">${openDisputes.map(item=>`<option value="${escapeHTML(item.id)}">${escapeHTML(item.id)} · ${escapeHTML(item.raisedBy)}</option>`).join('')}</select></div><div class="form-field"><label>RESOLVING REVIEWER</label><input name="reviewer" required minlength="2" maxlength="80"></div><div class="form-field"><label>DECISION</label><select name="decision"><option value="upheld">Original score upheld</option><option value="adjusted">Score adjusted</option></select></div><div class="form-field"><label>ADJUSTED SCORE · IF APPLICABLE</label><input name="adjustedScore" type="number" min="0" max="100"></div><div class="form-field"><label>RESOLUTION RATIONALE · MINIMUM 20 CHARACTERS</label><textarea name="resolution" required minlength="20" maxlength="2000"></textarea></div><button class="btn primary" type="submit">Record dispute decision</button></form>`:''}
+      </section>
+      <section class="panel"><div class="panel-head"><div><h3>Reviewer calibration</h3><p>Compare independent scores for the same interaction and scorecard.</p></div><span class="pill">CONSISTENCY</span></div>
+        ${calibratable.length?`<form id="qaCalibrationForm"><div class="form-field"><label>INTERACTION / SCORECARD GROUP</label><select name="group">${calibratable.map(key=>{const [interactionId,scorecardId]=key.split('::');const item=reviews.find(row=>row.interactionId===interactionId&&row.scorecardId===scorecardId);return `<option value="${escapeHTML(key)}">${escapeHTML(interactionId)} · ${escapeHTML(item?.scorecardName || scorecardId)}</option>`;}).join('')}</select></div><div class="form-field"><label>FACILITATOR</label><input name="facilitator" required minlength="2" maxlength="80"></div><div class="form-field"><label>CALIBRATION NOTES</label><textarea name="notes" rows="3" maxlength="2000"></textarea></div><button class="btn primary" type="submit">Compare reviewer scores</button></form>`:'<div class="empty-state"><p>At least two reviewers must independently score the same interaction using the same scorecard before calibration is available.</p></div>'}
+        <div class="data-list" style="margin-top:12px">${calibrations.slice().reverse().map(item=>`<div class="data-row"><span>${escapeHTML(item.interactionId)}<small>${escapeHTML(item.reviewers.join(' · '))} · score spread ${item.scoreSpread} points</small></span><strong class="${item.requiresDiscussion?'text-warning':''}">${item.requiresDiscussion?'DISCUSS':'ALIGNED'}</strong></div>`).join('') || '<p class="muted-note">No calibration sessions recorded.</p>'}</div>
+      </section>
+    </div>`;
+}
+
 function renderView() {
   setHeader();
   const config = {
@@ -1174,7 +1226,8 @@ function renderView() {
     performance:['PERFORMANCE INTELLIGENCE','Performance dashboard','Review quality, resolution and service performance.'],
     career:['CAREER MANAGEMENT','Career profile','Track employment details, experience and progression.'],
     workforce:['WORKFORCE INTELLIGENCE','People & enterprise operations','Briefings, departments, promotion, customer recognition and simulated enterprise systems.'],
-    organization:['ENTERPRISE ADMINISTRATION','Organisation workspaces','Manage local organisation profiles, staff directory, access roles, policies and audit history.']
+    organization:['ENTERPRISE ADMINISTRATION','Organisation workspaces','Manage local organisation profiles, staff directory, access roles, policies and audit history.'],
+    qa:['QUALITY ASSURANCE','Human QA & calibration','Review synthetic interaction evidence, coach agents, calibrate reviewers and resolve score disputes.']
   };
   const [eyebrow,title,desc] = config[state.currentView] || config.overview;
   $('#pageEyebrow').textContent = eyebrow; $('#pageTitle').textContent = title; $('#pageDescription').textContent = desc;
@@ -1187,6 +1240,7 @@ function renderView() {
     case 'outbound': renderOutbound(); break;
     case 'digital': renderDigital(); break;
     case 'customerIntel': renderCustomerIntelligence(); break;
+    case 'qa': renderQAWorkspace(); break;
     case 'crm': renderCRM(); break;
     case 'knowledge': renderKnowledge(); break;
     case 'performance': renderPerformance(); break;
@@ -1678,6 +1732,7 @@ function handleAction(action,event={}){
     case 'start-customer-lab':{const personaId=$('#customerPersona')?.value||null;const issueId=$('#customerIssue')?.value||null;const channel=$('#customerChannel')?.value||'Voice';state.customerLabSession=createCustomerScenario({seed:Date.now(),personaId,issueId,channel});saveState();renderView();break;}
     case 'finalize-customer-lab':{try{const report=finalizeCustomerScenario(state.customerLabSession);state.customerQaHistory.push(report);if(state.customerQaHistory.length>100)state.customerQaHistory.splice(0,state.customerQaHistory.length-100);pushOperationEvent('customer-intelligence',report.id,`Customer practice QA finalised: ${report.averageScore}% · ${report.outcome}.`,report.outcome);state.customerLabSession=null;saveState();renderView();toast('Customer practice QA record saved.','success');}catch(error){toast(error.message,'error');}break;}
     case 'clear-customer-lab':{state.customerLabSession=null;saveState();renderView();break;}
+    case 'qa-open':{state.currentView='qa';renderView();break;}
     case 'reset-simulation':{const modal=openModal('<div class="subtle-label">LOCAL SAVE RESET</div><h3>Reset this simulation?</h3><p>This removes the candidate, employment and local performance data for the currently selected browser profile. It does not delete your Supabase login or server-side organisation records.</p><div class="modal-actions"><button class="btn outline" data-close>Cancel</button><button class="btn danger" id="confirmReset">Reset simulation</button></div>');$('[data-close]',modal).onclick=()=>modal.remove();$('#confirmReset',modal).onclick=()=>{localStorage.removeItem(activeStorageKey);location.reload();};break;}
     case 'back-knowledge':state.viewedArticle=null;renderView();break;
   }
@@ -1702,9 +1757,26 @@ document.addEventListener('change',e=>{
   if(e.target?.id==='digitalChannelFilter'){state.digitalChannelFilter=e.target.value;saveState();renderView();}
   if(e.target?.id==='activeOrganizationSelect'){if(state.organizationWorkspace.organizations.some(org=>org.id===e.target.value)){state.organizationWorkspace.activeOrganizationId=e.target.value;saveState();renderView();}}
   if(e.target?.id==='cloudOrgSelect'){selectCloudOrganization(e.target.value).then(()=>renderView()).catch(error=>toast(error.message,'error'));}
+  if(e.target?.id==='qaInteractionSelect'){state.qaSelectedInteractionId=e.target.value;saveState();renderView();}
+  if(e.target?.id==='qaScorecardSelect'){state.qaSelectedScorecardId=e.target.value;saveState();renderView();}
 });
 document.addEventListener('submit',e=>{
   if(e.target.id==='customerLabReplyForm'){e.preventDefault();const value=new FormData(e.target).get('reply');try{submitCustomerTurn(state.customerLabSession,String(value||''));if(state.customerLabSession.status==='escalated')pushOperationEvent('customer-intelligence',state.customerLabSession.id,'Critical practice QA breach triggered mandatory review.','escalated');saveState();renderView();}catch(error){toast(error.message,'warning');}return;}
+  if(e.target.id==='qaScorecardForm'){
+    e.preventDefault();try{const f=new FormData(e.target);const base=state.qaScorecards.find(item=>item.id===state.qaSelectedScorecardId)||state.qaScorecards.find(item=>item.active!==false)||DEFAULT_QA_SCORECARD;const criteria=base.criteria.map(item=>({...item,weight:Number(f.get(`weight_${item.id}`))}));const created=createScorecard(state.qaScorecards,{name:f.get('name'),criteria});state.qaSelectedScorecardId=created.id;saveState();renderView();toast('New QA scorecard version created.','success');}catch(error){toast(error.message,'warning');}return;
+  }
+  if(e.target.id==='humanQaReviewForm'){
+    e.preventDefault();try{const f=new FormData(e.target);const interaction=(state.customerQaHistory||[]).find(item=>item.id===f.get('interactionId'));const scorecard=state.qaScorecards.find(item=>item.id===f.get('scorecardId'));if(!interaction||!scorecard)throw new Error('Select a valid interaction and scorecard.');const ratings=scorecard.criteria.map(item=>({criterionId:item.id,rating:Number(f.get(`rating_${item.id}`))}));const evidence=scorecard.criteria.map(item=>{const lineIndex=Number(f.get(`evidence_${item.id}`));const line=interaction.transcript?.[lineIndex];return {criterionId:item.id,quote:line?.text||''};});const review=createHumanQAReview({interaction,scorecard,ratings,evidence,reviewer:f.get('reviewer'),notes:f.get('notes'),coachingAction:f.get('coachingAction')});state.humanQaReviews.push(review);state.humanQaReviews=state.humanQaReviews.slice(-300);pushOperationEvent('human-qa',review.id,`Human QA review completed: ${review.score}% · ${review.status}.`,review.status,{interactionId:review.interactionId,scorecardId:review.scorecardId});saveState();renderView();toast(`Human QA review saved: ${review.score}%.`,'success');}catch(error){toast(error.message,'warning');}return;
+  }
+  if(e.target.id==='qaDisputeForm'){
+    e.preventDefault();try{const f=new FormData(e.target);const review=state.humanQaReviews.find(item=>item.id===f.get('reviewId'));const dispute=createQADispute(state.qaDisputes,review,{raisedBy:f.get('raisedBy'),reason:f.get('reason')});pushOperationEvent('qa-dispute',dispute.id,'Agent submitted a human QA score dispute.','open',{reviewId:dispute.reviewId});saveState();renderView();toast('QA dispute submitted.','success');}catch(error){toast(error.message,'warning');}return;
+  }
+  if(e.target.id==='qaResolveDisputeForm'){
+    e.preventDefault();try{const f=new FormData(e.target);const dispute=state.qaDisputes.find(item=>item.id===f.get('disputeId'));resolveQADispute(dispute,{reviewer:f.get('reviewer'),decision:f.get('decision'),adjustedScore:f.get('adjustedScore')===''?null:Number(f.get('adjustedScore')),resolution:f.get('resolution')});pushOperationEvent('qa-dispute',dispute.id,`QA dispute resolved: ${dispute.status}.`,dispute.status);saveState();renderView();toast('QA dispute resolution recorded.','success');}catch(error){toast(error.message,'warning');}return;
+  }
+  if(e.target.id==='qaCalibrationForm'){
+    e.preventDefault();try{const f=new FormData(e.target);const [interactionId,scorecardId]=String(f.get('group')).split('::');const matched=state.humanQaReviews.filter(item=>item.interactionId===interactionId&&item.scorecardId===scorecardId);const calibration=createCalibrationSession(matched,{facilitator:f.get('facilitator'),notes:f.get('notes')});state.qaCalibrations.push(calibration);state.qaCalibrations=state.qaCalibrations.slice(-100);pushOperationEvent('qa-calibration',calibration.id,`Reviewer calibration completed. Score spread: ${calibration.scoreSpread}.`,calibration.requiresDiscussion?'discussion_required':'aligned');saveState();renderView();toast('Reviewer calibration saved.','success');}catch(error){toast(error.message,'warning');}return;
+  }
   if(e.target.id==='cloudOrgCreateForm'){
     e.preventDefault();const f=new FormData(e.target);createCloudOrganization({name:f.get('name'),industry:f.get('industry')}).then(()=>renderView()).catch(error=>toast(error.message,'error'));return;
   }
@@ -1861,7 +1933,7 @@ window.addEventListener('calloria:cloud-context', async event=>{
         state.organizationWorkspace={activeOrganizationId:detail.organizationId,organizations:[{
           id:detail.organizationId,name:cloudOrg?.name||detail.organizationName||'Organisation',industry:cloudOrg?.industry||'General customer service',status:'active',createdAt:cloudOrg?.createdAt||new Date().toISOString(),policy:structuredClone(detail.policy||DEFAULT_ORG_POLICY),members:[],audit:[]
         }]};
-        for(const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory']) if(!Array.isArray(state[key])) state[key]=[];
+        for(const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations']) if(!Array.isArray(state[key])) state[key]=[];
         markCloudEmploymentSyncReady();
       } else {
         // One-time migration of this user's already-scoped browser save into the tenant record.

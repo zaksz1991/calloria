@@ -1,4 +1,4 @@
-# CALLORIA 1.1.0 — Supabase setup
+# CALLORIA 1.2.0 — Supabase setup
 
 This release moves user identity and organisation administration to Supabase. Follow these steps before enabling cloud mode on the Vercel deployment.
 
@@ -85,3 +85,8 @@ This is an identity and tenant-administration milestone, not a complete cloud co
 ## v1.0.0 migration
 
 After applying `202611070001_calloria_server_tenancy.sql`, apply `202611070002_calloria_employment_persistence.sql`. This creates the tenant-scoped employment snapshot table and authenticated save RPC. No service-role key is required in the browser. Verify that the migration completes successfully before deploying the matching application build.
+
+
+## v1.2.0 QA data behaviour
+
+Human QA reviews, scorecard versions, disputes and calibration sessions are stored in the employee's existing `employment_snapshot` payload. No new SQL migration is required for this release. This is not a shared QA register: one employee snapshot is not a substitute for a tenant-wide QA schema or server-enforced reviewer permissions.

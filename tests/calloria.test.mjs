@@ -142,9 +142,9 @@ test('multi-channel operations are reachable and linked to existing work systems
     read('index.html'), read('js/main.js'), read('js/multichannel-engine.js'), read('styles.css'), read('package.json')
   ]);
   const pkg = JSON.parse(packageJson);
-  assert.equal(pkg.version, '1.1.0');
+  assert.equal(pkg.version, '1.2.0');
   assert.match(html, /data-view=["']digital["']/);
-  assert.match(html, /BUILD 1\.1\.0/);
+  assert.match(html, /BUILD 1\.2\.0/);
   for (const item of ['function renderDigital','function acceptDigital','function submitDigitalReply','function finishDigitalContact','function receiveDigitalFollowUp','case \'digital\': renderDigital()']) {
     assert.ok(main.includes(item), `missing digital integration: ${item}`);
   }
@@ -166,9 +166,9 @@ test('organisation administration is reachable and preserves the local workspace
     read('index.html'), read('js/main.js'), read('js/organization-engine.js'), read('package.json'), read('styles.css')
   ]);
   const pkg = JSON.parse(packageJson);
-  assert.equal(pkg.version, '1.1.0');
+  assert.equal(pkg.version, '1.2.0');
   assert.match(html, /data-view=["']organization["']/);
-  assert.match(html, /BUILD 1\.1\.0/);
+  assert.match(html, /BUILD 1\.2\.0/);
   assert.match(main, /function renderOrganizationWorkspace/);
   assert.match(main, /case 'organization': renderOrganizationWorkspace\(\)/);
   for (const form of ['orgCreateForm','orgMemberForm','orgPolicyForm']) assert.ok(main.includes(form));
@@ -178,4 +178,23 @@ test('organisation administration is reachable and preserves the local workspace
   assert.match(engine, /state\.organizationWorkspace\.activeOrganizationId/);
   assert.match(css, /\.org-member-list/);
   assert.match(css, /\.org-role-table/);
+});
+
+
+test('human QA workspace is reachable and wired to evidence-linked review workflows', async () => {
+  const [html, main, engine, customerEngine, css, pkg] = await Promise.all([
+    read('index.html'), read('js/main.js'), read('js/qa-workspace-engine.js'),
+    read('js/customer-intelligence-engine.js'), read('styles.css'), read('package.json')
+  ]);
+  assert.equal(JSON.parse(pkg).version, '1.2.0');
+  assert.match(html, /data-view=["']qa["']/);
+  assert.match(html, /BUILD 1\.2\.0/);
+  assert.match(main, /function renderQAWorkspace/);
+  assert.match(main, /case 'qa': renderQAWorkspace\(\)/);
+  for (const form of ['humanQaReviewForm','qaScorecardForm','qaDisputeForm','qaResolveDisputeForm','qaCalibrationForm']) assert.ok(main.includes(form));
+  for (const operation of ['createHumanQAReview','createQADispute','resolveQADispute','createCalibrationSession','humanQAMetrics']) assert.ok(engine.includes(`export function ${operation}`));
+  assert.match(customerEngine, /transcript: \(scenario\.transcript/);
+  assert.match(main, /evidence_\$\{item\.id\}/);
+  assert.match(css, /\.qa-criterion-row/);
+  assert.match(css, /\.qa-review-evidence/);
 });
