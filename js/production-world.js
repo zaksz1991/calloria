@@ -21,14 +21,21 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   const constrained = saveData || (memory > 0 && memory <= 2) || (cores > 0 && cores <= 2);
   const highCapability = memory >= 8 && cores >= 8;
   const tier = constrained ? 'low' : highCapability ? 'high' : 'balanced';
-  const quality = {
+  const deviceQuality = {
     low: { pixelRatio: mobile ? 0.88 : 0.94, minRatio: 0.68, fps: 24, antialias: false, anisotropy: 2 },
     balanced: { pixelRatio: mobile ? 1.12 : 1.18, minRatio: mobile ? 0.78 : 0.82, fps: mobile ? 30 : 45, antialias: true, anisotropy: 4 },
     high: { pixelRatio: mobile ? 1.32 : 1.4, minRatio: 0.88, fps: mobile ? 45 : 60, antialias: true, anisotropy: 8 }
   }[tier];
   const maxAnisotropy = 8;
-  const pixelRatioCap = Math.min(quality.pixelRatio, window.devicePixelRatio || 1, mobile ? 1.4 : 1.75, maxAnisotropy);
+  let quality = { ...deviceQuality };
+  let pixelRatioCap = Math.min(quality.pixelRatio, window.devicePixelRatio || 1, mobile ? 1.4 : 1.75, maxAnisotropy);
   let currentPixelRatio = pixelRatioCap;
+  const graphicsProfileKey = 'calloria.graphics-profile.v1';
+  let graphicsProfile = 'auto';
+  try {
+    const savedProfile = localStorage.getItem(graphicsProfileKey);
+    if (['auto', 'smooth', 'balanced', 'sharp'].includes(savedProfile)) graphicsProfile = savedProfile;
+  } catch { /* Private browsing may disable storage. */ }
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#132838');
@@ -588,7 +595,39 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   let perfPanel = null;
   let perfButton = null;
   let perfVisible = false;
+  let sceneMemoryCache = null;
   const perfMetrics = { fps: 0, frameMs: 0, p95Ms: 0, cpuMs: 0, calls: 0, triangles: 0, geometries: 0, textures: 0, heapMb: null };
+
+  function applyGraphicsProfile(profile, persist = false) {
+    const allowed = ['auto', 'smooth', 'balanced', 'sharp'];
+    const selected = allowed.includes(profile) ? profile : 'auto';
+    graphicsProfile = selected;
+    const settings = {
+      auto: { ratio: deviceQuality.pixelRatio, min: deviceQuality.minRatio, fps: deviceQuality.fps },
+      smooth: { ratio: deviceQuality.pixelRatio * 0.78, min: Math.min(deviceQuality.minRatio, 0.62), fps: Math.min(deviceQuality.fps, 30) },
+      balanced: { ratio: deviceQuality.pixelRatio * 0.94, min: Math.min(deviceQuality.minRatio, 0.68), fps: Math.min(deviceQuality.fps, mobile ? 30 : 45) },
+      sharp: { ratio: deviceQuality.pixelRatio * (mobile ? 1.04 : 1.10), min: deviceQuality.minRatio, fps: mobile ? Math.min(deviceQuality.fps, 30) : Math.min(deviceQuality.fps, 50) }
+    }[selected];
+    quality = { ...deviceQuality, pixelRatio: settings.ratio, minRatio: settings.min, fps: settings.fps };
+    pixelRatioCap = Math.min(quality.pixelRatio, window.devicePixelRatio || 1, mobile ? 1.4 : 1.75, maxAnisotropy);
+    currentPixelRatio = Math.max(Math.min(quality.pixelRatio, pixelRatioCap), Math.min(quality.minRatio, pixelRatioCap));
+    slowFrameStreak = 0;
+    headroomStreak = 0;
+    averageFrameMs = 0;
+    lastQualityCheck = 0;
+    perfSamples.length = 0;
+    if (persist) {
+      try { localStorage.setItem(graphicsProfileKey, selected); } catch { /* Profile remains active for this page. */ }
+    }
+    if (typeof renderer !== 'undefined' && renderer) {
+      renderer.setPixelRatio(currentPixelRatio);
+      renderer.setSize(Math.max(1, host.clientWidth || 1), Math.max(1, host.clientHeight || 1), false);
+      if (typeof renderStill === 'function') renderStill();
+    }
+    const select = perfPanel?.querySelector('#calloria-graphics-profile');
+    if (select && select.value !== selected) select.value = selected;
+    updatePerformanceLab(true);
+  }
   function createPerformanceLab() {
     const panelRoot = host.closest('.world-panel') || host.parentElement || document.body;
     perfButton = document.createElement('button');
@@ -601,10 +640,15 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     perfPanel.className = 'calloria-perf-panel';
     perfPanel.hidden = true;
     perfPanel.setAttribute('aria-label', 'Performance Lab diagnostics');
-    perfPanel.innerHTML = '<div class="calloria-perf-head"><strong>PERFORMANCE LAB</strong><span>F3</span><button type="button" aria-label="Close Performance Lab">×</button></div><div class="calloria-perf-grid"></div><div class="calloria-perf-foot">GPU timing unavailable in this browser. Memory figures are estimates where supported.</div>';
+    perfPanel.innerHTML = '<div class="calloria-perf-head"><strong>PERFORMANCE LAB</strong><span>F3</span><button type="button" aria-label="Close Performance Lab">×</button></div><div class="calloria-perf-controls"><label for="calloria-graphics-profile">GRAPHICS PROFILE<select id="calloria-graphics-profile"><option value="auto">Automatic · adaptive</option><option value="smooth">Smooth · lower rendering cost</option><option value="balanced">Balanced · everyday quality</option><option value="sharp">Sharp · higher image clarity</option></select></label><small>Profiles adjust render resolution and frame target. Device safety limits remain active.</small></div><div class="calloria-perf-grid"></div><div class="calloria-perf-foot">GPU timing is not exposed by this browser. Memory figures are estimates.</div>';
     panelRoot.append(perfButton, perfPanel);
     perfButton.addEventListener('click', togglePerformanceLab);
     perfPanel.querySelector('.calloria-perf-head button')?.addEventListener('click', () => togglePerformanceLab(false));
+    const profileSelect = perfPanel.querySelector('#calloria-graphics-profile');
+    if (profileSelect) {
+      profileSelect.value = graphicsProfile;
+      profileSelect.addEventListener('change', () => applyGraphicsProfile(profileSelect.value, true));
+    }
     listen(window, 'keydown', (event) => {
       if (event.code === 'F3') { event.preventDefault(); togglePerformanceLab(); }
     });
@@ -617,6 +661,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     if (perfVisible) updatePerformanceLab(true);
   }
   function estimateSceneMemory() {
+    if (sceneMemoryCache) return sceneMemoryCache;
     const geometries = new Set(); const textures = new Set();
     let geometryBytes = 0; let textureBytes = 0;
     scene.traverse((object) => {
@@ -639,7 +684,8 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
         }
       }
     });
-    return { geometryCount: geometries.size, textureCount: textures.size, estimateMb: (geometryBytes + textureBytes) / 1048576 };
+    sceneMemoryCache = { geometryCount: geometries.size, textureCount: textures.size, estimateMb: (geometryBytes + textureBytes) / 1048576 };
+    return sceneMemoryCache;
   }
   function updatePerformanceLab(force = false) {
     if (!perfVisible || !perfPanel) return;
@@ -661,6 +707,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
       ['Geometries / textures', `${info.memory.geometries} / ${info.memory.textures}`],
       ['Scene memory estimate', `${sceneMemory.estimateMb.toFixed(1)} MB`],
       ['JS heap', memory ? `${(memory / 1048576).toFixed(1)} MB` : 'Not exposed'],
+      ['Graphics profile', graphicsProfile.toUpperCase()],
       ['Render scale / DPR', `${currentPixelRatio.toFixed(2)} / ${(window.devicePixelRatio || 1).toFixed(2)}`],
       ['Device tier / input', `${tier.toUpperCase()} / ${mobile ? 'MOBILE' : 'DESKTOP'}`],
       ['Staff / stations', `${staff.length} / ${stations.length}`]
@@ -677,6 +724,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
       updatePerformanceLab();
     }
   }
+  if (graphicsProfile !== 'auto') applyGraphicsProfile(graphicsProfile, false);
   setPreviewCamera();
 
   function resize() {
@@ -993,6 +1041,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     get pixelRatio() { return currentPixelRatio; },
     get assetsReady() { return assetsReady; },
     get qualityTier() { return tier; },
+    get graphicsProfile() { return graphicsProfile; },
     dispose() {
       if (disposed) return;
       disposed = true;
