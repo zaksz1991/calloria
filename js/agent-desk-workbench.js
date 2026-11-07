@@ -3,7 +3,6 @@ import portfolioCatalog from '../assets/ruffneck-catalog.json';
 import {
   cleanText, validateWorkItem, validateWrapUp, queueCounts, dueState, formatDuration
 } from './agent-desk-engine.js';
-
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 const $ = selector => document.querySelector(selector);
@@ -21,7 +20,6 @@ let items = [];
 let selected = null;
 let catalog = Array.isArray(portfolioCatalog.products) ? portfolioCatalog.products : [];
 let refreshTimer = null;
-
 function setStatus(target, message, type = '') {
   target.textContent = message || '';
   target.className = `status ${type}`.trim();
@@ -200,7 +198,7 @@ function renderKnowledge(query) {
   const box = $('#knowledge-results'); box.replaceChildren();
   const q = cleanText(query, 100).toLowerCase();
   const found = catalog.filter(product => !q || [product.name, product.summary, product.category, ...(product.customer_needs || []), ...(product.self_service || [])].join(' ').toLowerCase().includes(q)).slice(0, 8);
-  if (!found.length) { const empty = document.createElement('div'); empty.className = 'empty-state'; empty.textContent = 'No catalogue entry matched. Use the owning platform's current help information.'; box.append(empty); return; }
+  if (!found.length) { const empty = document.createElement('div'); empty.className = 'empty-state'; empty.textContent = "No catalogue entry matched. Use the owning platform's current help information."; box.append(empty); return; }
   for (const product of found) {
     const card = document.createElement('article'); card.className = 'knowledge-card';
     const name = document.createElement('strong'); name.textContent = product.name;
