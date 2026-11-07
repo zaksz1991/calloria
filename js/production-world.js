@@ -491,14 +491,19 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     addStaffMesh(root, neckGeometry, skin, [0, seated ? 1.43 : 1.54, 0.005]);
     const head = new THREE.Group(); head.position.set(0, seated ? 1.69 : 1.82, 0.015); root.add(head);
     addStaffMesh(head, headGeometry, skin, [0, 0, 0]);
+    // Tiny face/headset parts are omitted at preview distance and restored nearby.
+    const detailGroup = new THREE.Group();
+    detailGroup.name = 'staff-face-and-headset-details';
+    detailGroup.visible = false;
+    head.add(detailGroup);
     // Face is oriented toward local +Z: eyes, bridge, nose and a subtle mouth.
     for (const side of [-1, 1]) {
-      addStaffMesh(head, eyeGeometry, mats.eyeWhite, [side * 0.057, 0.018, 0.139]);
-      addStaffMesh(head, irisGeometry, mats.eyeDark, [side * 0.057, 0.017, 0.158]);
-      const ear = addStaffMesh(head, handGeometry, skin, [side * 0.158, -0.012, 0], [0.48, 0.78, 0.62]);
+      addStaffMesh(detailGroup, eyeGeometry, mats.eyeWhite, [side * 0.057, 0.018, 0.139]);
+      addStaffMesh(detailGroup, irisGeometry, mats.eyeDark, [side * 0.057, 0.017, 0.158]);
+      addStaffMesh(detailGroup, handGeometry, skin, [side * 0.158, -0.012, 0], [0.48, 0.78, 0.62]);
     }
-    addStaffMesh(head, noseGeometry, skin, [0, -0.02, 0.16], [0.78, 0.82, 0.72], [Math.PI / 2, 0, 0]);
-    addStaffMesh(head, new THREE.BoxGeometry(0.055, 0.008, 0.012), hairAlt, [0, -0.075, 0.144]);
+    addStaffMesh(detailGroup, noseGeometry, skin, [0, -0.02, 0.16], [0.78, 0.82, 0.72], [Math.PI / 2, 0, 0]);
+    addStaffMesh(detailGroup, new THREE.BoxGeometry(0.055, 0.008, 0.012), hairAlt, [0, -0.075, 0.144]);
     if (isScarf) {
       addStaffMesh(head, new THREE.SphereGeometry(0.176, 16, 12), mats.scarf, [0, 0.025, -0.008], [1.14, 1.17, 1.06]);
       addStaffMesh(root, new THREE.CapsuleGeometry(0.17, 0.24, 3, 12), mats.scarf, [0, seated ? 1.43 : 1.56, -0.035], [1.14, 1.05, 0.9]);
@@ -509,14 +514,14 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
       addStaffMesh(head, new THREE.SphereGeometry(0.12, 14, 9), seed % 2 ? mats.hair : hairAlt, [0, 0.105, -0.045], [1.0, 0.55, 0.9]);
     }
     // Contact-centre headset: ear cups, headband and a short boom microphone.
-    addStaffMesh(head, headsetArcGeometry, mats.headset, [0, 0.015, -0.004], [1.02, 1.04, 1], [0, 0, 0]);
-    for (const side of [-1, 1]) addStaffMesh(head, earPadGeometry, mats.headset, [side * 0.169, -0.005, 0.004], [1, 1, 1], [Math.PI / 2, 0, 0]);
+    addStaffMesh(detailGroup, headsetArcGeometry, mats.headset, [0, 0.015, -0.004], [1.02, 1.04, 1], [0, 0, 0]);
+    for (const side of [-1, 1]) addStaffMesh(detailGroup, earPadGeometry, mats.headset, [side * 0.169, -0.005, 0.004], [1, 1, 1], [Math.PI / 2, 0, 0]);
     const boomCurve = new THREE.CatmullRomCurve3([
       new THREE.Vector3(-0.16, -0.015, 0.035),
       new THREE.Vector3(-0.19, -0.075, 0.10),
       new THREE.Vector3(-0.14, -0.12, 0.15)
     ]);
-    addStaffMesh(head, new THREE.TubeGeometry(boomCurve, 8, 0.009, 5, false), mats.headset, [0, 0, 0]);
+    addStaffMesh(detailGroup, new THREE.TubeGeometry(boomCurve, 8, 0.009, 5, false), mats.headset, [0, 0, 0]);
     addStaffMesh(root, new THREE.BoxGeometry(0.12, 0.16, 0.018), mats.gold, [0.105, seated ? 1.02 : 1.16, 0.22]);
     // Seated staff retain visible legs and shoes; standing staff have separated legs.
     const legs = [];
@@ -537,7 +542,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     const rightArm = createArm(root, 1, jacket, seated);
     root.userData = { leftArm, rightArm, seed, seated };
     scene.add(root);
-    staff.push({ root, phase: seed * 1.37, baseX: x, baseZ: z, seated, walking: !seated });
+    staff.push({ root, detailGroup, phase: seed * 1.37, baseX: x, baseZ: z, seated, walking: !seated });
     return root;
   }
   const seatedStations = [stations[1], stations[4], stations[6], stations[9]];
@@ -565,6 +570,10 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   let headroomStreak = 0;
   let hostInView = true;
   let disposed = false;
+  let contextLost = false;
+  let contextRecoveryTimer = 0;
+  let staffDetailCheckAt = 0;
+  let lastStaffUpdateAt = 0;
   let assetsReady = true;
   const assetMessage = 'CALLORIA workplace geometry and articulated local staff ready';
   const interactButton = document.getElementById('touchInteractButton');
@@ -577,6 +586,19 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     listeners.push(() => target?.removeEventListener(type, handler, options));
   };
 
+  function updateStaffDetailVisibility(force = false) {
+    const now = performance.now();
+    if (!force && now - staffDetailCheckAt < 240) return;
+    staffDetailCheckAt = now;
+    const detailRadius = mobile ? 13.5 : 16.5;
+    const radiusSq = detailRadius * detailRadius;
+    for (const person of staff) {
+      const dx = camera.position.x - person.root.position.x;
+      const dy = camera.position.y - (person.root.position.y + 1.6);
+      const dz = camera.position.z - person.root.position.z;
+      person.detailGroup.visible = (dx * dx + dy * dy + dz * dz) <= radiusSq;
+    }
+  }
   function setPreviewCamera() {
     const e = preview.elevation, a = preview.azimuth, r = preview.radius;
     camera.position.set(
@@ -585,6 +607,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
       preview.target.z + Math.cos(a) * Math.cos(e) * r
     );
     camera.lookAt(preview.target);
+    updateStaffDetailVisibility(true);
   }
   // Performance Lab: browser-observable metrics only. WebGL does not expose
   // portable GPU milliseconds, so GPU time is explicitly reported as unavailable.
@@ -605,8 +628,8 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     const settings = {
       auto: { ratio: deviceQuality.pixelRatio, min: deviceQuality.minRatio, fps: deviceQuality.fps },
       smooth: { ratio: deviceQuality.pixelRatio * 0.78, min: Math.min(deviceQuality.minRatio, 0.62), fps: Math.min(deviceQuality.fps, 30) },
-      balanced: { ratio: deviceQuality.pixelRatio * 0.94, min: Math.min(deviceQuality.minRatio, 0.68), fps: Math.min(deviceQuality.fps, mobile ? 30 : 45) },
-      sharp: { ratio: deviceQuality.pixelRatio * (mobile ? 1.04 : 1.10), min: deviceQuality.minRatio, fps: mobile ? Math.min(deviceQuality.fps, 30) : Math.min(deviceQuality.fps, 50) }
+      balanced: { ratio: deviceQuality.pixelRatio * 0.94, min: Math.min(deviceQuality.minRatio, 0.68), fps: Math.min(deviceQuality.fps, mobile ? 45 : 60) },
+      sharp: { ratio: deviceQuality.pixelRatio * (mobile ? 1.04 : 1.10), min: deviceQuality.minRatio, fps: Math.min(deviceQuality.fps, mobile ? 45 : 60) }
     }[selected];
     quality = { ...deviceQuality, pixelRatio: settings.ratio, minRatio: settings.min, fps: settings.fps };
     pixelRatioCap = Math.min(quality.pixelRatio, window.devicePixelRatio || 1, mobile ? 1.4 : 1.75, maxAnisotropy);
@@ -710,6 +733,9 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
       ['Graphics profile', graphicsProfile.toUpperCase()],
       ['Render scale / DPR', `${currentPixelRatio.toFixed(2)} / ${(window.devicePixelRatio || 1).toFixed(2)}`],
       ['Device tier / input', `${tier.toUpperCase()} / ${mobile ? 'MOBILE' : 'DESKTOP'}`],
+      ['Staff detail in range', `${staff.filter((person) => person.detailGroup.visible).length} / ${staff.length}`],
+      ['WebGL context', contextLost ? 'RECOVERING' : 'READY'],
+      ['Staff animation cadence', `${tier === 'low' ? 20 : mobile ? 25 : 40} updates/s max`],
       ['Staff / stations', `${staff.length} / ${stations.length}`]
     ];
     const grid = perfPanel.querySelector('.calloria-perf-grid');
@@ -718,7 +744,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   createPerformanceLab();
 
   function renderStill() {
-    if (!disposed && !document.hidden && host.clientWidth > 0 && host.clientHeight > 0) {
+    if (!disposed && !contextLost && !document.hidden && host.clientWidth > 0 && host.clientHeight > 0) {
       const start = performance.now(); renderer.render(scene, camera); perfCpuMs = performance.now() - start;
       perfMetrics.calls = renderer.info.render.calls; perfMetrics.triangles = renderer.info.render.triangles;
       updatePerformanceLab();
@@ -765,7 +791,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     }
   }
   function startRenderLoop() {
-    if (loopActive || disposed || document.hidden || !immersive || !hostInView) return;
+    if (loopActive || disposed || contextLost || document.hidden || !immersive || !hostInView) return;
     loopActive = true;
     lastFrameAt = 0;
     frameId = requestAnimationFrame(animate);
@@ -831,6 +857,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   function updateStaff(delta, elapsed) {
     for (const person of staff) {
       const { root, phase, baseX, baseZ, seated } = person;
+      if (seated && !person.detailGroup.visible) continue;
       if (seated) {
         const working = ['busy', 'wrap-up'].includes(agentActivity);
         const motion = Math.sin(elapsed * (working ? 2.6 : 1.0) + phase);
@@ -847,7 +874,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     }
   }
   function animate(timestamp) {
-    if (!loopActive || disposed) return;
+    if (!loopActive || disposed || contextLost) return;
     if (document.hidden || (!hostInView && !immersive) || !immersive) { stopRenderLoop(); return; }
     const interval = 1000 / quality.fps;
     if (lastFrameAt && timestamp - lastFrameAt < interval) { frameId = requestAnimationFrame(animate); return; }
@@ -857,7 +884,12 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     const elapsed = timestamp / 1000;
     const cpuStart = performance.now();
     updatePlayer(delta);
-    updateStaff(delta, elapsed);
+    updateStaffDetailVisibility();
+    const staffCadenceMs = tier === 'low' ? 50 : mobile ? 40 : 25;
+    if (!lastStaffUpdateAt || timestamp - lastStaffUpdateAt >= staffCadenceMs) {
+      updateStaff(delta, elapsed);
+      lastStaffUpdateAt = timestamp;
+    }
     renderer.render(scene, camera);
     perfCpuMs = performance.now() - cpuStart;
     perfSamples.push(frameMs); if (perfSamples.length > 120) perfSamples.shift();
@@ -915,6 +947,36 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   }
 
   const canvas = renderer.domElement;
+  const renderStatusHost = host.closest('.world-panel') || host.parentElement || document.body;
+  const renderStatus = document.createElement('div');
+  renderStatus.className = 'calloria-render-status';
+  renderStatus.setAttribute('role', 'status');
+  renderStatus.setAttribute('aria-live', 'polite');
+  renderStatus.hidden = true;
+  renderStatusHost.append(renderStatus);
+  function setRenderStatus(message, autoHide = false) {
+    clearTimeout(contextRecoveryTimer);
+    renderStatus.textContent = message || '';
+    renderStatus.hidden = !message;
+    if (message && autoHide) contextRecoveryTimer = window.setTimeout(() => { renderStatus.hidden = true; }, 1800);
+  }
+  listen(canvas, 'webglcontextlost', (event) => {
+    event.preventDefault();
+    contextLost = true;
+    stopRenderLoop();
+    keys.clear(); resetJoystick(); touchMove.sprinting = false;
+    setRenderStatus('Graphics paused — restoring the 3D workspace…');
+    callbacks.onRenderStatus?.({ state: 'context-lost' });
+  });
+  listen(canvas, 'webglcontextrestored', () => {
+    contextLost = false;
+    renderer.resetState?.();
+    renderer.setPixelRatio(currentPixelRatio);
+    renderer.setSize(Math.max(1, host.clientWidth || 1), Math.max(1, host.clientHeight || 1), false);
+    setRenderStatus('3D workspace restored', true);
+    callbacks.onRenderStatus?.({ state: 'restored' });
+    if (immersive) startRenderLoop(); else renderStill();
+  });
   listen(canvas, 'pointerdown', (event) => {
     if (immersive && !coarsePointer && document.pointerLockElement !== canvas) {
       try { canvas.requestPointerLock?.(); } catch { /* Optional browser capability. */ }
@@ -972,8 +1034,9 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     if (immersive && document.pointerLockElement !== canvas && !coarsePointer) callbacks.onPointerUnlock?.();
   });
   listen(document, 'visibilitychange', () => {
-    if (document.hidden) stopRenderLoop();
-    else if (immersive) startRenderLoop();
+    if (document.hidden) {
+      stopRenderLoop(); keys.clear(); resetJoystick(); touchMove.sprinting = false;
+    } else if (immersive) startRenderLoop();
     else renderStill();
   });
 
@@ -1047,7 +1110,8 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
       disposed = true;
       stopRenderLoop(); observer?.disconnect(); resizeObserver?.disconnect();
       listeners.forEach((remove) => remove());
-      perfButton?.remove(); perfPanel?.remove();
+      perfButton?.remove(); perfPanel?.remove(); renderStatus.remove();
+      clearTimeout(contextRecoveryTimer);
       document.body.classList.remove('touch-device', 'calloria-immersive');
       scene.traverse((object) => {
         if (object.isInstancedMesh || object.isMesh) {

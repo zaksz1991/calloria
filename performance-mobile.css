@@ -229,3 +229,18 @@ body.calloria-game-playing button { -webkit-tap-highlight-color:transparent; tou
   .calloria-perf-controls { padding:8px; }
   .calloria-perf-controls select { min-height:44px; font-size:16px; }
 }
+
+
+/* v6: WebGL recovery status and mobile runtime feedback. */
+.calloria-render-status {
+  position:absolute; z-index:45; left:50%; top:max(12px,env(safe-area-inset-top));
+  transform:translateX(-50%); max-width:min(92%,420px); box-sizing:border-box;
+  padding:10px 14px; border:1px solid rgba(113,224,205,.42); border-radius:10px;
+  background:rgba(5,18,27,.94); color:#e8f4f3; text-align:center;
+  font:700 11px/1.4 system-ui,sans-serif; letter-spacing:.2px;
+  box-shadow:0 8px 22px rgba(0,0,0,.25); pointer-events:none;
+}
+.calloria-render-status[hidden] { display:none !important; }
+@media(max-width:480px) {
+  .calloria-render-status { top:max(8px,env(safe-area-inset-top)); max-width:calc(100% - 20px); padding:9px 11px; font-size:10px; }
+}
