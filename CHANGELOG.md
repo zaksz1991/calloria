@@ -80,3 +80,25 @@
 
 - Established recruitment application and assessment flow.
 - Added employment offer, initial inbound/outbound scenarios, CRM, knowledge base, performance and career foundations.
+
+
+## 0.9.0 — Server-backed Identity & Tenant Isolation
+
+### Added
+- Supabase Auth sign-up, sign-in, password-reset and sign-out flow.
+- Authenticated workspace access gate and organisation selector.
+- PostgreSQL schema for profiles, organisations, active memberships, pending invitations, tenant policies and audit records.
+- RLS policies on every exposed tenant table, role-aware read rules and database permission helper functions.
+- Database RPCs for organisation creation, invitation creation/acceptance/revocation, member suspension/reactivation and policy updates.
+- Verified-email invitation acceptance with seven-day expiry. Invitations do not automatically send email.
+- User-and-organisation-scoped local gameplay save keys.
+- Explicit cloud/demo mode distinction and a fail-closed state for partial Supabase configuration.
+- Password recovery completion flow, optional session-storage handling and retryable cloud connection errors.
+- Browser configuration rejects recognised service-role JWT payloads and Supabase secret-key prefixes.
+- Invitation-recipient RLS visibility is limited to pending, unexpired invitations.
+
+### Security boundary
+- Browser configuration accepts Supabase publishable keys or legacy anon JWTs and rejects recognised service-role JWT claims and `sb_secret_` keys. No privileged key is required in the browser.
+- Direct browser writes are revoked for tenant organisation, membership, invitation, policy and audit tables; database functions perform checked mutations.
+- Gameplay state and simulated customer records remain local and are not part of the server tenancy boundary.
+- Live Supabase SQL execution, real authentication flow, SQL/RLS cross-tenant tests, browser testing and production build/deployment have not been verified in this packaging environment.

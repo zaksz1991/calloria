@@ -1,22 +1,28 @@
-# CALLORIA 0.8.0 — GUI deployment guide
+# CALLORIA 0.9.0 — GUI deployment guide
 
-Target GitHub repository: `zaksz1991/calloria`  
-Target Vercel site: `calloria.vercel.app`  
+Target repository: `zaksz1991/calloria`  
+Target Vercel site: `https://calloria.vercel.app`  
 Production branch: `main`
 
 ## 1. Replace the repository files
 
-1. Download and extract `CALLORIA-v0.8.0.zip` in Windows File Explorer.
-2. Open the existing `zaksz1991/calloria` repository in GitHub Desktop. If it is not on this computer, clone the existing repository through GitHub Desktop.
-3. In GitHub Desktop, select **Repository → Show in Explorer**.
-4. Copy the contents of the extracted `CALLORIA-v0.8.0` folder into the local repository root. Do not copy an outer wrapper folder and do not delete the hidden `.git` folder.
-5. Allow File Explorer to replace matching files. New modules and test files should be added alongside the existing project files.
-6. Return to GitHub Desktop and review the changed-file list. It should include the updated `js/main.js`, the new `js/multichannel-engine.js`, `styles.css`, navigation, documentation, package version and new tests. Existing engines and 3D workplace files remain included.
-7. Use the summary `CALLORIA v0.8.0 — organisation workspaces and administration`, commit to `main` and push the changes.
+1. Download and extract `CALLORIA-v0.9.0.zip` in Windows File Explorer.
+2. Open the existing `zaksz1991/calloria` repository in GitHub Desktop. If it is not on this computer, clone the existing repository using GitHub Desktop.
+3. In GitHub Desktop, choose **Repository → Show in Explorer**.
+4. Copy the contents of the extracted `CALLORIA-v0.9.0` folder into the existing repository root. Do not copy an outer wrapper folder and do not delete the hidden `.git` folder.
+5. Allow File Explorer to replace matching files and add the new cloud modules, tests and Supabase migration folder.
+6. Review the changed-file list in GitHub Desktop. The release should include the updated `package.json`, `index.html`, `js/main.js`, new `js/cloud-platform.js` and `js/cloud-security.js`, `supabase/`, `SUPABASE-SETUP.md`, and updated documentation/tests.
+7. Use the summary `CALLORIA v0.9.0 — Supabase identity and tenant isolation foundation`, commit to `main` and push.
 
-## 2. Vercel project settings
+## 2. Apply Supabase setup before adding Vercel variables
 
-The repository includes the Vite deployment configuration. The existing Vercel project should use:
+Follow `SUPABASE-SETUP.md` in full. Apply `supabase/migrations/202611070001_calloria_server_tenancy.sql` in Supabase SQL Editor. Configure Email Auth and allowed redirect URLs. Confirm the six tenant tables exist and have RLS enabled.
+
+Do not configure the Vercel cloud variables until the migration has been applied. With a configured Supabase URL/key but a missing database schema, CALLORIA intentionally blocks access rather than silently switching to local mode.
+
+## 3. Vercel project settings
+
+In the existing Vercel project:
 
 - Framework preset: Vite
 - Root directory: `./`
@@ -25,36 +31,33 @@ The repository includes the Vite deployment configuration. The existing Vercel p
 - Output directory: `dist`
 - Node.js: 22.x or later (22.12.0 minimum)
 
-Keep the existing `calloria.vercel.app` domain attached to the same Vercel project. A push to the connected `main` branch should trigger a deployment. Deployment success must be confirmed in Vercel's deployment panel; it is not assumed by this package.
+Under **Settings → Environment Variables**, add:
 
-## 3. Post-deployment checks
+- `VITE_SUPABASE_URL` — Supabase Project URL
+- `VITE_SUPABASE_PUBLISHABLE_KEY` — Supabase publishable key (preferred)
 
-1. Confirm the page title, icon and visible branding say CALLORIA and show Build 0.8.0.
-2. Complete the recruitment-to-employment path or use an existing hired browser profile.
-3. Visit People & Systems and confirm the 07:30 and 14:00 briefing windows use the in-game clock.
-4. Start one shift for the simulated workday. Confirm a second shift cannot be started until the next workday is advanced.
-5. Confirm inbound and outbound contacts cannot begin outside the 08:00–17:00 shift window.
-6. Test the three scheduled breaks, return-from-break action, shift adherence and shift history.
-7. Accept an inbound contact and test the optional customer-statement playback, typed-response fallback and consent checkbox.
-8. On a supported browser, test microphone permission, a short sample recording and playback. Confirm that clearing the sample removes it from the page.
-9. On a supported browser, test speech recognition. Confirm that the browser may use its own speech service and that transcript output is temporary.
-10. Confirm the voice controls stop when a call is placed on hold, when navigating away from the inbound desk, when microphone consent is withdrawn and when the page is hidden.
-11. Test call hold/resume, transfer, supervisor assistance, after-contact work, callback validation and customer opt-out suppression.
-12. Accept one email, one live-chat and one social-media contact. Test channel filtering, reply validation, scripted customer follow-up, resolved/pending/escalated dispositions and CRM case linkage.
-13. Confirm that attempted requests for PINs, passwords, one-time codes and full payment-card numbers are blocked. Test a public social response that directs account-specific help to a verified private channel.
-14. Review digital channel metrics, CRM notes, workforce records and the operations timeline.
-15. Open Organisation and switch between the default workspace and a newly created local workspace.
-16. Add a synthetic staff invitation, verify duplicate email rejection, and suspend/reactivate a non-owner member.
-17. Change the digital response target, generate a fresh digital queue and verify the new target is used. Existing queued contacts retain their original target.
-18. Change the promotion threshold and confirm it changes promotion eligibility.
-19. Confirm the interface clearly identifies local-only records and does not claim to send invitations or enforce production tenant security.
-20. Re-test first-person navigation and mobile touch controls on actual Android and iPhone devices.
+`VITE_SUPABASE_ANON_KEY` is accepted for projects still using the legacy anon key. Do not add a service-role or secret key to any `VITE_` variable. Vite embeds client variables in the public site bundle.
 
-## 4. Verification boundary
+Apply variables to the correct Production and Preview scopes, save and trigger a new deployment. Keep `calloria.vercel.app` attached to this same Vercel project.
 
-Verification in the release preparation environment: 63/63 automated tests passed and all JavaScript syntax checks passed. `npm run build` could not run because Vite was not installed (`vite: not found`). A subsequent `npm install --no-audit --no-fund` attempt did not finish within 120 seconds. The production bundle is therefore unverified. The organisation module syntax and automated regression suite are included in the 0.8.0 checks. Browser microphone permissions, speech recognition, external GLB loading, actual animation transitions and physical-device behaviour remain unverified. Vercel must complete the configured dependency installation and production build, then the deployment needs the post-deployment checks above.
+## 4. First deployment checks
 
+1. Confirm CALLORIA branding and Build 0.9.0 are visible.
+2. Confirm the sign-in/create-account gate appears when cloud variables are configured.
+3. Create an account, confirm the email and sign in.
+4. Create the first organisation; confirm the user becomes owner.
+5. Change an organisation policy and confirm a server audit event is recorded.
+6. Create a staff invitation. Confirm the interface explicitly says no email was sent.
+7. Accept the invitation from a second confirmed account using the invited email.
+8. Confirm that the invited account sees only its organisation membership.
+9. Test owner/admin, manager, supervisor, QA, agent and trainee permissions.
+10. Run every case in `supabase/tests/tenant-isolation-checklist.md` and record evidence.
+11. Confirm local game saves are separate when switching accounts and organisation tenants in the same browser.
+12. Confirm that clearing browser storage removes local simulation progress but does not remove Supabase identity or organisation records.
+13. Re-test recruitment, voice, inbound/outbound, digital support, workforce, mobile controls and 3D workplace behaviour.
 
-## v0.8.0 organisation workspace note
+## 5. Verification boundary
 
-The organisation administration screen in this release stores all organisation profiles, staff records, policy values and audit events in browser local storage. It is suitable only for local product demonstration. It does not create accounts, send invitations, enforce production role permissions or provide server-side tenant isolation. Do not deploy it as an enterprise multi-tenant service until the server-backed identity and Row Level Security phase is implemented and tested.
+Automated Node regression tests and JavaScript syntax checks are included in this release. The SQL migration was reviewed and statically tested through source-level checks, but it has not been executed against a live PostgreSQL/Supabase project in the release environment. Live RLS isolation, authentication emails, invitation acceptance, production build, deployment, browser rendering and physical Android/iOS behaviour remain unverified until the checks above are completed.
+
+No GitHub commit, Vercel deployment, Supabase migration execution or live tenant-isolation result is implied by this ZIP package.

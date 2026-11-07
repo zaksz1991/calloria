@@ -61,9 +61,10 @@ test('Three.js and addons are npm-resolved and Vite production build is configur
 test('previous local player progress is migrated to CALLORIA storage', async () => {
   const source = await read('js/main.js');
   assert.match(source, /const STORAGE_KEY = 'calloria\.save\.v1'/);
+  assert.match(source, /let activeStorageKey = STORAGE_KEY/);
   assert.match(source, /const LEGACY_STORAGE_KEY = 'floorshift3d\.save\.v1'/);
   assert.match(source, /localStorage\.getItem\(LEGACY_STORAGE_KEY\)/);
-  assert.match(source, /localStorage\.setItem\(STORAGE_KEY/);
+  assert.match(source, /localStorage\.setItem\(activeStorageKey/);
 });
 
 test('recruitment gate and existing operational functions remain intact', async () => {
@@ -141,9 +142,9 @@ test('multi-channel operations are reachable and linked to existing work systems
     read('index.html'), read('js/main.js'), read('js/multichannel-engine.js'), read('styles.css'), read('package.json')
   ]);
   const pkg = JSON.parse(packageJson);
-  assert.equal(pkg.version, '0.8.0');
+  assert.equal(pkg.version, '0.9.0');
   assert.match(html, /data-view=["']digital["']/);
-  assert.match(html, /BUILD 0\.8\.0/);
+  assert.match(html, /BUILD 0\.9\.0/);
   for (const item of ['function renderDigital','function acceptDigital','function submitDigitalReply','function finishDigitalContact','function receiveDigitalFollowUp','case \'digital\': renderDigital()']) {
     assert.ok(main.includes(item), `missing digital integration: ${item}`);
   }
@@ -165,9 +166,9 @@ test('organisation administration is reachable and preserves the local workspace
     read('index.html'), read('js/main.js'), read('js/organization-engine.js'), read('package.json'), read('styles.css')
   ]);
   const pkg = JSON.parse(packageJson);
-  assert.equal(pkg.version, '0.8.0');
+  assert.equal(pkg.version, '0.9.0');
   assert.match(html, /data-view=["']organization["']/);
-  assert.match(html, /BUILD 0\.8\.0/);
+  assert.match(html, /BUILD 0\.9\.0/);
   assert.match(main, /function renderOrganizationWorkspace/);
   assert.match(main, /case 'organization': renderOrganizationWorkspace\(\)/);
   for (const form of ['orgCreateForm','orgMemberForm','orgPolicyForm']) assert.ok(main.includes(form));

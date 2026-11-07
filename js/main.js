@@ -8,10 +8,14 @@ import { AGENT_STATES, createShiftRecord, recordAgentState, calculateShiftAdhere
 import { speechRecognitionAvailable, mediaRecordingAvailable, createVoiceSession, appendVoiceTranscript, finishVoiceSession, sanitizeTranscript } from './voice-engine.js';
 import { DIGITAL_CHANNELS, DIGITAL_STATUS, DIGITAL_SCENARIOS, createDigitalQueue, sortDigitalQueue, findDigitalContact, acceptDigitalContact, recordDigitalReply, deliverDigitalFollowUp, completeDigitalContact, digitalQueueMetrics, appendDigitalEvent } from './multichannel-engine.js';
 import { ORGANIZATION_ROLES, DEFAULT_ORG_POLICY, ensureOrganizationWorkspace, createOrganization, createOrganizationMember, setOrganizationMemberStatus, updateOrganizationPolicy, getActiveOrganization, getOrganizationSnapshot } from './organization-engine.js';
+import { initializeCloudPlatform, getCloudPlatformState, canCloudRole, createCloudOrganization, createCloudInvitation, updateCloudPolicy, setCloudMemberStatus, selectCloudOrganization } from './cloud-platform.js';
+import { validateCloudPolicy } from './cloud-security.js';
 
 let THREE = null;
 
 const STORAGE_KEY = 'calloria.save.v1';
+let activeStorageKey = STORAGE_KEY;
+let cloudScopedSave = false;
 const LEGACY_STORAGE_KEY = 'floorshift3d.save.v1';
 const $ = (selector, root = document) => root.querySelector(selector);
 const viewRoot = $('#viewRoot');
@@ -93,7 +97,7 @@ let lastShiftSaveBucket = 0;
 
 function loadState() {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+    const stored = localStorage.getItem(activeStorageKey) || (!cloudScopedSave ? localStorage.getItem(LEGACY_STORAGE_KEY) : null);
     if (!stored) return initialState();
     const parsed = JSON.parse(stored);
     const migrated = { ...initialState(), ...parsed };
@@ -106,14 +110,14 @@ function loadState() {
     if (!['all', ...Object.keys(DIGITAL_CHANNELS)].includes(migrated.digitalChannelFilter)) migrated.digitalChannelFilter = 'all';
     if (migrated.digitalActiveId && !migrated.digitalQueue.some(item => item.id === migrated.digitalActiveId && [DIGITAL_STATUS.ACTIVE, DIGITAL_STATUS.AWAITING_CUSTOMER].includes(item.status))) migrated.digitalActiveId = null;
     if (!AGENT_STATES.includes(migrated.agentStatus)) migrated.agentStatus = migrated.shiftActive ? 'available' : 'offline';
-    if (!localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+    if (!localStorage.getItem(activeStorageKey)) localStorage.setItem(activeStorageKey, JSON.stringify(migrated));
     return migrated;
   } catch {
     return initialState();
   }
 }
 function saveState() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* storage may be disabled */ }
+  try { localStorage.setItem(activeStorageKey, JSON.stringify(state)); } catch { /* storage may be disabled */ }
 }
 function syncQueueCount() {
   state.callQueue = countQueuedContacts(state.inboundQueueItems);
@@ -1028,6 +1032,8 @@ function renderWorkforce() {
 }
 
 function renderOrganizationWorkspace() {
+  const cloud = getCloudPlatformState();
+  if (cloud.configured) { renderCloudOrganizationWorkspace(cloud); return; }
   const org = getActiveOrganization(state.organizationWorkspace);
   if (!org) { viewRoot.innerHTML = '<div class="panel empty-state"><h3>No organisation workspace</h3><p>Create an organisation workspace to begin.</p></div>'; return; }
   const snapshot = getOrganizationSnapshot(state.organizationWorkspace, org.id);
@@ -1036,6 +1042,7 @@ function renderOrganizationWorkspace() {
   const suspended = snapshot.members.filter(member => member.status === 'suspended').length;
   const departments = org.policy.departments;
   viewRoot.innerHTML = `
+    <div class="cloud-demo-warning"><strong>LOCAL DEMONSTRATION MODE</strong><span>Supabase is not configured. These organisation records, staff roles and policies exist only in this browser and are not a security boundary.</span></div>
     <div class="ops-summary-grid org-summary-grid">
       <article class="metric-card"><span>ORGANISATIONS IN THIS BROWSER</span><strong>${state.organizationWorkspace.organizations.length}</strong><small>Local workspace profiles</small></article>
       <article class="metric-card"><span>STAFF MEMBERS</span><strong>${snapshot.memberCount}</strong><small>${active} active · ${invited} invited · ${suspended} suspended</small></article>
@@ -1074,6 +1081,59 @@ function renderOrganizationWorkspace() {
       </section>
     </div>
     <div class="org-disclaimer">DEVELOPMENT SIMULATION · Staff invitations, role permissions, organisation policies and audit events are stored in this browser only. No real accounts, emails, server-side tenant boundaries or external integrations are created.</div>`;
+}
+
+function renderCloudOrganizationWorkspace(cloud) {
+  if (cloud.mode !== 'active' || !cloud.activeOrganization) {
+    viewRoot.innerHTML = '<section class="panel"><span class="pill amber">CLOUD ACCESS</span><h3>Organisation workspace not selected</h3><p>Sign in and select an active organisation membership to manage its tenant records.</p></section>';
+    return;
+  }
+  const org = cloud.activeOrganization, policy = cloud.policy;
+  const role = cloud.membership?.role || 'trainee';
+  const canManageMembers = canCloudRole(role, 'members:manage');
+  const canManagePolicies = canCloudRole(role, 'policies:manage');
+  const canReadAudit = canCloudRole(role, 'audit:read');
+  const active = cloud.members.filter(member => member.status === 'active').length;
+  const suspended = cloud.members.filter(member => member.status === 'suspended').length;
+  const pending = cloud.invitations.filter(invite => invite.status === 'pending').length;
+  const auditMarkup = canReadAudit
+    ? cloud.audit.slice(0, 15).map(entry => `<div class="data-row"><span>${escapeHTML(entry.event_type.replaceAll('-', ' '))}<small>${new Date(entry.created_at).toLocaleString()}</small></span><strong>${escapeHTML(entry.details?.email || entry.details?.name || entry.actor_user_id || 'SYSTEM')}</strong></div>`).join('') || '<p class="muted-note">No administrative events recorded.</p>'
+    : '<p class="muted-note">Audit history is restricted to authorised management roles.</p>';
+  viewRoot.innerHTML = `
+    <div class="cloud-tenant-banner"><div><span class="pill green">SERVER-BACKED TENANT</span><strong>${escapeHTML(org.name)}</strong><small>Authenticated as ${escapeHTML(cloud.user?.email)} · ${escapeHTML(ORGANIZATION_ROLES[role]?.label || role)}</small></div><span class="cloud-tenant-state">TENANT-SCOPED ACCESS</span></div>
+    <div class="ops-summary-grid org-summary-grid">
+      <article class="metric-card"><span>YOUR ORGANISATIONS</span><strong>${cloud.organizations.length}</strong><small>Verified memberships for this account</small></article>
+      <article class="metric-card"><span>ACTIVE STAFF</span><strong>${active}</strong><small>${suspended} suspended · ${pending} pending invitations</small></article>
+      <article class="metric-card"><span>DEPARTMENTS</span><strong>${policy.departments.length}</strong><small>Tenant-specific policy</small></article>
+      <article class="metric-card"><span>AUDIT EVENTS</span><strong>${canReadAudit ? cloud.audit.length : '—'}</strong><small>${canReadAudit ? 'Server-side event history' : 'Restricted by role'}</small></article>
+    </div>
+    <div class="grid two org-grid">
+      <section class="panel">
+        <div class="panel-head"><div><h3>Organisation workspace</h3><p>Organisation identity and membership are stored in Supabase.</p></div><span class="pill green">${escapeHTML(role.toUpperCase())}</span></div>
+        <label class="form-field">Active organisation<select id="cloudOrgSelect">${cloud.organizations.map(item=>`<option value="${escapeHTML(item.id)}" ${item.id===org.id?'selected':''}>${escapeHTML(item.name)}</option>`).join('')}</select></label>
+        <div class="data-list"><div class="data-row"><span>Organisation name</span><strong>${escapeHTML(org.name)}</strong></div><div class="data-row"><span>Industry</span><strong>${escapeHTML(org.industry)}</strong></div><div class="data-row"><span>Your department</span><strong>${escapeHTML(cloud.membership?.department || 'Customer Experience')}</strong></div><div class="data-row"><span>Tenant ID</span><strong class="mono-value">${escapeHTML(org.id)}</strong></div></div>
+        <form id="cloudOrgCreateForm" class="org-form"><h4>Create another organisation</h4><div class="form-field"><label>ORGANISATION NAME</label><input name="name" required minlength="2" maxlength="80" placeholder="e.g. Northern Customer Services"></div><div class="form-field"><label>INDUSTRY</label><select name="industry"><option>Banking and financial services</option><option>Telecommunications</option><option>E-commerce and retail</option><option>Insurance</option><option>Healthcare administration</option><option>Travel and hospitality</option><option>Logistics and utilities</option><option>General customer service</option></select></div><button class="btn primary" type="submit">Create tenant workspace</button></form>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><h3>Server-backed staff directory</h3><p>Staff records are retrieved through organisation membership policies.</p></div><span class="pill">${cloud.members.length} RECORDS</span></div>
+        <div class="org-member-list">${cloud.members.map(member=>`<article class="org-member"><div class="org-member-avatar">${escapeHTML(initials(member.name))}</div><div class="org-member-copy"><strong>${escapeHTML(member.name)}</strong><small>${escapeHTML(member.email || member.userId)} · ${escapeHTML(member.department)}</small><small>${escapeHTML(ORGANIZATION_ROLES[member.role]?.label || member.role)}</small></div><div class="org-member-actions"><span class="pill ${member.status==='active'?'green':'red'}">${escapeHTML(member.status.toUpperCase())}</span>${canManageMembers && member.role!=='owner' && member.userId!==cloud.user?.id ? `<button class="btn small outline" data-action="cloud-member-status" data-member-id="${escapeHTML(member.id)}" data-next-status="${member.status==='suspended'?'active':'suspended'}">${member.status==='suspended'?'Reactivate':'Suspend'}</button>`:''}</div></article>`).join('') || '<p class="muted-note">No member records are visible to this role.</p>'}</div>
+        ${canManageMembers ? `<form id="cloudInviteForm" class="org-form"><h4>Invite a staff member</h4><div class="org-form-grid"><div class="form-field"><label>WORK EMAIL</label><input name="email" type="email" required maxlength="254"></div><div class="form-field"><label>ACCESS ROLE</label><select name="role">${Object.entries(ORGANIZATION_ROLES).filter(([name])=>name!=='owner').map(([name,info])=>`<option value="${name}">${escapeHTML(info.label)}</option>`).join('')}</select></div><div class="form-field"><label>DEPARTMENT</label><select name="department">${policy.departments.map(dept=>`<option>${escapeHTML(dept)}</option>`).join('')}</select></div></div><button class="btn primary" type="submit">Create secure invitation</button><p class="muted-note">Creates a pending server invitation. It does not send email. The recipient must sign up with this address, confirm it and accept the invitation.</p></form>` : '<p class="muted-note">Member management is not included in your role permissions.</p>'}
+        <h4 style="margin-top:18px">Pending and recent invitations</h4>${cloud.invitations.slice(0,8).map(invite=>`<div class="data-row"><span>${escapeHTML(invite.email)}<small>${escapeHTML(invite.department)} · ${escapeHTML(ORGANIZATION_ROLES[invite.role]?.label || invite.role)}</small></span><strong>${escapeHTML(invite.status.toUpperCase())}</strong></div>`).join('') || '<p class="muted-note">No invitation records.</p>'}
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><h3>Organisation policies</h3><p>These settings are stored in the server-side tenant record.</p></div><span class="pill green">SERVER POLICY</span></div>
+        ${canManagePolicies ? `<form id="cloudPolicyForm" class="org-form"><div class="org-policy-grid">
+          <div class="form-field"><label>VOICE RESPONSE TARGET · SECONDS</label><input name="voiceResponseTargetSeconds" type="number" min="5" max="600" value="${policy.voiceResponseTargetSeconds}" required></div>
+          <div class="form-field"><label>DIGITAL RESPONSE TARGET · MINUTES</label><input name="digitalResponseTargetMinutes" type="number" min="1" max="1440" value="${policy.digitalResponseTargetMinutes}" required></div>
+          <div class="form-field"><label>QA PASS MARK · %</label><input name="qaPassMark" type="number" min="0" max="100" value="${policy.qaPassMark}" required></div>
+          <div class="form-field"><label>PROMOTION THRESHOLD · %</label><input name="promotionThreshold" type="number" min="0" max="100" value="${policy.promotionThreshold}" required></div>
+          <div class="form-field"><label>MAX CONCURRENT CHATS</label><input name="maxConcurrentChats" type="number" min="1" max="10" value="${policy.maxConcurrentChats}" required></div>
+          <div class="form-field"><label>DATA RETENTION · DAYS</label><input name="dataRetentionDays" type="number" min="1" max="3650" value="${policy.dataRetentionDays}" required></div>
+        </div><div class="form-field"><label>DEPARTMENTS · ONE PER LINE</label><textarea name="departments" rows="5" required>${escapeHTML(policy.departments.join('\n'))}</textarea></div><button class="btn primary" type="submit">Save tenant policy</button></form>` : `<p class="muted-note">Policy editing is restricted to organisation owners and administrators.</p><div class="data-list">${Object.entries(policy).map(([key,value])=>`<div class="data-row"><span>${escapeHTML(key)}</span><strong>${escapeHTML(Array.isArray(value)?value.join(', '):value)}</strong></div>`).join('')}</div>`}
+      </section>
+      <section class="panel"><div class="panel-head"><div><h3>Administrative audit history</h3><p>Server-side records for tenant administration.</p></div><span class="pill">${canReadAudit?'AUDIT ACCESS':'RESTRICTED'}</span></div><div class="data-list">${auditMarkup}</div></section>
+    </div>
+    <div class="cloud-local-progress-note"><strong>Data boundary</strong><span>Authentication, organisation membership, organisation policies, invitations and audit records are server-backed. Gameplay progress, customer interaction practice records, voice samples and simulation performance remain in browser storage, scoped to this user and selected organisation. They are not yet synchronised to PostgreSQL.</span></div>`;
 }
 
 function renderView() {
@@ -1590,7 +1650,7 @@ function handleAction(action,event={}){
       pushOperationEvent('system',reference,`${system.name} simulation opened.`);
       saveState();renderView();toast(`${system.name} sandbox opened. No live data accessed.`,'success');break;
     }
-    case 'reset-simulation':{const modal=openModal('<div class="subtle-label">LOCAL SAVE RESET</div><h3>Reset this simulation?</h3><p>This removes the candidate, employment and local performance data stored in this browser. It does not affect any online account because this prototype has no server-side save system.</p><div class="modal-actions"><button class="btn outline" data-close>Cancel</button><button class="btn danger" id="confirmReset">Reset simulation</button></div>');$('[data-close]',modal).onclick=()=>modal.remove();$('#confirmReset',modal).onclick=()=>{localStorage.removeItem(STORAGE_KEY);location.reload();};break;}
+    case 'reset-simulation':{const modal=openModal('<div class="subtle-label">LOCAL SAVE RESET</div><h3>Reset this simulation?</h3><p>This removes the candidate, employment and local performance data for the currently selected browser profile. It does not delete your Supabase login or server-side organisation records.</p><div class="modal-actions"><button class="btn outline" data-close>Cancel</button><button class="btn danger" id="confirmReset">Reset simulation</button></div>');$('[data-close]',modal).onclick=()=>modal.remove();$('#confirmReset',modal).onclick=()=>{localStorage.removeItem(activeStorageKey);location.reload();};break;}
     case 'back-knowledge':state.viewedArticle=null;renderView();break;
   }
 }
@@ -1598,7 +1658,7 @@ function handleAction(action,event={}){
 document.addEventListener('click',e=>{
   const template=e.target.closest('[data-digital-template]');if(template){const field=$('#digitalReplyForm textarea[name="reply"]');if(field){const channel=state.digitalActiveId?findDigitalContact(state.digitalQueue,state.digitalActiveId)?.channel:'email';const selected=digitalReplyTemplates(channel).find(item=>item[0]===template.dataset.digitalTemplate);if(selected){field.value=selected[1];field.focus();}}return;}
   const nav=e.target.closest('.nav-item[data-view]');if(nav){if(nav.disabled){toast('Complete recruitment and accept an offer to unlock agent operations.');return;}if(nav.dataset.view!=='inbound'&&voiceStatus!=='inactive')stopVoiceTools();state.currentView=nav.dataset.view;renderView();return;}
-  const action=e.target.closest('[data-action]');if(action){handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId,system:action.dataset.system,text:action.dataset.text,contactId:action.dataset.contactId,memberId:action.dataset.memberId,nextStatus:action.dataset.nextStatus});return;}
+  const action=e.target.closest('[data-action]');if(action){if(action.dataset.action==='cloud-member-status'){setCloudMemberStatus(action.dataset.memberId,action.dataset.nextStatus).then(()=>{renderView();toast('Server-side staff access updated.','success');}).catch(error=>toast(error.message,'error'));return;}handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId,system:action.dataset.system,text:action.dataset.text,contactId:action.dataset.contactId,memberId:action.dataset.memberId,nextStatus:action.dataset.nextStatus});return;}
   const answer=e.target.closest('[data-answer]');
 if(answer){const i=state.assessmentIndex;state.assessmentAnswers[i]=Number(answer.dataset.answer);renderView();return;}
   const practicalAnswer=e.target.closest('[data-practical-answer]');if(practicalAnswer){state.practicalAnswers[state.practicalIndex]=Number(practicalAnswer.dataset.practicalAnswer);renderView();return;}
@@ -1613,8 +1673,18 @@ document.addEventListener('change',e=>{
   if(e.target?.id==='departmentSelect'){state.workforceDepartment=e.target.value;saveState();renderView();}
   if(e.target?.id==='digitalChannelFilter'){state.digitalChannelFilter=e.target.value;saveState();renderView();}
   if(e.target?.id==='activeOrganizationSelect'){if(state.organizationWorkspace.organizations.some(org=>org.id===e.target.value)){state.organizationWorkspace.activeOrganizationId=e.target.value;saveState();renderView();}}
+  if(e.target?.id==='cloudOrgSelect'){selectCloudOrganization(e.target.value).then(()=>renderView()).catch(error=>toast(error.message,'error'));}
 });
 document.addEventListener('submit',e=>{
+  if(e.target.id==='cloudOrgCreateForm'){
+    e.preventDefault();const f=new FormData(e.target);createCloudOrganization({name:f.get('name'),industry:f.get('industry')}).then(()=>renderView()).catch(error=>toast(error.message,'error'));return;
+  }
+  if(e.target.id==='cloudInviteForm'){
+    e.preventDefault();const f=new FormData(e.target);createCloudInvitation({email:f.get('email'),role:f.get('role'),department:f.get('department')}).then(()=>{renderView();toast('Server invitation recorded. No email was sent.','success');}).catch(error=>toast(error.message,'error'));return;
+  }
+  if(e.target.id==='cloudPolicyForm'){
+    e.preventDefault();const f=new FormData(e.target);const policy=Object.fromEntries(f.entries());policy.departments=String(policy.departments||'').split(/\r?\n/).map(value=>value.trim()).filter(Boolean);try{validateCloudPolicy(policy);updateCloudPolicy(policy).then(()=>{renderView();toast('Tenant policy saved to Supabase.','success');}).catch(error=>toast(error.message,'error'));}catch(error){toast(error.message,'error');}return;
+  }
   if(e.target.id==='digitalReplyForm'){e.preventDefault();submitDigitalReply(e.target);}
   if(e.target.id==='digitalCloseForm'){e.preventDefault();finishDigitalContact(e.target);}
   if(e.target.id==='orgCreateForm'){e.preventDefault();const form=e.target;try{const org=createOrganization({name:form.elements.name.value,industry:form.elements.industry.value});state.organizationWorkspace.organizations.push(org);state.organizationWorkspace.activeOrganizationId=org.id;saveState();renderView();toast('Local organisation workspace created.','success');}catch(error){toast(error.message,'error');}}
@@ -1735,5 +1805,26 @@ document.addEventListener('click',event=>{
   const action=event.target.closest('[data-station-action]');if(action){open3dWorkView(action.dataset.stationAction);return;}
 });
 
+window.addEventListener('calloria:cloud-context', event=>{
+  const detail=event.detail||{};
+  if(detail.signedOut){cloudScopedSave=false;activeStorageKey=STORAGE_KEY;state=loadState();ensureOrganizationWorkspace(state);setHeader();renderView();return;}
+  if(detail.userId&&detail.organizationId){
+    cloudScopedSave=true;
+    activeStorageKey=`calloria.save.cloud.${detail.userId}.${detail.organizationId}.v1`;
+    state=loadState();
+    const cloud=getCloudPlatformState();
+    const cloudOrg=cloud.activeOrganization;
+    state.organizationWorkspace={activeOrganizationId:detail.organizationId,organizations:[{
+      id:detail.organizationId,name:cloudOrg?.name||detail.organizationName||'Organisation',industry:cloudOrg?.industry||'General customer service',status:'active',createdAt:cloudOrg?.createdAt||new Date().toISOString(),policy:structuredClone(detail.policy||DEFAULT_ORG_POLICY),
+      members:[],audit:[]
+    }]};
+    state.applicantName=state.applicantName||cloud.user?.user_metadata?.full_name||cloud.user?.email?.split('@')[0]||'CALLORIA user';
+    state.nameInitials=initials(state.applicantName);
+    setHeader();renderView();
+  }
+});
+
+const cloudInit = initializeCloudPlatform();
 initClock();renderView();
+cloudInit.then(()=>{if(getCloudPlatformState().mode==='active')renderView();}).catch(error=>console.error('CALLORIA cloud initialisation failed:',error));
 import('three').then(module=>{THREE=module;initWorld();}).catch(error=>{console.warn('Three.js could not be loaded; keeping the operational interface available.',error);$('#worldCanvas').innerHTML='<div class="world-fallback">3D preview could not load. The operational workspace remains available.</div>';});

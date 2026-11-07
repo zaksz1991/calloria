@@ -1,92 +1,83 @@
 # CALLORIA Product Roadmap
 
-**Current milestone:** 0.7.0 — Multi-channel Customer Operations  
-**Next milestone:** 0.8.0 — Organisation Platform  
-**Product definition:** A browser-first 3D contact-centre career and operations simulator. Recruitment is the entry gate; the core experience is the employee's daily customer operations, performance and career progression.
+**Current release:** 0.9.0 — Server-backed Identity & Tenant Administration Foundation  
+**Next milestone:** 1.0.0 — Persisted Employment & Contact-Centre Operations  
+**Product definition:** A browser-first 3D contact-centre career and operations simulator. Recruitment is the entry gate; the main experience is simulated employment, customer operations, workforce routines, performance and career progression.
 
-Previous milestones: 0.1.0 functional prototype, 0.2.0 3D workplace, 0.3.0 game-first and mobile controls, 0.4.0 contact-centre operations, and 0.5.0 workforce intelligence.
+## Release history
 
-## Current baseline — Build 0.7.0
+Build 0.1.0 established the recruitment and career prototype; 0.2.0 introduced the 3D workplace; 0.3.0 shifted to a game-first CALLORIA shell and touch controls; 0.4.0 added contact-centre operations; 0.5.0 added workforce intelligence; 0.6.0 added voice practice and shift management; 0.7.0 added multi-channel service; 0.8.0 added local organisation administration.
 
-### Recruitment and career
-- Candidate application, aptitude/judgement/security assessment, practical customer-call assessment, offer and employment acceptance.
-- Local career profile, experience, salary/bonus values and level progression.
+## Current baseline — Build 0.9.0
 
-### Contact operations
-- Prioritised inbound queue, simulated customer scenarios and contact lifecycle history.
+### Recruitment and career simulation
+- Candidate application, aptitude/judgement/security assessment, practical customer-call assessment, interview, offer and employment acceptance.
+- Local career profile, experience, salary/bonus values and career progression.
+- Annual promotion examination records with one attempt per calendar year and three attempts overall; weighted eligibility checks.
+
+### Contact-centre operations
+- Prioritised inbound queues, scripted customer scenarios and contact lifecycle history.
 - Hold/resume, specialist transfer, supervisor assistance, return-to-queue and callback handling.
-- After-contact work with required factual notes and constrained dispositions.
 - Outbound campaign tasks, callbacks, opt-out suppression and completion controls.
-- CRM case history, queue metrics, knowledge base and performance views.
-- Synthetic email, live-chat and social-media queues, channel-aware routing, threaded conversations, privacy checks, digital after-contact work and CRM case linkage.
-- Digital first-response, workload, QA, resolution, escalation and illustrative response-target metrics.
+- After-contact work with factual notes and constrained dispositions.
+- Synthetic CRM case history, knowledge base, queue metrics and performance views.
+- Synthetic email, live-chat and social-media queues, channel-aware routing, threaded conversations, privacy checks and digital after-contact work.
+- Channel-specific response targets, workload, first-response, SLA-risk, resolution, escalation and practice-QA metrics.
 
-### Workforce intelligence
+### Workforce and enterprise simulation
 - 07:30 morning and 14:00 afternoon simulated briefing windows.
-- Specialist departments for inbound/outbound voice, email, social, chat, IT, QA, customer experience, fraud/security and back office.
-- Annual promotion examination records with one attempt per calendar year and three attempts overall in the current real-calendar implementation.
+- Specialist departments for voice, email, social, chat, IT, QA, customer experience, fraud/security and back office; all staff retain core customer-care responsibilities.
 - Weighted promotion eligibility, consent/relevance/eligibility-gated cross-selling and official customer-commendation referral.
 - Synthetic ICC, CRM, Finacle, FirstMobile, USSD, Postilion, JIRA and FCQA system activity records.
-- Agent states, 08:00–17:00 simulated shifts, scheduled breaks, schedule adherence, shift history and coaching records.
+- Agent states, 08:00–17:00 simulated shifts, scheduled breaks, adherence, shift history and coaching records.
 
-### Voice and workplace activity
-- Optional customer statement playback through browser speech synthesis.
+### Voice and 3D workplace
+- Optional customer-statement playback through browser speech synthesis.
 - Explicitly consented, up-to-30-second local microphone sample recording and in-page playback.
-- Optional browser speech recognition with text fallback.
-- Sensitive-number and credential phrase filtering before transcript display.
-- Temporary in-memory handling, with no CALLORIA upload or local employment-save persistence.
-- GLB desk animation clip selection by agent state when suitable clips exist; restrained local fallback arm movement.
+- Optional browser speech recognition with text fallback and sensitive-number/credential filtering.
+- Temporary voice data stays in page memory; it is not uploaded to CALLORIA or saved in the employment profile.
+- GLB desk animation clip selection by agent state when compatible animation clips exist, with restrained local fallback movement.
 
-### 0.6.0 boundaries
-- Voice practice does not currently control scripted conversation branches or contribute automatic speech QA scores.
-- Browser speech recognition may be processed by the browser's speech provider. The UI discloses this before permission is granted.
-- Customer statement playback depends on available browser speech synthesis voices.
-- Animation switching is conditional on the external GLB asset containing compatible animation clips. External model license, CORS, loading and runtime compatibility remain to be verified.
-- Queue and workforce logic remain single-player browser simulation; localStorage is not a secure, server-backed employee record.
-- No real banking service, customer account, transaction, telephone system, live contact centre or enterprise application is connected.
+### Server-backed identity and tenant administration — 0.9.0
+- Supabase Auth sign-up, sign-in, password reset and sign-out.
+- PostgreSQL profiles, organisations, memberships, invitations, policy and audit tables.
+- RLS policies on every tenant table, organisation-scoped reads and permission-checked database RPCs.
+- First-owner organisation creation, verified-email invitation acceptance, member suspension/reactivation and policy updates.
+- Tenant invitations are database records only; email delivery is not included.
+- Browser saves are partitioned by authenticated user ID and active organisation ID.
 
-## Completed milestone — Build 0.7.0: Multi-channel Customer Operations
+### Important 0.9.0 data boundary
+Server-backed only after the supplied migration is applied and Supabase is configured: authentication, organisation membership, organisation metadata, invitations, tenant policies and administrative audit history. Recruitment, employment, calls, chat/email/social practice, shifts, briefings, coaching, voice sessions, CRM training cases and performance history remain browser-local. They do not synchronise across devices and are not protected as server records. A live Supabase project, SQL execution, RLS isolation and deployment have not been verified in this release environment.
 
-- Simulated email, live-chat and social-media queues with channel-specific response targets.
-- Priority sorting, channel filters, specialist routing and one-at-a-time agent assignment.
-- Threaded messages, editable channel-specific reply starters, scripted customer follow-up and explicit digital-contact lifecycle states.
-- Privacy controls that block explicit PIN, password, OTP and full payment-card-number solicitation patterns.
-- Public-social reply guidance requiring a private/verified channel for account-specific support to obtain full privacy practice credit.
-- Rule-based practice checks for acknowledgement, ownership, next-step clarity and privacy.
-- Mandatory after-contact disposition, factual notes, CRM case creation and retained conversation transcripts.
-- Channel-aware workload, first-response, SLA-risk, resolution, escalation and QA metrics.
+## Next milestone — Build 1.0.0: Persisted Employment & Operations
 
-### 0.7.0 boundaries
-- Email, chat and social accounts are simulated only; no external platform API or mailbox is connected.
-- Only one digital contact can be active for the player at a time; concurrent chat handling is not yet implemented.
-- There are no attachments, live typing indicators, external media uploads, automated language model responses or platform webhooks.
-- Channel service targets and deterministic response checks are illustrative and require organisation approval before any real-world training use.
+- Store employee profiles, recruitment outcomes, employment stages, positions and career history in tenant-scoped PostgreSQL records.
+- Persist daily briefings, attendance acknowledgements, shift plans, adherence, coaching and promotion attempts.
+- Store voice, email, chat, social and back-office practice contacts with tenant-scoped ownership and assignment.
+- Persist customer histories, CRM training cases, dispositions, escalations, callbacks and quality results.
+- Connect organisation policy values to server-validated operational workflows rather than only local presentation or practice scoring.
+- Add reliable invitation delivery through a trusted server/Edge Function and configured email provider.
+- Add account lifecycle controls, account deletion/offboarding, retention enforcement and authorised data export.
+- Add automated Supabase integration tests proving tenant A cannot access tenant B and that role escalation, suspended accounts and expired invitations are denied.
+- Add data migration/versioning so the move from local simulation records to server records does not silently discard player progress.
 
-## Build 0.8.0 — Organisation Platform
+## Build 1.1.0 — Shared Contact Centre & Realtime Collaboration
 
-- Supabase authentication and server-backed player profiles.
-- Tenant-scoped organisations, departments, teams and roles.
-- Organisation administrator, trainer, supervisor, QA and player permissions.
-- Configurable products, scripts, policies, scorecards, briefings, shifts and campaigns.
-- Auditable event records, data retention settings and report exports.
-- Cross-device progress sync with strict organisation-level access checks.
+- Shared team floor with authenticated agent presence.
+- Multi-agent queue distribution and collision-safe contact assignment.
+- Supervisor live queue visibility, monitoring requests and coaching hand-offs.
+- Team briefings, announcements, acknowledgements and department-specific updates.
+- Team/cohort reporting and workload balancing.
+- Realtime permissions, reconnect behaviour, presence expiry and audit history.
 
-## Build 0.9.0 — Multiplayer Contact Centre
+## Build 1.2.0 — Commercial Release Candidate
 
-- Shared team floor and agent presence.
-- Multiple agents, supervisors and QA users in a shared session.
-- Queue distribution across agents and supervisor hand-offs.
-- Team briefings, live coaching and coordinated escalations.
-- Cohort and team-level performance reports.
-
-## Build 1.0 — Commercial Release Candidate
-
-- First-party, version-pinned and appropriately licensed 3D models and audio.
-- Validated character rigs, facial/lip-sync animation, LODs and device performance budgets.
+- First-party, version-pinned and appropriately licensed 3D models, animations and audio.
+- Validated character rigs, facial/lip-sync animation, LODs and documented device performance budgets.
 - Accessibility, localisation and representative desktop/mobile browser QA.
-- Security and privacy review, tenant-isolation tests, audio consent and retention controls.
-- Organisation-approved content, policy and legal review for every industry pack.
-- Subscription, licensing, tenant provisioning and support controls.
+- Security and privacy review, tenant-isolation testing, data retention and deletion controls.
+- Organisation-approved training content, policy, scorecards and legal review for every industry pack.
+- Tenant provisioning, subscription/licensing, usage limits, support and incident response.
 
 ## Industry packs
 
@@ -105,14 +96,14 @@ Every industry pack requires approved procedures, contact permissions, disclosur
 
 ## Production architecture target
 
-- **Client:** TypeScript, React for application interfaces where useful, and Three.js for the 3D workplace.
+- **Client:** Three.js for the 3D workplace and focused application interfaces.
 - **Build:** Vite with locked dependencies and reproducible production builds.
-- **Simulation domain:** versioned scenarios, deterministic state transitions, role-aware scoring and event history.
-- **Server:** authenticated APIs with organisation-scoped access checks.
+- **Simulation domain:** Versioned scenarios, deterministic state transitions, role-aware scoring and event history.
+- **Server:** Authenticated APIs and database functions with organisation-scoped access checks.
 - **Data:** PostgreSQL, tenant isolation, auditable event records and policy versioning.
-- **Realtime:** queue, presence and supervisor activity.
-- **Media:** explicit consent, secured audio handling and configurable retention.
-- **AI:** bounded customer dialogue constrained by organisation-approved policy and authored scenario rules.
+- **Realtime:** Queue distribution, presence and supervisor activity.
+- **Media:** Explicit consent, secured audio handling and configurable retention.
+- **AI:** Bounded customer dialogue constrained by organisation-approved policy and authored scenario rules.
 - **3D pipeline:** Blender-authored GLB assets, PBR materials, validated rigs, animation clips, LODs, instancing and first-party asset delivery.
 - **Deployment:** CDN-delivered frontend plus secured backend services.
 
@@ -127,21 +118,3 @@ Every industry pack requires approved procedures, contact permissions, disclosur
 - Performance targets must be role-specific and organisation-configurable.
 - Audio capture must be transparent, permission-based and subject to retention controls.
 - Institutional procedures require owner approval before production use.
-
-
-## 0.8.0 — Organisation administration foundation
-
-Delivered as a local-only prototype: multiple organisation profiles, staff directory, role definitions, configurable training policies, audit history and active-workspace filtering. The organisation digital response target is applied to newly generated digital contacts. Other policy settings remain configuration references. This does not establish secure production tenancy.
-
-## Next: 0.9.0 — Server-backed identity and tenant isolation
-
-- Supabase Auth organisation membership and verified invitations.
-- PostgreSQL organisation, member, role, policy and audit tables.
-- Row Level Security policies on every tenant-owned table.
-- Server-side authorisation checks for administrative operations.
-- Tenant-scoped cases, interactions, staff records and reporting.
-- Organisation owner onboarding, member acceptance, suspension and offboarding.
-- Database migrations, RLS tests and cross-tenant access-denial tests.
-- No real banking credentials, customer data or transaction access.
-
-The server-backed phase must not be described as multi-tenant secure until RLS and API-level isolation tests pass against a deployed Supabase project.

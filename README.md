@@ -1,7 +1,25 @@
 # CALLORIA — Contact Centre Career & Operations Simulator
 
-**Build:** 0.8.0 — Organisation Workspaces & Administration  
+**Build:** 0.9.0 — Server-backed Identity & Tenant Isolation  
 **Product:** A browser-first contact-centre career and operations simulator. Recruitment is the entry gate; the main experience is simulated employment, multi-channel customer operations, workforce routines and career progression.
+
+## What changed in 0.9.0
+
+### Supabase identity and server-side organisation tenancy
+- Added Supabase Auth email/password registration, sign-in, password reset and sign-out flows.
+- Added a first-owner organisation-creation RPC, verified-email invitation acceptance and role-controlled member invitations.
+- Added PostgreSQL organisation, membership, profile, invitation, policy and audit tables.
+- Enabled Row Level Security on every exposed tenant table, with organisation-scoped read policies and least-privilege role checks.
+- Revoked direct browser writes to tenant membership, organisation, invitation, policy and audit tables. Mutations run through security-definer RPCs with explicit membership and permission checks.
+- Added server-side policy validation, staff activation/suspension and tenant audit events.
+- Partitioned local gameplay saves by authenticated user and selected organisation to reduce same-browser cross-account/save collisions.
+- Added a strict cloud access gate: when Supabase is partially configured or unavailable, the application does not silently fall back to local demo mode.
+
+### Operational boundary
+This milestone server-backs identity and organisation administration only. Recruitment progress, gameplay, simulated call records, customer interactions, shift records, voice sessions and performance history remain browser-local. Staff invitations create pending records but do not send emails; recipients must create/confirm an account using the invited email and accept the invitation. The SQL has static regression coverage but has not yet been applied to a live Supabase project or subjected to live cross-tenant RLS testing. Do not describe a deployed environment as security-verified until the tenant-isolation checklist has passed against the actual project.
+
+### Supabase setup
+See `SUPABASE-SETUP.md` before configuring Vercel. Run the migration in `supabase/migrations/202611070001_calloria_server_tenancy.sql`, then add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to the Vercel environment. A legacy anon key is supported. Never put a service-role or secret key in a `VITE_` variable.
 
 ## What changed in 0.8.0
 
@@ -84,11 +102,11 @@ The project includes automated syntax and regression checks in its package scrip
 
 ## Simulation and privacy boundaries
 
-- All people, customers, conversations, platform messages, cases, accounts, campaigns, callbacks, salaries and performance values are synthetic gameplay data.
+- All people, customers, conversations, platform messages, cases, accounts, campaigns, callbacks, salaries and performance values in the simulation are synthetic gameplay data.
 - The digital operations desk does not connect to Gmail, Outlook, Instagram, Facebook, X, WhatsApp, live chat providers or other external channels.
 - The enterprise systems sandbox does not connect to real ICC, CRM, Finacle or other bank systems and cannot initiate real transactions.
 - The application does not place real telephone calls or connect to live customer queues.
-- Player progress, operational records and organisation workspace demonstrations remain in browser local storage. They are not server-backed or synchronised across devices. Organisation records are partitioned by active local workspace only; this is not secure server-side tenant isolation.
+- In cloud mode, authentication, organisation membership, organisation profiles, invitations, policies and administrative audit records are stored in Supabase and are intended to be guarded by the supplied PostgreSQL Row Level Security migration after it has been applied. Gameplay progress, operational practice records and interaction histories remain in local storage, partitioned by user ID and selected organisation ID; they are not synchronised across devices or protected as server records. Existing unscoped local/demo progress is not automatically imported into a cloud-scoped profile; the previous browser save remains separate.
 - Optional audio samples and transcripts remain in page memory only and are not persisted in the employment save. Browser speech recognition may use a browser-controlled recognition service; this is disclosed before use.
 - Do not use real customer data or enter PINs, passwords, OTPs, full account numbers or payment-card details during practice. The response filter is defensive and is not guaranteed to detect every unsafe phrase or number format.
 - Voice practice does not drive customer scenario branching or automatic voice QA scoring.
@@ -99,13 +117,15 @@ The project includes automated syntax and regression checks in its package scrip
 ## Project structure
 
 ```text
-CALLORIA-v0.8.0/
+CALLORIA-v0.9.0/
 ├── index.html
 ├── styles.css
 ├── vite.config.js
 ├── package.json
 ├── vercel.json
 ├── js/
+│   ├── cloud-platform.js
+│   ├── cloud-security.js
 │   ├── organization-engine.js
 │   ├── main.js
 │   ├── operations-engine.js
@@ -114,9 +134,13 @@ CALLORIA-v0.8.0/
 │   ├── shift-engine.js
 │   ├── voice-engine.js
 │   └── production-world.js
+├── supabase/
+│   ├── migrations/
+│   └── tests/
 ├── assets/
 │   └── calloria-mark.svg
 ├── tests/
+│   ├── cloud-security.test.mjs
 │   ├── calloria.test.mjs
 │   ├── operations-engine.test.mjs
 │   ├── multichannel-engine.test.mjs
@@ -129,10 +153,11 @@ CALLORIA-v0.8.0/
 ## Release verification
 
 - JavaScript syntax checks: passed in the release preparation environment.
-- Automated regression tests: 63/63 passed in release preparation.
+- Automated regression tests: 71/71 passed in release preparation.
 - ZIP integrity: checked when the release archive is packaged.
+- Production dependency installation: timed out in the preparation environment; Vite remains unavailable.
 - Vite production bundle: only reported as passed if dependencies are available and `vite build` completes.
 - Browser UI, message flow, screen-reader/accessibility behaviour, 3D asset loading, WebGL rendering, and physical-device QA on Android/iOS require browser/device verification.
 - No GitHub commit or Vercel deployment is implied by this ZIP package.
 
-Build 0.8.0 is a development milestone. It adds browser-local organisation workspaces, staff directory records, role definitions, policy settings and administrative audit history. The active organisation digital response target is applied to newly generated digital contacts; other policy values are configuration references pending full operational integration. Server-backed identity, enforceable permissions and secure tenant isolation remain future milestones.
+Build 0.9.0 adds the Supabase-backed identity and organisation administration foundation. RLS is implemented in the supplied migration, but actual SQL execution, project configuration, browser sign-in, live tenant-isolation tests and production deployment remain external verification steps. This release does not yet server-sync simulated customer operations or employment progress.
