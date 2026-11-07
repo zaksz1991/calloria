@@ -1,142 +1,157 @@
-# CALLORIA Phase 11 — RuffNeck Sales & Ethical Cross-Sell Desk
+# CALLORIA Phase 12 — Guest Support Entry, Skills Routing & Queue Control
 
-**New staff page:** `/sales-desk.html`  
-**New Edge Function:** `calloria-sales-desk`  
-**New database migration:** `202611070012_calloria_sales_enablement.sql`
+**Public page:** `/support-router.html`  
+**Staff page:** `/routing-control.html`  
+**Supabase Edge Function:** `calloria-contact-routing`  
+**Database migration:** `202611070013_calloria_contact_routing.sql`
 
-Phase 11 gives CALLORIA staff a structured way to understand a customer's actual need, identify a relevant RuffNeck product or service, record which options were presented, capture the customer's decision and schedule a consent-verified follow-up task.
+Phase 12 connects the customer-facing help path to the existing Phase 8 Agent Desk. It adds a guest-first entry form, private request tracking, skills-constrained queue claiming and an internal routing control centre. It does not create a second agent work queue: each accepted request becomes a normal `calloria_ops_work_items` record and is then handled in the Agent Desk.
 
-This is a staff sales-enablement workspace. It is not an online checkout, payment system, live campaign sender or revenue ledger.
+## What it adds
 
-## RuffNeck portfolio coverage
+### Customer support entry
 
-The desk uses the existing Phase 8 `assets/ruffneck-catalog.json` catalogue and covers:
+- A guided support entry page covering all six RuffNeck products and games.
+- Categories for platform support, account access, technical support, product/service enquiries, complaints, personal guidance, safeguarding, learning/career, social media and general customer care.
+- Language preference selection: English, Hausa, Yoruba, Igbo and Nigerian Pidgin.
+- Server-side language matching; a request waits if no currently eligible staff profile has the chosen language. The language options do not claim that a trained agent is always available.
+- Guest submission without account creation or sign-in.
+- Explicit consent before storing a support request.
+- No name, email, telephone, account or payment fields in the new routing form.
+- A random request reference and one-time 256-bit access code. Only the SHA-256 token hash is stored. The customer must keep the raw code to check status.
+- Private status checking with generic customer-safe states. Agent Desk resolution and closure are reflected back to the request status.
+- Link from Customer Care to the new support entry page. The included `customer-care.html` is the Phase 6 case-enabled version with this new link; it preserves the Case Desk case creation and tracking controls.
 
-1. **RuffNeck Learn** — AI and digital skills, structured learning and professional development enquiries.
-2. **RuffNeck Prospector** — prospecting, lead workflow and business-growth needs.
-3. **RuffNeck Connect** — community participation, collaboration and networking.
-4. **RuffNeck Social Hub** — social-media operations, brand and content workflows.
-5. **Kano Run / Kano Life** — Kano-themed driving and life-simulation entertainment.
-6. **Kano Keke** — Kano keke-driving and life-simulation entertainment.
+### Skills-based routing
 
-The six product pages show the catalogue's high-level service descriptions and sales boundaries. The agent must verify current feature availability, account status, pricing, discounts, service levels, supported channels and commercial terms on the destination platform or with the product owner before promising them. No price or feature claim is fabricated in this workspace.
+- Requests map deterministically to the approved CALLORIA departments and required skills.
+- Queue priority is `urgent`, `high`, `normal` or `low`. Safeguarding starts as urgent; complaints start as high; other categories default to normal.
+- Queue order applies 30-minute priority aging to non-urgent work. Older non-urgent requests can rise to high priority, but never outrank urgent safeguarding requests.
+- The staff member must match department, required skill, channel and language.
+- The staff member must be clocked into a published Workforce shift for the same department and currently recorded as `customer_work`.
+- Active, held and after-contact work items count against the staff member's configured concurrency limit.
+- A single database transaction locks the selected route and corresponding Agent Desk item, then assigns both. A database guard blocks the generic Agent Desk claim RPC for guest-routed items, so staff cannot bypass the shift, skill, language or concurrency checks. The Agent Desk screen directs staff to Routing Control for unassigned guest requests.
+- If an agent releases a claimed interaction or escalates an active one, the Agent Desk clears assignment and it returns to the routing queue. Direct Agent Desk claim attempts remain blocked; the next assignment must pass the full Routing Control eligibility check.
+- The routing control centre reports exact queue counts by department and priority, and actual oldest waiting time. It does not invent an estimated wait time.
+- Staff use a pull model: an eligible agent chooses **Claim next eligible request**. This phase does not silently push work to staff or auto-assign to an arbitrary person.
 
-The catalogue's related service lines include digital-skills training, business-prospecting support, community and collaboration, social-media operations, customer-care consultation and game entertainment. If no product matches the need, the UI explicitly tells the agent not to force a sale.
+### Agent Desk integration
 
-## What it does
+- The Edge Function creates the work item in `calloria_ops_work_items` using the existing Agent Desk schema.
+- The request narrative is encrypted using the same HKDF/AES-GCM derivation as the Agent Desk, so the existing Agent Desk can decrypt it. It uses the existing `CALLORIA_AGENT_DESK_ENCRYPTION_SECRET` without changing or rotating that value.
+- The routing claim updates the existing work item's owner and status. The interaction then appears in the normal Agent Desk queue for the assigned employee.
+- When an Agent Desk item is marked resolved or cancelled, a database trigger changes the public routing status to completed or closed.
+- New routing events store only the route reference, actor identifier and event category. Customer narratives remain encrypted in the linked Agent Desk item.
 
-- Staff-only login using existing Supabase Auth accounts and a separate Sales Desk permission map.
-- Department-scoped opportunity creation and pipeline visibility.
-- Customer need categories covering learning, business growth, community collaboration, social-media operations, games, career development, customer-care consultation, technical support, product access and cross-platform needs.
-- Optional Customer 360 record linking. The UI accepts only the CRM UUID, not customer email or phone details.
-- Server-side encrypted opportunity summaries. Common phone, email, credential and long financial-number patterns are redacted before encryption.
-- Deterministic need-to-product matching from the existing RuffNeck portfolio catalogue; a maximum of three options can be presented per action.
-- Customer response tracking: presented, interested or declined, with a dedicated response audit event and guarded single-response update.
-- Pipeline states: new, discovery, recommended, customer interested, referred to platform, follow-up due and closed/no interest.
-- A customer referral hand-off to the owning platform. A referral does not claim that an account was created, a payment occurred or a sale was completed.
-- Follow-up task creation linked to the Customer 360 record and the specific granted consent record.
-- Minimal event history without customer contact details or personal narratives.
+## Routing map
 
-## Ethical cross-selling controls
+| Customer selection | Destination department | Required approved skill | Initial priority |
+|---|---|---|---|
+| Product / platform support | RuffNeck Products and Platform Support | `platform_support` | Normal |
+| Account access | RuffNeck Products and Platform Support | `account_access` | Normal |
+| Technical problem | Technical Support and IT | `technical_support` | Normal |
+| Product, service or pricing enquiry | Sales and Service Enquiries | `sales` | Normal |
+| Complaint | Complaints and Service Recovery | `complaints` | High |
+| Personal development / general guidance | Personal Development and Wellbeing Information | `personal_guidance` | Normal |
+| Safety / safeguarding | Safeguarding and Trained Human Support | `safeguarding` | Urgent |
+| Learning / career development | Learning and Career Development | `learning_advice` | Normal |
+| Social media support | Social Media Support | `social_support` | Normal |
+| General enquiry | General Customer Care | `general_customer_care` | Normal |
 
-### Customer-requested recommendation
+Every routing-enabled staff grant is required to include `general_customer_care` as a foundation skill. Specialist skills, approved languages, channels and departments are additional constraints; all employees still need the same basic customer-care capability.
 
-The opportunity source must be recorded as `customer_requested` before a customer-requested product recommendation can be presented. This is a staff-recorded statement that the customer explicitly asked for product information; it is not inferred from an ordinary support enquiry.
+## Privacy and operational boundaries
 
-### Proactive cross-sell
+- The portal stores the customer's short summary encrypted in the existing Agent Desk work item. Subject fields are redacted for common email, phone, credential, account/card number and token patterns.
+- The portal does not ask for contact details. A customer who needs a response by email or phone should use the separate Phase 6 support-case form on Customer Care, which has its own explicit consent and encrypted contact-detail workflow.
+- The one-time access code is shown once and is not saved to local storage. Losing it means the customer cannot use the private status lookup for that request.
+- Public request submission is limited to eight requests per hashed connection fingerprint per 10-minute bucket; status checks are limited to 24. The rate-limit table stores an HMAC-SHA-256 connection fingerprint, not the raw IP or user-agent.
+- Closed routing records and their linked Agent Desk work items are eligible for deletion 180 days after closure. Purging is opportunistic when a customer submits a request or checks status; it is not a guaranteed nightly schedule. Unresolved requests are not automatically deleted by this routine.
+- The urgent safeguard priority is a queue rule, not an emergency response. The page clearly tells customers that the portal is not an emergency service or clinical treatment.
+- The customer status page displays status only. It does not send email, SMS, WhatsApp, social messages, push notifications or agent replies.
+- The public page accepts portal-originated requests and flags Kano Run/Kano Keke requests as the `game` channel. Database routing supports additional channel types for future adapters, but Phase 12 does **not** connect telephony, email, live chat, WhatsApp or social provider APIs.
+- Claiming a request does not establish a live call. Staff open the Agent Desk to handle, document, escalate and resolve the assigned work item.
+- Internal due targets reuse the Agent Desk's configured priority targets (urgent 5 min, high 15 min, normal 60 min, low 240 min). These are internal queue targets, not customer response guarantees.
 
-Proactive recommendations require all of the following:
+## Files included
 
-- A linked Customer 360 record.
-- The latest `marketing` consent entry for that customer must be `granted`.
-- The consent is checked on the server at the time the recommendation is presented.
+### Add
 
-A missing, revoked or `not_granted` marketing consent blocks proactive cross-selling. Service-contact consent is not treated as marketing consent.
+| Package path | Repository path |
+|---|---|
+| `support-router.html` | `support-router.html` |
+| `routing-control.html` | `routing-control.html` |
+| `js/routing-engine.js` | `js/routing-engine.js` |
+| `js/support-router-workbench.js` | `js/support-router-workbench.js` |
+| `js/routing-control-workbench.js` | `js/routing-control-workbench.js` |
+| `styles/support-router.css` | `styles/support-router.css` |
+| `styles/routing-control.css` | `styles/routing-control.css` |
+| `supabase/functions/calloria-contact-routing/index.ts` | same path |
+| `supabase/functions/calloria-contact-routing/deno-globals.d.ts` | same path; local static type-check support |
+| `supabase/migrations/202611070013_calloria_contact_routing.sql` | `supabase/migrations/` |
+| `tests/routing-engine.test.mjs` | `tests/` |
+| `tests/routing-contract.test.mjs` | `tests/` |
 
-### Follow-up
+### Complete replacements / merged configuration
 
-A follow-up is only a staff task; this function does not send email, WhatsApp, SMS, social messages or telephone calls. Scheduling requires a linked Customer 360 record and the latest granted consent for the exact purpose selected:
+- `agent-desk.html` — Phase 11 Agent Desk page with a Routing Control navigation link.
+- `js/agent-desk-workbench.js` — Phase 9-compatible Agent Desk workbench that hides generic claim controls on guest-routed requests and directs staff to Routing Control.
+- `supabase/functions/calloria-agent-desk/index.ts` — complete replacement with a server-side 409 guard that rejects generic claims of `CR-` work items. Deploy this updated function together with the routing function.
+- `customer-care.html` — Phase 6 case-enabled Customer Care page with a Submit / Track Support Request link. It retains the case form and case status lookup; do not replace a newer customised version without preserving those changes.
+- `vite.config.js` — Phase 11 multi-page Vite configuration with the two routing page entries added.
+- `package.json` — Phase 11 scripts preserved, with checks for the new browser modules.
+- `supabase/config.toml` — Phase 11 function entries preserved, with `calloria-contact-routing` added and gateway JWT verification disabled for guest submission.
+- `tsconfig.edge.json` — prior staff Edge Function type-check paths retained, with the routing function added.
 
-- `service_contact` for a customer-requested service follow-up.
-- `marketing` for promotional or marketing contact.
+This is an incremental overlay based on the Phase 11-integrated project. It is not a complete copy of the 3D simulator repository. Do not replace `index.html`, `main.js`, `game.js`, `renderer3d.js`, `ui.js`, `production-world.js`, existing 3D assets, prior database migrations or unrelated Edge Functions with older snapshots from this package.
 
-A service-contact consent does not authorise marketing. A marketing consent does not authorise an unrelated service disclosure. Follow-up tasks are limited to the next 90 days. Removing a Customer 360 record or its consent cascades deletion of linked follow-up tasks; the opportunity is retained with its CRM link set to null.
+## Installation
 
-## Commercial and data boundaries
+1. Integrate Phases 1–11 first. Confirm the existing Agent Desk, Workforce, Customer Care, Case Desk, Customer 360 and Sales Desk files are present. This phase relies on both `calloria_ops_*` and `calloria_wfm_*` objects.
+2. Check Supabase migration history. Confirm the required earlier migrations, especially `007` Case Desk, `009` Agent Desk, `010` Workforce and `012` Sales Enablement, have already been applied. Do not rerun migrations 001–012.
+3. Apply `202611070013_calloria_contact_routing.sql` exactly once.
+4. Deploy the updated `calloria-agent-desk` Edge Function included in this package, then deploy `calloria-contact-routing`. The Agent Desk update prevents its generic claim endpoint from bypassing Routing Control.
+5. Set `verify_jwt = false` for these two handler-authenticated staff functions as supplied; `calloria-contact-routing` also accepts guest submissions, so its handler checks origin and staff JWT for all staff-only actions. The public customer submission is guest-first. Staff actions are separately authenticated in the Edge Function using `admin.auth.getUser(token)` and the server-side access map.
+6. Add the required secrets under **Supabase → Edge Functions → Secrets**. Do not put any of these values in Vercel browser variables, source files, GitHub or chat.
 
-- No prices, quotation totals, discounts, subscriptions, plan entitlements or sales targets are invented.
-- No card or bank transaction is initiated or accepted.
-- No customer is automatically enrolled in a marketing list.
-- No outbound communication is sent. Staff must use an approved platform or communication provider outside this package after checking consent and policy.
-- The workflow has no `won` or `converted` stage. A recommendation or platform referral is not proof of purchase. Transaction confirmation belongs to the owning platform.
-- Customer summaries are encrypted with AES-GCM server-side. Do not add passwords, PINs, OTPs, payment information or sensitive personal/therapeutic narratives.
-- Personal-development and wellbeing enquiries remain in their appropriate customer-care/safeguarding paths. This sales module does not score, package or monetise a person's distress.
+### Supabase secrets
 
-## Integration baseline
+- `CALLORIA_ALLOWED_ORIGINS` — use the existing exact-origin allowlist already used by the other CALLORIA customer-care functions. It must include `https://calloria.vercel.app` and only the local origins actually used.
+- `CALLORIA_ROUTING_ACCESS` — new JSON map containing the staff IDs, departments, approved skills, supported channels, supported languages and maximum concurrent work.
+- `CALLORIA_ROUTING_RATE_SALT` — new random secret recommended for the HMAC-SHA-256 request fingerprint. At least 32 characters. If omitted, the function falls back to the Supabase service-role key as the HMAC key.
+- `CALLORIA_AGENT_DESK_ENCRYPTION_SECRET` — the **existing Phase 8 Agent Desk encryption secret**. The routing function must use exactly the same value and HKDF derivation so that Agent Desk can decrypt incoming summaries. Do not rotate it. Do not create a separate routing encryption key for this integration.
 
-Use the Phase 10-integrated CALLORIA repository as the baseline. This ZIP is an incremental overlay, not a replacement for the full game repository.
+Supabase supplies `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the Edge Function. The service-role key must remain server-side. The existing Groq keys, Prospector credentials and other Phase-specific encryption secrets are not used or modified by this phase.
 
-### Add these files
+### Routing access-map example
 
-| Package file | Repository destination | Action |
-|---|---|---|
-| `sales-desk.html` | `sales-desk.html` | Add |
-| `js/sales-desk-engine.js` | same path | Add |
-| `js/sales-desk-workbench.js` | same path | Add |
-| `styles/sales-desk.css` | same path | Add |
-| `supabase/functions/calloria-sales-desk/index.ts` | same path | Add and deploy |
-| `supabase/functions/calloria-sales-desk/deno-globals.d.ts` | same path | Add for local static type-checking |
-| `supabase/migrations/202611070012_calloria_sales_enablement.sql` | `supabase/migrations/` | Add and apply once |
-| `tests/sales-desk-engine.test.mjs` | `tests/` | Add |
-| `tests/sales-desk-contract.test.mjs` | `tests/` | Add |
-
-### Replace with the included merged files
-
-- `agent-desk.html` — same Phase 10 Agent Desk page, with a Sales Desk navigation link.
-- `vite.config.js` — retains the existing seven page inputs and adds `sales-desk.html`.
-- `package.json` — retains the Phase 10 dependencies and scripts and adds syntax checks for the Sales Desk modules.
-- `supabase/config.toml` — preserves all Phase 10 function entries and adds `calloria-sales-desk` with handler-side JWT validation.
-- `tsconfig.edge.json` — preserves the prior Agent Desk, Workforce and Performance function check paths and adds Sales Desk.
-
-The package includes `assets/ruffneck-catalog.reference.json` only as a reference snapshot for the tests and review. The runtime imports the existing `assets/ruffneck-catalog.json` from Phase 8. **Do not overwrite that current repository catalogue with the reference snapshot.**
-
-Do not replace `index.html`, `main.js`, `game.js`, `renderer3d.js`, `production-world.js`, existing career/shift/voice/multichannel engines, customer-care, case-desk, Customer 360, Workforce or Performance modules with unrelated older copies. Preserve later repository changes.
-
-## Supabase installation
-
-1. Confirm migrations `001`–`011` are already applied. Review Supabase migration history first; do not rerun any earlier migration.
-2. Confirm migration `202611070008_calloria_customer_360.sql` is present because migration 012 adds foreign keys to Customer 360 contacts and consent records.
-3. Apply `202611070012_calloria_sales_enablement.sql` exactly once.
-4. Deploy the `calloria-sales-desk` Edge Function.
-5. Set `verify_jwt = false` for this function in the supplied `supabase/config.toml`. The function independently validates the bearer token through `admin.auth.getUser(token)` and then checks the Sales Desk access allowlist. Do not remove the handler-side checks.
-6. In **Supabase → Edge Functions → Secrets**, add:
-   - `CALLORIA_ALLOWED_ORIGINS` — comma-separated exact origins, including `https://calloria.vercel.app` and only the local development origins actually used.
-   - `CALLORIA_SALES_DESK_ACCESS` — JSON map from existing employee Supabase Auth UUIDs to an approved role and explicit department scope.
-   - `CALLORIA_SALES_DESK_ENCRYPTION_SECRET` — a new, independent secret with at least 32 characters. Keep it private and do not reuse the Groq key, Customer 360 encryption secret or any Prospector secret.
-
-Example permission-map structure only; replace every placeholder UUID with the corresponding existing employee Auth UUID and keep each scope limited to the departments actually assigned:
+Replace every placeholder UUID with the employee's existing Supabase Auth UUID. These scopes are examples, not real approved staff assignments:
 
 ```json
 {
-  "<existing-sales-adviser-auth-uuid>": {
-    "role": "sales_advisor",
-    "departments": ["Sales and Service Enquiries", "RuffNeck Products and Platform Support"]
+  "<existing-agent-auth-uuid>": {
+    "role": "agent",
+    "departments": ["RuffNeck Products and Platform Support"],
+    "skills": ["general_customer_care", "platform_support", "account_access"],
+    "channels": ["portal", "game"],
+    "languages": ["en", "ha"],
+    "maxConcurrency": 1
   },
-  "<existing-sales-supervisor-auth-uuid>": {
-    "role": "sales_supervisor",
-    "departments": ["Sales and Service Enquiries", "RuffNeck Products and Platform Support"]
-  },
-  "<existing-people-admin-auth-uuid>": {
-    "role": "people_admin",
-    "departments": ["*"]
+  "<existing-supervisor-auth-uuid>": {
+    "role": "supervisor",
+    "departments": ["*"],
+    "skills": ["general_customer_care", "complaints", "safeguarding"],
+    "channels": ["portal", "game", "voice", "email", "live_chat", "social", "whatsapp", "back_office"],
+    "languages": ["en", "ha", "yo", "ig", "pcm"],
+    "maxConcurrency": 1
   }
 }
 ```
 
-Supported roles: `agent`, `sales_advisor`, `supervisor`, `sales_supervisor`, `people_admin`. Frontline `agent` and `sales_advisor` entries require explicit department scopes and can view their own opportunities. Supervisors can view opportunities in their assigned departments. `people_admin` requires wildcard scope. Access to Sales Desk is separate from Customer 360, Agent Desk, Workforce and Performance permissions; add only the employees who need it.
+Supported role names: `agent`, `supervisor`, `people_admin`. Every routing-enabled employee, including supervisors and people administrators, must have the `general_customer_care` foundation skill plus only their approved specialist skills. Agents need explicit departments; `people_admin` must have `departments: ["*"]`. People administrators can view permitted queue totals but cannot claim customer interactions. Allowed skill names are `platform_support`, `account_access`, `technical_support`, `sales`, `complaints`, `personal_guidance`, `safeguarding`, `learning_advice`, `social_support` and `general_customer_care`. Allowed language codes are `en`, `ha`, `yo`, `ig` and `pcm`. Channels are `voice`, `email`, `live_chat`, `social`, `whatsapp`, `website`, `portal`, `game` and `back_office`.
 
-Supabase supplies `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the Edge Function. Do not copy the service-role key, encryption secret or access map into Vercel browser environment variables, repository files or chat. The existing Groq key and all Prospector-specific credentials remain untouched.
+Only list languages and specialist skills for which the employee has been trained and approved. Do not assign `safeguarding` to staff who have not completed that training. The employee must also be listed in the separate `CALLORIA_AGENT_DESK_ACCESS` map with matching department access. A staff account in Routing Control but not Agent Desk cannot open the claimed work; keep both maps aligned.
 
 ## Verification
 
-See `VERIFICATION.md`. The focused unit and contract tests, JS syntax checks and Edge Function TypeScript static check are included. The complete repository Vite build, live Supabase migration, actual staff authentication and deployed browser workflow require the Phase 10-integrated repository and Supabase project; they were not run in this isolated overlay workspace.
+See `VERIFICATION.md`. Focused tests and static checks are included. A full repository Vite build, live Postgres migration, staff authentication, Edge Function deployment and end-to-end browser checks require the user's actual Phase 11-integrated repository and Supabase project. They are not claimed as completed here.

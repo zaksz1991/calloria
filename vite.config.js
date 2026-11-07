@@ -20,7 +20,9 @@ export default defineConfig({
         agentDesk: resolve(process.cwd(), 'agent-desk.html'),
         workforce: resolve(process.cwd(), 'workforce.html'),
         performance: resolve(process.cwd(), 'performance.html'),
-        salesDesk: resolve(process.cwd(), 'sales-desk.html')
+        salesDesk: resolve(process.cwd(), 'sales-desk.html'),
+        supportRouter: resolve(process.cwd(), 'support-router.html'),
+        routingControl: resolve(process.cwd(), 'routing-control.html')
       },
       output: {
         manualChunks(id) {

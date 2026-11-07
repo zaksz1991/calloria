@@ -21,6 +21,8 @@
     "supabase/functions/calloria-performance/**/*.ts",
     "supabase/functions/calloria-performance/**/*.d.ts",
     "supabase/functions/calloria-sales-desk/**/*.ts",
-    "supabase/functions/calloria-sales-desk/**/*.d.ts"
+    "supabase/functions/calloria-sales-desk/**/*.d.ts",
+    "supabase/functions/calloria-contact-routing/**/*.ts",
+    "supabase/functions/calloria-contact-routing/**/*.d.ts"
   ]
 }

@@ -147,11 +147,13 @@ function drawControls(item) {
   const box = $('#work-controls'); box.replaceChildren();
   const mine = item.assigned_to === session.user.id;
   const supervisor = staff.role === 'supervisor';
-  if (!item.assigned_to && ['pending','escalated'].includes(item.status)) control('Claim interaction', 'claim', false, 'primary');
-  if (mine && item.status === 'claimed') control('Start handling', 'active', false, 'primary');
+  const routeManaged = String(item.work_ref || '').startsWith('CR-') && !item.assigned_to && ['pending','escalated'].includes(item.status);
+  if (!item.assigned_to && ['pending','escalated'].includes(item.status) && !routeManaged) control('Claim interaction', 'claim', false, 'primary');
+  if (routeManaged) { const note = document.createElement('p'); note.className = 'muted small'; note.textContent = 'Guest-routed request: claim it from Routing Control so workforce status, approved skills and language eligibility are enforced.'; box.append(note); }
+  if (mine && item.status === 'claimed') { control('Start handling', 'active', false, 'primary'); control('Release back to queue', 'pending', false, 'quiet'); }
   if (mine && item.status === 'active') { control('Place on hold', 'on_hold'); control('Begin after-contact work', 'after_contact_work', false, 'primary'); control('Escalate', 'escalated', false, 'quiet'); }
   if (mine && item.status === 'on_hold') control('Resume handling', 'active', false, 'primary');
-  if (supervisor && item.status === 'escalated' && !mine) control('Assign to me', 'claim', false, 'primary');
+  if (supervisor && item.status === 'escalated' && !mine && !routeManaged) control('Assign to me', 'claim', false, 'primary');
   if (supervisor && !['resolved','cancelled'].includes(item.status)) control('Cancel work item', 'cancelled', false, 'quiet');
   if (!box.children.length) { const note = document.createElement('span'); note.className = 'muted small'; note.textContent = 'No actions are available for your current ownership and permission state.'; box.append(note); }
 }

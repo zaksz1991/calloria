@@ -28,3 +28,6 @@ verify_jwt = false
 
 [functions.calloria-sales-desk]
 verify_jwt = false
+
+[functions.calloria-contact-routing]
+verify_jwt = false

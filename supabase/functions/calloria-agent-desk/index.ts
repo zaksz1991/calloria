@@ -159,6 +159,7 @@ Deno.serve(async request => {
     }
 
     if (action === 'claim') {
+      if (String(item.work_ref || '').startsWith('CR-')) return json(409,{error:'Guest support requests must be claimed through Routing Control, which verifies shift, skill, language and workload capacity.'},origin);
       const {data,error}=await admin.rpc('calloria_ops_claim_work_item',{p_item_id:itemId,p_agent_id:user.id,p_actor_role:access.role,p_departments:agentDepartments});
       if(error) throw error;
       const claimed=Array.isArray(data)?data[0]:null;
@@ -178,6 +179,7 @@ Deno.serve(async request => {
         patch.hold_started_at=null;
       }
       if(next==='on_hold') patch.hold_started_at=new Date().toISOString();
+      if(next==='pending') { patch.assigned_to=null; patch.claimed_at=null; patch.hold_started_at=null; }
       if(next==='escalated') { patch.assigned_to=null; patch.claimed_at=null; }
       if(next==='resolved') patch.resolved_at=new Date().toISOString();
       if(next==='cancelled') patch.resolved_at=new Date().toISOString();

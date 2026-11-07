@@ -1,23 +1,19 @@
-CALLORIA Phase 11 focused verification
+CALLORIA Phase 12 focused verification results
 
-PASS node --check js/sales-desk-engine.js
-PASS node --check js/sales-desk-workbench.js
-PASS node --check vite.config.js
-PASS node --test tests/*.test.mjs — 15 tests passed
-PASS tsc --noEmit -p tsconfig.edge.json
-PASS package.json JSON parse
-PASS supabase/config.toml TOML parse
-PASS sales-desk.html HTML parser
-PASS agent-desk.html HTML parser
-PASS CSS brace balance
-PASS static DOM ID contract
-PASS recommendation response single-write guard and audit event contract
-PASS preserved multi-page Vite entry contract
-PASS isolated migration/RLS contract checks
+node --test tests/*.test.mjs
+22 tests passed; 0 failed.
 
-NOT RUN
-- Complete repository Vite production build
-- Full existing CALLORIA repository test suite
-- Live Supabase migration/deployment
-- Live staff authentication, consent integration or browser end-to-end tests
-- Vercel deployment or physical Android testing
+node --check js/routing-engine.js                         PASS
+node --check js/support-router-workbench.js               PASS
+node --check js/routing-control-workbench.js              PASS
+node --check js/agent-desk-workbench.js                   PASS
+node --check vite.config.js                               PASS
+tsc --noEmit -p tsconfig.edge.json                        PASS
+package.json JSON parse                                   PASS
+supabase/config.toml TOML parse                            PASS
+Customer Router, Routing Control, Agent Desk and Customer Care HTML parse PASS
+HTML ID uniqueness on checked pages                       PASS
+New routing CSS brace-balance checks                      PASS
+ZIP integrity                                                PASS after archive creation
+
+Not run: full Vite build against the complete repository, live Postgres migration/runtime, live Edge Function deployment, browser end-to-end tests, Android/desktop device QA, or Vercel deployment.

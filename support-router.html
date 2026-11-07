@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#07131f" />
+  <meta name="description" content="Find the right CALLORIA customer support route for RuffNeck Entertainment products and services." />
+  <title>CALLORIA · Customer Support</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/calloria-mark.svg" />
+  <link rel="stylesheet" href="/styles/support-router.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-mark">C</span><span><b>CALLORIA</b><small>RUFFNECK CUSTOMER SUPPORT</small></span></a>
+    <nav><a href="/customer-care.html">Knowledge & self-service</a><a href="/">Back to CALLORIA</a></nav>
+  </header>
+  <main class="shell">
+    <section class="hero">
+      <div class="eyebrow">ONE SUPPORT ENTRY · SIX PLATFORMS</div>
+      <h1>How can we help?</h1>
+      <p>Choose the product and the kind of assistance you need. CALLORIA will route the request to the relevant support department.</p>
+      <div class="trust-row"><span>Guest access</span><span>No account required</span><span>Language-matched routing, subject to trained staff availability</span></div>
+    </section>
+
+    <section class="content-grid">
+      <section class="panel form-panel">
+        <div class="section-head"><div><div class="eyebrow">STEP 1</div><h2>Choose a product or service</h2></div></div>
+        <div id="platform-options" class="platform-grid" aria-label="RuffNeck products"></div>
+        <form id="route-form" class="form-stack">
+          <div class="section-head"><div><div class="eyebrow">STEP 2</div><h2>Tell us what you need</h2></div></div>
+          <label>Type of assistance<select id="intent" required>
+            <option value="">Select a support category</option>
+            <option value="platform_support">Product or platform support</option>
+            <option value="account_access">Account access or sign-in</option>
+            <option value="technical_support">Technical problem</option>
+            <option value="sales_enquiry">Products, services or pricing enquiry</option>
+            <option value="complaint">Complaint or service recovery</option>
+            <option value="personal_guidance">Personal development or general life guidance</option>
+            <option value="safeguarding">Safety or safeguarding support</option>
+            <option value="learning_career">Learning or career development</option>
+            <option value="social_media">Social media support</option>
+            <option value="general">General customer care</option>
+          </select></label>
+          <label>Preferred language<select id="language" required><option value="en">English</option><option value="ha">Hausa</option><option value="yo">Yorùbá</option><option value="ig">Igbo</option><option value="pcm">Nigerian Pidgin</option></select></label>
+          <label>Subject<input id="subject" maxlength="140" minlength="4" required placeholder="A short description of the request"></label>
+          <label>Explain what happened or what you want to achieve<textarea id="summary" rows="5" maxlength="600" minlength="12" required placeholder="Include only the details needed to understand the request. Do not include passwords, OTPs, PINs, card information or private medical details."></textarea></label>
+          <label class="consent"><input id="storage-consent" type="checkbox" required><span>I agree that CALLORIA may store this request in encrypted form so the relevant support team can handle it and update its status. I understand this form does not request my contact details.</span></label>
+          <button class="button primary full" type="submit">Submit support request</button>
+          <p id="submit-status" class="status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <aside class="side-column">
+        <section class="panel self-service">
+          <div class="eyebrow">BEFORE YOU JOIN THE QUEUE</div><h2>Try self-service first</h2>
+          <p>Many access, learning, community and platform questions can be handled directly on the owning product.</p>
+          <a class="button outline full" href="/customer-care.html">Open Customer Care knowledge centre</a>
+          <p class="small">Need a reply by email or phone? Use the formal support-case form on Customer Care. It asks separately for explicit storage consent and optional follow-up details.</p>
+          <div id="selected-platform-help" class="selected-help">Select a RuffNeck product above to see its official destination.</div>
+        </section>
+        <section class="panel safety-panel">
+          <div class="eyebrow">IMPORTANT</div><h2>Privacy and urgent safety</h2>
+          <p>Do not submit passwords, OTPs, PINs, payment credentials or full account numbers. This form is not an emergency service or clinical therapy.</p>
+          <p>For immediate danger, contact local emergency services or a trusted person who can assist now. Select safeguarding support only when trained human follow-up is needed.</p>
+          <p class="muted small">This portal creates a support request. It does not start a live telephone call, WhatsApp chat or guaranteed real-time session.</p>
+        </section>
+      </aside>
+    </section>
+
+    <section class="panel tracking-panel">
+      <div class="section-head"><div><div class="eyebrow">PRIVATE STATUS CHECK</div><h2>Track an existing request</h2></div></div>
+      <form id="track-form" class="track-form"><label>Request reference<input id="track-reference" required maxlength="32" placeholder="CR-YYYYMMDD-XXXXXX"></label><label>One-time access code<input id="track-token" required minlength="32" maxlength="100" autocomplete="off"></label><button class="button outline" type="submit">Check status</button></form>
+      <div id="track-result" class="track-result" role="status" aria-live="polite"></div>
+    </section>
+  </main>
+  <footer><span>CALLORIA · Every Call. Every Customer. Every Career.</span><a href="/privacy.html">Privacy information</a></footer>
+  <script type="module" src="/js/support-router-workbench.js"></script>
+</body>
+</html>
