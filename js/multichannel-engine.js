@@ -99,6 +99,7 @@ export function createDigitalQueue(scenarios = DIGITAL_SCENARIOS, count = 6, opt
   if (!source.length || !Number.isFinite(count) || count <= 0) return [];
   const now = Number(options.now ?? Date.now());
   const sequence = Math.max(0, Math.floor(Number(options.sequence ?? 0)));
+  const slaOverride = Number(options.slaMinutesOverride);
   const total = Math.min(30, Math.floor(count));
   return Array.from({ length: total }, (_, index) => {
     const scenario = source[(sequence + index) % source.length];
@@ -118,7 +119,7 @@ export function createDigitalQueue(scenarios = DIGITAL_SCENARIOS, count = 6, opt
       keywords: [...(scenario.keywords || [])],
       priority: scenario.priority || 'normal',
       routeGroup: scenario.routeGroup || 'Customer Services',
-      slaMinutes: DIGITAL_CHANNELS[scenario.channel].slaMinutes,
+      slaMinutes: Number.isInteger(slaOverride) && slaOverride >= 1 && slaOverride <= 1440 ? slaOverride : DIGITAL_CHANNELS[scenario.channel].slaMinutes,
       status: DIGITAL_STATUS.QUEUED,
       receivedAt: new Date(receivedAt).toISOString(),
       acceptedAt: null,

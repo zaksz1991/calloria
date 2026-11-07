@@ -127,3 +127,21 @@ Every industry pack requires approved procedures, contact permissions, disclosur
 - Performance targets must be role-specific and organisation-configurable.
 - Audio capture must be transparent, permission-based and subject to retention controls.
 - Institutional procedures require owner approval before production use.
+
+
+## 0.8.0 — Organisation administration foundation
+
+Delivered as a local-only prototype: multiple organisation profiles, staff directory, role definitions, configurable training policies, audit history and active-workspace filtering. The organisation digital response target is applied to newly generated digital contacts. Other policy settings remain configuration references. This does not establish secure production tenancy.
+
+## Next: 0.9.0 — Server-backed identity and tenant isolation
+
+- Supabase Auth organisation membership and verified invitations.
+- PostgreSQL organisation, member, role, policy and audit tables.
+- Row Level Security policies on every tenant-owned table.
+- Server-side authorisation checks for administrative operations.
+- Tenant-scoped cases, interactions, staff records and reporting.
+- Organisation owner onboarding, member acceptance, suspension and offboarding.
+- Database migrations, RLS tests and cross-tenant access-denial tests.
+- No real banking credentials, customer data or transaction access.
+
+The server-backed phase must not be described as multi-tenant secure until RLS and API-level isolation tests pass against a deployed Supabase project.

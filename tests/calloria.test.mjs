@@ -141,9 +141,9 @@ test('multi-channel operations are reachable and linked to existing work systems
     read('index.html'), read('js/main.js'), read('js/multichannel-engine.js'), read('styles.css'), read('package.json')
   ]);
   const pkg = JSON.parse(packageJson);
-  assert.equal(pkg.version, '0.7.0');
+  assert.equal(pkg.version, '0.8.0');
   assert.match(html, /data-view=["']digital["']/);
-  assert.match(html, /BUILD 0\.7\.0/);
+  assert.match(html, /BUILD 0\.8\.0/);
   for (const item of ['function renderDigital','function acceptDigital','function submitDigitalReply','function finishDigitalContact','function receiveDigitalFollowUp','case \'digital\': renderDigital()']) {
     assert.ok(main.includes(item), `missing digital integration: ${item}`);
   }
@@ -157,4 +157,24 @@ test('multi-channel operations are reachable and linked to existing work systems
   assert.match(css, /\.digital-workspace/);
   assert.match(css, /\.digital-queue-row/);
   assert.match(engine, /Unsafe reply blocked/);
+});
+
+
+test('organisation administration is reachable and preserves the local workspace model', async () => {
+  const [html, main, engine, packageJson, css] = await Promise.all([
+    read('index.html'), read('js/main.js'), read('js/organization-engine.js'), read('package.json'), read('styles.css')
+  ]);
+  const pkg = JSON.parse(packageJson);
+  assert.equal(pkg.version, '0.8.0');
+  assert.match(html, /data-view=["']organization["']/);
+  assert.match(html, /BUILD 0\.8\.0/);
+  assert.match(main, /function renderOrganizationWorkspace/);
+  assert.match(main, /case 'organization': renderOrganizationWorkspace\(\)/);
+  for (const form of ['orgCreateForm','orgMemberForm','orgPolicyForm']) assert.ok(main.includes(form));
+  for (const action of ['toggle-org-member','activeOrganizationSelect']) assert.ok(main.includes(action));
+  for (const operation of ['createOrganization','createOrganizationMember','setOrganizationMemberStatus','updateOrganizationPolicy','getOrganizationSnapshot']) assert.ok(engine.includes(`export function ${operation}`));
+  assert.match(main, /minimumScore:activeOrgPolicy\?\.promotionThreshold/);
+  assert.match(engine, /state\.organizationWorkspace\.activeOrganizationId/);
+  assert.match(css, /\.org-member-list/);
+  assert.match(css, /\.org-role-table/);
 });

@@ -144,3 +144,11 @@ test('social-channel privacy check changes after the customer moves to private s
   const privateReply = recordDigitalReply(items, social.id, 'Thank you for moving to the verified message. I will investigate and provide the case update.', 'EMP-AY', fixedNow + 3000);
   assert.equal(privateReply.quality.dimensions.privacy, true);
 });
+
+
+test('organisation digital response target can override new synthetic contact SLA values', () => {
+  const queue = createDigitalQueue(DIGITAL_SCENARIOS, 3, { sequence: 0, now: 1700000000000, slaMinutesOverride: 35 });
+  assert.deepEqual(queue.map(item => item.slaMinutes), [35, 35, 35]);
+  const invalid = createDigitalQueue(DIGITAL_SCENARIOS, 2, { sequence: 0, now: 1700000000000, slaMinutesOverride: 0 });
+  assert.deepEqual(invalid.map(item => item.slaMinutes), invalid.map(item => DIGITAL_CHANNELS[item.channel].slaMinutes));
+});

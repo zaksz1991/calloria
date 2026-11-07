@@ -7,6 +7,7 @@ import { DEPARTMENTS, SYSTEMS, briefingFor, recordBriefingAttendance, promotionE
 import { AGENT_STATES, createShiftRecord, recordAgentState, calculateShiftAdherence, expectedShiftMode, nextScheduledBreak, closeShift, createCoachingRecord } from './shift-engine.js';
 import { speechRecognitionAvailable, mediaRecordingAvailable, createVoiceSession, appendVoiceTranscript, finishVoiceSession, sanitizeTranscript } from './voice-engine.js';
 import { DIGITAL_CHANNELS, DIGITAL_STATUS, DIGITAL_SCENARIOS, createDigitalQueue, sortDigitalQueue, findDigitalContact, acceptDigitalContact, recordDigitalReply, deliverDigitalFollowUp, completeDigitalContact, digitalQueueMetrics, appendDigitalEvent } from './multichannel-engine.js';
+import { ORGANIZATION_ROLES, DEFAULT_ORG_POLICY, ensureOrganizationWorkspace, createOrganization, createOrganizationMember, setOrganizationMemberStatus, updateOrganizationPolicy, getActiveOrganization, getOrganizationSnapshot } from './organization-engine.js';
 
 let THREE = null;
 
@@ -69,10 +70,11 @@ const initialState = () => ({
   viewedArticle: null,
   workforceDepartment: 'inbound',
   shiftRecord: null, shiftElapsedMinutes: 0, agentStatus: 'offline', shiftHistory: [], coachingSessions: [], simulationClockSeconds: 7 * 3600, lastShiftDay: 0,
-  briefingAttendance: [], promotionAttempts: [], crossSellRecords: [], commendations: [], systemEvents: [], digitalQueue: [], digitalSequence: 0, digitalActiveId: null, digitalChannelFilter: 'all', digitalEvents: []
+  briefingAttendance: [], promotionAttempts: [], crossSellRecords: [], commendations: [], systemEvents: [], digitalQueue: [], digitalSequence: 0, digitalActiveId: null, digitalChannelFilter: 'all', digitalEvents: [], organizationWorkspace: null
 });
 
 let state = loadState();
+ensureOrganizationWorkspace(state);
 let selectedAnswer = null;
 let threeWorld = null;
 let productionWorld = null;
@@ -808,7 +810,7 @@ function ensureDigitalQueue(count = 6) {
   if (!Array.isArray(state.digitalQueue)) state.digitalQueue = [];
   const waiting = state.digitalQueue.filter(item => item.status === DIGITAL_STATUS.QUEUED).length;
   if (state.digitalQueue.length === 0 || (waiting === 0 && count > 0)) {
-    const items = createDigitalQueue(DIGITAL_SCENARIOS, count, { sequence: state.digitalSequence });
+    const items = createDigitalQueue(DIGITAL_SCENARIOS, count, { sequence: state.digitalSequence, slaMinutesOverride: getActiveOrganization(state.organizationWorkspace)?.policy?.digitalResponseTargetMinutes });
     state.digitalQueue.push(...items);
     state.digitalSequence += items.length;
   }
@@ -947,7 +949,8 @@ function renderWorkforce() {
     compliance: state.incidents ? Math.max(0,100-state.incidents*12) : 95,
     leadership: Math.min(100, 60 + Math.floor(state.level*5))
   };
-  const eligibility = promotionEligibility({metrics, attempts:state.promotionAttempts});
+  const activeOrgPolicy = getActiveOrganization(state.organizationWorkspace)?.policy;
+  const eligibility = promotionEligibility({metrics, attempts:state.promotionAttempts, minimumScore:activeOrgPolicy?.promotionThreshold ?? 75});
   const attended = currentBriefing && state.briefingAttendance.some(x=>x.briefingId===currentBriefing.id);
   const dept = DEPARTMENTS.find(x=>x.id===state.workforceDepartment) || DEPARTMENTS[0];
   viewRoot.innerHTML = `
@@ -1024,6 +1027,55 @@ function renderWorkforce() {
     </div>`;
 }
 
+function renderOrganizationWorkspace() {
+  const org = getActiveOrganization(state.organizationWorkspace);
+  if (!org) { viewRoot.innerHTML = '<div class="panel empty-state"><h3>No organisation workspace</h3><p>Create an organisation workspace to begin.</p></div>'; return; }
+  const snapshot = getOrganizationSnapshot(state.organizationWorkspace, org.id);
+  const active = snapshot.members.filter(member => member.status === 'active').length;
+  const invited = snapshot.members.filter(member => member.status === 'invited').length;
+  const suspended = snapshot.members.filter(member => member.status === 'suspended').length;
+  const departments = org.policy.departments;
+  viewRoot.innerHTML = `
+    <div class="ops-summary-grid org-summary-grid">
+      <article class="metric-card"><span>ORGANISATIONS IN THIS BROWSER</span><strong>${state.organizationWorkspace.organizations.length}</strong><small>Local workspace profiles</small></article>
+      <article class="metric-card"><span>STAFF MEMBERS</span><strong>${snapshot.memberCount}</strong><small>${active} active · ${invited} invited · ${suspended} suspended</small></article>
+      <article class="metric-card"><span>CONFIGURED DEPARTMENTS</span><strong>${departments.length}</strong><small>Organisation-specific units</small></article>
+      <article class="metric-card"><span>AUDIT EVENTS</span><strong>${snapshot.audit.length}</strong><small>Local administrative history</small></article>
+    </div>
+    <div class="grid two org-grid">
+      <section class="panel">
+        <div class="panel-head"><div><h3>Organisation workspace</h3><p>Switch between isolated local training workspaces.</p></div><span class="pill green">${escapeHTML(org.status.toUpperCase())}</span></div>
+        <label class="form-field">Active organisation<select id="activeOrganizationSelect">${state.organizationWorkspace.organizations.map(item=>`<option value="${escapeHTML(item.id)}" ${item.id===org.id?'selected':''}>${escapeHTML(item.name)}</option>`).join('')}</select></label>
+        <div class="data-list"><div class="data-row"><span>Organisation name</span><strong>${escapeHTML(org.name)}</strong></div><div class="data-row"><span>Industry</span><strong>${escapeHTML(org.industry)}</strong></div><div class="data-row"><span>Created</span><strong>${new Date(org.createdAt).toLocaleDateString()}</strong></div><div class="data-row"><span>Workspace ID</span><strong>${escapeHTML(org.id)}</strong></div></div>
+        <form id="orgCreateForm" class="org-form"><h4>Create another organisation</h4><div class="form-field"><label for="orgName">ORGANISATION NAME</label><input id="orgName" name="name" required minlength="2" maxlength="80" placeholder="e.g. Northern Customer Services" /></div><div class="form-field"><label for="orgIndustry">INDUSTRY</label><select id="orgIndustry" name="industry"><option>Banking and financial services</option><option>Telecommunications</option><option>E-commerce and retail</option><option>Insurance</option><option>Healthcare administration</option><option>Travel and hospitality</option><option>Logistics and utilities</option><option>General customer service</option></select></div><button class="btn primary" type="submit">Create local workspace</button></form>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><h3>Staff directory & access roles</h3><p>Invitations are simulated. No email is sent and no login is created.</p></div><span class="pill">${snapshot.memberCount} RECORDS</span></div>
+        <div class="org-member-list">${snapshot.members.map(member=>`<article class="org-member"><div class="org-member-avatar">${escapeHTML(initials(member.name))}</div><div class="org-member-copy"><strong>${escapeHTML(member.name)}</strong><small>${escapeHTML(member.email)} · ${escapeHTML(member.department)}</small><small>${escapeHTML(ORGANIZATION_ROLES[member.role]?.label || member.role)}</small></div><div class="org-member-actions"><span class="pill ${member.status==='active'?'green':member.status==='suspended'?'red':'amber'}">${escapeHTML(member.status.toUpperCase())}</span><button class="btn small outline" data-action="toggle-org-member" data-member-id="${escapeHTML(member.id)}" data-next-status="${member.status==='suspended'?'active':'suspended'}" ${member.role==='owner'?'disabled':''}>${member.status==='suspended'?'Reactivate':'Suspend'}</button></div></article>`).join('')}</div>
+        <form id="orgMemberForm" class="org-form"><h4>Invite a staff member</h4><div class="org-form-grid"><div class="form-field"><label for="orgMemberName">FULL NAME</label><input id="orgMemberName" name="name" required minlength="2" maxlength="70" /></div><div class="form-field"><label for="orgMemberEmail">WORK EMAIL</label><input id="orgMemberEmail" name="email" type="email" required maxlength="120" /></div><div class="form-field"><label for="orgMemberRole">ACCESS ROLE</label><select id="orgMemberRole" name="role">${Object.entries(ORGANIZATION_ROLES).filter(([role])=>role!=='owner').map(([role,info])=>`<option value="${role}">${escapeHTML(info.label)}</option>`).join('')}</select></div><div class="form-field"><label for="orgMemberDepartment">DEPARTMENT</label><select id="orgMemberDepartment" name="department">${departments.map(department=>`<option>${escapeHTML(department)}</option>`).join('')}</select></div></div><button class="btn primary" type="submit">Add simulated staff invitation</button></form>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><h3>Organisation policies</h3><p>Configure local training targets. These are not official service standards.</p></div><span class="pill amber">SANDBOX POLICY</span></div>
+        <form id="orgPolicyForm" class="org-form"><div class="org-policy-grid">
+          <div class="form-field"><label for="policyVoice">VOICE RESPONSE TARGET · SECONDS</label><input id="policyVoice" name="voiceResponseTargetSeconds" type="number" min="5" max="600" step="1" value="${org.policy.voiceResponseTargetSeconds}" required /></div>
+          <div class="form-field"><label for="policyDigital">DIGITAL RESPONSE TARGET · MINUTES</label><input id="policyDigital" name="digitalResponseTargetMinutes" type="number" min="1" max="1440" step="1" value="${org.policy.digitalResponseTargetMinutes}" required /></div>
+          <div class="form-field"><label for="policyQA">QA PASS MARK · %</label><input id="policyQA" name="qaPassMark" type="number" min="0" max="100" step="1" value="${org.policy.qaPassMark}" required /></div>
+          <div class="form-field"><label for="policyPromotion">PROMOTION THRESHOLD · %</label><input id="policyPromotion" name="promotionThreshold" type="number" min="0" max="100" step="1" value="${org.policy.promotionThreshold}" required /></div>
+          <div class="form-field"><label for="policyChats">MAX CONCURRENT CHATS</label><input id="policyChats" name="maxConcurrentChats" type="number" min="1" max="10" step="1" value="${org.policy.maxConcurrentChats}" required /></div>
+          <div class="form-field"><label for="policyRetention">DATA RETENTION · DAYS</label><input id="policyRetention" name="dataRetentionDays" type="number" min="1" max="3650" step="1" value="${org.policy.dataRetentionDays}" required /></div>
+        </div><button class="btn primary" type="submit">Save organisation policy</button></form>
+        <h4 style="margin-top:18px">Department catalogue</h4><div class="org-department-tags">${departments.map(item=>`<span>${escapeHTML(item)}</span>`).join('')}</div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><h3>Role permission matrix</h3><p>Least-privilege role definitions for the local workspace model.</p></div></div>
+        <div class="table-wrap"><table class="org-role-table"><thead><tr><th>Role</th><th>Organisation</th><th>Members</th><th>Cases</th><th>Reports</th><th>Audit</th></tr></thead><tbody>${Object.entries(ORGANIZATION_ROLES).map(([role,info])=>`<tr><td><strong>${escapeHTML(info.label)}</strong></td><td>${info.permissions.some(p=>p.startsWith('org:'))?'Manage':'—'}</td><td>${info.permissions.includes('members:manage')?'Manage':info.permissions.includes('members:read')?'Read':'—'}</td><td>${info.permissions.includes('cases:read')?'Read':info.permissions.includes('cases:own')?'Own':'—'}</td><td>${info.permissions.includes('reports:read')?'Read':'—'}</td><td>${info.permissions.includes('audit:read')?'Read':'—'}</td></tr>`).join('')}</tbody></table></div>
+        <p class="org-security-note">Workspace separation is currently enforced only by the local application data model and active-workspace filtering. It is not server-side tenant isolation, authentication, or production access control.</p>
+        <h4 style="margin-top:18px">Administrative audit history</h4><div class="org-audit-list">${snapshot.audit.slice(-8).reverse().map(item=>`<div class="org-audit-row"><time>${new Date(item.at).toLocaleString()}</time><div><strong>${escapeHTML(item.type.replaceAll('-',' '))}</strong><small>${escapeHTML(item.detail)} · ${escapeHTML(item.actor)}</small></div></div>`).join('')||'<p class="muted-note">No audit events recorded.</p>'}</div>
+      </section>
+    </div>
+    <div class="org-disclaimer">DEVELOPMENT SIMULATION · Staff invitations, role permissions, organisation policies and audit events are stored in this browser only. No real accounts, emails, server-side tenant boundaries or external integrations are created.</div>`;
+}
+
 function renderView() {
   setHeader();
   const config = {
@@ -1037,7 +1089,8 @@ function renderView() {
     knowledge:['AGENT RESOURCES','Knowledge base','Reference the principles and procedures relevant to your role.'],
     performance:['PERFORMANCE INTELLIGENCE','Performance dashboard','Review quality, resolution and service performance.'],
     career:['CAREER MANAGEMENT','Career profile','Track employment details, experience and progression.'],
-    workforce:['WORKFORCE INTELLIGENCE','People & enterprise operations','Briefings, departments, promotion, customer recognition and simulated enterprise systems.']
+    workforce:['WORKFORCE INTELLIGENCE','People & enterprise operations','Briefings, departments, promotion, customer recognition and simulated enterprise systems.'],
+    organization:['ENTERPRISE ADMINISTRATION','Organisation workspaces','Manage local organisation profiles, staff directory, access roles, policies and audit history.']
   };
   const [eyebrow,title,desc] = config[state.currentView] || config.overview;
   $('#pageEyebrow').textContent = eyebrow; $('#pageTitle').textContent = title; $('#pageDescription').textContent = desc;
@@ -1054,6 +1107,7 @@ function renderView() {
     case 'performance': renderPerformance(); break;
     case 'career': renderCareer(); break;
     case 'workforce': renderWorkforce(); break;
+    case 'organization': renderOrganizationWorkspace(); break;
     default: state.currentView='overview'; renderOverview();
   }
   saveState();
@@ -1510,7 +1564,7 @@ function handleAction(action,event={}){
     case 'open-digital':state.currentView='digital';renderView();break;
     case 'accept-digital':acceptDigital(event.contactId);break;
     case 'deliver-digital-followup':receiveDigitalFollowUp();break;
-    case 'refresh-digital-queue':{if(state.digitalActiveId||state.agentStatus!=='available'){toast('Complete the current interaction before loading another batch.','warning');break;}const items=createDigitalQueue(DIGITAL_SCENARIOS,6,{sequence:state.digitalSequence});state.digitalQueue.push(...items);state.digitalSequence+=items.length;appendDigitalEvent(state.digitalEvents,{type:'queue-refresh',message:'Six synthetic digital contacts added.',status:'queued'});saveState();renderView();toast('Six simulated digital contacts added.','success');break;}
+    case 'refresh-digital-queue':{if(state.digitalActiveId||state.agentStatus!=='available'){toast('Complete the current interaction before loading another batch.','warning');break;}const items=createDigitalQueue(DIGITAL_SCENARIOS,6,{sequence:state.digitalSequence,slaMinutesOverride:getActiveOrganization(state.organizationWorkspace)?.policy?.digitalResponseTargetMinutes});state.digitalQueue.push(...items);state.digitalSequence+=items.length;appendDigitalEvent(state.digitalEvents,{type:'queue-refresh',message:'Six synthetic digital contacts added.',status:'queued'});saveState();renderView();toast('Six simulated digital contacts added.','success');break;}
     case 'open-crm':state.currentView='crm';renderView();break;
     case 'open-knowledge':state.currentView='knowledge';state.viewedArticle=null;renderView();break;
     case 'answer-call':startInboundCall();break;
@@ -1527,6 +1581,7 @@ function handleAction(action,event={}){
       pushOperationEvent('briefing',briefing.id,`${briefing.title} attended and acknowledged.`);
       saveState();renderView();toast('Briefing attendance recorded.','success');break;
     }
+    case 'toggle-org-member': { const org=getActiveOrganization(state.organizationWorkspace); if(!org)break; try{setOrganizationMemberStatus(org,event.memberId,event.nextStatus);saveState();renderView();toast('Staff status updated.','success');}catch(error){toast(error.message,'error');} break;}
     case 'launch-system': {
       const system=SYSTEMS.find(x=>x.id===event.system);
       if(!system)break;
@@ -1543,7 +1598,7 @@ function handleAction(action,event={}){
 document.addEventListener('click',e=>{
   const template=e.target.closest('[data-digital-template]');if(template){const field=$('#digitalReplyForm textarea[name="reply"]');if(field){const channel=state.digitalActiveId?findDigitalContact(state.digitalQueue,state.digitalActiveId)?.channel:'email';const selected=digitalReplyTemplates(channel).find(item=>item[0]===template.dataset.digitalTemplate);if(selected){field.value=selected[1];field.focus();}}return;}
   const nav=e.target.closest('.nav-item[data-view]');if(nav){if(nav.disabled){toast('Complete recruitment and accept an offer to unlock agent operations.');return;}if(nav.dataset.view!=='inbound'&&voiceStatus!=='inactive')stopVoiceTools();state.currentView=nav.dataset.view;renderView();return;}
-  const action=e.target.closest('[data-action]');if(action){handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId,system:action.dataset.system,text:action.dataset.text,contactId:action.dataset.contactId});return;}
+  const action=e.target.closest('[data-action]');if(action){handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId,system:action.dataset.system,text:action.dataset.text,contactId:action.dataset.contactId,memberId:action.dataset.memberId,nextStatus:action.dataset.nextStatus});return;}
   const answer=e.target.closest('[data-answer]');
 if(answer){const i=state.assessmentIndex;state.assessmentAnswers[i]=Number(answer.dataset.answer);renderView();return;}
   const practicalAnswer=e.target.closest('[data-practical-answer]');if(practicalAnswer){state.practicalAnswers[state.practicalIndex]=Number(practicalAnswer.dataset.practicalAnswer);renderView();return;}
@@ -1557,14 +1612,18 @@ if(answer){const i=state.assessmentIndex;state.assessmentAnswers[i]=Number(answe
 document.addEventListener('change',e=>{
   if(e.target?.id==='departmentSelect'){state.workforceDepartment=e.target.value;saveState();renderView();}
   if(e.target?.id==='digitalChannelFilter'){state.digitalChannelFilter=e.target.value;saveState();renderView();}
+  if(e.target?.id==='activeOrganizationSelect'){if(state.organizationWorkspace.organizations.some(org=>org.id===e.target.value)){state.organizationWorkspace.activeOrganizationId=e.target.value;saveState();renderView();}}
 });
 document.addEventListener('submit',e=>{
   if(e.target.id==='digitalReplyForm'){e.preventDefault();submitDigitalReply(e.target);}
   if(e.target.id==='digitalCloseForm'){e.preventDefault();finishDigitalContact(e.target);}
+  if(e.target.id==='orgCreateForm'){e.preventDefault();const form=e.target;try{const org=createOrganization({name:form.elements.name.value,industry:form.elements.industry.value});state.organizationWorkspace.organizations.push(org);state.organizationWorkspace.activeOrganizationId=org.id;saveState();renderView();toast('Local organisation workspace created.','success');}catch(error){toast(error.message,'error');}}
+  if(e.target.id==='orgMemberForm'){e.preventDefault();const form=e.target;const org=getActiveOrganization(state.organizationWorkspace);try{createOrganizationMember(org,{name:form.elements.name.value,email:form.elements.email.value,role:form.elements.role.value,department:form.elements.department.value});saveState();renderView();toast('Simulated staff invitation added. No email was sent.','success');}catch(error){toast(error.message,'error');}}
+  if(e.target.id==='orgPolicyForm'){e.preventDefault();const form=e.target;const org=getActiveOrganization(state.organizationWorkspace);try{updateOrganizationPolicy(org,Object.fromEntries(new FormData(form).entries()));saveState();renderView();toast('Organisation policy saved locally.','success');}catch(error){toast(error.message,'error');}}
   if(e.target.id==='promotionExamForm'){
     e.preventDefault();
     const digitalMetricSet=digitalQueueMetrics(state.digitalQueue||[]);const completedDigital=digitalMetricSet.resolved+digitalMetricSet.escalated;const qaCount=state.qaCount+(digitalMetricSet.averageQA===null?0:(state.digitalQueue||[]).filter(x=>Number.isFinite(x.qaScore)).length);const metrics={kpi:Math.min(100,Math.round((state.callsHandled+state.outboundCalls+completedDigital)*5)),qa:qaCount?Math.round(((state.totalQA)+(digitalMetricSet.averageQA||0)*(qaCount-state.qaCount))/qaCount):75,csat:state.csatCount?Math.round(state.totalCSAT/state.csatCount):75,knowledge:Math.min(100,70+state.experience),compliance:state.incidents?Math.max(0,100-state.incidents*12):95,leadership:Math.min(100,60+Math.floor(state.level*5))};
-    try{const item=recordPromotionExam(state.promotionAttempts,{metrics,examScore:Number(new FormData(e.target).get('examScore'))});pushOperationEvent('promotion',item.id,`Annual promotion examination ${item.status}.`);saveState();renderView();toast(`Examination ${item.status.replace('_',' ')}.`,'success');}catch(err){toast(err.message,'warning');}
+    try{const item=recordPromotionExam(state.promotionAttempts,{metrics,minimumScore:getActiveOrganization(state.organizationWorkspace)?.policy?.promotionThreshold ?? 75,examScore:Number(new FormData(e.target).get('examScore'))});pushOperationEvent('promotion',item.id,`Annual promotion examination ${item.status}.`);saveState();renderView();toast(`Examination ${item.status.replace('_',' ')}.`,'success');}catch(err){toast(err.message,'warning');}
   }
   if(e.target.id==='crossSellForm'){
     e.preventDefault();const f=new FormData(e.target);

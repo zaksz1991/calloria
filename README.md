@@ -1,7 +1,22 @@
 # CALLORIA — Contact Centre Career & Operations Simulator
 
-**Build:** 0.7.0 — Multi-channel Customer Operations  
+**Build:** 0.8.0 — Organisation Workspaces & Administration  
 **Product:** A browser-first contact-centre career and operations simulator. Recruitment is the entry gate; the main experience is simulated employment, multi-channel customer operations, workforce routines and career progression.
+
+## What changed in 0.8.0
+
+### Organisation administration foundation
+- Added multiple local organisation workspace profiles with an active-workspace selector.
+- Added an organisation staff directory with synthetic invitations, department assignment and owner/admin/manager/supervisor/QA/agent/trainee role definitions.
+- Added explicit least-privilege permission maps for organisation, member, case, report, operations and audit capabilities.
+- Added local member activation/suspension controls and duplicate-email validation within each organisation.
+- Added configurable organisation policy values for voice and digital response targets, QA pass mark, promotion threshold, concurrent chat target and retention period. The digital response target is applied to newly generated digital contacts; other policy values are currently configuration references.
+- Connected the configured promotion threshold to promotion eligibility and examination entry.
+- Added administrative audit history for workspace creation, staff invitations, status changes and policy updates.
+- Added tenant-scoped snapshot retrieval and independent policy/member/audit records per local workspace.
+
+### Important enterprise boundary
+This is a browser-local multi-workspace administration foundation. It is not production multi-tenancy: there is no server-side tenant isolation, authentication, invitations by email, user provisioning, database persistence, API authorisation or cross-device synchronisation. The role permission map is a training model and is not a security boundary. Do not store real employee or customer information.
 
 ## What changed in 0.7.0
 
@@ -73,7 +88,7 @@ The project includes automated syntax and regression checks in its package scrip
 - The digital operations desk does not connect to Gmail, Outlook, Instagram, Facebook, X, WhatsApp, live chat providers or other external channels.
 - The enterprise systems sandbox does not connect to real ICC, CRM, Finacle or other bank systems and cannot initiate real transactions.
 - The application does not place real telephone calls or connect to live customer queues.
-- Player progress and operational records remain in browser local storage. They are not server-backed, tenant-scoped or synchronised across devices.
+- Player progress, operational records and organisation workspace demonstrations remain in browser local storage. They are not server-backed or synchronised across devices. Organisation records are partitioned by active local workspace only; this is not secure server-side tenant isolation.
 - Optional audio samples and transcripts remain in page memory only and are not persisted in the employment save. Browser speech recognition may use a browser-controlled recognition service; this is disclosed before use.
 - Do not use real customer data or enter PINs, passwords, OTPs, full account numbers or payment-card details during practice. The response filter is defensive and is not guaranteed to detect every unsafe phrase or number format.
 - Voice practice does not drive customer scenario branching or automatic voice QA scoring.
@@ -84,13 +99,14 @@ The project includes automated syntax and regression checks in its package scrip
 ## Project structure
 
 ```text
-CALLORIA-v0.7.0/
+CALLORIA-v0.8.0/
 ├── index.html
 ├── styles.css
 ├── vite.config.js
 ├── package.json
 ├── vercel.json
 ├── js/
+│   ├── organization-engine.js
 │   ├── main.js
 │   ├── operations-engine.js
 │   ├── multichannel-engine.js
@@ -113,10 +129,10 @@ CALLORIA-v0.7.0/
 ## Release verification
 
 - JavaScript syntax checks: passed in the release preparation environment.
-- Automated regression tests: 55/55 passed in release preparation.
+- Automated regression tests: 63/63 passed in release preparation.
 - ZIP integrity: checked when the release archive is packaged.
 - Vite production bundle: only reported as passed if dependencies are available and `vite build` completes.
 - Browser UI, message flow, screen-reader/accessibility behaviour, 3D asset loading, WebGL rendering, and physical-device QA on Android/iOS require browser/device verification.
 - No GitHub commit or Vercel deployment is implied by this ZIP package.
 
-Build 0.7.0 is a development milestone. It adds scripted multi-channel written customer support and shared CRM case records. External platform integrations, multi-agent concurrency, server persistence and multi-tenant organisation management remain future milestones.
+Build 0.8.0 is a development milestone. It adds browser-local organisation workspaces, staff directory records, role definitions, policy settings and administrative audit history. The active organisation digital response target is applied to newly generated digital contacts; other policy values are configuration references pending full operational integration. Server-backed identity, enforceable permissions and secure tenant isolation remain future milestones.

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.0 — Organisation workspaces and administration foundation
+
+- Added local multi-organisation workspace creation and active workspace switching.
+- Added synthetic staff directory records, department assignment, invitation status and suspension/reactivation controls.
+- Added organisation role definitions for owner, administrator, operations manager, supervisor, QA, agent and trainee.
+- Added explicit role-to-permission maps and least-privilege tests.
+- Added configurable voice response, digital response, QA, promotion, concurrent-chat and data-retention policy values. The digital response target is applied to newly generated digital contacts; the remaining values are stored configuration references until their engines are integrated.
+- Connected organisation promotion threshold to promotion eligibility and examination validation.
+- Added workspace-scoped audit history and snapshot retrieval.
+- Added a clear boundary notice: no real authentication, email invitations, server-side tenant isolation or database persistence is provided.
+- Added organisation engine regression coverage and integrated organisation administration into the application navigation.
+
 ## 0.7.0 — Multi-channel customer operations
 
 - Added simulated email, live-chat and social-media customer queues with channel-specific response targets and specialist routing.
