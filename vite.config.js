@@ -22,7 +22,8 @@ export default defineConfig({
         performance: resolve(process.cwd(), 'performance.html'),
         salesDesk: resolve(process.cwd(), 'sales-desk.html'),
         supportRouter: resolve(process.cwd(), 'support-router.html'),
-        routingControl: resolve(process.cwd(), 'routing-control.html')
+        routingControl: resolve(process.cwd(), 'routing-control.html'),
+        voiceSimulator: resolve(process.cwd(), 'voice-simulator.html')
       },
       output: {
         manualChunks(id) {

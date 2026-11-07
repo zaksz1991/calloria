@@ -1,19 +1,152 @@
-CALLORIA Phase 12 focused verification results
 
-node --test tests/*.test.mjs
-22 tests passed; 0 failed.
+> calloria@1.4.0 test
+> node --test tests/*.test.mjs
 
-node --check js/routing-engine.js                         PASS
-node --check js/support-router-workbench.js               PASS
-node --check js/routing-control-workbench.js              PASS
-node --check js/agent-desk-workbench.js                   PASS
-node --check vite.config.js                               PASS
-tsc --noEmit -p tsconfig.edge.json                        PASS
-package.json JSON parse                                   PASS
-supabase/config.toml TOML parse                            PASS
-Customer Router, Routing Control, Agent Desk and Customer Care HTML parse PASS
-HTML ID uniqueness on checked pages                       PASS
-New routing CSS brace-balance checks                      PASS
-ZIP integrity                                                PASS after archive creation
+TAP version 13
+# Subtest: voice simulator is an explicit Vite multi-page build entry
+ok 1 - voice simulator is an explicit Vite multi-page build entry
+  ---
+  duration_ms: 0.729119
+  type: 'test'
+  ...
+# Subtest: Agent Desk navigation links to the new practice page
+ok 2 - Agent Desk navigation links to the new practice page
+  ---
+  duration_ms: 0.163516
+  type: 'test'
+  ...
+# Subtest: voice simulator authenticates through existing Agent Desk whoami endpoint
+ok 3 - voice simulator authenticates through existing Agent Desk whoami endpoint
+  ---
+  duration_ms: 0.106761
+  type: 'test'
+  ...
+# Subtest: browser-only practice history is scoped to the authenticated staff UUID
+ok 4 - browser-only practice history is scoped to the authenticated staff UUID
+  ---
+  duration_ms: 0.244639
+  type: 'test'
+  ...
+# Subtest: page clearly discloses simulation-only and no recording/provider connection
+ok 5 - page clearly discloses simulation-only and no recording/provider connection
+  ---
+  duration_ms: 0.229917
+  type: 'test'
+  ...
+# Subtest: practice scores are explicitly excluded from official scorecards
+ok 6 - practice scores are explicitly excluded from official scorecards
+  ---
+  duration_ms: 0.093571
+  type: 'test'
+  ...
+# Subtest: scenario directory covers portfolio, games, complaints, security and personal guidance
+ok 7 - scenario directory covers portfolio, games, complaints, security and personal guidance
+  ---
+  duration_ms: 1.096644
+  type: 'test'
+  ...
+# Subtest: unknown scenario cannot start
+ok 8 - unknown scenario cannot start
+  ---
+  duration_ms: 0.402457
+  type: 'test'
+  ...
+# Subtest: normal support call passes all practice gates when handled correctly
+ok 9 - normal support call passes all practice gates when handled correctly
+  ---
+  duration_ms: 1.482406
+  type: 'test'
+  ...
+# Subtest: account-access scenario requires safe verification before passing
+ok 10 - account-access scenario requires safe verification before passing
+  ---
+  duration_ms: 0.290097
+  type: 'test'
+  ...
+# Subtest: asking for a prohibited secret triggers an automatic critical failure
+ok 11 - asking for a prohibited secret triggers an automatic critical failure
+  ---
+  duration_ms: 0.146781
+  type: 'test'
+  ...
+# Subtest: proactive cross-sell without consent is a critical failure
+ok 12 - proactive cross-sell without consent is a critical failure
+  ---
+  duration_ms: 0.163336
+  type: 'test'
+  ...
+# Subtest: marketing consent must be asked separately and issue resolved before proactive offer
+ok 13 - marketing consent must be asked separately and issue resolved before proactive offer
+  ---
+  duration_ms: 0.127011
+  type: 'test'
+  ...
+# Subtest: crisis scenario cannot pass without a safeguarding hand-off
+ok 14 - crisis scenario cannot pass without a safeguarding hand-off
+  ---
+  duration_ms: 0.135975
+  type: 'test'
+  ...
+# Subtest: crisis scenario passes only after safeguarding escalation
+ok 15 - crisis scenario passes only after safeguarding escalation
+  ---
+  duration_ms: 0.97494
+  type: 'test'
+  ...
+# Subtest: hold and resume exclude hold time from active handling time
+ok 16 - hold and resume exclude hold time from active handling time
+  ---
+  duration_ms: 0.363578
+  type: 'test'
+  ...
+# Subtest: practice outcomes persist no conversation transcript or free text
+ok 17 - practice outcomes persist no conversation transcript or free text
+  ---
+  duration_ms: 0.255656
+  type: 'test'
+  ...
+# Subtest: invalid disposition and incomplete outcome summary are rejected
+ok 18 - invalid disposition and incomplete outcome summary are rejected
+  ---
+  duration_ms: 0.909191
+  type: 'test'
+  ...
+# Subtest: outbound callback scenario is identified as outbound and requires verification
+ok 19 - outbound callback scenario is identified as outbound and requires verification
+  ---
+  duration_ms: 0.077396
+  type: 'test'
+  ...
+# Subtest: sharing case details before approved verification is a critical failure
+ok 20 - sharing case details before approved verification is a critical failure
+  ---
+  duration_ms: 0.159901
+  type: 'test'
+  ...
+# Subtest: customer emotion responds to empathy and worsens after an unconsented pitch
+ok 21 - customer emotion responds to empathy and worsens after an unconsented pitch
+  ---
+  duration_ms: 0.088414
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 115.787426
 
-Not run: full Vite build against the complete repository, live Postgres migration/runtime, live Edge Function deployment, browser end-to-end tests, Android/desktop device QA, or Vercel deployment.
+Additional static checks:
+node --check js/voice-simulator-engine.js                         PASS
+node --check js/voice-simulator-workbench.js                       PASS
+node --check vite.config.js                                       PASS
+package.json JSON parse                                           PASS
+voice-simulator.html parse and unique IDs                         PASS (44 IDs)
+agent-desk.html parse and unique IDs                               PASS (52 IDs)
+voice-simulator.css brace balance                                 PASS
+Full Vite build                                                   NOT RUN
+Live Supabase/authentication test                                 NOT RUN
+Physical browser/TTS QA                                            NOT RUN

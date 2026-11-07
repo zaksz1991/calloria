@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#07121d" />
+  <meta name="description" content="CALLORIA staff voice-conversation practice simulator." />
+  <title>CALLORIA · Voice Practice</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/calloria-mark.svg" />
+  <link rel="stylesheet" href="/styles/voice-simulator.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="CALLORIA home"><span class="brand-mark">C</span><span><b>CALLORIA</b><small>VOICE PRACTICE STUDIO</small></span></a>
+      <nav class="topnav"><a href="/agent-desk.html">Agent Desk</a><a href="/routing-control.html">Routing Control</a><a href="/performance.html">Performance &amp; Career</a><a href="/">Simulator</a><button id="sign-out" class="button quiet" type="button" hidden>Sign out</button></nav>
+    </header>
+
+    <main>
+      <section id="login-panel" class="login-wrap">
+        <div class="login-card">
+          <div class="eyebrow">RESTRICTED STAFF ACCESS</div>
+          <h1>Voice Practice Studio</h1>
+          <p class="muted">Practise realistic customer conversations across RuffNeck products, games and personal-guidance enquiries.</p>
+          <form id="login-form" class="stack-form">
+            <label>Staff email<input id="staff-email" type="email" autocomplete="username" required maxlength="180"></label>
+            <label>Password<input id="staff-password" type="password" autocomplete="current-password" required maxlength="200"></label>
+            <button class="button primary" type="submit">Sign in to practice</button>
+            <div id="login-status" class="status" role="status" aria-live="polite"></div>
+          </form>
+          <p class="security-note">Staff access is verified through the existing Agent Desk Edge Function. No new account or permission map is created.</p>
+        </div>
+      </section>
+
+      <section id="workspace" hidden>
+        <div class="page-heading">
+          <div><div class="eyebrow">RUFFNECK ENTERTAINMENT · CUSTOMER CONVERSATION TRAINING</div><h1>Voice Practice Studio</h1><p class="muted">Practise the conversation, make sound decisions and review the quality gates.</p></div>
+          <div class="staff-badge"><strong id="staff-name">Staff member</strong><small id="staff-scope">Permitted departments</small></div>
+        </div>
+
+        <div class="notice"><strong>SIMULATION ONLY</strong><span>No telephone carrier, real customer, microphone recording, call recording or external message provider is connected. Practice scores are saved only in this browser and are excluded from official KPI scorecards, payroll and promotion decisions.</span></div>
+
+        <section class="setup-card panel">
+          <div class="setup-copy"><div class="eyebrow">SCENARIO LIBRARY</div><h2>Choose a customer situation</h2><p class="muted">Synthetic personas cover product support, game support, complaints, security and non-clinical personal guidance.</p></div>
+          <div class="setup-controls"><label>Practice scenario<select id="scenario-select"></select></label><button id="start-call" class="button primary" type="button">Start practice call</button></div>
+          <div id="scenario-summary" class="scenario-summary" aria-live="polite"></div>
+        </section>
+
+        <div class="call-layout">
+          <section class="call-panel panel">
+            <div class="call-head"><div><div class="eyebrow">PRACTICE SESSION</div><h2 id="call-title">No active call</h2><p id="call-subtitle" class="muted">Choose a scenario to begin.</p></div><div class="call-clock"><span id="call-status" class="state-chip idle">Ready</span><strong id="call-timer">00:00</strong><small>Handling time · practice only</small></div></div>
+            <div class="caller-card">
+              <div class="avatar" id="caller-avatar">?</div><div class="caller-details"><strong id="caller-name">Synthetic customer</strong><span id="caller-persona" class="muted">Persona appears when a call starts</span><span id="caller-platform" class="platform-tag">General enquiry</span></div>
+              <div class="caller-tone"><span>Customer emotion</span><strong id="caller-emotion">—</strong></div>
+            </div>
+            <div class="call-controls">
+              <button id="listen-customer" class="button outline" type="button" disabled>Play customer voice</button>
+              <button id="hold-call" class="button outline" type="button" disabled>Place on hold</button>
+              <button id="resume-call" class="button outline" type="button" disabled>Resume call</button>
+              <button id="finish-call" class="button primary" type="button" disabled>Finish call · go to ACW</button>
+            </div>
+            <div id="conversation" class="conversation" aria-live="polite"><div class="empty-state">The customer conversation will appear here.</div></div>
+            <div class="disclaimer-line">Customer speech uses optional browser text-to-speech. Voice availability depends on the device and browser. No audio is recorded or uploaded.</div>
+          </section>
+
+          <aside class="coach-panel panel">
+            <div class="eyebrow">AGENT ACTIONS</div><h2>Handle the conversation</h2>
+            <p class="muted small">Choose the action that matches what you would say or do. Actions are scored against the scenario rubric; speed is not scored.</p>
+            <label class="response-label">Your wording (optional)<textarea id="agent-wording" rows="3" maxlength="500" placeholder="Type the words you would use with the customer. Never enter real customer details or credentials."></textarea></label>
+            <div id="action-grid" class="action-grid"></div>
+            <div id="coach-status" class="status" role="status" aria-live="polite"></div>
+            <div class="safety-reminder"><strong>Non-negotiable security</strong><p>Never ask for passwords, OTPs, PINs, CVVs, full card numbers or API secrets. Use the official secure verification process.</p></div>
+          </aside>
+        </div>
+
+        <section id="acw-panel" class="panel acw-panel" hidden>
+          <div><div class="eyebrow">AFTER-CONTACT WORK</div><h2>Complete the practice record</h2><p class="muted">Record the outcome, not a transcript or unnecessary personal information.</p></div>
+          <form id="acw-form" class="acw-form">
+            <label>Practice disposition<select id="disposition" required><option value="">Select disposition</option><option value="resolved">Resolved</option><option value="self_service_guided">Self-service guidance completed</option><option value="specialist_referral">Specialist referral</option><option value="safeguarding_escalation">Safeguarding escalation</option><option value="follow_up_required">Follow-up required</option><option value="unresolved">Unresolved</option></select></label>
+            <label>Outcome summary<textarea id="practice-summary" rows="3" maxlength="400" required placeholder="Example: Explained the secure account recovery route and confirmed the customer understood the next step."></textarea></label>
+            <button class="button primary" type="submit">Complete and score practice</button>
+            <div id="acw-status" class="status" role="status"></div>
+          </form>
+        </section>
+
+        <section id="score-panel" class="panel score-panel" hidden>
+          <div class="score-heading"><div><div class="eyebrow">PRACTICE REVIEW</div><h2 id="score-title">Session review</h2><p id="score-subtitle" class="muted"></p></div><div id="score-value" class="score-value">—</div></div>
+          <div id="score-gate" class="gate-status"></div>
+          <div id="score-criteria" class="criteria-list"></div>
+          <div id="score-recommendations" class="recommendations"></div>
+          <button id="new-scenario" class="button primary" type="button">Start another scenario</button>
+        </section>
+
+        <section class="history-panel panel">
+          <div class="panel-head"><div><div class="eyebrow">LOCAL PRACTICE HISTORY</div><h2>Recent training sessions</h2><p class="muted small">Stored in this browser profile only. No transcripts or caller personal information are saved.</p></div><button id="clear-history" class="button quiet" type="button">Clear history</button></div>
+          <div id="history-list" class="history-list"><div class="empty-state">No completed practice sessions yet.</div></div>
+        </section>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="/js/voice-simulator-workbench.js"></script>
+</body>
+</html>
