@@ -22,12 +22,12 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   const highCapability = memory >= 8 && cores >= 8;
   const tier = constrained ? 'low' : highCapability ? 'high' : 'balanced';
   const quality = {
-    low: { pixelRatio: mobile ? 0.86 : 0.92, minRatio: 0.68, fps: 26, antialias: false, anisotropy: 2 },
-    balanced: { pixelRatio: mobile ? 1.25 : 1.18, minRatio: mobile ? 0.88 : 0.84, fps: mobile ? 30 : 48, antialias: true, anisotropy: 4 },
-    high: { pixelRatio: 1.35, minRatio: 0.9, fps: 60, antialias: true, anisotropy: 8 }
+    low: { pixelRatio: mobile ? 0.88 : 0.94, minRatio: 0.68, fps: 24, antialias: false, anisotropy: 2 },
+    balanced: { pixelRatio: mobile ? 1.12 : 1.18, minRatio: mobile ? 0.78 : 0.82, fps: mobile ? 30 : 45, antialias: true, anisotropy: 4 },
+    high: { pixelRatio: mobile ? 1.32 : 1.4, minRatio: 0.88, fps: mobile ? 45 : 60, antialias: true, anisotropy: 8 }
   }[tier];
   const maxAnisotropy = 8;
-  const pixelRatioCap = Math.min(quality.pixelRatio, window.devicePixelRatio || 1, mobile ? 1.5 : 1.75, maxAnisotropy);
+  const pixelRatioCap = Math.min(quality.pixelRatio, window.devicePixelRatio || 1, mobile ? 1.4 : 1.75, maxAnisotropy);
   let currentPixelRatio = pixelRatioCap;
 
   const scene = new THREE.Scene();
@@ -60,13 +60,13 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     return materialCache.get(key);
   };
   const mats = {
-    floor: material('#253b4b', 0.96),
-    carpet: material('#304b5c', 0.98),
-    wall: material('#9eafb5', 0.86),
+    floor: material('#ffffff', 0.94),
+    carpet: material('#ffffff', 0.98),
+    wall: material('#b5c3c5', 0.86),
     wallDark: material('#102635', 0.76),
     teal: material('#13b99f', 0.48, 0.08),
     tealLight: material('#7ce0c9', 0.52),
-    wood: material('#815b3e', 0.58),
+    wood: material('#ffffff', 0.62),
     woodEdge: material('#3a2b22', 0.62),
     metal: material('#7c929b', 0.48, 0.35),
     darkMetal: material('#182a38', 0.54, 0.2),
@@ -91,6 +91,65 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     plantLight: material('#71a66f', 0.95),
     gold: material('#c59c62', 0.64, 0.12)
   };
+
+  // Small deterministic canvas textures make surfaces readable without downloading assets.
+  function makeSurfaceTexture(kind, width = 256, height = 256) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width; canvas.height = height;
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (kind === 'wood') {
+      ctx.fillStyle = '#765238'; ctx.fillRect(0, 0, width, height);
+      for (let i = 0; i < 115; i++) {
+        const y = (i * 37) % height;
+        const x = (i * 83) % width;
+        const length = width * (0.18 + ((i * 17) % 70) / 100);
+        ctx.strokeStyle = i % 3 ? 'rgba(226,180,126,0.12)' : 'rgba(35,20,12,0.16)';
+        ctx.lineWidth = 1 + (i % 3);
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.bezierCurveTo(x + length * 0.28, y - 2, x + length * 0.7, y + 2, x + length, y); ctx.stroke();
+      }
+      for (let i = 0; i < 12; i++) {
+        ctx.strokeStyle = 'rgba(30,18,12,0.10)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse((i * 47) % width, (i * 71) % height, 10 + (i % 4) * 4, 3 + (i % 3), 0.08, 0, Math.PI * 2); ctx.stroke();
+      }
+    } else if (kind === 'carpet') {
+      ctx.fillStyle = '#536a70'; ctx.fillRect(0, 0, width, height);
+      for (let y = 0; y < height; y += 4) {
+        ctx.fillStyle = y % 8 ? 'rgba(220,235,235,0.035)' : 'rgba(12,32,40,0.065)';
+        ctx.fillRect(0, y, width, 2);
+      }
+      for (let x = 0; x < width; x += 4) {
+        ctx.fillStyle = x % 8 ? 'rgba(220,235,235,0.025)' : 'rgba(12,32,40,0.05)';
+        ctx.fillRect(x, 0, 2, height);
+      }
+    } else {
+      ctx.fillStyle = '#79888b'; ctx.fillRect(0, 0, width, height);
+      // Deterministic speckle avoids random per-load noise and keeps the texture tileable.
+      for (let i = 0; i < 2200; i++) {
+        const x = (i * 73 + (i * i * 7)) % width;
+        const y = (i * 151 + (i * i * 3)) % height;
+        ctx.fillStyle = i % 2 ? 'rgba(235,242,239,0.08)' : 'rgba(18,39,45,0.07)';
+        ctx.fillRect(x, y, 1 + (i % 2), 1 + (i % 2));
+      }
+      for (let y = 0; y < height; y += 64) {
+        ctx.strokeStyle = 'rgba(230,240,238,0.06)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+      }
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.anisotropy = Math.min(quality.anisotropy, renderer.capabilities.getMaxAnisotropy());
+    return texture;
+  }
+  const floorSurfaceTexture = makeSurfaceTexture('floor', 256, 256);
+  floorSurfaceTexture.repeat.set(10, 9);
+  mats.floor.map = floorSurfaceTexture; mats.floor.bumpMap = floorSurfaceTexture; mats.floor.bumpScale = 0.018; mats.floor.needsUpdate = true;
+  const carpetSurfaceTexture = makeSurfaceTexture('carpet', 128, 128);
+  carpetSurfaceTexture.repeat.set(18, 16);
+  mats.carpet.map = carpetSurfaceTexture; mats.carpet.needsUpdate = true;
+  const woodSurfaceTexture = makeSurfaceTexture('wood', 512, 256);
+  woodSurfaceTexture.repeat.set(2, 1);
+  mats.wood.map = woodSurfaceTexture; mats.wood.bumpMap = woodSurfaceTexture; mats.wood.bumpScale = 0.025; mats.wood.needsUpdate = true;
 
   function makeScreenTexture() {
     const canvas = document.createElement('canvas');
@@ -136,6 +195,23 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     return geometry;
   }
   const boxGeometry = makeRoundedUnitBox();
+  function makeRoundedBoxGeometry(width, height, depth) {
+    const bevel = Math.min(0.024, depth * 0.12, width * 0.025, height * 0.06);
+    const radius = Math.min(0.085, width * 0.08, height * 0.12);
+    const w = Math.max(0.001, width - bevel * 2);
+    const h = Math.max(0.001, height - bevel * 2);
+    const shape = new THREE.Shape();
+    shape.moveTo(-w / 2 + radius, -h / 2);
+    shape.lineTo(w / 2 - radius, -h / 2); shape.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + radius);
+    shape.lineTo(w / 2, h / 2 - radius); shape.quadraticCurveTo(w / 2, h / 2, w / 2 - radius, h / 2);
+    shape.lineTo(-w / 2 + radius, h / 2); shape.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - radius);
+    shape.lineTo(-w / 2, -h / 2 + radius); shape.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + radius, -h / 2);
+    const coreDepth = Math.max(0.001, depth - bevel * 2);
+    const geometry = new THREE.ExtrudeGeometry(shape, { depth: coreDepth, steps: 1, bevelEnabled: bevel > 0.001, bevelSegments: 2, bevelSize: bevel, bevelThickness: bevel, curveSegments: 4 });
+    geometry.translate(0, 0, -coreDepth / 2);
+    geometry.computeVertexNormals();
+    return geometry;
+  }
   const sphereGeometry = new THREE.SphereGeometry(1, tier === 'low' ? 12 : 20, tier === 'low' ? 8 : 14);
   const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, tier === 'low' ? 12 : 20);
   const planeGeometry = new THREE.PlaneGeometry(1, 1);
@@ -157,7 +233,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   });
   const dummy = new THREE.Object3D();
   function addBox(parent, name, size, position, mat, rotationY = 0) {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), mat);
+    const mesh = new THREE.Mesh(makeRoundedBoxGeometry(...size), mat);
     mesh.name = name;
     mesh.position.set(...position);
     mesh.rotation.y = rotationY;
@@ -239,7 +315,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   const zPositions = [-7, -1, 5];
   const stations = [];
   const deskTops = [], deskEdges = [], deskLegs = [], modestyPanels = [], dividers = [], dividerSides = [];
-  const monitorFrames = [], monitorScreens = [], monitorStands = [], monitorFeet = [], keyboards = [];
+  const monitorFrames = [], monitorScreens = [], monitorStands = [], monitorFeet = [], keyboards = [], keyboardKeycaps = [], pointingDevices = [], monitorIndicators = [];
   const chairSeats = [], chairBacks = [], chairPosts = [], chairBases = [];
   const stationLights = [];
   let stationId = 1;
@@ -261,6 +337,13 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
         monitorFeet.push({ x: mx, y: 0.99, z: mz + 0.04, sx: 0.48, sy: 0.045, sz: 0.25 });
       }
       keyboards.push({ x, y: 0.94, z: z + 0.39, sx: 1.16, sy: 0.045, sz: 0.32 });
+      for (let keyRow = 0; keyRow < 2; keyRow++) {
+        for (let keyCol = 0; keyCol < 8; keyCol++) {
+          keyboardKeycaps.push({ x: x + (keyCol - 3.5) * 0.125, y: 0.969, z: z + 0.30 + keyRow * 0.13, sx: 0.088, sy: 0.018, sz: 0.075 });
+        }
+      }
+      pointingDevices.push({ x: x + 0.83, y: 0.982, z: z + 0.40, sx: 0.105, sy: 0.045, sz: 0.15 });
+      monitorIndicators.push({ x: x - 0.57, y: 1.62, z: z - 0.424, sx: 0.035, sy: 0.025, sz: 0.014, color: '#71e6c7' }, { x: x + 0.58, y: 1.62, z: z - 0.424, sx: 0.035, sy: 0.025, sz: 0.014, color: '#71e6c7' });
       chairSeats.push({ x, y: 0.64, z: z + 1.86, sx: 0.78, sy: 0.15, sz: 0.7 });
       chairBacks.push({ x, y: 1.18, z: z + 2.18, sx: 0.74, sy: 0.94, sz: 0.14 });
       chairPosts.push({ x, y: 0.3, z: z + 1.86, sx: 0.12, sy: 0.54, sz: 0.12 });
@@ -279,6 +362,9 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   addInstances('monitor-stands', boxGeometry, mats.darkMetal, monitorStands);
   addInstances('monitor-feet', boxGeometry, mats.metal, monitorFeet);
   addInstances('keyboards', boxGeometry, mats.darkMetal, keyboards);
+  addInstances('keyboard-keycaps', boxGeometry, material('#82949a', 0.72), keyboardKeycaps);
+  addInstances('pointing-devices', sphereGeometry, mats.darkMetal, pointingDevices);
+  addInstances('monitor-status-indicators', sphereGeometry, new THREE.MeshBasicMaterial({ color: '#71e6c7' }), monitorIndicators);
   addInstances('chair-seats', boxGeometry, mats.chair, chairSeats);
   addInstances('chair-backs', boxGeometry, mats.chair, chairBacks);
   addInstances('chair-posts', cylinderGeometry, mats.metal, chairPosts);
@@ -334,6 +420,11 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   const aisleMarks = [];
   for (let z = -12; z <= 12; z += 2.4) aisleMarks.push({ x: 0, y: 0.012, z, sx: 0.045, sy: 0.015, sz: 0.7 });
   addInstances('aisle-wayfinding', boxGeometry, mats.tealLight, aisleMarks);
+  const overheadFixtures = [];
+  for (const z of [-7, -1, 5]) for (const x of [-9, -3, 3, 9]) {
+    overheadFixtures.push({ x, y: 3.16, z: z - 1.1, sx: 2.35, sy: 0.045, sz: 0.22 });
+  }
+  addInstances('overhead-led-fixtures', boxGeometry, new THREE.MeshBasicMaterial({ color: '#f5f0df', toneMapped: false }), overheadFixtures);
 
   // Detailed low-poly staff: shared anatomy geometry, articulated arms and legs,
   // facial features, headset equipment and individual uniform/scarf materials.
@@ -461,8 +552,10 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   let frameId = 0;
   let loopActive = false;
   let lastFrameAt = 0;
-  let averageRenderMs = 0;
+  let averageFrameMs = 0;
   let lastQualityCheck = 0;
+  let slowFrameStreak = 0;
+  let headroomStreak = 0;
   let hostInView = true;
   let disposed = false;
   let assetsReady = true;
@@ -506,14 +599,22 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   else listen(window, 'resize', resize, { passive: true });
   resize();
 
-  function adaptResolution(cost, timestamp) {
-    averageRenderMs = averageRenderMs ? averageRenderMs * 0.86 + cost * 0.14 : cost;
+  function adaptResolution(frameMs, timestamp) {
+    averageFrameMs = averageFrameMs ? averageFrameMs * 0.82 + frameMs * 0.18 : frameMs;
     if (!lastQualityCheck) { lastQualityCheck = timestamp; return; }
-    if (timestamp - lastQualityCheck < 4000) return;
+    if (timestamp - lastQualityCheck < 2600) return;
     lastQualityCheck = timestamp;
+    const targetFrameMs = 1000 / quality.fps;
+    if (averageFrameMs > targetFrameMs * 1.22) {
+      slowFrameStreak++; headroomStreak = 0;
+    } else if (averageFrameMs < targetFrameMs * 1.08) {
+      headroomStreak++; slowFrameStreak = Math.max(0, slowFrameStreak - 1);
+    } else {
+      slowFrameStreak = Math.max(0, slowFrameStreak - 1); headroomStreak = 0;
+    }
     let next = currentPixelRatio;
-    if (averageRenderMs > 28) next = Math.max(quality.minRatio, currentPixelRatio - 0.09);
-    else if (averageRenderMs < 15) next = Math.min(pixelRatioCap, currentPixelRatio + 0.04);
+    if (slowFrameStreak >= 2) { next = Math.max(quality.minRatio, currentPixelRatio - 0.10); slowFrameStreak = 0; }
+    else if (headroomStreak >= 3) { next = Math.min(pixelRatioCap, currentPixelRatio + 0.035); headroomStreak = 0; }
     if (Math.abs(next - currentPixelRatio) >= 0.025) {
       currentPixelRatio = Number(next.toFixed(2));
       renderer.setPixelRatio(currentPixelRatio);
@@ -607,14 +708,14 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     if (document.hidden || (!hostInView && !immersive) || !immersive) { stopRenderLoop(); return; }
     const interval = 1000 / quality.fps;
     if (lastFrameAt && timestamp - lastFrameAt < interval) { frameId = requestAnimationFrame(animate); return; }
-    const delta = lastFrameAt ? Math.min((timestamp - lastFrameAt) / 1000, 0.05) : 1 / quality.fps;
+    const frameMs = lastFrameAt ? timestamp - lastFrameAt : 1000 / quality.fps;
+    const delta = Math.min(frameMs / 1000, 0.05);
     lastFrameAt = timestamp;
     const elapsed = timestamp / 1000;
     updatePlayer(delta);
     updateStaff(delta, elapsed);
-    const started = performance.now();
     renderer.render(scene, camera);
-    adaptResolution(performance.now() - started, timestamp);
+    adaptResolution(frameMs, timestamp);
     frameId = requestAnimationFrame(animate);
   }
 
@@ -796,7 +897,8 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
         }
         if (object.material && !Array.isArray(object.material) && !Object.values(mats).includes(object.material)) object.material.dispose?.();
       });
-      brandTexture.dispose(); mats.screen.map?.dispose?.(); contactShadowTexture.dispose(); contactShadowMaterial.dispose();
+      brandTexture.dispose(); mats.screen.map?.dispose?.(); floorSurfaceTexture.dispose(); carpetSurfaceTexture.dispose(); woodSurfaceTexture.dispose(); contactShadowTexture.dispose(); contactShadowMaterial.dispose();
+      [boxGeometry, sphereGeometry, cylinderGeometry, planeGeometry, bodyGeometry, upperArmGeometry, forearmGeometry, legGeometry, headGeometry, handGeometry, shoeGeometry, neckGeometry, noseGeometry, eyeGeometry, irisGeometry, hairCapGeometry, headsetArcGeometry, earPadGeometry, waistGeometry].forEach((geometry) => geometry.dispose?.());
       renderer.dispose(); host.replaceChildren();
     }
   };

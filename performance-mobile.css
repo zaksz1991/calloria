@@ -120,3 +120,36 @@ body.calloria-game-playing .world-action-bar { display:none !important; }
 @media (prefers-reduced-motion:reduce) {
   body.calloria-game-launch *,body.calloria-game-launch *::before,body.calloria-game-launch *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; transition-duration:.01ms !important; }
 }
+
+/* v3 render-quality and phone layout refinements */
+body.calloria-game-launch,
+body.calloria-game-playing { overscroll-behavior:none; }
+body.calloria-game-launch #worldCanvas,
+body.calloria-game-playing #worldCanvas { contain:layout paint size; }
+body.calloria-game-launch #worldCanvas canvas,
+body.calloria-game-playing #worldCanvas canvas {
+  image-rendering:auto;
+  transform:translateZ(0);
+  backface-visibility:hidden;
+}
+body.calloria-game-launch .game-launch-copy,
+body.calloria-game-launch .game-launch-top,
+body.calloria-game-launch .game-launch-footer { min-width:0; }
+body.calloria-game-launch button,
+body.calloria-game-playing button { -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+@media (max-width:480px) {
+  body.calloria-game-launch .game-launch-top { flex-wrap:wrap; }
+  body.calloria-game-launch .game-launch-account { max-width:100%; flex:0 0 auto; }
+  body.calloria-game-launch .game-launch-copy h1 { max-width:8ch; }
+  body.calloria-game-launch .game-launch-actions > button { flex:1 1 138px; }
+  body.calloria-game-launch .game-stats-bar { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  body.calloria-game-launch .game-stat strong { font-variant-numeric:tabular-nums; }
+}
+@media (max-width:350px) {
+  body.calloria-game-launch #gameLaunchScreen { padding-left:9px; padding-right:9px; }
+  body.calloria-game-launch .game-brand small { display:none; }
+  body.calloria-game-launch .game-account-button { min-height:44px; padding:8px 9px; }
+  body.calloria-game-launch .game-launch-copy h1 { font-size:34px; }
+  body.calloria-game-launch .game-launch-copy > p { font-size:11px; }
+  body.calloria-game-launch .game-stat span { font-size:6.5px; }
+}
