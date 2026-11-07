@@ -1,17 +1,23 @@
-CALLORIA Phase 10 final local verification
+CALLORIA Phase 11 focused verification
 
-PASSED
-- node --check js/performance-engine.js
-- node --check js/performance-workbench.js
-- node --check js/agent-desk-workbench.js
-- node --check vite.config.js
-- tsc --noEmit -p tsconfig.edge.json
-- node --test tests/*.test.mjs: 15 passed, 0 failed
-- migration namespace/RLS and package integration checks are included in the passing test suite
+PASS node --check js/sales-desk-engine.js
+PASS node --check js/sales-desk-workbench.js
+PASS node --check vite.config.js
+PASS node --test tests/*.test.mjs — 15 tests passed
+PASS tsc --noEmit -p tsconfig.edge.json
+PASS package.json JSON parse
+PASS supabase/config.toml TOML parse
+PASS sales-desk.html HTML parser
+PASS agent-desk.html HTML parser
+PASS CSS brace balance
+PASS static DOM ID contract
+PASS recommendation response single-write guard and audit event contract
+PASS preserved multi-page Vite entry contract
+PASS isolated migration/RLS contract checks
 
 NOT RUN
-- Full Vite build against the complete Phase 9 application repository (this package is an overlay and does not contain the full root app source tree or installed node_modules)
-- Live Supabase migration, Edge Function deployment, or staff-account integration
-- Vercel deployment or physical-device testing
-
-Do not interpret local syntax and unit tests as proof of a successful production build or deployment.
+- Complete repository Vite production build
+- Full existing CALLORIA repository test suite
+- Live Supabase migration/deployment
+- Live staff authentication, consent integration or browser end-to-end tests
+- Vercel deployment or physical Android testing

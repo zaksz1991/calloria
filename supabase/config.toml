@@ -25,3 +25,6 @@ verify_jwt = false
 
 [functions.calloria-performance]
 verify_jwt = false
+
+[functions.calloria-sales-desk]
+verify_jwt = false

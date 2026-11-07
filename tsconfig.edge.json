@@ -19,6 +19,8 @@
     "supabase/functions/calloria-workforce/**/*.ts",
     "supabase/functions/calloria-workforce/**/*.d.ts",
     "supabase/functions/calloria-performance/**/*.ts",
-    "supabase/functions/calloria-performance/**/*.d.ts"
+    "supabase/functions/calloria-performance/**/*.d.ts",
+    "supabase/functions/calloria-sales-desk/**/*.ts",
+    "supabase/functions/calloria-sales-desk/**/*.d.ts"
   ]
 }

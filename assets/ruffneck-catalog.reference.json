@@ -1,0 +1,74 @@
+{
+  "version": "2026-11-07.1",
+  "notice": "Portfolio descriptions are high-level and must be confirmed against the current product owner before quoting feature availability, pricing, service levels or commercial terms.",
+  "products": [
+    {
+      "id": "ruffneck-learn",
+      "name": "RuffNeck Learn",
+      "url": "https://ruffneck-lms.vercel.app/",
+      "category": "learning",
+      "summary": "A practical learning platform for AI, digital systems, professional skills and structured courses.",
+      "customer_needs": ["learn", "training", "skills", "career", "professional_development", "ai_literacy"],
+      "self_service": ["Open the platform and review the available course catalogue.", "Use the sign-in or account recovery options shown on the platform.", "Review course details and enrolment information before making a payment.", "Use the learner dashboard to check available learning activity and course progress."],
+      "sales_boundary": "Do not invent course prices, certificates, access periods, discounts or completion guarantees. Confirm current course availability and terms on the platform."
+    },
+    {
+      "id": "ruffneck-prospector",
+      "name": "RuffNeck Prospector",
+      "url": "https://ruffneck-prospector.vercel.app/",
+      "category": "business_growth",
+      "summary": "A prospecting and lead-workflow platform for finding, organising and working with potential customers.",
+      "customer_needs": ["lead_generation", "prospecting", "sales", "pipeline", "business_growth", "customer_acquisition"],
+      "self_service": ["Open the platform and review its available prospecting workspace.", "Use the available search and qualification controls for your permitted business purpose.", "Keep prospect records accurate and respect applicable privacy and marketing rules.", "Use the platform's visible account and support options for access issues."],
+      "sales_boundary": "Do not promise lead volume, data freshness, conversion outcomes, or access to data not visible in the customer's account."
+    },
+    {
+      "id": "ruffneck-connect",
+      "name": "RuffNeck Connect",
+      "url": "https://ruffneck-connect.vercel.app/",
+      "category": "community",
+      "summary": "A community and collaboration platform for purposeful connections, shared interests, offers and needs.",
+      "customer_needs": ["community", "collaboration", "networking", "partnership", "shared_interests", "belonging"],
+      "self_service": ["Open the platform and explore available communities.", "Review each community's description and conduct expectations.", "Use the join or participation controls presented by the community.", "Avoid posting another person's private information or unsolicited promotions."],
+      "sales_boundary": "Do not promise membership approval, a specific match, employment, funding or a business outcome."
+    },
+    {
+      "id": "ruffneck-social-hub",
+      "name": "RuffNeck Social Hub",
+      "url": "https://ruffneck-social-hub.vercel.app/",
+      "category": "social_operations",
+      "summary": "A workspace for managing social-media operations, content workflows and connected brand activity.",
+      "customer_needs": ["social_media", "content_management", "brand_management", "publishing", "community_management", "marketing_operations"],
+      "self_service": ["Open the workspace and sign in through the organisation's authorised account.", "Review connected channels and the permissions requested before authorising them.", "Use the available content and publishing workflows for the channels enabled on the account.", "Never share social-platform passwords or two-factor codes with support staff."],
+      "sales_boundary": "Do not claim that a platform API, channel, publishing format or automation is available unless the current product workspace confirms it."
+    },
+    {
+      "id": "kano-run",
+      "name": "Kano Run / Kano Life",
+      "url": "https://kano-run.vercel.app/",
+      "category": "entertainment",
+      "summary": "A Kano-themed driving and life simulation experience centred on local routes, passenger operations and career progression.",
+      "customer_needs": ["games", "entertainment", "driving_game", "simulation", "kano", "casual_play"],
+      "self_service": ["Open the game in a supported browser.", "Allow the game to finish loading before changing graphics settings.", "Use the visible touch or keyboard controls shown by the game.", "For performance or loading problems, record the device type, browser and visible error without sharing private account credentials."],
+      "sales_boundary": "Do not promise a specific frame rate, device compatibility, multiplayer capability or reward unless confirmed in the current game."
+    },
+    {
+      "id": "kano-keke",
+      "name": "Kano Keke",
+      "url": "https://kano-keke.vercel.app/",
+      "category": "entertainment",
+      "summary": "A Kano keke-driving life-simulation and entertainment experience.",
+      "customer_needs": ["games", "entertainment", "driving_game", "keke", "simulation", "kano", "casual_play"],
+      "self_service": ["Open the game in a supported browser.", "Allow the initial scene and assets to load.", "Use the in-game controls and settings available on the current device.", "Report reproducible issues with browser, device and a short description."],
+      "sales_boundary": "Do not promise device support, saved progress across devices, rewards or online features unless confirmed in the current game."
+    }
+  ],
+  "service_lines": [
+    {"id":"digital_skills_training","name":"Digital skills and AI training","summary":"Enquiries about learning needs, course suitability and professional upskilling.","related_products":["ruffneck-learn"]},
+    {"id":"business_prospecting","name":"Business prospecting support","summary":"Enquiries about lead workflows, prospecting needs and business development use cases.","related_products":["ruffneck-prospector"]},
+    {"id":"community_collaboration","name":"Community and collaboration support","summary":"Enquiries about community participation, collaboration and networking needs.","related_products":["ruffneck-connect"]},
+    {"id":"social_media_operations","name":"Social-media operations support","summary":"Enquiries about content workflows, brand operations and supported social-channel capabilities.","related_products":["ruffneck-social-hub"]},
+    {"id":"customer_care_consultation","name":"Customer-care and service consultation","summary":"General enquiries about customer-care setup, service requirements and support options.","related_products":[]},
+    {"id":"game_entertainment","name":"Digital entertainment and simulation","summary":"Enquiries and support for RuffNeck's Kano-themed driving and life-simulation games.","related_products":["kano-run","kano-keke"]}
+  ]
+}

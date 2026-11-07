@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#07131f" />
+  <meta name="description" content="CALLORIA staff sales enablement and consent-led RuffNeck portfolio recommendations." />
+  <title>CALLORIA · Sales Desk</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/calloria-mark.svg" />
+  <link rel="stylesheet" href="/styles/sales-desk.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="CALLORIA home"><span class="brand-mark">C</span><span><b>CALLORIA</b><small>RUFFNECK SALES ENABLEMENT</small></span></a>
+      <nav class="topnav" aria-label="Staff navigation">
+        <a href="/agent-desk.html">Agent Desk</a><a href="/customer-360.html">Customer 360</a><a href="/workforce.html">Workforce</a><a href="/performance.html">Performance</a><a href="/customer-care.html">Customer Care</a>
+        <button id="sign-out" class="button quiet" type="button" hidden>Sign out</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="login-panel" class="login-wrap">
+        <div class="login-card">
+          <div class="eyebrow">RESTRICTED STAFF ACCESS</div>
+          <h1>Sales Desk</h1>
+          <p class="muted">Understand the customer's need, present the right RuffNeck product or service, record their decision and arrange consent-verified follow-up.</p>
+          <form id="login-form" class="form-stack">
+            <label>Staff email<input id="staff-email" type="email" autocomplete="username" required maxlength="180"></label>
+            <label>Password<input id="staff-password" type="password" autocomplete="current-password" required maxlength="200"></label>
+            <button class="button primary full" type="submit">Sign in to Sales Desk</button>
+            <div id="login-status" class="status" role="status" aria-live="polite"></div>
+          </form>
+          <p class="security-note">Staff access uses Supabase Auth and a separate server-side CALLORIA Sales Desk permission map. No public registration.</p>
+        </div>
+      </section>
+
+      <section id="workspace" hidden>
+        <div class="page-heading">
+          <div><div class="eyebrow">RUFFNECK ENTERTAINMENT · CUSTOMER NEEDS & PRODUCT FIT</div><h1>Sales & Cross-Sell Workspace</h1><p class="muted">Recommend only what fits. Customer care comes before selling. No invented pricing, forced upsell or unverified sale claims.</p></div>
+          <div class="staff-badge"><strong id="staff-name">Staff</strong><small id="staff-scope">Department scope</small></div>
+        </div>
+
+        <section class="metric-grid" aria-label="Sales pipeline metrics">
+          <article class="metric"><span>Open opportunities</span><strong id="metric-open">0</strong><small>Within your access scope</small></article>
+          <article class="metric"><span>Discovery</span><strong id="metric-discovery">0</strong><small>Needs being understood</small></article>
+          <article class="metric"><span>Customer interested</span><strong id="metric-interested">0</strong><small>Interest recorded</small></article>
+          <article class="metric"><span>Referred to platform</span><strong id="metric-referred">0</strong><small>Customer self-service hand-off</small></article>
+        </section>
+
+        <div class="main-grid">
+          <aside class="panel create-panel">
+            <div class="panel-heading"><div><div class="eyebrow">START WITH THE NEED</div><h2>New opportunity</h2></div></div>
+            <form id="opportunity-form" class="form-stack">
+              <label>Department<select id="department" required></select></label>
+              <div class="two-col">
+                <label>Contact channel<select id="source-channel" required><option value="voice">Voice</option><option value="email">Email</option><option value="live_chat">Live chat</option><option value="social">Social media</option><option value="whatsapp">WhatsApp</option><option value="website">Website</option><option value="portal">Portal</option><option value="in_person">In person</option><option value="platform_referral">Platform referral</option></select></label>
+                <label>Enquiry source<select id="source-type"><option value="inbound_enquiry">Inbound enquiry</option><option value="customer_requested">Customer requested product information</option><option value="platform_referral">Platform referral</option><option value="staff_referral">Staff referral</option></select></label>
+              </div>
+              <label>Primary customer need<select id="need-category" required>
+                <option value="">Select the actual need</option><option value="learning_development">Learning, AI & digital skills</option><option value="business_growth">Business growth & lead generation</option><option value="community_collaboration">Community & collaboration</option><option value="social_media_operations">Social-media management</option><option value="entertainment">Games & entertainment</option><option value="career_development">Career & professional development</option><option value="customer_care_consultation">Customer-care consultation</option><option value="technical_support">Technical support</option><option value="product_access">Access to an existing product</option><option value="cross_platform">Multiple RuffNeck products</option>
+              </select></label>
+              <label>Customer 360 record ID <span class="optional">optional</span><input id="crm-customer-id" maxlength="64" placeholder="Customer record UUID, not email or phone"></label>
+              <label>Need summary<textarea id="need-summary" rows="4" maxlength="700" required placeholder="Record what the customer is trying to achieve. Do not include credentials, payment details or unnecessary personal information."></textarea></label>
+              <div class="privacy-hint">Personal contact details and payment credentials are not needed here. The server redacts common sensitive patterns and encrypts the summary before storage.</div>
+              <button class="button primary full" type="submit">Create opportunity</button>
+              <div id="form-status" class="status" role="status" aria-live="polite"></div>
+            </form>
+          </aside>
+
+          <section class="panel pipeline-panel">
+            <div class="panel-heading"><div><div class="eyebrow">YOUR PERMITTED PIPELINE</div><h2>Opportunities</h2></div><button id="refresh" class="button outline" type="button">Refresh</button></div>
+            <div class="filter-row"><label>Stage<select id="stage-filter"><option value="all">All stages</option><option value="new">New</option><option value="discovery">Discovery</option><option value="recommended">Recommended</option><option value="customer_interested">Customer interested</option><option value="referred_to_platform">Referred</option><option value="follow_up_due">Follow-up due</option><option value="closed_no_interest">Closed</option></select></label></div>
+            <div id="opportunity-list" class="opportunity-list"><div class="empty-state">Sign in to load your opportunities.</div></div>
+          </section>
+
+          <section class="panel detail-panel">
+            <div id="no-selection" class="empty-detail"><div class="empty-icon">↗</div><h2>Select an opportunity</h2><p>Customer need, product-fit recommendations, follow-up tasks and activity history will appear here.</p></div>
+            <div id="opportunity-detail" hidden>
+              <div class="detail-title"><div><div class="eyebrow" id="opp-id">OPPORTUNITY</div><h2 id="opp-title">Customer need</h2><p id="opp-subline" class="muted small"></p></div><span id="opp-stage" class="stage-pill">New</span></div>
+              <div class="summary-block"><h3>Need summary</h3><p id="opp-summary"></p></div>
+              <div class="detail-meta" id="opp-meta"></div>
+              <section class="detail-section">
+                <div class="section-heading"><div><div class="eyebrow">PRODUCT SUITABILITY</div><h3>Recommendations</h3></div></div>
+                <div id="recommendation-options" class="recommendation-options"></div>
+                <div class="recommend-actions"><button id="present-requested" class="button primary" type="button">Present customer-requested options</button><button id="present-proactive" class="button outline" type="button">Proactive cross-sell (consent required)</button></div>
+                <p class="small muted">Customer-requested options are available only when the opportunity source is recorded as “Customer requested product information”. Proactive recommendations are blocked unless the latest Customer 360 marketing consent is recorded as granted.</p>
+                <div id="recommendation-status" class="status" role="status"></div>
+                <div id="presented-list" class="presented-list"></div>
+              </section>
+              <section class="detail-section">
+                <div class="section-heading"><div><div class="eyebrow">PIPELINE CONTROL</div><h3>Next action</h3></div></div>
+                <div id="stage-actions" class="stage-actions"></div>
+              </section>
+              <section class="detail-section followup-block">
+                <div class="section-heading"><div><div class="eyebrow">CONSENT-VERIFIED TASK</div><h3>Schedule follow-up</h3></div></div>
+                <form id="followup-form" class="form-stack">
+                  <div class="two-col"><label>Follow-up purpose<select id="followup-purpose"><option value="service_contact">Customer-requested service follow-up</option><option value="marketing">Marketing / promotional contact</option></select></label><label>Due date and time<input id="followup-due" type="datetime-local" required></label></div>
+                  <button class="button outline" type="submit">Check consent & schedule task</button>
+                  <div id="followup-status" class="status" role="status"></div>
+                </form>
+                <div id="followup-list" class="followup-list"></div>
+              </section>
+              <section class="detail-section">
+                <div class="section-heading"><div><div class="eyebrow">AUDIT TRAIL</div><h3>Activity</h3></div></div>
+                <div id="event-list" class="event-list"></div>
+              </section>
+            </div>
+          </section>
+        </div>
+        <div id="global-status" class="global-status status" role="status" aria-live="polite">Ready.</div>
+
+        <section class="panel portfolio-panel">
+          <div class="panel-heading"><div><div class="eyebrow">RUFFNECK ENTERTAINMENT PORTFOLIO</div><h2>Product and service reference</h2></div><span class="small muted">Verify current features, pricing and terms on the destination platform.</span></div>
+          <div id="portfolio-grid" class="portfolio-grid"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="/js/sales-desk-workbench.js"></script>
+</body>
+</html>
