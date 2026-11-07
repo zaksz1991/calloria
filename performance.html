@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#081526">
+  <meta name="description" content="CALLORIA evidence-backed performance reviews, quality assurance, coaching and promotion assessments.">
+  <title>CALLORIA · Performance & Career</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/calloria-mark.svg">
+  <link rel="stylesheet" href="/styles/performance.css">
+</head>
+<body>
+  <div class="perf-shell">
+    <header class="perf-topbar">
+      <a class="perf-brand" href="/" aria-label="CALLORIA home"><span class="perf-mark">C</span><span><b>CALLORIA</b><small>PERFORMANCE & CAREER</small></span></a>
+      <nav class="perf-nav" aria-label="Staff tools">
+        <a href="/agent-desk">Agent Desk</a><a href="/workforce">Workforce</a><a href="/case-desk">Case Desk</a><a href="/customer-360">Customer 360</a>
+        <button id="perf-sign-out" class="perf-button quiet" type="button" hidden>Sign out</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="perf-login" class="perf-login-wrap">
+        <form id="perf-login-form" class="perf-login-card">
+          <p class="eyebrow">RESTRICTED PEOPLE OPERATIONS</p>
+          <h1>Performance & Career</h1>
+          <p class="muted">Monthly evidence-backed reviews, quality calibration, coaching and annual promotion assessments.</p>
+          <label>Staff email<input id="perf-email" type="email" autocomplete="username" maxlength="180" required></label>
+          <label>Password<input id="perf-password" type="password" autocomplete="current-password" maxlength="200" required></label>
+          <button class="perf-button primary" type="submit">Sign in</button>
+          <p id="perf-login-status" class="perf-status" role="status" aria-live="polite"></p>
+          <p class="security-note">No public registration. Access is checked against Supabase Auth and the separate Performance access map.</p>
+        </form>
+      </section>
+
+      <section id="perf-app" hidden>
+        <div class="perf-heading">
+          <div><p class="eyebrow">RUFFNECK ENTERTAINMENT · PEOPLE DEVELOPMENT</p><h1>Performance & Career Centre</h1><p class="muted">Quality first. Fair evidence. Coaching before consequences. Promotion through demonstrated competence.</p></div>
+          <div class="perf-staff-pill"><strong id="perf-staff-label">Staff member</strong><small id="perf-staff-scope">Access scope</small></div>
+        </div>
+
+        <div class="perf-metrics">
+          <article><span>Latest reviewed score</span><strong id="perf-metric-score">—</strong><small>Most recent month</small></article>
+          <article><span>Reviewed months</span><strong id="perf-metric-reviewed">0</strong><small>Available history</small></article>
+          <article><span>Open coaching actions</span><strong id="perf-metric-coaching">0</strong><small>Development plan</small></article>
+          <article><span>Promotion readiness</span><strong id="perf-metric-ready">Not yet</strong><small>KPI gates + exam + approval</small></article>
+        </div>
+
+        <section class="perf-panel career-panel">
+          <div class="panel-head"><div><p class="eyebrow">CAREER PROGRESSION</p><h2>My next career step</h2></div><span class="pill" id="perf-current-role">Assigned profile</span></div>
+          <p class="muted" id="perf-eligibility-reason">Three reviewed monthly scorecards are required before an annual promotion exam can be opened.</p>
+          <div class="career-actions">
+            <label>Promotion target<select id="perf-target-role"></select></label>
+            <button id="perf-start-exam" class="perf-button primary" type="button" disabled>Start annual promotion exam</button>
+          </div>
+          <div id="perf-exam-history" class="exam-history"><p class="empty">Promotion exam history will appear here.</p></div>
+          <p class="small muted">A passed exam is not an automatic promotion. Role vacancy, conduct, required training, competency and formal management approval still apply. Maximum three annual attempts per target within three calendar years.</p>
+        </section>
+
+        <div class="perf-columns">
+          <section class="perf-panel">
+            <div class="panel-head"><div><p class="eyebrow">PERSONAL RECORD</p><h2>My performance reviews</h2></div><button id="perf-refresh" class="perf-button outline" type="button">Refresh</button></div>
+            <div class="table-wrap"><table><thead><tr><th>Period</th><th>Role profile</th><th>Score</th><th>Rating</th><th>Review status</th></tr></thead><tbody id="perf-my-scorecards"><tr><td colspan="5">Your reviewed periods will appear here.</td></tr></tbody></table></div>
+          </section>
+          <section class="perf-panel">
+            <div class="panel-head"><div><p class="eyebrow">MANAGER FEEDBACK</p><h2>Review conversations</h2></div></div>
+            <div id="perf-my-reviews" class="review-list"><p class="empty">Manager feedback will appear here after a review.</p></div>
+            <div class="panel-head" style="margin-top:20px"><div><p class="eyebrow">DEVELOPMENT</p><h2>Coaching actions</h2></div></div>
+            <div id="perf-my-coaching" class="coaching-list"><p class="empty">No coaching actions recorded.</p></div>
+          </section>
+        </div>
+
+        <section id="perf-manager-panel" class="perf-panel" hidden>
+          <div class="panel-head"><div><p class="eyebrow">SUPERVISOR / PEOPLE OPERATIONS</p><h2>Monthly scorecards</h2></div><button id="perf-load-team" class="perf-button outline" type="button">Load team</button></div>
+          <div class="filters">
+            <label>Review month<input id="perf-month" type="month" required></label>
+            <label>Department<select id="perf-department"></select></label>
+            <label>Staff member<select id="perf-staff-select"></select></label>
+            <button id="perf-open-scorecard" class="perf-button primary" type="button">Prepare scorecard</button>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Staff reference</th><th>Department</th><th>Role</th><th>Score</th><th>Gates</th><th>Status</th><th>Action</th></tr></thead><tbody id="perf-team-rows"><tr><td colspan="7">Select a month and department, then load the team.</td></tr></tbody></table></div>
+          <p id="perf-team-status" class="perf-status" role="status" aria-live="polite"></p>
+          <form id="perf-coaching-form" class="coaching-create">
+            <h3>Assign a coaching action</h3>
+            <div class="filters">
+              <label>Staff member<select id="perf-coaching-staff" required></select></label>
+              <label>Due date<input id="perf-coaching-due" type="date"></label>
+              <label class="wide-label">Specific development action<textarea id="perf-coaching-plan" rows="2" maxlength="2000" required></textarea></label>
+              <button type="submit" class="perf-button outline">Assign coaching action</button>
+            </div>
+            <p id="perf-coaching-status" class="perf-status" role="status" aria-live="polite"></p>
+          </form>
+        </section>
+
+        <section id="perf-qa-panel" class="perf-panel" hidden>
+          <div class="panel-head"><div><p class="eyebrow">QUALITY ASSURANCE</p><h2>Interaction quality evaluation</h2></div><span class="pill">7-part rubric</span></div>
+          <p class="muted small">Record only the interaction reference and necessary findings. Do not paste customer transcripts, passwords, payment details or unrelated personal/health information. A critical security or safeguarding failure overrides the numerical score.</p>
+          <form id="perf-qa-form">
+            <div class="filters qa-filters">
+              <label>Staff member<select id="perf-qa-staff" required></select></label>
+              <label>Department<select id="perf-qa-department" required></select></label>
+              <label>Channel<select id="perf-qa-channel"><option value="voice">Voice</option><option value="email">Email</option><option value="live_chat">Live chat</option><option value="social">Social media</option><option value="whatsapp">WhatsApp</option><option value="back_office">Back office</option><option value="game_support">Game support</option><option value="platform_support">Platform support</option></select></label>
+              <label>Interaction reference<input id="perf-qa-reference" maxlength="100" placeholder="Case / interaction ID only"></label>
+            </div>
+            <div id="perf-qa-rubric" class="rubric-grid"></div>
+            <label class="critical-toggle"><input id="perf-qa-critical" type="checkbox"> Critical failure (privacy, security, consent, safeguarding or serious policy breach)</label>
+            <label id="perf-qa-critical-reason-wrap" hidden>Critical failure reason<textarea id="perf-qa-critical-reason" rows="2" maxlength="1000"></textarea></label>
+            <label>Evaluator notes<textarea id="perf-qa-notes" rows="3" maxlength="1600" placeholder="Specific factual findings and coaching reference."></textarea></label>
+            <button class="perf-button primary" type="submit">Save QA evaluation</button>
+            <p id="perf-qa-status" class="perf-status" role="status" aria-live="polite"></p>
+          </form>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="perf-scorecard-dialog" class="perf-dialog">
+    <form id="perf-scorecard-form" class="dialog-form">
+      <div class="panel-head"><div><p class="eyebrow">MONTHLY KPI SCORECARD</p><h2>Evidence-backed performance</h2></div><button type="button" class="icon-close" data-close="perf-scorecard-dialog" aria-label="Close">×</button></div>
+      <div class="scorecard-context"><span id="perf-scorecard-person">Staff reference</span><span id="perf-scorecard-role">Role</span><span id="perf-scorecard-period">Month</span></div>
+      <div class="gate-note">Each measure requires a 0–100 target-attainment score, sample count and verifiable source. Missing evidence blocks submission. Critical compliance failures cannot be offset by speed or volume.</div>
+      <div id="perf-kpi-fields" class="kpi-fields"></div>
+      <label class="critical-toggle"><input id="perf-score-critical" type="checkbox"> Verified critical failure during this review period</label>
+      <label id="perf-score-critical-reason-wrap" hidden>Critical failure reason<textarea id="perf-score-critical-reason" rows="2" maxlength="1000"></textarea></label>
+      <label>Evidence summary<textarea id="perf-evidence-summary" rows="3" maxlength="1200" required placeholder="Name the approved report/source, period and scope. Do not add unnecessary customer data."></textarea></label>
+      <div class="scorecard-preview"><span>Calculated score</span><strong id="perf-score-preview">Incomplete</strong><small id="perf-score-gates">Complete all required measures to calculate.</small></div>
+      <p id="perf-scorecard-status" class="perf-status" role="status" aria-live="polite"></p>
+      <div class="dialog-actions"><button type="button" class="perf-button outline" data-close="perf-scorecard-dialog">Cancel</button><button type="submit" class="perf-button primary">Submit scorecard for review</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="perf-review-dialog" class="perf-dialog">
+    <form id="perf-review-form" class="dialog-form">
+      <div class="panel-head"><div><p class="eyebrow">SUPERVISOR REVIEW</p><h2>Review scorecard</h2></div><button type="button" class="icon-close" data-close="perf-review-dialog" aria-label="Close">×</button></div>
+      <p id="perf-review-context" class="muted"></p>
+      <div id="perf-review-details" class="review-evidence"></div>
+      <label>Strengths and achievements<textarea id="perf-review-strengths" rows="3" maxlength="2000" required></textarea></label>
+      <label>Improvement areas and agreed support<textarea id="perf-review-improvements" rows="3" maxlength="2000" required></textarea></label>
+      <p class="small muted">Review decisions must be specific, evidence-based and free from discriminatory or retaliatory comments.</p>
+      <p id="perf-review-status" class="perf-status" role="status" aria-live="polite"></p>
+      <div class="dialog-actions"><button type="button" class="perf-button outline" data-close="perf-review-dialog">Cancel</button><button type="submit" class="perf-button primary">Finalise review</button></div>
+    </form>
+  </dialog>
+
+  <section id="perf-exam-overlay" class="exam-overlay" hidden>
+    <div class="exam-card">
+      <header class="exam-header"><div><p class="eyebrow">ANNUAL PROMOTION ASSESSMENT</p><h2 id="perf-exam-title">Customer Operations Assessment</h2></div><div class="exam-clock"><span>TIME REMAINING</span><strong id="perf-exam-countdown">30:00</strong></div></header>
+      <p class="muted small">12 scenario questions · 30 minutes · pass mark 80%. Submit once. Correct answers are not shown during the assessment.</p>
+      <form id="perf-exam-form"><div id="perf-exam-questions" class="exam-questions"></div><p id="perf-exam-status" class="perf-status" role="status" aria-live="polite"></p><button class="perf-button primary" type="submit">Submit final answers</button></form>
+    </div>
+  </section>
+
+  <script type="module" src="/js/performance-workbench.js"></script>
+</body>
+</html>

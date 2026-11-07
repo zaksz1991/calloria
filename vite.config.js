@@ -18,7 +18,8 @@ export default defineConfig({
         caseDesk: resolve(process.cwd(), 'case-desk.html'),
         customer360: resolve(process.cwd(), 'customer-360.html'),
         agentDesk: resolve(process.cwd(), 'agent-desk.html'),
-        workforce: resolve(process.cwd(), 'workforce.html')
+        workforce: resolve(process.cwd(), 'workforce.html'),
+        performance: resolve(process.cwd(), 'performance.html')
       },
       output: {
         manualChunks(id) {

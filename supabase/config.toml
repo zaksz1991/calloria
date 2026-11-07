@@ -22,3 +22,6 @@ verify_jwt = false
 
 [functions.calloria-workforce]
 verify_jwt = false
+
+[functions.calloria-performance]
+verify_jwt = false
