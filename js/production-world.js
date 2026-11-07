@@ -1,558 +1,482 @@
 /*
- * CALLORIA — performance-first 3D contact-centre world
- *
+ * CALLORIA — 3D workplace world rebuild, Phase 1
  * Complete replacement for js/production-world.js.
- * Repeated architectural and workstation parts are GPU-instanced. The launch
- * preview renders on demand instead of continuously drawing an idle scene.
- * No remote models, font downloads, texture packs, or shadow maps are required.
+ *
+ * Design goals:
+ * - A legible, full-floor Nigerian contact-centre environment with distinct
+ *   reception, training, operations, QA, supervisor, IT and staff-lounge zones.
+ * - Articulated, locally generated staff (no external model downloads).
+ * - Instanced furniture and architectural repeats to control draw calls.
+ * - Guest-first compatibility: this module owns presentation only and keeps
+ *   the existing onStation/onNearestStation/enter/exit contract.
+ * - Touch input is not treated as a low-performance device diagnosis.
  */
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const isInput = (target) => Boolean(target && (target.isContentEditable || /INPUT|TEXTAREA|SELECT|BUTTON/.test(target.tagName)));
 
 export async function initProductionWorld(THREE, host, callbacks = {}) {
   if (!THREE || !host) throw new Error('CALLORIA 3D world requires Three.js and a canvas host.');
 
   const coarsePointer = Boolean(window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0);
+  const mobile = coarsePointer || window.innerWidth <= 760;
   const memory = Number(navigator.deviceMemory || 0);
   const cores = Number(navigator.hardwareConcurrency || 0);
   const saveData = Boolean(navigator.connection?.saveData);
-  const mobile = coarsePointer || window.innerWidth <= 760;
-  // Touch input is not a performance diagnosis. Only classify genuinely constrained
-  // hardware as low; mid-range phones retain antialiasing and useful render density.
-  const constrained = saveData || (memory > 0 && memory <= 2) || (cores > 0 && cores <= 2);
-  const highCapability = memory >= 8 && cores >= 8;
-  const tier = constrained ? 'low' : highCapability ? 'high' : 'balanced';
-  const deviceQuality = {
-    low: { pixelRatio: mobile ? 0.88 : 0.94, minRatio: 0.68, fps: 24, antialias: false, anisotropy: 2 },
-    balanced: { pixelRatio: mobile ? 1.12 : 1.18, minRatio: mobile ? 0.78 : 0.82, fps: mobile ? 30 : 45, antialias: true, anisotropy: 4 },
-    high: { pixelRatio: mobile ? 1.32 : 1.4, minRatio: 0.88, fps: mobile ? 45 : 60, antialias: true, anisotropy: 8 }
+  const lowTier = saveData || (memory > 0 && memory <= 2) || (cores > 0 && cores <= 2);
+  const highTier = !lowTier && memory >= 8 && cores >= 8;
+  const tier = lowTier ? 'low' : highTier ? 'high' : 'balanced';
+  const tierDefaults = {
+    low:      { ratio: mobile ? 0.98 : 1.0, minRatio: 0.78, fps: mobile ? 24 : 30, anisotropy: 2, people: 6, antialias: false },
+    balanced: { ratio: mobile ? 1.2 : 1.28, minRatio: mobile ? 0.92 : 0.98, fps: mobile ? 30 : 45, anisotropy: 4, people: 9, antialias: true },
+    high:     { ratio: mobile ? 1.38 : 1.55, minRatio: 1.05, fps: mobile ? 40 : 60, anisotropy: 8, people: 11, antialias: true }
   }[tier];
-  const maxAnisotropy = 8;
-  let quality = { ...deviceQuality };
-  let pixelRatioCap = Math.min(quality.pixelRatio, window.devicePixelRatio || 1, mobile ? 1.4 : 1.75, maxAnisotropy);
-  let currentPixelRatio = pixelRatioCap;
-  const graphicsProfileKey = 'calloria.graphics-profile.v1';
-  let graphicsProfile = 'auto';
+
+  let profile = 'auto';
+  const profileKey = 'calloria.graphics-profile.v1';
   try {
-    const savedProfile = localStorage.getItem(graphicsProfileKey);
-    if (['auto', 'smooth', 'balanced', 'sharp'].includes(savedProfile)) graphicsProfile = savedProfile;
-  } catch { /* Private browsing may disable storage. */ }
+    const saved = localStorage.getItem(profileKey);
+    if (['auto', 'smooth', 'balanced', 'sharp'].includes(saved)) profile = saved;
+  } catch { /* Storage can be unavailable in private browsing. */ }
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#132838');
-  scene.fog = new THREE.Fog('#142b39', 58, 112);
-  const camera = new THREE.PerspectiveCamera(51, 1, 0.1, 120);
+  scene.background = new THREE.Color('#91a5ae');
+  const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 150);
   const renderer = new THREE.WebGLRenderer({
-    antialias: quality.antialias,
+    antialias: tierDefaults.antialias,
     alpha: false,
-    powerPreference: tier === 'high' ? 'high-performance' : 'default',
+    powerPreference: highTier ? 'high-performance' : 'default',
     stencil: false,
     depth: true,
     failIfMajorPerformanceCaveat: false
   });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.04;
+  renderer.toneMappingExposure = 1.16;
   renderer.shadowMap.enabled = false;
-  renderer.setPixelRatio(currentPixelRatio);
+  renderer.setPixelRatio(Math.min(tierDefaults.ratio, window.devicePixelRatio || 1, mobile ? 1.55 : 1.85));
   renderer.domElement.className = 'production-world-canvas';
-  renderer.domElement.setAttribute('aria-label', 'Interactive 3D contact centre. Move with WASD or the touch joystick and use a nearby workstation.');
-  renderer.domElement.style.touchAction = 'none';
-  renderer.domElement.style.display = 'block';
+  renderer.domElement.setAttribute('aria-label', 'Interactive CALLORIA contact-centre floor. Use WASD or the touch joystick to move and approach a workstation.');
+  renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;outline:none;touch-action:none;';
   host.replaceChildren(renderer.domElement);
 
-  const materialCache = new Map();
-  const material = (color, roughness = 0.78, metalness = 0, extra = {}) => {
-    const key = `${color}|${roughness}|${metalness}|${JSON.stringify(extra)}`;
-    if (!materialCache.has(key)) materialCache.set(key, new THREE.MeshStandardMaterial({ color, roughness, metalness, ...extra }));
-    return materialCache.get(key);
+  const geometries = [];
+  const materials = [];
+  const textures = [];
+  const shared = (geometry) => { geometries.push(geometry); return geometry; };
+  const boxGeo = shared(new THREE.BoxGeometry(1, 1, 1));
+  const sphereGeo = shared(new THREE.SphereGeometry(1, 18, 14));
+  const smallSphereGeo = shared(new THREE.SphereGeometry(1, 12, 10));
+  const cylinderGeo = shared(new THREE.CylinderGeometry(1, 1, 1, 16));
+  const lowCylinderGeo = shared(new THREE.CylinderGeometry(1, 1, 1, 10));
+  const planeGeo = shared(new THREE.PlaneGeometry(1, 1));
+  const torusGeo = shared(new THREE.TorusGeometry(0.24, 0.022, 6, 20, Math.PI));
+  const capsuleGeo = shared(new THREE.CapsuleGeometry(0.11, 0.3, 4, 8));
+
+  const mat = (name, color, roughness = 0.78, metalness = 0, extra = {}) => {
+    const value = new THREE.MeshStandardMaterial({ color, roughness, metalness, ...extra });
+    value.name = name;
+    materials.push(value);
+    return value;
   };
   const mats = {
-    floor: material('#ffffff', 0.94),
-    carpet: material('#ffffff', 0.98),
-    wall: material('#b5c3c5', 0.86),
-    wallDark: material('#102635', 0.76),
-    teal: material('#13b99f', 0.48, 0.08),
-    tealLight: material('#7ce0c9', 0.52),
-    wood: material('#ffffff', 0.62),
-    woodEdge: material('#3a2b22', 0.62),
-    metal: material('#7c929b', 0.48, 0.35),
-    darkMetal: material('#182a38', 0.54, 0.2),
-    divider: material('#24495a', 0.92),
-    chair: material('#183449', 0.72),
-    screenFrame: material('#101c27', 0.34, 0.12),
-    screen: new THREE.MeshBasicMaterial({ map: makeScreenTexture(), toneMapped: false }),
-    glass: new THREE.MeshBasicMaterial({ color: '#89b7c0', transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide }),
-    white: material('#e9eeee', 0.7),
-    skin: material('#a96f55', 0.78),
-    shirt: material('#e4e9e8', 0.72),
-    headset: material('#182a35', 0.42, 0.32),
-    eyeWhite: material('#f1f0e9', 0.42),
-    eyeDark: material('#1d2023', 0.35),
-    scarf: material('#567e79', 0.82),
-    shoe: material('#101d27', 0.7),
-    jacketA: material('#24475b', 0.92),
-    jacketB: material('#6a4b3b', 0.92),
-    trousers: material('#182b3b', 0.94),
-    hair: material('#211a17', 0.96),
-    plant: material('#41815d', 0.95),
-    plantLight: material('#71a66f', 0.95),
-    gold: material('#c59c62', 0.64, 0.12)
+    floor: mat('floor-concrete', '#aeb9b8', 0.94),
+    carpet: mat('operations-carpet', '#314a55', 0.98),
+    wall: mat('warm-wall', '#d5ddda', 0.88),
+    wallLight: mat('partition-light', '#e6ece9', 0.82),
+    wallDark: mat('navy-panels', '#173344', 0.74),
+    teal: mat('calloria-teal', '#16b99f', 0.44, 0.08),
+    tealLight: mat('teal-trim', '#75ddc8', 0.5),
+    blue: mat('operations-blue', '#386b8b', 0.65),
+    blueDark: mat('deep-blue', '#203f56', 0.68),
+    wood: mat('wood', '#946c4d', 0.72),
+    woodLight: mat('wood-edge', '#c49a6f', 0.67),
+    metal: mat('brushed-metal', '#8e9da2', 0.42, 0.34),
+    darkMetal: mat('dark-metal', '#263b49', 0.45, 0.2),
+    glass: mat('glass', '#83bec5', 0.25, 0.08, { transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide }),
+    white: mat('warm-white', '#f1f2ec', 0.72),
+    black: mat('rubber-black', '#111c25', 0.8),
+    chair: mat('chair-upholstery', '#254d61', 0.92),
+    chairAccent: mat('chair-stitch', '#4a7b89', 0.88),
+    screenFrame: mat('monitor-frame', '#101c26', 0.32, 0.16),
+    screen: null,
+    keyboard: mat('keyboard', '#1b2b35', 0.62),
+    skinA: mat('skin-deep', '#70442f', 0.86),
+    skinB: mat('skin-medium', '#986247', 0.86),
+    skinC: mat('skin-warm', '#bd8260', 0.84),
+    shirtA: mat('uniform-teal', '#176b68', 0.82),
+    shirtB: mat('uniform-blue', '#315b82', 0.82),
+    shirtC: mat('uniform-burgundy', '#744354', 0.82),
+    shirtD: mat('uniform-sand', '#b59a73', 0.85),
+    trousers: mat('trousers', '#253847', 0.92),
+    hair: mat('hair', '#211d1b', 0.94),
+    scarfA: mat('hijab-sage', '#588b80', 0.9),
+    scarfB: mat('hijab-plum', '#80566e', 0.9),
+    scarfC: mat('hijab-sand', '#c4a879', 0.9),
+    headset: mat('headset', '#101b23', 0.46, 0.22),
+    eye: mat('eye', '#161b20', 0.42),
+    shoe: mat('shoes', '#121e27', 0.75),
+    plant: mat('plant-green', '#3e7958', 0.95),
+    plantLight: mat('plant-leaf-light', '#73a86a', 0.94),
+    gold: mat('warm-accent', '#d0a15f', 0.58, 0.12),
+    emissive: mat('light-diffuser', '#fff6d8', 0.38, 0, { emissive: '#fff1c9', emissiveIntensity: 0.42 }),
+    statusGreen: mat('status-green', '#21c69e', 0.45, 0.05, { emissive: '#0b7d65', emissiveIntensity: 0.35 })
   };
 
-  // Small deterministic canvas textures make surfaces readable without downloading assets.
-  function makeSurfaceTexture(kind, width = 256, height = 256) {
+  function makeCanvasTexture(draw, width = 1024, height = 640) {
     const canvas = document.createElement('canvas');
     canvas.width = width; canvas.height = height;
     const ctx = canvas.getContext('2d', { alpha: false });
-    if (kind === 'wood') {
-      ctx.fillStyle = '#765238'; ctx.fillRect(0, 0, width, height);
-      for (let i = 0; i < 115; i++) {
-        const y = (i * 37) % height;
-        const x = (i * 83) % width;
-        const length = width * (0.18 + ((i * 17) % 70) / 100);
-        ctx.strokeStyle = i % 3 ? 'rgba(226,180,126,0.12)' : 'rgba(35,20,12,0.16)';
-        ctx.lineWidth = 1 + (i % 3);
-        ctx.beginPath(); ctx.moveTo(x, y); ctx.bezierCurveTo(x + length * 0.28, y - 2, x + length * 0.7, y + 2, x + length, y); ctx.stroke();
-      }
-      for (let i = 0; i < 12; i++) {
-        ctx.strokeStyle = 'rgba(30,18,12,0.10)'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.ellipse((i * 47) % width, (i * 71) % height, 10 + (i % 4) * 4, 3 + (i % 3), 0.08, 0, Math.PI * 2); ctx.stroke();
-      }
-    } else if (kind === 'carpet') {
-      ctx.fillStyle = '#536a70'; ctx.fillRect(0, 0, width, height);
-      for (let y = 0; y < height; y += 4) {
-        ctx.fillStyle = y % 8 ? 'rgba(220,235,235,0.035)' : 'rgba(12,32,40,0.065)';
-        ctx.fillRect(0, y, width, 2);
-      }
-      for (let x = 0; x < width; x += 4) {
-        ctx.fillStyle = x % 8 ? 'rgba(220,235,235,0.025)' : 'rgba(12,32,40,0.05)';
-        ctx.fillRect(x, 0, 2, height);
-      }
-    } else {
-      ctx.fillStyle = '#79888b'; ctx.fillRect(0, 0, width, height);
-      // Deterministic speckle avoids random per-load noise and keeps the texture tileable.
-      for (let i = 0; i < 2200; i++) {
-        const x = (i * 73 + (i * i * 7)) % width;
-        const y = (i * 151 + (i * i * 3)) % height;
-        ctx.fillStyle = i % 2 ? 'rgba(235,242,239,0.08)' : 'rgba(18,39,45,0.07)';
-        ctx.fillRect(x, y, 1 + (i % 2), 1 + (i % 2));
-      }
-      for (let y = 0; y < height; y += 64) {
-        ctx.strokeStyle = 'rgba(230,240,238,0.06)'; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
-      }
-    }
+    draw(ctx, width, height);
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
-    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-    texture.anisotropy = Math.min(quality.anisotropy, renderer.capabilities.getMaxAnisotropy());
-    return texture;
-  }
-  const floorSurfaceTexture = makeSurfaceTexture('floor', 256, 256);
-  floorSurfaceTexture.repeat.set(10, 9);
-  mats.floor.map = floorSurfaceTexture; mats.floor.bumpMap = floorSurfaceTexture; mats.floor.bumpScale = 0.018; mats.floor.needsUpdate = true;
-  const carpetSurfaceTexture = makeSurfaceTexture('carpet', 128, 128);
-  carpetSurfaceTexture.repeat.set(18, 16);
-  mats.carpet.map = carpetSurfaceTexture; mats.carpet.needsUpdate = true;
-  const woodSurfaceTexture = makeSurfaceTexture('wood', 512, 256);
-  woodSurfaceTexture.repeat.set(2, 1);
-  mats.wood.map = woodSurfaceTexture; mats.wood.bumpMap = woodSurfaceTexture; mats.wood.bumpScale = 0.025; mats.wood.needsUpdate = true;
-
-  function makeScreenTexture() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 640;
-    const ctx = canvas.getContext('2d', { alpha: false });
-    ctx.fillStyle = '#0d2130'; ctx.fillRect(0, 0, 1024, 640);
-    ctx.fillStyle = '#153b4c'; ctx.fillRect(0, 0, 1024, 76);
-    ctx.fillStyle = '#73dfc8'; ctx.font = 'bold 34px Arial'; ctx.fillText('CALLORIA  /  CUSTOMER OPERATIONS', 36, 52);
-    ctx.fillStyle = '#d6e9e8'; ctx.font = 'bold 26px Arial'; ctx.fillText('CUSTOMER PROFILE', 36, 136);
-    ctx.fillStyle = '#8eaeb8'; ctx.fillRect(36, 164, 440, 14);
-    ctx.fillRect(36, 202, 340, 14);
-    ctx.fillRect(36, 240, 500, 14);
-    ctx.fillStyle = '#0e756e'; ctx.fillRect(596, 116, 380, 172);
-    ctx.fillStyle = '#a5f1de'; ctx.font = 'bold 52px Arial'; ctx.fillText('ACTIVE', 640, 188);
-    ctx.font = '24px Arial'; ctx.fillText('SERVICE DESK', 640, 240);
-    for (let i = 0; i < 5; i++) {
-      ctx.fillStyle = i % 2 ? '#173344' : '#1c4050';
-      ctx.fillRect(36, 324 + i * 54, 940, 40);
-      ctx.fillStyle = '#65d6bf'; ctx.fillRect(56, 338 + i * 54, 180 + (i % 3) * 44, 10);
-      ctx.fillStyle = '#829faa'; ctx.fillRect(300, 338 + i * 54, 380, 10);
-    }
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = Math.min(quality.anisotropy, renderer.capabilities.getMaxAnisotropy());
+    texture.anisotropy = Math.min(tierDefaults.anisotropy, renderer.capabilities.getMaxAnisotropy());
+    textures.push(texture);
     return texture;
   }
 
-  function makeRoundedUnitBox() {
-    const shape = new THREE.Shape();
-    const r = 0.085;
-    shape.moveTo(-0.5 + r, -0.5);
-    shape.lineTo(0.5 - r, -0.5); shape.quadraticCurveTo(0.5, -0.5, 0.5, -0.5 + r);
-    shape.lineTo(0.5, 0.5 - r); shape.quadraticCurveTo(0.5, 0.5, 0.5 - r, 0.5);
-    shape.lineTo(-0.5 + r, 0.5); shape.quadraticCurveTo(-0.5, 0.5, -0.5, 0.5 - r);
-    shape.lineTo(-0.5, -0.5 + r); shape.quadraticCurveTo(-0.5, -0.5, -0.5 + r, -0.5);
-    const geometry = new THREE.ExtrudeGeometry(shape, {
-      depth: 0.88, steps: 1, bevelEnabled: true,
-      bevelSegments: 2, bevelSize: 0.025, bevelThickness: 0.035, curveSegments: 5
-    });
-    geometry.translate(0, 0, -0.44);
-    geometry.computeVertexNormals();
-    return geometry;
-  }
-  const boxGeometry = makeRoundedUnitBox();
-  function makeRoundedBoxGeometry(width, height, depth) {
-    const bevel = Math.min(0.024, depth * 0.12, width * 0.025, height * 0.06);
-    const radius = Math.min(0.085, width * 0.08, height * 0.12);
-    const w = Math.max(0.001, width - bevel * 2);
-    const h = Math.max(0.001, height - bevel * 2);
-    const shape = new THREE.Shape();
-    shape.moveTo(-w / 2 + radius, -h / 2);
-    shape.lineTo(w / 2 - radius, -h / 2); shape.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + radius);
-    shape.lineTo(w / 2, h / 2 - radius); shape.quadraticCurveTo(w / 2, h / 2, w / 2 - radius, h / 2);
-    shape.lineTo(-w / 2 + radius, h / 2); shape.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - radius);
-    shape.lineTo(-w / 2, -h / 2 + radius); shape.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + radius, -h / 2);
-    const coreDepth = Math.max(0.001, depth - bevel * 2);
-    const geometry = new THREE.ExtrudeGeometry(shape, { depth: coreDepth, steps: 1, bevelEnabled: bevel > 0.001, bevelSegments: 2, bevelSize: bevel, bevelThickness: bevel, curveSegments: 4 });
-    geometry.translate(0, 0, -coreDepth / 2);
-    geometry.computeVertexNormals();
-    return geometry;
-  }
-  const sphereGeometry = new THREE.SphereGeometry(1, tier === 'low' ? 12 : 20, tier === 'low' ? 8 : 14);
-  const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, tier === 'low' ? 12 : 20);
-  const planeGeometry = new THREE.PlaneGeometry(1, 1);
-  // One shared, soft alpha texture creates inexpensive floor contact shading.
-  // This gives desks, chairs and staff visual grounding without shadow-map passes.
-  const shadowCanvas = document.createElement('canvas');
-  shadowCanvas.width = 128; shadowCanvas.height = 128;
-  const shadowContext = shadowCanvas.getContext('2d');
-  const shadowGradient = shadowContext.createRadialGradient(64, 64, 8, 64, 64, 62);
-  shadowGradient.addColorStop(0, 'rgba(5, 12, 18, 0.48)');
-  shadowGradient.addColorStop(0.48, 'rgba(5, 12, 18, 0.24)');
-  shadowGradient.addColorStop(1, 'rgba(5, 12, 18, 0)');
-  shadowContext.fillStyle = shadowGradient;
-  shadowContext.fillRect(0, 0, 128, 128);
-  const contactShadowTexture = new THREE.CanvasTexture(shadowCanvas);
-  const contactShadowMaterial = new THREE.MeshBasicMaterial({
-    map: contactShadowTexture, transparent: true, opacity: 0.78,
-    depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -1
+  const floorTexture = makeCanvasTexture((ctx, w, h) => {
+    ctx.fillStyle = '#aeb9b8'; ctx.fillRect(0, 0, w, h);
+    for (let y = 0; y < h; y += 64) {
+      for (let x = 0; x < w; x += 64) {
+        ctx.fillStyle = ((x + y) / 64) % 2 ? 'rgba(255,255,255,.08)' : 'rgba(33,56,62,.045)';
+        ctx.fillRect(x + 1, y + 1, 62, 62);
+      }
+    }
+    ctx.strokeStyle = 'rgba(42,62,68,.10)'; ctx.lineWidth = 2;
+    for (let x = 0; x <= w; x += 64) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+    for (let y = 0; y <= h; y += 64) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+  }, 512, 512);
+  floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+  floorTexture.repeat.set(12, 10);
+  mats.floor.map = floorTexture; mats.floor.needsUpdate = true;
+
+  const screenTexture = makeCanvasTexture((ctx, w, h) => {
+    ctx.fillStyle = '#0b1f2d'; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#123c4a'; ctx.fillRect(0, 0, w, 76);
+    ctx.fillStyle = '#7be2ca'; ctx.font = 'bold 30px Arial'; ctx.fillText('CALLORIA  /  CUSTOMER OPERATIONS', 34, 50);
+    ctx.fillStyle = '#e4f0ec'; ctx.font = 'bold 25px Arial'; ctx.fillText('CUSTOMER PROFILE', 38, 128);
+    ctx.fillStyle = '#829fa9'; ctx.font = '18px Arial'; ctx.fillText('VERIFIED SERVICE RECORD', 38, 160);
+    ctx.fillStyle = '#163949'; ctx.fillRect(34, 187, 580, 250);
+    ctx.fillStyle = '#8aa9b2';
+    for (let i = 0; i < 6; i++) { ctx.fillRect(58, 218 + i * 32, 250 + (i % 3) * 58, 8); ctx.fillRect(355, 218 + i * 32, 205, 8); }
+    ctx.fillStyle = '#0a7069'; ctx.fillRect(655, 187, 330, 250);
+    ctx.fillStyle = '#b5f6e6'; ctx.font = 'bold 44px Arial'; ctx.fillText('READY', 700, 270);
+    ctx.font = '20px Arial'; ctx.fillText('SERVICE DESK', 700, 312);
+    ctx.fillStyle = '#204457'; ctx.fillRect(34, 470, 952, 112);
+    ctx.fillStyle = '#6fdac5'; ctx.font = 'bold 18px Arial'; ctx.fillText('QUEUE  •  CRM  •  KNOWLEDGE  •  QUALITY', 58, 520);
   });
-  const dummy = new THREE.Object3D();
-  function addBox(parent, name, size, position, mat, rotationY = 0) {
-    const mesh = new THREE.Mesh(makeRoundedBoxGeometry(...size), mat);
+  mats.screen = new THREE.MeshBasicMaterial({ map: screenTexture, toneMapped: false });
+  materials.push(mats.screen);
+
+  function addBox(parent, name, size, position, material, rotationY = 0, extraRotation = null) {
+    const mesh = new THREE.Mesh(boxGeo, material);
     mesh.name = name;
-    mesh.position.set(...position);
+    mesh.position.set(position[0], position[1], position[2]);
+    mesh.scale.set(size[0], size[1], size[2]);
     mesh.rotation.y = rotationY;
-    mesh.castShadow = false;
-    mesh.receiveShadow = false;
+    if (extraRotation) mesh.rotation.set(extraRotation[0], extraRotation[1], extraRotation[2]);
+    mesh.castShadow = false; mesh.receiveShadow = false;
     parent.add(mesh);
     return mesh;
   }
-  function addInstances(name, geometry, mat, transforms) {
+  function addSphere(parent, name, position, scale, material, geometry = sphereGeo) {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = name; mesh.position.set(...position); mesh.scale.set(...scale);
+    parent.add(mesh); return mesh;
+  }
+  function addCylinder(parent, name, position, scale, material, geometry = cylinderGeo, rotation = null) {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = name; mesh.position.set(...position); mesh.scale.set(...scale);
+    if (rotation) mesh.rotation.set(...rotation);
+    parent.add(mesh); return mesh;
+  }
+  function addInstances(name, geometry, material, transforms) {
     if (!transforms.length) return null;
-    const mesh = new THREE.InstancedMesh(geometry, mat, transforms.length);
-    mesh.name = name;
-    mesh.count = transforms.length;
-    mesh.castShadow = false;
-    mesh.receiveShadow = false;
+    const mesh = new THREE.InstancedMesh(geometry, material, transforms.length);
+    mesh.name = name; mesh.count = transforms.length;
     mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+    const dummy = new THREE.Object3D();
     transforms.forEach((item, index) => {
       dummy.position.set(item.x, item.y, item.z);
       dummy.rotation.set(item.rx || 0, item.ry || 0, item.rz || 0);
       dummy.scale.set(item.sx ?? 1, item.sy ?? 1, item.sz ?? 1);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(index, dummy.matrix);
+      dummy.updateMatrix(); mesh.setMatrixAt(index, dummy.matrix);
       if (item.color && mesh.setColorAt) mesh.setColorAt(index, new THREE.Color(item.color));
     });
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    scene.add(mesh);
-    return mesh;
+    mesh.frustumCulled = true; scene.add(mesh); return mesh;
   }
 
-  // Low-cost lighting: one hemisphere and one directional source, no realtime shadows.
-  scene.add(new THREE.HemisphereLight('#e2f2f2', '#263847', 2.0));
-  const sun = new THREE.DirectionalLight('#fff2d9', 2.1);
-  sun.position.set(-9, 16, 11);
-  scene.add(sun);
-  const fill = new THREE.DirectionalLight('#a8d7e4', 0.72);
-  fill.position.set(12, 8, -10);
-  scene.add(fill);
+  // Soft local illumination. No real-time shadow maps are used; contact decals
+  // provide grounding without the heavy shadow-map cost on mobile browsers.
+  scene.add(new THREE.HemisphereLight('#f1fbff', '#35444a', 1.85));
+  const keyLight = new THREE.DirectionalLight('#fff0d7', 2.15);
+  keyLight.position.set(-14, 22, 16); scene.add(keyLight);
+  const fillLight = new THREE.DirectionalLight('#b7e5f0', 0.8);
+  fillLight.position.set(16, 12, -18); scene.add(fillLight);
+  const warmLight = new THREE.PointLight('#ffd8a2', 0.85, 22, 2);
+  warmLight.position.set(-13, 3.4, 9); scene.add(warmLight);
+  const coolLight = new THREE.PointLight('#8de3d0', 0.62, 24, 2);
+  coolLight.position.set(11, 3.8, -7); scene.add(coolLight);
 
-  // Open ceiling keeps the entire floor readable in the camera view; repeated parts are instanced.
-  addBox(scene, 'main-floor', [34, 0.22, 30], [0, -0.16, 0], mats.floor);
-  addBox(scene, 'central-carpet', [26, 0.025, 22], [0, -0.025, 0], mats.carpet);
-  addBox(scene, 'rear-wall', [34, 3.35, 0.32], [0, 1.66, -15], mats.wall);
-  addBox(scene, 'left-wall', [0.32, 3.35, 30], [-17, 1.66, 0], mats.wall);
-  addBox(scene, 'right-wall', [0.32, 3.35, 30], [17, 1.66, 0], mats.wall);
-  addBox(scene, 'rear-feature-band', [33.5, 0.68, 0.1], [0, 3.0, -14.78], mats.wallDark);
-  addBox(scene, 'brand-board', [7.8, 1.35, 0.12], [-3.9, 2.45, -14.73], mats.wallDark);
+  // Core architecture: open roof keeps the preview legible and avoids a ceiling
+  // slab obscuring the player camera. The outer structure still reads as a room.
+  addBox(scene, 'main-floor', [40, 0.28, 34], [0, -0.17, 0], mats.floor);
+  addBox(scene, 'operations-carpet', [25, 0.025, 21], [1, -0.005, 0], mats.carpet);
+  addBox(scene, 'rear-wall', [40, 4.4, 0.36], [0, 2.18, -17.05], mats.wall);
+  addBox(scene, 'left-wall', [0.36, 4.4, 34], [-19.82, 2.18, 0], mats.wall);
+  addBox(scene, 'right-wall', [0.36, 4.4, 34], [19.82, 2.18, 0], mats.wall);
+  addBox(scene, 'front-left-wall', [9.2, 4.4, 0.36], [-15.4, 2.18, 17.05], mats.wall);
+  addBox(scene, 'front-right-wall', [9.2, 4.4, 0.36], [15.4, 2.18, 17.05], mats.wall);
+  addBox(scene, 'rear-navy-band', [39.5, 0.82, 0.08], [0, 3.55, -16.83], mats.wallDark);
+  addBox(scene, 'left-navy-band', [0.08, 0.82, 33], [-19.62, 3.55, 0], mats.wallDark);
+  addBox(scene, 'right-navy-band', [0.08, 0.82, 33], [19.62, 3.55, 0], mats.wallDark);
 
-  const brandCanvas = document.createElement('canvas');
-  brandCanvas.width = 1024; brandCanvas.height = 220;
-  const brandCtx = brandCanvas.getContext('2d');
-  brandCtx.fillStyle = '#102838'; brandCtx.fillRect(0, 0, 1024, 220);
-  brandCtx.fillStyle = '#23c5aa'; brandCtx.fillRect(35, 35, 10, 150);
-  brandCtx.fillStyle = '#f0f8f6'; brandCtx.font = '800 76px Arial'; brandCtx.fillText('CALLORIA', 82, 105);
-  brandCtx.fillStyle = '#88b2bb'; brandCtx.font = '600 25px Arial'; brandCtx.fillText('CUSTOMER OPERATIONS  ·  FLOOR 04', 86, 151);
-  brandCtx.fillStyle = '#71dfc8'; brandCtx.font = '700 21px Arial'; brandCtx.fillText('SERVICE  •  QUALITY  •  CAREER', 86, 190);
-  const brandTexture = new THREE.CanvasTexture(brandCanvas);
-  brandTexture.colorSpace = THREE.SRGBColorSpace;
-  const brandSign = new THREE.Mesh(new THREE.PlaneGeometry(7.45, 1.38), new THREE.MeshBasicMaterial({ map: brandTexture, toneMapped: false }));
-  brandSign.position.set(-3.9, 2.45, -14.65);
-  scene.add(brandSign);
+  const columns = [];
+  for (const x of [-18.7, 18.7]) for (const z of [-14, -5, 5, 14]) columns.push({ x, y: 2.0, z, sx: 0.48, sy: 4.0, sz: 0.48 });
+  addInstances('architectural-columns', boxGeo, mats.wallLight, columns);
 
-  // Architectural details and departmental zones.
-  const columnPositions = [[-16, -13], [16, -13], [-16, 0], [16, 0], [-16, 13], [16, 13]];
-  addInstances('structural-columns', boxGeometry, mats.wall, columnPositions.map(([x, z]) => ({ x, y: 2.6, z, sx: 0.52, sy: 5.2, sz: 0.52 })));
-  addBox(scene, 'reception-counter', [4.8, 1.0, 1.05], [-12.7, 0.55, 10.6], mats.wood);
-  addBox(scene, 'reception-front', [4.65, 0.58, 0.08], [-12.7, 0.47, 11.15], mats.wallDark);
-  addBox(scene, 'reception-accent', [4.4, 0.055, 0.1], [-12.7, 0.88, 11.1], mats.teal);
-  addBox(scene, 'qa-room-floor', [6.1, 0.1, 6.3], [12.5, 0.02, -11.0], mats.wallDark);
-  addBox(scene, 'qa-room-left-glass', [0.06, 2.7, 6.3], [9.45, 1.38, -11.0], mats.glass);
-  addBox(scene, 'qa-room-right-glass', [0.06, 2.7, 6.3], [15.55, 1.38, -11.0], mats.glass);
-  addBox(scene, 'qa-room-front-glass', [6.1, 2.7, 0.06], [12.5, 1.38, -7.85], mats.glass);
-  addBox(scene, 'qa-room-sign', [3.4, 0.55, 0.08], [12.5, 2.95, -7.78], mats.teal);
-  addBox(scene, 'training-room-table', [3.4, 0.12, 1.5], [-12.4, 0.78, -7.0], mats.wood);
-  addBox(scene, 'training-room-screen', [2.0, 1.1, 0.08], [-12.4, 2.1, -14.72], mats.screenFrame);
+  // Perimeter glazing and light diffusers create readable depth in the open-roof room.
+  for (const z of [-11.5, -3.5, 4.5, 12.5]) {
+    addBox(scene, `left-window-${z}`, [0.06, 1.9, 4.4], [-19.58, 2.15, z], mats.glass);
+    addBox(scene, `right-window-${z}`, [0.06, 1.9, 4.4], [19.58, 2.15, z], mats.glass);
+  }
+  const ceilingLights = [];
+  for (const x of [-12, -4, 4, 12]) for (const z of [-12, -4, 4, 12]) ceilingLights.push({ x, y: 4.18, z, sx: 2.9, sy: 0.08, sz: 0.72 });
+  addInstances('ceiling-light-diffusers', boxGeo, mats.emissive, ceilingLights);
 
-  // Twelve stations are retained. Repeating desk parts, dividers, screens and chairs are instanced.
-  const xPositions = [-9, -3, 3, 9];
-  const zPositions = [-7, -1, 5];
+  // Branded architectural signs are high-resolution canvas textures, not tiny 3D text.
+  function signTexture(title, subtitle, accent = '#24c3a9') {
+    return makeCanvasTexture((ctx, w, h) => {
+      ctx.fillStyle = '#102b3b'; ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = accent; ctx.fillRect(0, 0, 18, h);
+      ctx.fillStyle = '#f2f7f4'; ctx.font = 'bold 76px Arial'; ctx.fillText(title, 58, 100);
+      ctx.fillStyle = '#91b4bb'; ctx.font = 'bold 28px Arial'; ctx.fillText(subtitle, 62, 150);
+    }, 1024, 200);
+  }
+  function addSign(title, subtitle, position, size, rotationY = 0, accent) {
+    const texture = signTexture(title, subtitle, accent);
+    const material = new THREE.MeshBasicMaterial({ map: texture, toneMapped: false, side: THREE.DoubleSide });
+    materials.push(material);
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(size[0], size[1]), material);
+    geometries.push(mesh.geometry); mesh.position.set(...position); mesh.rotation.y = rotationY; scene.add(mesh);
+    return mesh;
+  }
+  addSign('CALLORIA', 'EVERY CALL  ·  EVERY CUSTOMER  ·  EVERY CAREER', [0, 3.15, -16.82], [9.4, 1.85]);
+  addSign('CUSTOMER OPERATIONS', 'AGENT FLOOR  /  12 LIVE WORKSTATIONS', [0, 3.25, -2.1], [8.2, 1.45], 0, '#1f9a91');
+  addSign('RECEPTION', 'VISITOR CHECK-IN  /  STAFF ACCESS', [-15.1, 2.65, 14.7], [4.2, 0.9], Math.PI, '#d4a35f');
+  addSign('TRAINING', 'LEARNING  /  BRIEFINGS  /  COACHING', [-13.3, 2.62, -14.45], [5.0, 0.86], 0, '#3e86a4');
+  addSign('QUALITY ASSURANCE', 'CALL REVIEW  /  CALIBRATION', [13.0, 2.62, -14.45], [5.0, 0.86], 0, '#8d6f9b');
+
+  // Distinct departmental rooms and flooring.
+  addBox(scene, 'training-zone-floor', [7.2, 0.055, 6.3], [-13.1, 0.0, -11.15], mats.blueDark);
+  addBox(scene, 'qa-zone-floor', [7.2, 0.055, 6.3], [13.1, 0.0, -11.15], mats.blueDark);
+  addBox(scene, 'supervisor-zone-floor', [7.2, 0.055, 6.4], [13.1, 0.0, -1.7], mats.blue);
+  addBox(scene, 'it-zone-floor', [7.2, 0.055, 6.3], [13.1, 0.0, 8.2], mats.blueDark);
+  addBox(scene, 'lounge-zone-floor', [7.2, 0.055, 6.3], [-13.1, 0.0, 1.9], mats.blue);
+
+  // Training room: facilitator desk, display, rows of chairs and a low glass divider.
+  addBox(scene, 'training-back-wall', [7.5, 2.75, 0.16], [-13.1, 1.38, -14.55], mats.wallLight);
+  addBox(scene, 'training-side-wall', [0.16, 2.75, 6.4], [-16.7, 1.38, -11.2], mats.wallLight);
+  addBox(scene, 'training-display-frame', [3.2, 1.75, 0.16], [-13.1, 2.25, -14.38], mats.screenFrame);
+  addBox(scene, 'training-display-screen', [2.98, 1.52, 0.025], [-13.1, 2.25, -14.27], mats.screenFrame);
+  addBox(scene, 'training-trainer-desk', [3.5, 0.16, 1.2], [-13.1, 0.86, -12.9], mats.wood);
+  const trainingChairs = [];
+  for (const z of [-10.6, -9.2]) for (const x of [-15.25, -13.1, -10.95]) trainingChairs.push({ x, y: 0.55, z, sx: 0.72, sy: 0.12, sz: 0.72 });
+  addInstances('training-chair-seats', boxGeo, mats.chair, trainingChairs);
+
+  // QA room: glass-fronted listening booths and review monitors.
+  addBox(scene, 'qa-back-wall', [7.5, 2.75, 0.16], [13.1, 1.38, -14.55], mats.wallLight);
+  addBox(scene, 'qa-side-wall', [0.16, 2.75, 6.4], [16.7, 1.38, -11.2], mats.wallLight);
+  addBox(scene, 'qa-glass-front', [7.15, 2.5, 0.055], [13.1, 1.27, -7.98], mats.glass);
+  addBox(scene, 'qa-review-desk', [4.4, 0.14, 1.35], [13.1, 0.86, -10.0], mats.wood);
+
+  // Supervisor office, visible through a glass partition.
+  addBox(scene, 'supervisor-rear-partition', [7.4, 2.65, 0.12], [13.1, 1.33, -5.0], mats.wallLight);
+  addBox(scene, 'supervisor-left-glass', [0.06, 2.55, 6.3], [9.45, 1.27, -1.8], mats.glass);
+  addBox(scene, 'supervisor-right-glass', [0.06, 2.55, 6.3], [16.75, 1.27, -1.8], mats.glass);
+  addBox(scene, 'supervisor-desk', [3.7, 0.16, 1.45], [13.1, 0.86, -1.15], mats.wood);
+  addSign('SUPERVISOR', 'TEAM LEAD  /  LIVE ASSISTANCE', [13.1, 2.68, -4.9], [4.1, 0.82], 0, '#d4a35f');
+
+  // IT and systems bay with server cabinets and service counter.
+  addBox(scene, 'it-back-wall', [7.5, 2.7, 0.16], [13.1, 1.35, 11.25], mats.wallLight);
+  addBox(scene, 'it-side-wall', [0.16, 2.7, 6.4], [16.7, 1.35, 8.1], mats.wallLight);
+  const serverCases = [];
+  for (const x of [10.6, 12.2, 13.8, 15.4]) serverCases.push({ x, y: 1.28, z: 10.05, sx: 1.05, sy: 2.4, sz: 0.72 });
+  addInstances('it-server-cabinets', boxGeo, mats.darkMetal, serverCases);
+  const serverLights = [];
+  for (const x of [10.6, 12.2, 13.8, 15.4]) for (const y of [0.7, 1.1, 1.5, 1.9]) serverLights.push({ x: x - 0.22, y, z: 9.67, sx: 0.08, sy: 0.08, sz: 0.025 });
+  addInstances('it-server-status-lights', boxGeo, mats.statusGreen, serverLights);
+  addSign('IT & SYSTEMS', 'HARDWARE  /  NETWORK  /  PLATFORM', [13.1, 2.65, 11.17], [4.8, 0.76], Math.PI, '#3e86a4');
+  addSign('STAFF LOUNGE', 'REST  /  REFRESH  /  RESET', [-13.1, 2.58, 4.96], [4.3, 0.78], Math.PI, '#d4a35f');
+
+  // Staff lounge with seating, tables and plants.
+  addBox(scene, 'lounge-rear-wall', [7.5, 2.65, 0.16], [-13.1, 1.33, 5.05], mats.wallLight);
+  addBox(scene, 'lounge-side-wall', [0.16, 2.65, 6.4], [-16.7, 1.33, 1.9], mats.wallLight);
+  addBox(scene, 'lounge-sofa-base', [3.7, 0.42, 1.1], [-13.1, 0.48, 2.6], mats.chair);
+  addBox(scene, 'lounge-sofa-back', [3.7, 0.9, 0.28], [-13.1, 1.0, 3.05], mats.chair);
+  addBox(scene, 'lounge-coffee-table', [2.4, 0.12, 1.0], [-13.1, 0.52, 0.7], mats.wood);
+  addCylinder(scene, 'lounge-plant-pot', [-15.7, 0.5, -0.25], [0.38, 0.5, 0.38], mats.wood);
+  addSphere(scene, 'lounge-plant-crown', [-15.7, 1.45, -0.25], [0.65, 0.95, 0.62], mats.plant);
+  addSphere(scene, 'lounge-plant-highlight', [-15.2, 1.35, 0.0], [0.35, 0.6, 0.32], mats.plantLight);
+
+  // Reception: substantial curved-looking counter, visitor chairs and access posts.
+  addBox(scene, 'reception-counter-top', [5.2, 0.18, 1.35], [-15.0, 1.08, 11.85], mats.woodLight);
+  addBox(scene, 'reception-counter-front', [5.05, 0.82, 0.16], [-15.0, 0.57, 12.5], mats.wallDark);
+  addBox(scene, 'reception-counter-accent', [4.65, 0.07, 0.035], [-15.0, 0.82, 12.39], mats.teal);
+  addBox(scene, 'reception-checkin-screen', [1.1, 0.82, 0.09], [-15.0, 1.55, 11.35], mats.screenFrame);
+  const bollards = [];
+  for (const x of [-17.7, -12.3]) bollards.push({ x, y: 0.52, z: 14.4, sx: 0.16, sy: 1.0, sz: 0.16 });
+  addInstances('reception-access-posts', cylinderGeo, mats.gold, bollards);
+
+  // Central workstations: 12 fixed, addressable stations, repeated parts instanced.
+  const xPositions = [-8.5, -2.8, 2.9, 8.6];
+  const zPositions = [-6.4, -0.4, 5.6];
   const stations = [];
-  const deskTops = [], deskEdges = [], deskLegs = [], modestyPanels = [], dividers = [], dividerSides = [];
-  const monitorFrames = [], monitorScreens = [], monitorStands = [], monitorFeet = [], keyboards = [], keyboardKeycaps = [], pointingDevices = [], monitorIndicators = [];
-  const chairSeats = [], chairBacks = [], chairPosts = [], chairBases = [];
-  const stationLights = [];
-  let stationId = 1;
+  const deskTops = [], deskAprons = [], deskLegs = [], dividers = [];
+  const monitorFrames = [], monitorScreens = [], monitorStands = [], keyboards = [], mice = [];
+  const chairSeats = [], chairBacks = [], chairPosts = [], chairBases = [], statusLamps = [];
+  let id = 1;
   for (let row = 0; row < zPositions.length; row++) {
     for (let col = 0; col < xPositions.length; col++) {
       const x = xPositions[col], z = zPositions[row];
-      stations.push({ id: stationId++, x, z, row, col, glowIndex: stations.length });
-      deskTops.push({ x, y: 0.84, z, sx: 2.95, sy: 0.12, sz: 1.48 });
-      deskEdges.push({ x, y: 0.765, z, sx: 2.98, sy: 0.045, sz: 1.5 });
-      modestyPanels.push({ x, y: 0.43, z: z - 0.55, sx: 2.66, sy: 0.64, sz: 0.075 });
-      for (const side of [-1, 1]) for (const depth of [-1, 1]) deskLegs.push({ x: x + side * 1.31, y: 0.39, z: z + depth * 0.61, sx: 0.075, sy: 0.76, sz: 0.075 });
-      dividers.push({ x, y: 1.25, z: z - 0.77, sx: 2.94, sy: 0.82, sz: 0.09 });
-      dividerSides.push({ x: x - 1.51, y: 1.12, z, sx: 0.08, sy: 0.72, sz: 1.55 }, { x: x + 1.51, y: 1.12, z, sx: 0.08, sy: 0.72, sz: 1.55 });
-      for (const monitorX of [-0.57, 0.58]) {
-        const mx = x + monitorX, mz = z - 0.48;
-        monitorFrames.push({ x: mx, y: 1.63, z: mz, sx: 1.05, sy: 0.68, sz: 0.085 });
-        monitorScreens.push({ x: mx, y: 1.63, z: mz + 0.048, sx: 0.96, sy: 0.58, sz: 0.012 });
-        monitorStands.push({ x: mx, y: 1.21, z: mz, sx: 0.09, sy: 0.44, sz: 0.09 });
-        monitorFeet.push({ x: mx, y: 0.99, z: mz + 0.04, sx: 0.48, sy: 0.045, sz: 0.25 });
+      stations.push({ id, x, z, row, col, label: `Agent Station ${String(id).padStart(2, '0')}`, department: 'Customer Operations' });
+      deskTops.push({ x, y: 0.84, z, sx: 2.75, sy: 0.15, sz: 1.34 });
+      deskAprons.push({ x, y: 0.66, z: z - 0.44, sx: 2.42, sy: 0.25, sz: 0.07 });
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) deskLegs.push({ x: x + sx * 1.22, y: 0.39, z: z + sz * 0.55, sx: 0.075, sy: 0.78, sz: 0.075 });
+      dividers.push({ x, y: 1.34, z: z - 0.71, sx: 2.72, sy: 0.78, sz: 0.075 });
+      for (const mx of [-0.52, 0.52]) {
+        const monitorX = x + mx, monitorZ = z - 0.44;
+        monitorFrames.push({ x: monitorX, y: 1.51, z: monitorZ, sx: 0.91, sy: 0.58, sz: 0.075 });
+        monitorScreens.push({ x: monitorX, y: 1.51, z: monitorZ + 0.043, sx: 0.83, sy: 0.49, sz: 0.012 });
+        monitorStands.push({ x: monitorX, y: 1.17, z: monitorZ, sx: 0.08, sy: 0.32, sz: 0.08 });
       }
-      keyboards.push({ x, y: 0.94, z: z + 0.39, sx: 1.16, sy: 0.045, sz: 0.32 });
-      for (let keyRow = 0; keyRow < 2; keyRow++) {
-        for (let keyCol = 0; keyCol < 8; keyCol++) {
-          keyboardKeycaps.push({ x: x + (keyCol - 3.5) * 0.125, y: 0.969, z: z + 0.30 + keyRow * 0.13, sx: 0.088, sy: 0.018, sz: 0.075 });
-        }
-      }
-      pointingDevices.push({ x: x + 0.83, y: 0.982, z: z + 0.40, sx: 0.105, sy: 0.045, sz: 0.15 });
-      monitorIndicators.push({ x: x - 0.57, y: 1.62, z: z - 0.424, sx: 0.035, sy: 0.025, sz: 0.014, color: '#71e6c7' }, { x: x + 0.58, y: 1.62, z: z - 0.424, sx: 0.035, sy: 0.025, sz: 0.014, color: '#71e6c7' });
-      chairSeats.push({ x, y: 0.64, z: z + 1.86, sx: 0.78, sy: 0.15, sz: 0.7 });
-      chairBacks.push({ x, y: 1.18, z: z + 2.18, sx: 0.74, sy: 0.94, sz: 0.14 });
-      chairPosts.push({ x, y: 0.3, z: z + 1.86, sx: 0.12, sy: 0.54, sz: 0.12 });
-      chairBases.push({ x, y: 0.1, z: z + 1.86, sx: 0.76, sy: 0.07, sz: 0.76 });
-      stationLights.push({ x, y: 2.08, z: mzForLight(z), sx: 0.095, sy: 0.095, sz: 0.095, color: stationId % 4 === 0 ? '#dcb46e' : '#53d8bd' });
+      keyboards.push({ x, y: 0.94, z: z + 0.12, sx: 0.78, sy: 0.055, sz: 0.28 });
+      mice.push({ x: x + 0.62, y: 0.94, z: z + 0.12, sx: 0.11, sy: 0.06, sz: 0.17 });
+      chairSeats.push({ x, y: 0.57, z: z + 1.36, sx: 0.82, sy: 0.16, sz: 0.82 });
+      chairBacks.push({ x, y: 1.03, z: z + 1.72, sx: 0.82, sy: 0.82, sz: 0.16 });
+      chairPosts.push({ x, y: 0.31, z: z + 1.36, sx: 0.075, sy: 0.54, sz: 0.075 });
+      chairBases.push({ x, y: 0.1, z: z + 1.36, sx: 0.82, sy: 0.07, sz: 0.82 });
+      statusLamps.push({ x: x - 1.12, y: 1.01, z: z - 0.35, sx: 0.12, sy: 0.12, sz: 0.035 });
+      id++;
     }
   }
-  addInstances('desk-surfaces', boxGeometry, mats.wood, deskTops);
-  addInstances('desk-front-edges', boxGeometry, mats.woodEdge, deskEdges);
-  addInstances('desk-legs', boxGeometry, mats.metal, deskLegs);
-  addInstances('desk-modesty-panels', boxGeometry, mats.wallDark, modestyPanels);
-  addInstances('acoustic-divider-backs', boxGeometry, mats.divider, dividers);
-  addInstances('acoustic-divider-sides', boxGeometry, mats.divider, dividerSides);
-  addInstances('monitor-frames', boxGeometry, mats.screenFrame, monitorFrames);
-  addInstances('monitor-displays', boxGeometry, mats.screen, monitorScreens);
-  addInstances('monitor-stands', boxGeometry, mats.darkMetal, monitorStands);
-  addInstances('monitor-feet', boxGeometry, mats.metal, monitorFeet);
-  addInstances('keyboards', boxGeometry, mats.darkMetal, keyboards);
-  addInstances('keyboard-keycaps', boxGeometry, material('#82949a', 0.72), keyboardKeycaps);
-  addInstances('pointing-devices', sphereGeometry, mats.darkMetal, pointingDevices);
-  addInstances('monitor-status-indicators', sphereGeometry, new THREE.MeshBasicMaterial({ color: '#71e6c7' }), monitorIndicators);
-  addInstances('chair-seats', boxGeometry, mats.chair, chairSeats);
-  addInstances('chair-backs', boxGeometry, mats.chair, chairBacks);
-  addInstances('chair-posts', cylinderGeometry, mats.metal, chairPosts);
-  addInstances('chair-bases', boxGeometry, mats.darkMetal, chairBases);
-  const contactShadowTransforms = [];
-  for (const station of stations) {
-    contactShadowTransforms.push({ x: station.x, y: -0.004, z: station.z, sx: 2.7, sy: 1.55, sz: 1, rx: -Math.PI / 2 });
-    contactShadowTransforms.push({ x: station.x, y: -0.003, z: station.z + 1.86, sx: 1.05, sy: 1.15, sz: 1, rx: -Math.PI / 2 });
-  }
-  for (const [x, z] of [[-15, 12], [15, 12], [-14, -10], [15, -3], [-12.7, 10.6], [-12.4, -7]]) {
-    contactShadowTransforms.push({ x, y: -0.002, z, sx: 1.7, sy: 1.35, sz: 1, rx: -Math.PI / 2 });
-  }
-  const contactShadowMesh = new THREE.InstancedMesh(planeGeometry, contactShadowMaterial, contactShadowTransforms.length);
-  contactShadowMesh.name = 'soft-floor-contact-shadows';
-  contactShadowMesh.renderOrder = 1;
-  contactShadowMesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
-  contactShadowTransforms.forEach((item, index) => {
-    dummy.position.set(item.x, item.y, item.z);
-    dummy.rotation.set(item.rx, 0, 0);
-    dummy.scale.set(item.sx, item.sy, item.sz);
-    dummy.updateMatrix();
-    contactShadowMesh.setMatrixAt(index, dummy.matrix);
-  });
-  contactShadowMesh.instanceMatrix.needsUpdate = true;
-  scene.add(contactShadowMesh);
-  const glowMaterial = new THREE.MeshBasicMaterial({ color: '#55d7bf' });
-  const glowMesh = new THREE.InstancedMesh(sphereGeometry, glowMaterial, stationLights.length);
-  glowMesh.name = 'workstation-status-lights';
-  glowMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-  stationLights.forEach((item, index) => {
-    dummy.position.set(item.x, item.y, item.z);
-    dummy.scale.set(item.sx, item.sy, item.sz);
-    dummy.updateMatrix();
-    glowMesh.setMatrixAt(index, dummy.matrix);
-    glowMesh.setColorAt(index, new THREE.Color(item.color));
-  });
-  glowMesh.instanceMatrix.needsUpdate = true;
-  if (glowMesh.instanceColor) glowMesh.instanceColor.needsUpdate = true;
-  scene.add(glowMesh);
-  stations.forEach((station) => { station.glow = { mesh: glowMesh, index: station.glowIndex }; });
+  addInstances('agent-desk-surfaces', boxGeo, mats.wood, deskTops);
+  addInstances('agent-desk-aprons', boxGeo, mats.darkMetal, deskAprons);
+  addInstances('agent-desk-legs', boxGeo, mats.metal, deskLegs);
+  addInstances('desk-acoustic-dividers', boxGeo, mats.blueDark, dividers);
+  addInstances('monitor-bezels', boxGeo, mats.screenFrame, monitorFrames);
+  addInstances('monitor-active-screens', boxGeo, mats.screen, monitorScreens);
+  addInstances('monitor-stands', boxGeo, mats.metal, monitorStands);
+  addInstances('keyboards', boxGeo, mats.keyboard, keyboards);
+  addInstances('pointing-devices', sphereGeo, mats.darkMetal, mice);
+  addInstances('chair-seats', boxGeo, mats.chair, chairSeats);
+  addInstances('chair-backs', boxGeo, mats.chair, chairBacks);
+  addInstances('chair-posts', cylinderGeo, mats.darkMetal, chairPosts);
+  addInstances('chair-bases', boxGeo, mats.darkMetal, chairBases);
+  const lampMesh = addInstances('station-presence-lights', sphereGeo, mats.statusGreen, statusLamps);
 
-  // A few restrained plants and noticeboards add depth without expensive detail meshes.
-  const potTransforms = [[-15, 0.26, 12], [15, 0.26, 12], [-14, 0.26, -10], [15, 0.26, -3]].map(([x, y, z]) => ({ x, y, z, sx: 0.48, sy: 0.52, sz: 0.48 }));
-  addInstances('planters', cylinderGeometry, material('#879b95', 0.86), potTransforms);
-  const leaves = [];
-  for (const [x, , z] of [[-15, 0, 12], [15, 0, 12], [-14, 0, -10], [15, 0, -3]]) {
-    for (let i = 0; i < 5; i++) {
-      const a = i * 1.256;
-      leaves.push({ x: x + Math.cos(a) * 0.24, y: 1.05 + (i % 2) * 0.13, z: z + Math.sin(a) * 0.24, sx: 0.2, sy: 0.64, sz: 0.2, color: i % 2 ? '#4f9165' : '#76a875' });
-    }
-  }
-  addInstances('plant-canopies', sphereGeometry, mats.plant, leaves);
-  const aisleMarks = [];
-  for (let z = -12; z <= 12; z += 2.4) aisleMarks.push({ x: 0, y: 0.012, z, sx: 0.045, sy: 0.015, sz: 0.7 });
-  addInstances('aisle-wayfinding', boxGeometry, mats.tealLight, aisleMarks);
-  const overheadFixtures = [];
-  for (const z of [-7, -1, 5]) for (const x of [-9, -3, 3, 9]) {
-    overheadFixtures.push({ x, y: 3.16, z: z - 1.1, sx: 2.35, sy: 0.045, sz: 0.22 });
-  }
-  addInstances('overhead-led-fixtures', boxGeometry, new THREE.MeshBasicMaterial({ color: '#f5f0df', toneMapped: false }), overheadFixtures);
+  // A subtle, shared ground shadow keeps people and furniture visually anchored.
+  const shadowTexture = makeCanvasTexture((ctx, w, h) => {
+    const g = ctx.createRadialGradient(w / 2, h / 2, 5, w / 2, h / 2, w / 2);
+    g.addColorStop(0, 'rgba(8,17,24,.34)'); g.addColorStop(0.55, 'rgba(8,17,24,.14)'); g.addColorStop(1, 'rgba(8,17,24,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  }, 128, 128);
+  const shadowMat = new THREE.MeshBasicMaterial({ map: shadowTexture, transparent: true, depthWrite: false, toneMapped: false });
+  materials.push(shadowMat);
+  const shadowGeo = shared(new THREE.PlaneGeometry(1, 1));
+  const personShadows = [];
 
-  // Detailed low-poly staff: shared anatomy geometry, articulated arms and legs,
-  // facial features, headset equipment and individual uniform/scarf materials.
+  // Locally-generated staff with torso, neck, face, hair/hijab, headset, arms,
+  // forearms and visible legs. These are articulated meshes, not single blobs.
+  const skinMaterials = [mats.skinA, mats.skinB, mats.skinC];
+  const shirtMaterials = [mats.shirtA, mats.shirtB, mats.shirtC, mats.shirtD];
+  const scarfMaterials = [mats.scarfA, mats.scarfB, mats.scarfC];
   const staff = [];
-  const bodyGeometry = new THREE.CapsuleGeometry(0.235, 0.54, tier === 'low' ? 3 : 5, tier === 'low' ? 10 : 16);
-  const upperArmGeometry = new THREE.CapsuleGeometry(0.073, 0.27, 3, tier === 'low' ? 8 : 12);
-  const forearmGeometry = new THREE.CapsuleGeometry(0.062, 0.25, 3, tier === 'low' ? 8 : 12);
-  const legGeometry = new THREE.CapsuleGeometry(0.087, 0.39, 3, tier === 'low' ? 8 : 12);
-  const headGeometry = new THREE.SphereGeometry(0.158, tier === 'low' ? 14 : 22, tier === 'low' ? 10 : 16);
-  const handGeometry = new THREE.SphereGeometry(0.064, 12, 9);
-  const shoeGeometry = new THREE.SphereGeometry(0.09, 14, 9);
-  const neckGeometry = new THREE.CylinderGeometry(0.07, 0.08, 0.14, 12);
-  const noseGeometry = new THREE.ConeGeometry(0.033, 0.082, 8);
-  const eyeGeometry = new THREE.SphereGeometry(0.022, 10, 8);
-  const irisGeometry = new THREE.SphereGeometry(0.010, 8, 6);
-  const hairCapGeometry = new THREE.SphereGeometry(0.166, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.62);
-  const headsetArcGeometry = new THREE.TorusGeometry(0.17, 0.012, 6, 20, Math.PI);
-  const earPadGeometry = new THREE.CylinderGeometry(0.043, 0.043, 0.035, 12);
-  const badgeGeometry = makeRoundedUnitBox();
-  const waistGeometry = new THREE.CylinderGeometry(0.19, 0.2, 0.19, 14);
-  const hairAlt = material('#30251f', 0.88);
-  const tieMaterial = material('#b78e50', 0.5);
-  const skinLight = material('#bd8768', 0.8);
-  const jacketLight = material('#365d70', 0.74);
-  const jacketDeep = material('#59443b', 0.78);
-  function addStaffMesh(parent, geometry, mat, position, scale = null, rotation = null) {
-    const mesh = new THREE.Mesh(geometry, mat);
-    mesh.position.set(...position);
-    if (scale) mesh.scale.set(...scale);
-    if (rotation) mesh.rotation.set(...rotation);
-    mesh.castShadow = false;
-    mesh.receiveShadow = false;
-    parent.add(mesh);
-    return mesh;
-  }
-  function createArm(root, side, jacket, seated) {
-    const arm = new THREE.Group();
-    arm.position.set(side * 0.245, seated ? 1.28 : 1.38, 0.015);
-    const upper = addStaffMesh(arm, upperArmGeometry, jacket, [0, -0.16, 0], null, [0, 0, side * -0.12]);
-    const elbow = new THREE.Group(); elbow.position.set(0, -0.30, 0.012); arm.add(elbow);
-    addStaffMesh(elbow, forearmGeometry, jacket, [0, -0.13, 0.025]);
-    addStaffMesh(elbow, handGeometry, mats.skin, [0, -0.30, 0.045], [1.0, 0.9, 1.05]);
-    arm.userData = { upper, elbow };
-    root.add(arm);
-    return arm;
-  }
-  function createStaff(seed, x, z, seated = false) {
+  function buildStaff(station, index, seated = true) {
     const root = new THREE.Group();
-    root.position.set(x, 0, z);
-    // Staff at desks face their monitor; walking staff face into the floor.
-    root.rotation.y = Math.PI;
-    const jacket = seed % 3 === 0 ? jacketLight : seed % 2 ? mats.jacketA : jacketDeep;
-    const skin = seed % 2 ? mats.skin : skinLight;
-    const isScarf = seed % 3 === 1;
-    addStaffMesh(root, bodyGeometry, jacket, [0, seated ? 1.03 : 1.12, 0], seated ? [1.0, 0.94, 0.88] : [1, 1.04, 0.9]);
-    addStaffMesh(root, waistGeometry, mats.trousers, [0, seated ? 0.69 : 0.72, 0], [1, 1, 0.92]);
-    addStaffMesh(root, neckGeometry, skin, [0, seated ? 1.43 : 1.54, 0.005]);
-    const head = new THREE.Group(); head.position.set(0, seated ? 1.69 : 1.82, 0.015); root.add(head);
-    addStaffMesh(head, headGeometry, skin, [0, 0, 0]);
-    // Tiny face/headset parts are omitted at preview distance and restored nearby.
-    const detailGroup = new THREE.Group();
-    detailGroup.name = 'staff-face-and-headset-details';
-    detailGroup.visible = false;
-    head.add(detailGroup);
-    // Face is oriented toward local +Z: eyes, bridge, nose and a subtle mouth.
-    for (const side of [-1, 1]) {
-      addStaffMesh(detailGroup, eyeGeometry, mats.eyeWhite, [side * 0.057, 0.018, 0.139]);
-      addStaffMesh(detailGroup, irisGeometry, mats.eyeDark, [side * 0.057, 0.017, 0.158]);
-      addStaffMesh(detailGroup, handGeometry, skin, [side * 0.158, -0.012, 0], [0.48, 0.78, 0.62]);
-    }
-    addStaffMesh(detailGroup, noseGeometry, skin, [0, -0.02, 0.16], [0.78, 0.82, 0.72], [Math.PI / 2, 0, 0]);
-    addStaffMesh(detailGroup, new THREE.BoxGeometry(0.055, 0.008, 0.012), hairAlt, [0, -0.075, 0.144]);
-    if (isScarf) {
-      addStaffMesh(head, new THREE.SphereGeometry(0.176, 16, 12), mats.scarf, [0, 0.025, -0.008], [1.14, 1.17, 1.06]);
-      addStaffMesh(root, new THREE.CapsuleGeometry(0.17, 0.24, 3, 12), mats.scarf, [0, seated ? 1.43 : 1.56, -0.035], [1.14, 1.05, 0.9]);
-      // Keep the facial opening clear over the scarf shell.
-      addStaffMesh(head, headGeometry, skin, [0, 0, 0], [0.92, 0.96, 0.98]);
+    root.name = `staff-${String(index + 1).padStart(2, '0')}`;
+    root.position.set(station.x, 0, station.z + (seated ? 1.36 : 0));
+    root.rotation.y = Math.PI; // Face the workstation / central floor.
+    const skin = skinMaterials[index % skinMaterials.length];
+    const shirt = shirtMaterials[(index * 3 + 1) % shirtMaterials.length];
+    const scarf = scarfMaterials[(index + 1) % scarfMaterials.length];
+
+    addSphere(root, 'uniform-torso', [0, 1.04, 0], [0.32, 0.4, 0.2], shirt);
+    addSphere(root, 'uniform-collar', [0, 1.36, -0.025], [0.17, 0.09, 0.17], mats.white, smallSphereGeo);
+    addCylinder(root, 'neck', [0, 1.47, 0.01], [0.105, 0.18, 0.105], skin, lowCylinderGeo);
+    addSphere(root, 'head', [0, 1.73, 0.015], [0.235, 0.29, 0.22], skin);
+    const isHijab = index % 4 === 1 || index % 4 === 3;
+    if (isHijab) {
+      addSphere(root, 'hijab-crown', [0, 1.82, -0.005], [0.265, 0.32, 0.245], scarf);
+      addSphere(root, 'hijab-drape', [0, 1.48, -0.005], [0.29, 0.34, 0.22], scarf);
+      addSphere(root, 'face-opening', [0, 1.72, 0.19], [0.17, 0.205, 0.045], skin, smallSphereGeo);
     } else {
-      addStaffMesh(head, hairCapGeometry, seed % 2 ? mats.hair : hairAlt, [0, 0.035, -0.008]);
-      addStaffMesh(head, new THREE.SphereGeometry(0.12, 14, 9), seed % 2 ? mats.hair : hairAlt, [0, 0.105, -0.045], [1.0, 0.55, 0.9]);
+      addSphere(root, 'hair-cap', [0, 1.91, -0.015], [0.245, 0.17, 0.225], mats.hair);
+      addSphere(root, 'hair-back', [0, 1.72, -0.12], [0.24, 0.27, 0.16], mats.hair);
     }
-    // Contact-centre headset: ear cups, headband and a short boom microphone.
-    addStaffMesh(detailGroup, headsetArcGeometry, mats.headset, [0, 0.015, -0.004], [1.02, 1.04, 1], [0, 0, 0]);
-    for (const side of [-1, 1]) addStaffMesh(detailGroup, earPadGeometry, mats.headset, [side * 0.169, -0.005, 0.004], [1, 1, 1], [Math.PI / 2, 0, 0]);
-    const boomCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-0.16, -0.015, 0.035),
-      new THREE.Vector3(-0.19, -0.075, 0.10),
-      new THREE.Vector3(-0.14, -0.12, 0.15)
-    ]);
-    addStaffMesh(detailGroup, new THREE.TubeGeometry(boomCurve, 8, 0.009, 5, false), mats.headset, [0, 0, 0]);
-    addStaffMesh(root, new THREE.BoxGeometry(0.12, 0.16, 0.018), mats.gold, [0.105, seated ? 1.02 : 1.16, 0.22]);
-    // Seated staff retain visible legs and shoes; standing staff have separated legs.
-    const legs = [];
     for (const side of [-1, 1]) {
-      const legRoot = new THREE.Group();
-      legRoot.position.set(side * 0.115, seated ? 0.69 : 0.56, seated ? 0.10 : 0);
-      if (seated) {
-        addStaffMesh(legRoot, legGeometry, mats.trousers, [0, -0.045, 0.18], [0.92, 0.92, 0.92], [Math.PI / 2, 0, 0]);
-        addStaffMesh(legRoot, legGeometry, mats.trousers, [0, -0.30, 0.43], [0.88, 0.86, 0.9]);
-        addStaffMesh(legRoot, shoeGeometry, mats.shoe, [0, -0.55, 0.42], [1.2, 0.72, 1.8]);
-      } else {
-        addStaffMesh(legRoot, legGeometry, mats.trousers, [0, -0.20, 0]);
-        addStaffMesh(legRoot, shoeGeometry, mats.shoe, [0, -0.47, 0.045], [1.2, 0.72, 1.8]);
-      }
-      root.add(legRoot); legs.push(legRoot);
+      addSphere(root, 'ear', [side * 0.226, 1.73, 0.005], [0.045, 0.065, 0.05], skin, smallSphereGeo);
+      addSphere(root, 'eye', [side * 0.082, 1.755, 0.214], [0.027, 0.032, 0.016], mats.eye, smallSphereGeo);
+      addSphere(root, 'headset-earcup', [side * 0.255, 1.73, 0.015], [0.065, 0.085, 0.06], mats.headset, smallSphereGeo);
     }
-    const leftArm = createArm(root, -1, jacket, seated);
-    const rightArm = createArm(root, 1, jacket, seated);
-    root.userData = { leftArm, rightArm, seed, seated };
+    addSphere(root, 'nose', [0, 1.69, 0.225], [0.035, 0.055, 0.04], skin, smallSphereGeo);
+    const headband = new THREE.Mesh(torusGeo, mats.headset);
+    headband.name = 'headset-headband'; headband.position.set(0, 1.84, -0.015); headband.rotation.z = Math.PI; root.add(headband);
+    addCylinder(root, 'headset-microphone', [0.18, 1.62, 0.2], [0.018, 0.18, 0.018], mats.headset, lowCylinderGeo, [0, 0, -0.65]);
+
+    // Seated legs are visible below the desk; standing staff retain full legs.
+    if (seated) {
+      for (const side of [-1, 1]) {
+        addSphere(root, 'thigh', [side * 0.13, 0.62, -0.16], [0.13, 0.15, 0.32], mats.trousers);
+        addSphere(root, 'lower-leg', [side * 0.13, 0.31, -0.43], [0.105, 0.25, 0.11], mats.trousers);
+        addBox(root, 'shoe', [0.19, 0.11, 0.31], [side * 0.13, 0.09, -0.58], mats.shoe);
+      }
+    } else {
+      for (const side of [-1, 1]) {
+        addSphere(root, 'standing-leg', [side * 0.13, 0.38, 0], [0.12, 0.37, 0.13], mats.trousers);
+        addBox(root, 'standing-shoe', [0.2, 0.11, 0.3], [side * 0.13, 0.08, 0.07], mats.shoe);
+      }
+    }
+
+    const arms = [];
+    for (const side of [-1, 1]) {
+      const arm = new THREE.Group();
+      arm.position.set(side * 0.29, 1.32, -0.005);
+      const upper = new THREE.Mesh(capsuleGeo, shirt); upper.position.set(0, -0.15, -0.08); upper.rotation.x = -0.88; arm.add(upper);
+      const lower = new THREE.Mesh(capsuleGeo, shirt); lower.scale.set(0.8, 0.78, 0.8); lower.position.set(0, -0.28, -0.28); lower.rotation.x = -1.16; arm.add(lower);
+      addSphere(arm, 'hand', [0, -0.35, -0.51], [0.085, 0.055, 0.095], skin, smallSphereGeo);
+      root.add(arm); arms.push(arm);
+    }
     scene.add(root);
-    staff.push({ root, detailGroup, phase: seed * 1.37, baseX: x, baseZ: z, seated, walking: !seated });
+    const shadow = new THREE.Mesh(shadowGeo, shadowMat);
+    shadow.rotation.x = -Math.PI / 2; shadow.position.set(station.x, 0.006, station.z + (seated ? 1.36 : 0));
+    shadow.scale.set(1.6, 1.1, 1); scene.add(shadow); personShadows.push(shadow);
+    staff.push({ root, arms, shadow, seated, baseX: root.position.x, baseZ: root.position.z, phase: index * 1.73, index, walking: !seated });
     return root;
   }
-  const seatedStations = [stations[1], stations[4], stations[6], stations[9]];
-  seatedStations.forEach((station, index) => createStaff(index, station.x, station.z + 1.38, true));
-  createStaff(5, -1.8, 10.2, false);
-  createStaff(6, 2.0, -10.0, false);
 
-  // Preview and first-person movement state.
-  const preview = { azimuth: 0.42, elevation: 0.38, radius: 31.5, target: new THREE.Vector3(0, 1.35, -0.8) };
-  const player = { x: 0, z: 13.1, yaw: 0, pitch: -0.055, speed: 4.3 };
+  const occupied = [0, 1, 2, 4, 5, 7, 8, 9, 11].slice(0, tierDefaults.people);
+  occupied.forEach((stationIndex, index) => buildStaff(stations[stationIndex], index, true));
+  const roamingPosts = [
+    { id: 0, x: -14.9, z: 9.0 },
+    { id: 0, x: 5.5, z: -11.0 }
+  ];
+  roamingPosts.forEach((post, index) => buildStaff(post, occupied.length + index, false));
+
+  // A few small props reinforce the contact-centre setting without filling the floor.
+  const planters = [];
+  for (const x of [-18.1, -8.7, 8.8, 18.1]) for (const z of [-15.0, 15.0]) planters.push({ x, y: 0.45, z, sx: 0.72, sy: 0.9, sz: 0.72 });
+  addInstances('planter-pots', cylinderGeo, mats.wood, planters);
+  for (const [x, z] of [[-18.1, -15], [-8.7, 15], [8.8, -15], [18.1, 15]]) {
+    addSphere(scene, 'planter-foliage', [x, 1.28, z], [0.55, 0.8, 0.55], mats.plant);
+    addSphere(scene, 'planter-leaf', [x + 0.22, 1.36, z - 0.16], [0.29, 0.55, 0.3], mats.plantLight, smallSphereGeo);
+  }
+
+  // Preview camera and first-person controller.
+  const preview = { azimuth: 0.52, elevation: 0.43, radius: 40.5, target: new THREE.Vector3(0, 1.25, -0.35) };
+  const player = { x: 0, z: 15.0, yaw: 0, pitch: -0.04, speed: 4.35 };
   const keys = new Set();
   const touchMove = { x: 0, y: 0, pointerId: null, sprinting: false };
   let immersive = false;
@@ -564,494 +488,320 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   let frameId = 0;
   let loopActive = false;
   let lastFrameAt = 0;
-  let averageFrameMs = 0;
-  let lastQualityCheck = 0;
-  let slowFrameStreak = 0;
+  let avgFrameMs = 0;
+  let perfLastUi = 0;
+  let lowFpsStreak = 0;
   let headroomStreak = 0;
-  let hostInView = true;
+  let currentRatio = renderer.getPixelRatio();
+  let ratioCap = currentRatio;
   let disposed = false;
   let contextLost = false;
-  let contextRecoveryTimer = 0;
-  let staffDetailCheckAt = 0;
-  let lastStaffUpdateAt = 0;
-  let assetsReady = true;
-  const assetMessage = 'CALLORIA workplace geometry and articulated local staff ready';
-  const interactButton = document.getElementById('touchInteractButton');
-  const joystick = document.getElementById('touchJoystick');
-  const joystickKnob = document.getElementById('touchStick');
-  const sprintButton = document.getElementById('touchSprintButton');
+  let statusTimer = 0;
+  let hostInView = true;
   const listeners = [];
   const listen = (target, type, handler, options) => {
     target?.addEventListener(type, handler, options);
     listeners.push(() => target?.removeEventListener(type, handler, options));
   };
 
-  function updateStaffDetailVisibility(force = false) {
-    const now = performance.now();
-    if (!force && now - staffDetailCheckAt < 240) return;
-    staffDetailCheckAt = now;
-    const detailRadius = mobile ? 13.5 : 16.5;
-    const radiusSq = detailRadius * detailRadius;
-    for (const person of staff) {
-      const dx = camera.position.x - person.root.position.x;
-      const dy = camera.position.y - (person.root.position.y + 1.6);
-      const dz = camera.position.z - person.root.position.z;
-      person.detailGroup.visible = (dx * dx + dy * dy + dz * dz) <= radiusSq;
-    }
-  }
   function setPreviewCamera() {
-    const e = preview.elevation, a = preview.azimuth, r = preview.radius;
+    const horizontal = Math.cos(preview.elevation) * preview.radius;
     camera.position.set(
-      preview.target.x + Math.sin(a) * Math.cos(e) * r,
-      preview.target.y + Math.sin(e) * r,
-      preview.target.z + Math.cos(a) * Math.cos(e) * r
+      preview.target.x + Math.sin(preview.azimuth) * horizontal,
+      preview.target.y + Math.sin(preview.elevation) * preview.radius,
+      preview.target.z + Math.cos(preview.azimuth) * horizontal
     );
     camera.lookAt(preview.target);
-    updateStaffDetailVisibility(true);
   }
-  // Performance Lab: browser-observable metrics only. WebGL does not expose
-  // portable GPU milliseconds, so GPU time is explicitly reported as unavailable.
-  const perfSamples = [];
-  let perfLastUiAt = 0;
-  let perfFrames = 0;
-  let perfCpuMs = 0;
-  let perfPanel = null;
-  let perfButton = null;
-  let perfVisible = false;
-  let sceneMemoryCache = null;
-  const perfMetrics = { fps: 0, frameMs: 0, p95Ms: 0, cpuMs: 0, calls: 0, triangles: 0, geometries: 0, textures: 0, heapMb: null };
-
-  function applyGraphicsProfile(profile, persist = false) {
-    const allowed = ['auto', 'smooth', 'balanced', 'sharp'];
-    const selected = allowed.includes(profile) ? profile : 'auto';
-    graphicsProfile = selected;
-    const settings = {
-      auto: { ratio: deviceQuality.pixelRatio, min: deviceQuality.minRatio, fps: deviceQuality.fps },
-      smooth: { ratio: deviceQuality.pixelRatio * 0.78, min: Math.min(deviceQuality.minRatio, 0.62), fps: Math.min(deviceQuality.fps, 30) },
-      balanced: { ratio: deviceQuality.pixelRatio * 0.94, min: Math.min(deviceQuality.minRatio, 0.68), fps: Math.min(deviceQuality.fps, mobile ? 45 : 60) },
-      sharp: { ratio: deviceQuality.pixelRatio * (mobile ? 1.04 : 1.10), min: deviceQuality.minRatio, fps: Math.min(deviceQuality.fps, mobile ? 45 : 60) }
-    }[selected];
-    quality = { ...deviceQuality, pixelRatio: settings.ratio, minRatio: settings.min, fps: settings.fps };
-    pixelRatioCap = Math.min(quality.pixelRatio, window.devicePixelRatio || 1, mobile ? 1.4 : 1.75, maxAnisotropy);
-    currentPixelRatio = Math.max(Math.min(quality.pixelRatio, pixelRatioCap), Math.min(quality.minRatio, pixelRatioCap));
-    slowFrameStreak = 0;
-    headroomStreak = 0;
-    averageFrameMs = 0;
-    lastQualityCheck = 0;
-    perfSamples.length = 0;
-    if (persist) {
-      try { localStorage.setItem(graphicsProfileKey, selected); } catch { /* Profile remains active for this page. */ }
-    }
-    if (typeof renderer !== 'undefined' && renderer) {
-      renderer.setPixelRatio(currentPixelRatio);
-      renderer.setSize(Math.max(1, host.clientWidth || 1), Math.max(1, host.clientHeight || 1), false);
-      if (typeof renderStill === 'function') renderStill();
-    }
-    const select = perfPanel?.querySelector('#calloria-graphics-profile');
-    if (select && select.value !== selected) select.value = selected;
-    updatePerformanceLab(true);
+  function resize() {
+    const width = Math.max(1, host.clientWidth || 1);
+    const height = Math.max(1, host.clientHeight || 1);
+    camera.aspect = width / height; camera.updateProjectionMatrix();
+    renderer.setPixelRatio(currentRatio);
+    renderer.setSize(width, height, false);
+    if (!immersive) renderStill();
   }
-  function createPerformanceLab() {
-    const panelRoot = host.closest('.world-panel') || host.parentElement || document.body;
-    perfButton = document.createElement('button');
-    perfButton.type = 'button';
-    perfButton.className = 'calloria-perf-toggle';
-    perfButton.textContent = 'PERF';
-    perfButton.setAttribute('aria-label', 'Toggle Performance Lab');
-    perfButton.setAttribute('aria-expanded', 'false');
-    perfPanel = document.createElement('section');
-    perfPanel.className = 'calloria-perf-panel';
-    perfPanel.hidden = true;
-    perfPanel.setAttribute('aria-label', 'Performance Lab diagnostics');
-    perfPanel.innerHTML = '<div class="calloria-perf-head"><strong>PERFORMANCE LAB</strong><span>F3</span><button type="button" aria-label="Close Performance Lab">×</button></div><div class="calloria-perf-controls"><label for="calloria-graphics-profile">GRAPHICS PROFILE<select id="calloria-graphics-profile"><option value="auto">Automatic · adaptive</option><option value="smooth">Smooth · lower rendering cost</option><option value="balanced">Balanced · everyday quality</option><option value="sharp">Sharp · higher image clarity</option></select></label><small>Profiles adjust render resolution and frame target. Device safety limits remain active.</small></div><div class="calloria-perf-grid"></div><div class="calloria-perf-foot">GPU timing is not exposed by this browser. Memory figures are estimates.</div>';
-    panelRoot.append(perfButton, perfPanel);
-    perfButton.addEventListener('click', togglePerformanceLab);
-    perfPanel.querySelector('.calloria-perf-head button')?.addEventListener('click', () => togglePerformanceLab(false));
-    const profileSelect = perfPanel.querySelector('#calloria-graphics-profile');
-    if (profileSelect) {
-      profileSelect.value = graphicsProfile;
-      profileSelect.addEventListener('change', () => applyGraphicsProfile(profileSelect.value, true));
-    }
-    listen(window, 'keydown', (event) => {
-      if (event.code === 'F3') { event.preventDefault(); togglePerformanceLab(); }
-    });
-    if (new URLSearchParams(location.search).has('perf')) togglePerformanceLab(true);
-  }
-  function togglePerformanceLab(force) {
-    perfVisible = typeof force === 'boolean' ? force : !perfVisible;
-    if (perfPanel) perfPanel.hidden = !perfVisible;
-    if (perfButton) { perfButton.setAttribute('aria-expanded', String(perfVisible)); perfButton.classList.toggle('is-active', perfVisible); }
-    if (perfVisible) updatePerformanceLab(true);
-  }
-  function estimateSceneMemory() {
-    if (sceneMemoryCache) return sceneMemoryCache;
-    const geometries = new Set(); const textures = new Set();
-    let geometryBytes = 0; let textureBytes = 0;
-    scene.traverse((object) => {
-      if (object.geometry && !geometries.has(object.geometry)) {
-        geometries.add(object.geometry);
-        for (const attribute of Object.values(object.geometry.attributes || {})) {
-          const array = attribute?.array;
-          if (array?.byteLength) geometryBytes += array.byteLength;
-        }
-        for (const attribute of Object.values(object.geometry.morphAttributes || {})) for (const item of attribute || []) if (item?.array?.byteLength) geometryBytes += item.array.byteLength;
-      }
-      const materials = Array.isArray(object.material) ? object.material : object.material ? [object.material] : [];
-      for (const mat of materials) for (const value of Object.values(mat)) {
-        if (value?.isTexture && !textures.has(value)) {
-          textures.add(value);
-          const image = value.image || value.source?.data;
-          const width = image?.width || image?.videoWidth || 0;
-          const height = image?.height || image?.videoHeight || 0;
-          if (width && height) textureBytes += width * height * 4 * (value.generateMipmaps ? 1.34 : 1);
-        }
-      }
-    });
-    sceneMemoryCache = { geometryCount: geometries.size, textureCount: textures.size, estimateMb: (geometryBytes + textureBytes) / 1048576 };
-    return sceneMemoryCache;
-  }
-  function updatePerformanceLab(force = false) {
-    if (!perfVisible || !perfPanel) return;
-    const now = performance.now();
-    if (!force && now - perfLastUiAt < 450) return;
-    perfLastUiAt = now;
-    const sorted = perfSamples.slice().sort((a, b) => a - b);
-    const p95 = sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))] : 0;
-    const memory = performance.memory?.usedJSHeapSize;
-    const sceneMemory = estimateSceneMemory();
-    const info = renderer.info;
-    const rows = [
-      ['FPS', `${perfMetrics.fps.toFixed(1)} / ${quality.fps} target`],
-      ['Frame time', `${perfMetrics.frameMs.toFixed(1)} ms`],
-      ['Frame p95', `${p95.toFixed(1)} ms`],
-      ['CPU update + render submit', `${perfMetrics.cpuMs.toFixed(1)} ms`],
-      ['Draw calls', String(info.render.calls)],
-      ['Triangles', info.render.triangles.toLocaleString()],
-      ['Geometries / textures', `${info.memory.geometries} / ${info.memory.textures}`],
-      ['Scene memory estimate', `${sceneMemory.estimateMb.toFixed(1)} MB`],
-      ['JS heap', memory ? `${(memory / 1048576).toFixed(1)} MB` : 'Not exposed'],
-      ['Graphics profile', graphicsProfile.toUpperCase()],
-      ['Render scale / DPR', `${currentPixelRatio.toFixed(2)} / ${(window.devicePixelRatio || 1).toFixed(2)}`],
-      ['Device tier / input', `${tier.toUpperCase()} / ${mobile ? 'MOBILE' : 'DESKTOP'}`],
-      ['Staff detail in range', `${staff.filter((person) => person.detailGroup.visible).length} / ${staff.length}`],
-      ['WebGL context', contextLost ? 'RECOVERING' : 'READY'],
-      ['Staff animation cadence', `${tier === 'low' ? 20 : mobile ? 25 : 40} updates/s max`],
-      ['Staff / stations', `${staff.length} / ${stations.length}`]
-    ];
-    const grid = perfPanel.querySelector('.calloria-perf-grid');
-    if (grid) grid.innerHTML = rows.map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`).join('');
-  }
-  createPerformanceLab();
-
   function renderStill() {
     if (!disposed && !contextLost && !document.hidden && host.clientWidth > 0 && host.clientHeight > 0) {
-      const start = performance.now(); renderer.render(scene, camera); perfCpuMs = performance.now() - start;
-      perfMetrics.calls = renderer.info.render.calls; perfMetrics.triangles = renderer.info.render.triangles;
-      updatePerformanceLab();
+      renderer.render(scene, camera);
+      updatePerfPanel();
     }
   }
-  if (graphicsProfile !== 'auto') applyGraphicsProfile(graphicsProfile, false);
-  setPreviewCamera();
-
-  function resize() {
-    if (disposed) return;
-    const width = Math.max(1, host.clientWidth || window.innerWidth || 900);
-    const height = Math.max(1, host.clientHeight || window.innerHeight || 520);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-    renderer.setPixelRatio(currentPixelRatio);
-    renderer.setSize(width, height, false);
-    if (immersive) startRenderLoop(); else renderStill();
+  function applyProfile(next, persist = true) {
+    if (!['auto', 'smooth', 'balanced', 'sharp'].includes(next)) return;
+    profile = next;
+    if (persist) { try { localStorage.setItem(profileKey, next); } catch { /* Ignore storage errors. */ } }
+    const dpr = window.devicePixelRatio || 1;
+    if (next === 'smooth') { ratioCap = Math.min(mobile ? 0.98 : 1.05, dpr); qualityFps = Math.min(tierDefaults.fps, 30); }
+    else if (next === 'balanced') { ratioCap = Math.min(mobile ? 1.18 : 1.28, dpr); qualityFps = Math.min(tierDefaults.fps, 45); }
+    else if (next === 'sharp') { ratioCap = Math.min(mobile ? 1.42 : 1.65, dpr); qualityFps = Math.min(tierDefaults.fps, 60); }
+    else { ratioCap = Math.min(tierDefaults.ratio, dpr, mobile ? 1.55 : 1.85); qualityFps = tierDefaults.fps; }
+    currentRatio = Math.max(tierDefaults.minRatio, ratioCap);
+    renderer.setPixelRatio(currentRatio); resize();
+    if (profileSelect) profileSelect.value = profile;
   }
+  let qualityFps = tierDefaults.fps;
+
+  // Performance Lab is deliberately compact and optional; it does not obscure the floor.
+  const panelRoot = host.closest('.world-panel') || host.parentElement || document.body;
+  const perfButton = document.createElement('button');
+  perfButton.type = 'button'; perfButton.textContent = 'GRAPHICS'; perfButton.setAttribute('aria-expanded', 'false');
+  perfButton.style.cssText = 'position:absolute;z-index:12;right:14px;top:14px;padding:8px 11px;border:1px solid rgba(160,220,216,.42);border-radius:8px;background:rgba(8,27,39,.84);color:#dff9f2;font:700 10px system-ui;letter-spacing:.12em;cursor:pointer;';
+  const perfPanel = document.createElement('section');
+  perfPanel.hidden = true;
+  perfPanel.style.cssText = 'position:absolute;z-index:12;right:14px;top:50px;width:min(260px,calc(100% - 28px));padding:13px;border:1px solid rgba(160,220,216,.28);border-radius:10px;background:rgba(7,22,33,.94);color:#e8f3f1;font:11px/1.55 system-ui;box-shadow:0 14px 36px rgba(0,0,0,.28);';
+  perfPanel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong style="letter-spacing:.1em">PERFORMANCE LAB</strong><button type="button" data-close style="background:none;border:0;color:#fff;font-size:18px">×</button></div><label for="calloria-graphics-profile" style="display:block;color:#8fb5bb;margin-bottom:4px">GRAPHICS PROFILE</label><select id="calloria-graphics-profile" style="width:100%;padding:7px;background:#183445;color:#fff;border:1px solid #42616c;border-radius:6px"><option value="auto">Automatic</option><option value="smooth">Smooth</option><option value="balanced">Balanced</option><option value="sharp">Sharp</option></select><div data-stats style="margin-top:10px;color:#bcd2d3">Preparing render metrics…</div>`;
+  panelRoot.append(perfButton, perfPanel);
+  const profileSelect = perfPanel.querySelector('#calloria-graphics-profile');
+  perfButton.addEventListener('click', () => {
+    perfPanel.hidden = !perfPanel.hidden;
+    perfButton.setAttribute('aria-expanded', String(!perfPanel.hidden));
+    if (!perfPanel.hidden) updatePerfPanel(true);
+  });
+  perfPanel.querySelector('[data-close]')?.addEventListener('click', () => { perfPanel.hidden = true; perfButton.setAttribute('aria-expanded', 'false'); });
+  profileSelect?.addEventListener('change', () => applyProfile(profileSelect.value, true));
+  function updatePerfPanel(force = false) {
+    if (perfPanel.hidden) return;
+    const now = performance.now();
+    if (!force && now - perfLastUi < 450) return;
+    perfLastUi = now;
+    const info = renderer.info;
+    const stats = perfPanel.querySelector('[data-stats]');
+    if (stats) stats.innerHTML = `FPS: <b>${avgFrameMs ? (1000 / avgFrameMs).toFixed(1) : '—'}</b><br>Draw calls: <b>${info.render.calls}</b><br>Triangles: <b>${info.render.triangles.toLocaleString()}</b><br>Geometry / textures: <b>${info.memory.geometries} / ${info.memory.textures}</b><br>Pixel ratio: <b>${currentRatio.toFixed(2)}×</b><br>Device profile: <b>${tier.toUpperCase()}</b>`;
+  }
+
+  if (profile !== 'auto') applyProfile(profile, false);
+  else { profileSelect.value = 'auto'; }
+  setPreviewCamera();
   const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(resize) : null;
-  if (resizeObserver) resizeObserver.observe(host);
-  else listen(window, 'resize', resize, { passive: true });
+  if (resizeObserver) resizeObserver.observe(host); else listen(window, 'resize', resize, { passive: true });
   resize();
 
-  function adaptResolution(frameMs, timestamp) {
-    averageFrameMs = averageFrameMs ? averageFrameMs * 0.82 + frameMs * 0.18 : frameMs;
-    if (!lastQualityCheck) { lastQualityCheck = timestamp; return; }
-    if (timestamp - lastQualityCheck < 2600) return;
-    lastQualityCheck = timestamp;
-    const targetFrameMs = 1000 / quality.fps;
-    if (averageFrameMs > targetFrameMs * 1.22) {
-      slowFrameStreak++; headroomStreak = 0;
-    } else if (averageFrameMs < targetFrameMs * 1.08) {
-      headroomStreak++; slowFrameStreak = Math.max(0, slowFrameStreak - 1);
-    } else {
-      slowFrameStreak = Math.max(0, slowFrameStreak - 1); headroomStreak = 0;
-    }
-    let next = currentPixelRatio;
-    if (slowFrameStreak >= 2) { next = Math.max(quality.minRatio, currentPixelRatio - 0.10); slowFrameStreak = 0; }
-    else if (headroomStreak >= 3) { next = Math.min(pixelRatioCap, currentPixelRatio + 0.035); headroomStreak = 0; }
-    if (Math.abs(next - currentPixelRatio) >= 0.025) {
-      currentPixelRatio = Number(next.toFixed(2));
-      renderer.setPixelRatio(currentPixelRatio);
-      renderer.setSize(Math.max(1, host.clientWidth), Math.max(1, host.clientHeight), false);
-    }
-  }
-  function startRenderLoop() {
-    if (loopActive || disposed || contextLost || document.hidden || !immersive || !hostInView) return;
-    loopActive = true;
-    lastFrameAt = 0;
-    frameId = requestAnimationFrame(animate);
-  }
-  function stopRenderLoop() {
-    loopActive = false;
-    if (frameId) cancelAnimationFrame(frameId);
-    frameId = 0;
-  }
-
-  function blocked(x, z) {
-    if (x < -16 || x > 16 || z < -14 || z > 14) return true;
+  function isBlocked(x, z) {
+    if (x < -19.0 || x > 19.0 || z < -16.0 || z > 16.0) return true;
+    // Station desks are solid; the approach side (z + 1.8 to +2.8) stays open.
     for (const station of stations) {
-      if (Math.abs(x - station.x) < 1.55 && Math.abs(z - station.z) < 0.9) return true;
+      if (Math.abs(x - station.x) < 1.3 && z > station.z - 0.98 && z < station.z + 0.78) return true;
     }
-    if (x > 9.35 && x < 16 && z > -14.5 && z < -7.6) return true;
+    // Fixed room walls, leaving each entrance open toward the central aisle.
+    if (x > 9.2 && x < 17.0 && z < -7.75 && z > -14.7) return true;
+    if (x < -9.2 && x > -17.0 && z < -14.0 && z > -14.8) return true;
+    if (x > 16.65 && x < 17.3 && z > -4.8 && z < 4.9) return true;
+    if (x > 16.65 && x < 17.3 && z > 5.1 && z < 11.2) return true;
     return false;
   }
-  function highlightStation(station, active) {
-    const index = station.glow.index;
-    const size = active ? 1.8 : 1;
-    dummy.position.set(station.x, 2.08, station.z - 0.48);
-    dummy.scale.setScalar(0.095 * size);
-    dummy.updateMatrix();
-    glowMesh.setMatrixAt(index, dummy.matrix);
-    glowMesh.setColorAt(index, new THREE.Color(active ? '#f3c77c' : (station.id % 4 === 0 ? '#dcb46e' : '#55d7bf')));
-    glowMesh.instanceMatrix.needsUpdate = true;
-    if (glowMesh.instanceColor) glowMesh.instanceColor.needsUpdate = true;
-  }
   function updatePlayer(delta) {
-    const forward = clamp((keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0) - touchMove.y, -1, 1);
-    const strafe = clamp((keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) + touchMove.x, -1, 1);
-    if (forward || strafe) {
-      const length = Math.hypot(forward, strafe) || 1;
-      const sprinting = keys.has('ShiftLeft') || keys.has('ShiftRight') || touchMove.sprinting;
-      const speed = player.speed * (sprinting ? 1.5 : 1);
-      const dx = (Math.sin(player.yaw) * forward + Math.cos(player.yaw) * strafe) * speed * delta / length;
-      const dz = (-Math.cos(player.yaw) * forward + Math.sin(player.yaw) * strafe) * speed * delta / length;
-      if (!blocked(player.x + dx, player.z)) player.x += dx;
-      if (!blocked(player.x, player.z + dz)) player.z += dz;
+    const forwardInput = clamp((keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0) - touchMove.y, -1, 1);
+    const sideInput = clamp((keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) + touchMove.x, -1, 1);
+    if (forwardInput || sideInput) {
+      const length = Math.hypot(forwardInput, sideInput) || 1;
+      const forward = forwardInput / length;
+      const side = sideInput / length;
+      const sprint = keys.has('ShiftLeft') || keys.has('ShiftRight') || touchMove.sprinting;
+      const speed = player.speed * (sprint ? 1.55 : 1);
+      const sin = Math.sin(player.yaw), cos = Math.cos(player.yaw);
+      const dx = (side * cos - forward * sin) * speed * delta;
+      const dz = (side * sin - forward * cos) * speed * delta;
+      if (!isBlocked(player.x + dx, player.z)) player.x += dx;
+      if (!isBlocked(player.x, player.z + dz)) player.z += dz;
     }
     camera.position.set(player.x, 1.68, player.z);
-    camera.rotation.order = 'YXZ';
-    camera.rotation.set(player.pitch, player.yaw, 0);
-    let nearest = Infinity;
-    let next = null;
+    camera.rotation.order = 'YXZ'; camera.rotation.set(player.pitch, player.yaw, 0);
+    let closest = Infinity, next = null;
     for (const station of stations) {
-      const dx = player.x - station.x;
-      const dz = player.z - (station.z + 2.1);
-      const distance = Math.hypot(dx, dz);
-      if (distance < nearest) { nearest = distance; next = station; }
+      const distance = Math.hypot(player.x - station.x, player.z - (station.z + 2.05));
+      if (distance < closest) { closest = distance; next = station; }
     }
-    nearestStation = nearest <= 3.0 ? next : null;
-    if (interactButton) interactButton.disabled = !nearestStation;
-    const nearestId = nearestStation?.id ?? null;
-    if (nearestId !== lastNearestId) {
-      if (lastNearestId) { const previous = stations[lastNearestId - 1]; if (previous) highlightStation(previous, false); }
-      if (nearestStation) highlightStation(nearestStation, true);
-      lastNearestId = nearestId;
-      callbacks.onNearestStation?.(nearestStation ? { id: nearestStation.id, label: `Station ${String(nearestStation.id).padStart(2, '0')}` } : null);
+    nearestStation = closest <= 2.9 ? next : null;
+    const interact = document.getElementById('touchInteractButton');
+    if (interact) interact.disabled = !nearestStation;
+    if ((nearestStation?.id || null) !== lastNearestId) {
+      lastNearestId = nearestStation?.id || null;
+      callbacks.onNearestStation?.(nearestStation ? { id: nearestStation.id, label: nearestStation.label, department: nearestStation.department } : null);
     }
   }
+
   function updateStaff(delta, elapsed) {
     for (const person of staff) {
-      const { root, phase, baseX, baseZ, seated } = person;
-      if (seated && !person.detailGroup.visible) continue;
-      if (seated) {
-        const working = ['busy', 'wrap-up'].includes(agentActivity);
-        const motion = Math.sin(elapsed * (working ? 2.6 : 1.0) + phase);
-        root.userData.leftArm.rotation.x = working ? 0.22 * motion : 0.06 * motion;
-        root.userData.rightArm.rotation.x = working ? -0.22 * motion : -0.06 * motion;
-        root.position.y = Math.abs(motion) * 0.006;
+      const phase = person.phase;
+      if (person.seated) {
+        const typing = Math.sin(elapsed * 5.2 + phase);
+        person.arms[0].rotation.x = -0.08 + typing * 0.08;
+        person.arms[1].rotation.x = -0.08 - typing * 0.07;
+        person.arms[0].rotation.z = 0.04 + Math.sin(elapsed * 2.4 + phase) * 0.025;
+        person.arms[1].rotation.z = -0.04 - Math.sin(elapsed * 2.4 + phase) * 0.025;
+        person.root.position.y = Math.sin(elapsed * 1.7 + phase) * 0.006;
       } else {
-        root.position.x = baseX + Math.sin(elapsed * 0.32 + phase) * 0.58;
-        root.position.z = baseZ + Math.cos(elapsed * 0.24 + phase) * 0.42;
-        root.rotation.y = Math.sin(elapsed * 0.32 + phase) * 0.55;
-        root.userData.leftArm.rotation.x = 0.18 * Math.sin(elapsed * 2.1 + phase);
-        root.userData.rightArm.rotation.x = -0.18 * Math.sin(elapsed * 2.1 + phase);
+        const stride = elapsed * 0.35 + phase;
+        person.root.position.x = person.baseX + Math.sin(stride) * 1.35;
+        person.root.position.z = person.baseZ + Math.cos(stride * 0.7) * 0.75;
+        person.root.rotation.y = Math.PI + Math.sin(stride) * 0.55;
+        if (person.shadow) { person.shadow.position.x = person.root.position.x; person.shadow.position.z = person.root.position.z; }
+        person.arms[0].rotation.x = Math.sin(elapsed * 3.2 + phase) * 0.25;
+        person.arms[1].rotation.x = -Math.sin(elapsed * 3.2 + phase) * 0.25;
       }
     }
+  }
+
+  function startLoop() {
+    if (loopActive || disposed || contextLost || document.hidden || !immersive || !hostInView) return;
+    loopActive = true; lastFrameAt = 0; frameId = requestAnimationFrame(animate);
+  }
+  function stopLoop() {
+    loopActive = false; if (frameId) cancelAnimationFrame(frameId); frameId = 0;
+  }
+  function adaptResolution(frameMs, timestamp) {
+    avgFrameMs = avgFrameMs ? avgFrameMs * 0.84 + frameMs * 0.16 : frameMs;
+    if (!adaptResolution.lastCheck) { adaptResolution.lastCheck = timestamp; return; }
+    if (timestamp - adaptResolution.lastCheck < 2600) return;
+    adaptResolution.lastCheck = timestamp;
+    const target = 1000 / qualityFps;
+    if (avgFrameMs > target * 1.28) { lowFpsStreak++; headroomStreak = 0; }
+    else if (avgFrameMs < target * 1.04) { headroomStreak++; lowFpsStreak = Math.max(0, lowFpsStreak - 1); }
+    else { lowFpsStreak = Math.max(0, lowFpsStreak - 1); headroomStreak = 0; }
+    let next = currentRatio;
+    if (lowFpsStreak >= 2) { next = Math.max(tierDefaults.minRatio, currentRatio - 0.08); lowFpsStreak = 0; }
+    else if (headroomStreak >= 3) { next = Math.min(ratioCap, currentRatio + 0.035); headroomStreak = 0; }
+    if (Math.abs(next - currentRatio) >= 0.02) { currentRatio = Number(next.toFixed(2)); renderer.setPixelRatio(currentRatio); renderer.setSize(Math.max(1, host.clientWidth), Math.max(1, host.clientHeight), false); }
   }
   function animate(timestamp) {
     if (!loopActive || disposed || contextLost) return;
-    if (document.hidden || (!hostInView && !immersive) || !immersive) { stopRenderLoop(); return; }
-    const interval = 1000 / quality.fps;
+    if (document.hidden || !immersive) { stopLoop(); return; }
+    const interval = 1000 / qualityFps;
     if (lastFrameAt && timestamp - lastFrameAt < interval) { frameId = requestAnimationFrame(animate); return; }
-    const frameMs = lastFrameAt ? timestamp - lastFrameAt : 1000 / quality.fps;
+    const frameMs = lastFrameAt ? timestamp - lastFrameAt : interval;
     const delta = Math.min(frameMs / 1000, 0.05);
     lastFrameAt = timestamp;
-    const elapsed = timestamp / 1000;
-    const cpuStart = performance.now();
     updatePlayer(delta);
-    updateStaffDetailVisibility();
-    const staffCadenceMs = tier === 'low' ? 50 : mobile ? 40 : 25;
-    if (!lastStaffUpdateAt || timestamp - lastStaffUpdateAt >= staffCadenceMs) {
-      updateStaff(delta, elapsed);
-      lastStaffUpdateAt = timestamp;
+    if (!animate.lastStaffAt || timestamp - animate.lastStaffAt >= (tier === 'low' ? 65 : mobile ? 45 : 32)) {
+      updateStaff(delta, timestamp / 1000); animate.lastStaffAt = timestamp;
     }
     renderer.render(scene, camera);
-    perfCpuMs = performance.now() - cpuStart;
-    perfSamples.push(frameMs); if (perfSamples.length > 120) perfSamples.shift();
-    perfFrames++;
-    if (!perfLastUiAt || timestamp - perfLastUiAt >= 450) {
-      const windowMs = perfSamples.reduce((sum, value) => sum + value, 0);
-      perfMetrics.fps = windowMs > 0 ? perfSamples.length * 1000 / windowMs : 0;
-      perfMetrics.frameMs = perfSamples.length ? windowMs / perfSamples.length : frameMs;
-      perfMetrics.cpuMs = perfCpuMs;
-      perfMetrics.calls = renderer.info.render.calls;
-      perfMetrics.triangles = renderer.info.render.triangles;
-      updatePerformanceLab();
-    }
     adaptResolution(frameMs, timestamp);
+    updatePerfPanel();
     frameId = requestAnimationFrame(animate);
   }
 
-  function enter() {
-    if (disposed) return;
-    setImmersive(true);
-    if (!coarsePointer) {
-      try { renderer.domElement.requestPointerLock?.(); } catch { /* Pointer lock is optional. */ }
-    }
+  function useNearestStation() {
+    if (!immersive || !nearestStation) return;
+    callbacks.onStation?.({ id: nearestStation.id, label: nearestStation.label, department: nearestStation.department });
   }
-  function exit() { setImmersive(false); }
   function setImmersive(value) {
+    if (disposed) return;
     immersive = Boolean(value);
     host.closest('.world-panel')?.classList.toggle('is-immersive', immersive);
     document.body.classList.toggle('calloria-immersive', immersive);
     if (immersive) {
-      player.x = 0; player.z = 13.1; player.yaw = 0; player.pitch = -0.055;
+      player.x = 0; player.z = 15.0; player.yaw = 0; player.pitch = -0.04;
       touchMove.x = 0; touchMove.y = 0; touchMove.sprinting = false;
-      if (joystickKnob) joystickKnob.style.transform = 'translate(0px, 0px)';
-      camera.position.set(player.x, 1.68, player.z);
-      camera.rotation.order = 'YXZ'; camera.rotation.set(player.pitch, player.yaw, 0);
-      startRenderLoop();
+      const stick = document.getElementById('touchStick'); if (stick) stick.style.transform = 'translate(0px, 0px)';
+      camera.position.set(player.x, 1.68, player.z); camera.rotation.order = 'YXZ'; camera.rotation.set(player.pitch, player.yaw, 0);
+      startLoop();
     } else {
       if (document.pointerLockElement === renderer.domElement) document.exitPointerLock?.();
-      stopRenderLoop(); keys.clear(); touchMove.x = 0; touchMove.y = 0; touchMove.sprinting = false; touchMove.pointerId = null;
-      nearestStation = null; lastNearestId = null; setPreviewCamera();
-      if (interactButton) interactButton.disabled = true;
-      callbacks.onNearestStation?.(null);
-      renderStill();
+      stopLoop(); keys.clear(); touchMove.x = 0; touchMove.y = 0; touchMove.sprinting = false; touchMove.pointerId = null;
+      nearestStation = null; lastNearestId = null;
+      const interact = document.getElementById('touchInteractButton'); if (interact) interact.disabled = true;
+      callbacks.onNearestStation?.(null); setPreviewCamera(); renderStill();
     }
     callbacks.onImmersiveChange?.(immersive);
   }
-  function useNearestStation() {
-    if (immersive && nearestStation) {
-      callbacks.onStation?.({ id: nearestStation.id, label: `Station ${String(nearestStation.id).padStart(2, '0')}`, department: 'Customer Operations' });
-    }
+  function enter() {
+    if (disposed) return;
+    setImmersive(true);
+    if (!coarsePointer) { try { renderer.domElement.requestPointerLock?.(); } catch { /* Optional capability. */ } }
   }
-  function setAgentActivity(status) {
-    agentActivity = String(status || 'offline');
-    renderStill();
-  }
+  function exit() { setImmersive(false); }
+  function setAgentActivity(status) { agentActivity = String(status || 'offline'); renderStill(); }
 
   const canvas = renderer.domElement;
   const renderStatusHost = host.closest('.world-panel') || host.parentElement || document.body;
   const renderStatus = document.createElement('div');
-  renderStatus.className = 'calloria-render-status';
-  renderStatus.setAttribute('role', 'status');
-  renderStatus.setAttribute('aria-live', 'polite');
-  renderStatus.hidden = true;
-  renderStatusHost.append(renderStatus);
-  function setRenderStatus(message, autoHide = false) {
-    clearTimeout(contextRecoveryTimer);
-    renderStatus.textContent = message || '';
-    renderStatus.hidden = !message;
-    if (message && autoHide) contextRecoveryTimer = window.setTimeout(() => { renderStatus.hidden = true; }, 1800);
+  renderStatus.setAttribute('role', 'status'); renderStatus.setAttribute('aria-live', 'polite');
+  renderStatus.style.cssText = 'position:absolute;z-index:13;left:50%;top:15px;transform:translateX(-50%);max-width:80%;padding:7px 12px;border:1px solid rgba(140,210,205,.25);border-radius:8px;background:rgba(7,22,33,.88);color:#dff8f0;font:11px system-ui;text-align:center;pointer-events:none;';
+  renderStatus.hidden = true; renderStatusHost.append(renderStatus);
+  function showStatus(message, autoHide = false) {
+    clearTimeout(statusTimer); renderStatus.textContent = message || ''; renderStatus.hidden = !message;
+    if (message && autoHide) statusTimer = window.setTimeout(() => { renderStatus.hidden = true; }, 1900);
   }
+
   listen(canvas, 'webglcontextlost', (event) => {
-    event.preventDefault();
-    contextLost = true;
-    stopRenderLoop();
-    keys.clear(); resetJoystick(); touchMove.sprinting = false;
-    setRenderStatus('Graphics paused — restoring the 3D workspace…');
+    event.preventDefault(); contextLost = true; stopLoop(); keys.clear();
+    showStatus('Graphics paused — restoring the 3D workplace…');
     callbacks.onRenderStatus?.({ state: 'context-lost' });
   });
   listen(canvas, 'webglcontextrestored', () => {
-    contextLost = false;
-    renderer.resetState?.();
-    renderer.setPixelRatio(currentPixelRatio);
+    contextLost = false; renderer.resetState?.(); renderer.setPixelRatio(currentRatio);
     renderer.setSize(Math.max(1, host.clientWidth || 1), Math.max(1, host.clientHeight || 1), false);
-    setRenderStatus('3D workspace restored', true);
-    callbacks.onRenderStatus?.({ state: 'restored' });
-    if (immersive) startRenderLoop(); else renderStill();
+    showStatus('3D workplace restored', true); callbacks.onRenderStatus?.({ state: 'restored' });
+    if (immersive) startLoop(); else renderStill();
   });
   listen(canvas, 'pointerdown', (event) => {
     if (immersive && !coarsePointer && document.pointerLockElement !== canvas) {
-      try { canvas.requestPointerLock?.(); } catch { /* Optional browser capability. */ }
-      return;
+      try { canvas.requestPointerLock?.(); } catch { /* Mouse drag remains available. */ }
     }
-    dragging = true;
-    lastPointer = { x: event.clientX, y: event.clientY };
-    canvas.setPointerCapture?.(event.pointerId);
+    dragging = true; lastPointer = { x: event.clientX, y: event.clientY };
+    try { canvas.setPointerCapture?.(event.pointerId); } catch { /* Pointer capture is optional. */ }
   });
   listen(canvas, 'pointermove', (event) => {
     if (immersive && document.pointerLockElement === canvas) return;
     if (!dragging) return;
-    const dx = event.clientX - lastPointer.x;
-    const dy = event.clientY - lastPointer.y;
+    const dx = event.clientX - lastPointer.x, dy = event.clientY - lastPointer.y;
     if (immersive) {
-      player.yaw -= dx * 0.0042;
-      player.pitch = clamp(player.pitch - dy * 0.0032, -0.72, 0.48);
+      player.yaw -= dx * (coarsePointer ? 0.0045 : 0.0038);
+      player.pitch = clamp(player.pitch - dy * 0.0030, -0.68, 0.42);
       camera.rotation.order = 'YXZ'; camera.rotation.set(player.pitch, player.yaw, 0);
     } else {
-      preview.azimuth -= dx * 0.004;
-      preview.elevation = clamp(preview.elevation + dy * 0.0025, -0.06, 0.78);
-      setPreviewCamera();
+      preview.azimuth -= dx * 0.0037;
+      preview.elevation = clamp(preview.elevation + dy * 0.0024, 0.08, 0.76);
+      setPreviewCamera(); renderStill();
     }
     lastPointer = { x: event.clientX, y: event.clientY };
-    if (!immersive) renderStill();
   });
   const endDrag = () => { dragging = false; };
-  listen(canvas, 'pointerup', endDrag);
-  listen(canvas, 'pointercancel', endDrag);
-  listen(canvas, 'lostpointercapture', endDrag);
+  listen(canvas, 'pointerup', endDrag); listen(canvas, 'pointercancel', endDrag); listen(canvas, 'lostpointercapture', endDrag);
   listen(canvas, 'wheel', (event) => {
     if (immersive) return;
-    event.preventDefault();
-    preview.radius = clamp(preview.radius + Math.sign(event.deltaY) * 1.2, 19, 39);
+    event.preventDefault(); preview.radius = clamp(preview.radius + Math.sign(event.deltaY) * 1.35, 27, 52);
     setPreviewCamera(); renderStill();
   }, { passive: false });
   listen(document, 'pointermove', (event) => {
     if (immersive && document.pointerLockElement === canvas) {
       player.yaw -= (event.movementX || 0) * 0.0028;
-      player.pitch = clamp(player.pitch - (event.movementY || 0) * 0.0024, -0.72, 0.48);
+      player.pitch = clamp(player.pitch - (event.movementY || 0) * 0.0022, -0.68, 0.42);
       camera.rotation.order = 'YXZ'; camera.rotation.set(player.pitch, player.yaw, 0);
     }
   });
   listen(document, 'keydown', (event) => {
-    if (!immersive) return;
-    const target = event.target;
-    if (target && (target.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(target.tagName))) return;
-    if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'ShiftRight'].includes(event.code)) event.preventDefault();
+    if (!immersive || isInput(event.target)) return;
+    if (['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight'].includes(event.code)) event.preventDefault();
     if (event.code === 'Escape') { if (document.pointerLockElement === canvas) document.exitPointerLock?.(); else exit(); }
-    keys.add(event.code);
     if (event.code === 'KeyE') useNearestStation();
+    keys.add(event.code);
   });
   listen(document, 'keyup', (event) => keys.delete(event.code));
   listen(document, 'pointerlockchange', () => {
     if (immersive && document.pointerLockElement !== canvas && !coarsePointer) callbacks.onPointerUnlock?.();
   });
   listen(document, 'visibilitychange', () => {
-    if (document.hidden) {
-      stopRenderLoop(); keys.clear(); resetJoystick(); touchMove.sprinting = false;
-    } else if (immersive) startRenderLoop();
-    else renderStill();
+    if (document.hidden) { stopLoop(); keys.clear(); resetJoystick(); touchMove.sprinting = false; }
+    else if (immersive) startLoop(); else renderStill();
   });
 
+  const joystick = document.getElementById('touchJoystick');
+  const joystickKnob = document.getElementById('touchStick');
+  const sprintButton = document.getElementById('touchSprintButton');
+  const interactButton = document.getElementById('touchInteractButton');
   function joystickRadius() { return Math.max(24, (joystick?.clientWidth || 116) * 0.34); }
   function updateJoystick(event) {
     if (!joystick) return;
     const rect = joystick.getBoundingClientRect();
-    const dx0 = event.clientX - (rect.left + rect.width / 2);
-    const dy0 = event.clientY - (rect.top + rect.height / 2);
-    const radius = joystickRadius();
-    const distance = Math.hypot(dx0, dy0) || 1;
+    const dx0 = event.clientX - rect.left - rect.width / 2;
+    const dy0 = event.clientY - rect.top - rect.height / 2;
+    const radius = joystickRadius(), distance = Math.hypot(dx0, dy0) || 1;
     const dx = distance > radius ? dx0 / distance * radius : dx0;
     const dy = distance > radius ? dy0 / distance * radius : dy0;
-    touchMove.x = clamp(dx / radius, -1, 1);
-    touchMove.y = clamp(dy / radius, -1, 1);
+    touchMove.x = clamp(dx / radius, -1, 1); touchMove.y = clamp(dy / radius, -1, 1);
     if (joystickKnob) joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
   }
   function resetJoystick() {
@@ -1059,71 +809,60 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     if (joystickKnob) joystickKnob.style.transform = 'translate(0px, 0px)';
   }
   listen(joystick, 'pointerdown', (event) => {
-    if (!immersive) return;
-    event.preventDefault(); touchMove.pointerId = event.pointerId; joystick.setPointerCapture?.(event.pointerId); updateJoystick(event);
+    if (!immersive) return; event.preventDefault(); touchMove.pointerId = event.pointerId;
+    try { joystick.setPointerCapture?.(event.pointerId); } catch { /* Optional. */ }
+    updateJoystick(event);
   });
-  listen(joystick, 'pointermove', (event) => {
-    if (immersive && touchMove.pointerId === event.pointerId) { event.preventDefault(); updateJoystick(event); }
-  });
-  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((type) => listen(joystick, type, (event) => {
-    if (touchMove.pointerId === event.pointerId) resetJoystick();
-  }));
+  listen(joystick, 'pointermove', (event) => { if (immersive && touchMove.pointerId === event.pointerId) updateJoystick(event); });
+  ['pointerup','pointercancel','lostpointercapture'].forEach((type) => listen(joystick, type, resetJoystick));
   listen(sprintButton, 'pointerdown', (event) => {
-    if (immersive) { event.preventDefault(); touchMove.sprinting = true; sprintButton.setPointerCapture?.(event.pointerId); }
+    if (immersive) { event.preventDefault(); touchMove.sprinting = true; try { sprintButton.setPointerCapture?.(event.pointerId); } catch { /* Optional. */ } }
   });
-  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((type) => listen(sprintButton, type, () => { touchMove.sprinting = false; }));
+  ['pointerup','pointercancel','lostpointercapture'].forEach((type) => listen(sprintButton, type, () => { touchMove.sprinting = false; }));
   listen(interactButton, 'click', useNearestStation);
-  listen(window, 'pagehide', () => { stopRenderLoop(); });
-
-  const observer = typeof IntersectionObserver !== 'undefined' ? new IntersectionObserver((entries) => {
+  listen(window, 'pagehide', stopLoop);
+  const visibilityObserver = typeof IntersectionObserver !== 'undefined' ? new IntersectionObserver((entries) => {
     hostInView = entries.some((entry) => entry.isIntersecting);
-    if (immersive && hostInView) startRenderLoop();
-    else if (!hostInView) stopRenderLoop();
+    if (immersive && hostInView) startLoop();
+    else if (!hostInView) stopLoop();
     else if (!immersive) renderStill();
   }, { threshold: 0.01 }) : null;
-  observer?.observe(host);
+  visibilityObserver?.observe(host);
 
   document.body.classList.toggle('touch-device', coarsePointer);
-  callbacks.onAssetsReady?.({ loaded: 0, fallback: 6, mode: 'detailed-local-geometry' });
+  if (interactButton) interactButton.disabled = true;
+  callbacks.onAssetsReady?.({ loaded: 0, fallback: staff.length, mode: 'articulated-local-staff', tier });
+  callbacks.onRenderStatus?.({ state: 'ready', tier, stations: stations.length, staff: staff.length });
   renderStill();
 
   return {
-    scene,
-    camera,
-    renderer,
-    stations,
-    enter,
-    exit,
-    setImmersive,
-    setAgentActivity,
+    scene, camera, renderer, stations,
+    enter, exit, setImmersive, setAgentActivity,
     get agentActivity() { return agentActivity; },
     get immersive() { return immersive; },
     get nearestStation() { return nearestStation; },
-    get assetMessage() { return assetMessage; },
-    get lowEndDevice() { return tier === 'low'; },
-    get pixelRatio() { return currentPixelRatio; },
-    get assetsReady() { return assetsReady; },
+    get assetMessage() { return 'CALLORIA 3D workplace geometry and articulated local staff ready'; },
+    get lowEndDevice() { return lowTier; },
+    get pixelRatio() { return currentRatio; },
+    get assetsReady() { return true; },
     get qualityTier() { return tier; },
-    get graphicsProfile() { return graphicsProfile; },
+    get graphicsProfile() { return profile; },
     dispose() {
       if (disposed) return;
-      disposed = true;
-      stopRenderLoop(); observer?.disconnect(); resizeObserver?.disconnect();
-      listeners.forEach((remove) => remove());
-      perfButton?.remove(); perfPanel?.remove(); renderStatus.remove();
-      clearTimeout(contextRecoveryTimer);
+      disposed = true; stopLoop(); visibilityObserver?.disconnect(); resizeObserver?.disconnect();
+      listeners.forEach((remove) => remove()); perfButton.remove(); perfPanel.remove(); renderStatus.remove();
+      clearTimeout(statusTimer);
       document.body.classList.remove('touch-device', 'calloria-immersive');
       scene.traverse((object) => {
-        if (object.isInstancedMesh || object.isMesh) {
-          if (object.geometry && ![boxGeometry, sphereGeometry, cylinderGeometry, planeGeometry, bodyGeometry, upperArmGeometry, forearmGeometry, legGeometry, headGeometry, handGeometry, shoeGeometry, neckGeometry, noseGeometry, eyeGeometry, irisGeometry, hairCapGeometry, headsetArcGeometry, earPadGeometry, waistGeometry].includes(object.geometry)) object.geometry.dispose?.();
+        if (object.isMesh || object.isInstancedMesh) {
+          // Geometries/materials are disposed from the shared registries below.
+          object.parent?.remove(object);
         }
-        if (object.material && !Array.isArray(object.material) && !Object.values(mats).includes(object.material)) object.material.dispose?.();
       });
-      brandTexture.dispose(); mats.screen.map?.dispose?.(); floorSurfaceTexture.dispose(); carpetSurfaceTexture.dispose(); woodSurfaceTexture.dispose(); contactShadowTexture.dispose(); contactShadowMaterial.dispose();
-      [boxGeometry, sphereGeometry, cylinderGeometry, planeGeometry, bodyGeometry, upperArmGeometry, forearmGeometry, legGeometry, headGeometry, handGeometry, shoeGeometry, neckGeometry, noseGeometry, eyeGeometry, irisGeometry, hairCapGeometry, headsetArcGeometry, earPadGeometry, waistGeometry].forEach((geometry) => geometry.dispose?.());
+      textures.forEach((texture) => texture.dispose?.());
+      materials.forEach((material) => material.dispose?.());
+      geometries.forEach((geometry) => geometry.dispose?.());
       renderer.dispose(); host.replaceChildren();
     }
   };
 }
-
-function mzForLight(z) { return z - 0.48; }
