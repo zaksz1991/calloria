@@ -1,4 +1,4 @@
-# CALLORIA 0.9.0 — Supabase setup
+# CALLORIA 1.1.0 — Supabase setup
 
 This release moves user identity and organisation administration to Supabase. Follow these steps before enabling cloud mode on the Vercel deployment.
 

@@ -10,6 +10,7 @@ import { DIGITAL_CHANNELS, DIGITAL_STATUS, DIGITAL_SCENARIOS, createDigitalQueue
 import { ORGANIZATION_ROLES, DEFAULT_ORG_POLICY, ensureOrganizationWorkspace, createOrganization, createOrganizationMember, setOrganizationMemberStatus, updateOrganizationPolicy, getActiveOrganization, getOrganizationSnapshot } from './organization-engine.js';
 import { initializeCloudPlatform, getCloudPlatformState, canCloudRole, createCloudOrganization, createCloudInvitation, updateCloudPolicy, setCloudMemberStatus, selectCloudOrganization } from './cloud-platform.js';
 import { validateCloudPolicy } from './cloud-security.js';
+import { CUSTOMER_PERSONAS, CUSTOMER_ISSUES, createCustomerScenario, submitCustomerTurn, finalizeCustomerScenario, customerIntelligenceMetrics } from './customer-intelligence-engine.js';
 import { configureCloudEmploymentSync, markCloudEmploymentSyncReady, loadCloudEmploymentSnapshot, scheduleCloudEmploymentSave, flushCloudEmploymentSave } from './cloud-employment-sync.js';
 
 let THREE = null;
@@ -75,7 +76,7 @@ const initialState = () => ({
   viewedArticle: null,
   workforceDepartment: 'inbound',
   shiftRecord: null, shiftElapsedMinutes: 0, agentStatus: 'offline', shiftHistory: [], coachingSessions: [], simulationClockSeconds: 7 * 3600, lastShiftDay: 0,
-  briefingAttendance: [], promotionAttempts: [], crossSellRecords: [], commendations: [], systemEvents: [], digitalQueue: [], digitalSequence: 0, digitalActiveId: null, digitalChannelFilter: 'all', digitalEvents: [], organizationWorkspace: null
+  briefingAttendance: [], promotionAttempts: [], crossSellRecords: [], commendations: [], systemEvents: [], digitalQueue: [], digitalSequence: 0, digitalActiveId: null, digitalChannelFilter: 'all', digitalEvents: [], customerLabSession: null, customerQaHistory: [], organizationWorkspace: null
 });
 
 let state = loadState();
@@ -102,7 +103,7 @@ function loadState() {
     if (!stored) return initialState();
     const parsed = JSON.parse(stored);
     const migrated = { ...initialState(), ...parsed };
-    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
+    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
     if (!Number.isFinite(migrated.callQueue)) migrated.callQueue = 6;
     if (migrated.shiftActive && (!migrated.shiftRecord || migrated.shiftRecord.status !== 'active')) migrated.shiftRecord = createShiftRecord({ day: migrated.day || 1 });
     if (!Number.isFinite(migrated.shiftElapsedMinutes)) migrated.shiftElapsedMinutes = 0;
@@ -1138,6 +1139,26 @@ function renderCloudOrganizationWorkspace(cloud) {
     <div class="cloud-local-progress-note"><strong>Data boundary</strong><span>Authentication, organisation membership, organisation policies, invitations and audit records are server-backed. Gameplay progress, customer interaction practice records, voice samples and simulation performance remain in browser storage, scoped to this user and selected organisation. They are not yet synchronised to PostgreSQL.</span></div>`;
 }
 
+function renderCustomerIntelligence() {
+  const history = Array.isArray(state.customerQaHistory) ? state.customerQaHistory : [];
+  const metrics = customerIntelligenceMetrics(history);
+  const session = state.customerLabSession;
+  const personaOptions = CUSTOMER_PERSONAS.map(item => `<option value="${item.id}">${escapeHTML(item.label)}</option>`).join('');
+  const issueOptions = CUSTOMER_ISSUES.map(item => `<option value="${item.id}">${escapeHTML(item.title)} · ${escapeHTML(item.risk.toUpperCase())}</option>`).join('');
+  const metricsMarkup = `<div class="ops-summary-grid">${metricCard('PRACTICE INTERACTIONS',metrics.interactions,'Finalised customer simulations','◉')}${metricCard('AVERAGE PRACTICE QA',metrics.averageQA===null?'—':`${metrics.averageQA}%`,'Deterministic evidence-based score','⌁')}${metricCard('COACHING RECORDS',metrics.coaching,'Interactions requiring development','↗')}${metricCard('MANDATORY REVIEWS',metrics.mandatoryReview,'Critical conduct or security flags','!')}</div>`;
+  const startPanel = !session ? `<section class="panel"><div class="panel-head"><div><h3>Generate a customer interaction</h3><p>Choose a customer profile and issue, or leave the defaults to generate a mixed scenario.</p></div><span class="pill green">SYNTHETIC DATA</span></div><div class="grid two"><div class="form-field"><label for="customerPersona">CUSTOMER PERSONALITY</label><select id="customerPersona"><option value="">Random profile</option>${personaOptions}</select></div><div class="form-field"><label for="customerIssue">CUSTOMER ISSUE</label><select id="customerIssue"><option value="">Random issue</option>${issueOptions}</select></div><div class="form-field"><label for="customerChannel">CONTACT CHANNEL</label><select id="customerChannel"><option>Voice</option><option>Email</option><option>Live chat</option><option>Social media</option></select></div></div><button class="btn primary" data-action="start-customer-lab">Start customer simulation →</button></section>` : '';
+  let activePanel = '';
+  if (session) {
+    const transcript = (session.transcript||[]).map(item=>`<div class="digital-message ${item.speaker==='agent'?'agent':'customer'}"><div class="digital-message-meta"><strong>${item.speaker==='agent'?'YOU · AGENT':escapeHTML(session.customer)}</strong><time>${new Date(item.at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</time></div><p>${escapeHTML(item.text)}</p>${item.qa?`<small>Practice QA: ${item.qa.score}% · ${escapeHTML(item.qa.label.replaceAll('_',' '))}</small>`:''}</div>`).join('');
+    const latest = session.scorecards?.at(-1);
+    const feedback = latest ? `<div class="article-box"><h4>Practice QA · ${latest.score}%</h4><p>Customer reaction: <strong>${escapeHTML(latest.customerReaction)}</strong> · Remaining patience: ${latest.customerPatience}%</p><ul>${latest.recommendations.map(item=>`<li>${escapeHTML(item)}</li>`).join('')||'<li>Current response met the evaluated practice checks.</li>'}</ul>${latest.criticalBreaches.length?'<span class="pill red">MANDATORY REVIEW</span>':''}</div>` : '';
+    const active = session.status==='active';
+    activePanel = `<section class="panel"><div class="panel-head"><div><h3>${escapeHTML(session.issue.title)}</h3><p>${escapeHTML(session.issue.category)} · ${escapeHTML(session.channel)} · ${escapeHTML(session.id)}</p></div><span class="pill ${session.issue.risk==='critical'?'red':session.issue.risk==='high'?'amber':'green'}">${escapeHTML(session.issue.risk.toUpperCase())} RISK</span></div><div class="customer-strip"><div class="customer-avatar">${escapeHTML(initials(session.customer))}</div><div class="customer-info"><strong>${escapeHTML(session.customer)}</strong><small>${escapeHTML(session.persona.label)}</small></div><span class="pill">TURN ${session.turn}/3</span></div><div class="article-box"><div class="subtle-label">CUSTOMER STATEMENT</div><p class="call-prompt">“${escapeHTML(session.statement)}”</p><p class="muted-note">Customer patience: ${session.patience}% · Branch: ${escapeHTML(session.branch.replaceAll('_',' '))}</p></div>${transcript}${feedback}${active?`<form id="customerLabReplyForm"><div class="form-field"><label for="customerLabReply">AGENT RESPONSE</label><textarea id="customerLabReply" name="reply" rows="4" minlength="12" maxlength="1200" required placeholder="Write the response you would give this customer."></textarea><small class="muted-note">Do not request PINs, passwords, OTPs, full card details or other authentication secrets.</small></div><button class="btn primary" type="submit">Submit response for practice review →</button></form>`:`<div class="assessment-footer"><span class="pill ${session.status==='escalated'?'red':'green'}">${session.status==='escalated'?'ESCALATED FOR REVIEW':'INTERACTION COMPLETE'}</span><button class="btn primary" data-action="finalize-customer-lab">Finalise QA record</button><button class="btn outline" data-action="clear-customer-lab">New interaction</button></div>`}</section>`;
+  }
+  const recent = history.slice(-8).reverse().map(item=>`<div class="data-row"><span>${escapeHTML(item.issueId)} · ${escapeHTML(item.personaId)}<small style="display:block;color:var(--muted)">${new Date(item.completedAt).toLocaleString()}</small></span><strong>${item.averageScore}% · ${escapeHTML(item.outcome.replaceAll('_',' ').toUpperCase())}</strong></div>`).join('') || '<div class="empty-state"><p>No customer intelligence records yet.</p></div>';
+  viewRoot.innerHTML = `${metricsMarkup}<div class="grid two" style="margin-top:14px">${startPanel}${activePanel}<section class="panel"><div class="panel-head"><div><h3>Customer intelligence model</h3><p>Scenario behaviour and quality evidence.</p></div><span class="pill">RULE-BASED</span></div><div class="data-list"><div class="data-row"><span>Customer profiles</span><strong>${CUSTOMER_PERSONAS.length}</strong></div><div class="data-row"><span>Issue templates</span><strong>${CUSTOMER_ISSUES.length}</strong></div><div class="data-row"><span>Adaptive conversation turns</span><strong>Up to 3</strong></div><div class="data-row"><span>Critical breach handling</span><strong>Immediate review</strong></div></div><div class="article-box"><h4>Scoring boundary</h4><p>Practice QA checks observable wording for acknowledgement, ownership, probing, next-step clarity and safety. It is a transparent deterministic evaluator, not an AI language model, a certified organisational scorecard or a replacement for human QA.</p></div></section><section class="panel"><div class="panel-head"><div><h3>Recent practice history</h3><p>Locally stored synthetic practice records.</p></div><span class="pill">${history.length} RECORDS</span></div><div class="data-list">${recent}</div></section></div>`;
+}
+
 function renderView() {
   setHeader();
   const config = {
@@ -1147,6 +1168,7 @@ function renderView() {
     supervisor:['SUPERVISOR DESK','Assistance & escalations','Review agent assistance requests, escalations and operational activity.'],
     outbound:['CUSTOMER OPERATIONS','Outbound campaigns','Work authorised simulated campaigns and record true outcomes.'],
     digital:['CUSTOMER OPERATIONS','Multi-channel support','Handle simulated email, live-chat and social-media conversations with channel-specific privacy and service standards.'],
+    customerIntel:['CUSTOMER INTELLIGENCE','Customer behaviour & practice QA','Practise adaptive customer conversations and review transparent quality evidence across customer personalities.'],
     crm:['WORKSTATION','CRM & cases','Review accurate records of completed simulated interactions.'],
     knowledge:['AGENT RESOURCES','Knowledge base','Reference the principles and procedures relevant to your role.'],
     performance:['PERFORMANCE INTELLIGENCE','Performance dashboard','Review quality, resolution and service performance.'],
@@ -1164,6 +1186,7 @@ function renderView() {
     case 'supervisor': renderSupervisor(); break;
     case 'outbound': renderOutbound(); break;
     case 'digital': renderDigital(); break;
+    case 'customerIntel': renderCustomerIntelligence(); break;
     case 'crm': renderCRM(); break;
     case 'knowledge': renderKnowledge(); break;
     case 'performance': renderPerformance(); break;
@@ -1652,6 +1675,9 @@ function handleAction(action,event={}){
       pushOperationEvent('system',reference,`${system.name} simulation opened.`);
       saveState();renderView();toast(`${system.name} sandbox opened. No live data accessed.`,'success');break;
     }
+    case 'start-customer-lab':{const personaId=$('#customerPersona')?.value||null;const issueId=$('#customerIssue')?.value||null;const channel=$('#customerChannel')?.value||'Voice';state.customerLabSession=createCustomerScenario({seed:Date.now(),personaId,issueId,channel});saveState();renderView();break;}
+    case 'finalize-customer-lab':{try{const report=finalizeCustomerScenario(state.customerLabSession);state.customerQaHistory.push(report);if(state.customerQaHistory.length>100)state.customerQaHistory.splice(0,state.customerQaHistory.length-100);pushOperationEvent('customer-intelligence',report.id,`Customer practice QA finalised: ${report.averageScore}% · ${report.outcome}.`,report.outcome);state.customerLabSession=null;saveState();renderView();toast('Customer practice QA record saved.','success');}catch(error){toast(error.message,'error');}break;}
+    case 'clear-customer-lab':{state.customerLabSession=null;saveState();renderView();break;}
     case 'reset-simulation':{const modal=openModal('<div class="subtle-label">LOCAL SAVE RESET</div><h3>Reset this simulation?</h3><p>This removes the candidate, employment and local performance data for the currently selected browser profile. It does not delete your Supabase login or server-side organisation records.</p><div class="modal-actions"><button class="btn outline" data-close>Cancel</button><button class="btn danger" id="confirmReset">Reset simulation</button></div>');$('[data-close]',modal).onclick=()=>modal.remove();$('#confirmReset',modal).onclick=()=>{localStorage.removeItem(activeStorageKey);location.reload();};break;}
     case 'back-knowledge':state.viewedArticle=null;renderView();break;
   }
@@ -1678,6 +1704,7 @@ document.addEventListener('change',e=>{
   if(e.target?.id==='cloudOrgSelect'){selectCloudOrganization(e.target.value).then(()=>renderView()).catch(error=>toast(error.message,'error'));}
 });
 document.addEventListener('submit',e=>{
+  if(e.target.id==='customerLabReplyForm'){e.preventDefault();const value=new FormData(e.target).get('reply');try{submitCustomerTurn(state.customerLabSession,String(value||''));if(state.customerLabSession.status==='escalated')pushOperationEvent('customer-intelligence',state.customerLabSession.id,'Critical practice QA breach triggered mandatory review.','escalated');saveState();renderView();}catch(error){toast(error.message,'warning');}return;}
   if(e.target.id==='cloudOrgCreateForm'){
     e.preventDefault();const f=new FormData(e.target);createCloudOrganization({name:f.get('name'),industry:f.get('industry')}).then(()=>renderView()).catch(error=>toast(error.message,'error'));return;
   }
@@ -1834,7 +1861,7 @@ window.addEventListener('calloria:cloud-context', async event=>{
         state.organizationWorkspace={activeOrganizationId:detail.organizationId,organizations:[{
           id:detail.organizationId,name:cloudOrg?.name||detail.organizationName||'Organisation',industry:cloudOrg?.industry||'General customer service',status:'active',createdAt:cloudOrg?.createdAt||new Date().toISOString(),policy:structuredClone(detail.policy||DEFAULT_ORG_POLICY),members:[],audit:[]
         }]};
-        for(const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents']) if(!Array.isArray(state[key])) state[key]=[];
+        for(const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory']) if(!Array.isArray(state[key])) state[key]=[];
         markCloudEmploymentSyncReady();
       } else {
         // One-time migration of this user's already-scoped browser save into the tenant record.

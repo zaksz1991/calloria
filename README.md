@@ -1,9 +1,9 @@
 # CALLORIA — Contact Centre Career & Operations Simulator
 
-**Build:** 0.9.0 — Server-backed Identity & Tenant Isolation  
+**Build:** 1.1.0 — Customer Intelligence & Adaptive Contact Simulation  
 **Product:** A browser-first contact-centre career and operations simulator. Recruitment is the entry gate; the main experience is simulated employment, multi-channel customer operations, workforce routines and career progression.
 
-## What changed in 0.9.0
+## Release history and capabilities
 
 ### Supabase identity and server-side organisation tenancy
 - Added Supabase Auth email/password registration, sign-in, password reset and sign-out flows.
@@ -118,7 +118,7 @@ The project includes automated syntax and regression checks in its package scrip
 ## Project structure
 
 ```text
-CALLORIA-v1.0.0/
+CALLORIA-v1.1.0/
 ├── index.html
 ├── styles.css
 ├── vite.config.js
@@ -172,3 +172,8 @@ Build 1.0.0 adds tenant-scoped persistence for the employee simulation snapshot,
 Apply both SQL migrations in filename order. The second migration creates `calloria_employment_records`, a tenant-scoped snapshot table. Each signed-in employee has one `employment_snapshot/profile` record per organisation. The snapshot includes the current synthetic recruitment/employment and operational state arrays and counters. Client writes are debounced; initial cloud loading replaces the local cache when a server snapshot exists. If no server snapshot exists, the current user-and-organisation-scoped local cache is uploaded once as the initial cloud snapshot.
 
 The browser can read only its own snapshot unless its organisation role has `operations:read`. Writes go through a security-definer RPC that checks active membership and uses `auth.uid()` as the record owner. Direct table writes are revoked. This release does not provide conflict-free multi-device merging: the latest snapshot write wins for a given employee profile. It also does not implement scheduled retention deletion, email invitation delivery, real banking integrations or live customer data.
+
+
+## v1.1.0 Customer Intelligence
+
+Open **Customer Lab** after accepting employment. Generate a synthetic customer by persona, issue and channel, respond to up to three adaptive turns, review deterministic QA evidence, and finalise a coaching or mandatory-review record. The evaluator is transparent rule-based practice logic, not an external AI model or an approved organisational scorecard.

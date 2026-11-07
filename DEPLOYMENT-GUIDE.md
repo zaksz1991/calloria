@@ -1,4 +1,4 @@
-# CALLORIA 0.9.0 — GUI deployment guide
+# CALLORIA 1.1.0 — GUI deployment guide
 
 Target repository: `zaksz1991/calloria`  
 Target Vercel site: `https://calloria.vercel.app`  
@@ -6,13 +6,13 @@ Production branch: `main`
 
 ## 1. Replace the repository files
 
-1. Download and extract `CALLORIA-v0.9.0.zip` in Windows File Explorer.
+1. Download and extract `CALLORIA-v1.1.0.zip` in Windows File Explorer.
 2. Open the existing `zaksz1991/calloria` repository in GitHub Desktop. If it is not on this computer, clone the existing repository using GitHub Desktop.
 3. In GitHub Desktop, choose **Repository → Show in Explorer**.
-4. Copy the contents of the extracted `CALLORIA-v0.9.0` folder into the existing repository root. Do not copy an outer wrapper folder and do not delete the hidden `.git` folder.
+4. Copy the contents of the extracted `CALLORIA-v1.1.0` folder into the existing repository root. Do not copy an outer wrapper folder and do not delete the hidden `.git` folder.
 5. Allow File Explorer to replace matching files and add the new cloud modules, tests and Supabase migration folder.
 6. Review the changed-file list in GitHub Desktop. The release should include the updated `package.json`, `index.html`, `js/main.js`, new `js/cloud-platform.js` and `js/cloud-security.js`, `supabase/`, `SUPABASE-SETUP.md`, and updated documentation/tests.
-7. Use the summary `CALLORIA v0.9.0 — Supabase identity and tenant isolation foundation`, commit to `main` and push.
+7. Use the summary `CALLORIA v1.1.0 — Customer intelligence and adaptive contact simulation`, commit to `main` and push.
 
 ## 2. Apply Supabase setup before adding Vercel variables
 
@@ -42,7 +42,7 @@ Apply variables to the correct Production and Preview scopes, save and trigger a
 
 ## 4. First deployment checks
 
-1. Confirm CALLORIA branding and Build 0.9.0 are visible.
+1. Confirm CALLORIA branding and Build 1.1.0 are visible.
 2. Confirm the sign-in/create-account gate appears when cloud variables are configured.
 3. Create an account, confirm the email and sign in.
 4. Create the first organisation; confirm the user becomes owner.

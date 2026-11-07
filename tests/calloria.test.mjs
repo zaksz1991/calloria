@@ -83,7 +83,7 @@ test('asset and roadmap documentation identifies remaining production boundaries
   const [readme,roadmap,assets] = await Promise.all([read('README.md'),read('PRODUCT-ROADMAP.md'),read('ASSET-SOURCES.md')]);
   assert.match(readme, /not a finished commercial product/i);
   assert.match(readme, /physical-device QA/i);
-  assert.match(roadmap, /0\.3\.0/);
+  assert.match(roadmap, /v1\.1\.0/);
   assert.match(assets, /CC0/);
   assert.match(assets, /first-party/);
 });
@@ -142,9 +142,9 @@ test('multi-channel operations are reachable and linked to existing work systems
     read('index.html'), read('js/main.js'), read('js/multichannel-engine.js'), read('styles.css'), read('package.json')
   ]);
   const pkg = JSON.parse(packageJson);
-  assert.equal(pkg.version, '1.0.0');
+  assert.equal(pkg.version, '1.1.0');
   assert.match(html, /data-view=["']digital["']/);
-  assert.match(html, /BUILD 0\.9\.0/);
+  assert.match(html, /BUILD 1\.1\.0/);
   for (const item of ['function renderDigital','function acceptDigital','function submitDigitalReply','function finishDigitalContact','function receiveDigitalFollowUp','case \'digital\': renderDigital()']) {
     assert.ok(main.includes(item), `missing digital integration: ${item}`);
   }
@@ -166,9 +166,9 @@ test('organisation administration is reachable and preserves the local workspace
     read('index.html'), read('js/main.js'), read('js/organization-engine.js'), read('package.json'), read('styles.css')
   ]);
   const pkg = JSON.parse(packageJson);
-  assert.equal(pkg.version, '1.0.0');
+  assert.equal(pkg.version, '1.1.0');
   assert.match(html, /data-view=["']organization["']/);
-  assert.match(html, /BUILD 0\.9\.0/);
+  assert.match(html, /BUILD 1\.1\.0/);
   assert.match(main, /function renderOrganizationWorkspace/);
   assert.match(main, /case 'organization': renderOrganizationWorkspace\(\)/);
   for (const form of ['orgCreateForm','orgMemberForm','orgPolicyForm']) assert.ok(main.includes(form));
