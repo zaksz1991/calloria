@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#081526">
+  <meta name="description" content="CALLORIA staff scheduling, attendance, briefing and workforce adherence desk.">
+  <title>CALLORIA · Workforce Control</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/calloria-mark.svg">
+  <link rel="stylesheet" href="/styles/workforce.css">
+</head>
+<body>
+  <div class="wfm-shell">
+    <header class="wfm-topbar">
+      <a class="wfm-brand" href="/" aria-label="CALLORIA home"><span class="wfm-mark">C</span><span><b>CALLORIA</b><small>WORKFORCE CONTROL</small></span></a>
+      <nav class="wfm-nav" aria-label="Staff tools">
+        <a href="/agent-desk">Agent Desk</a><a href="/case-desk">Case Desk</a><a href="/customer-360">Customer 360</a><a href="/customer-care">Customer Care</a>
+        <button id="wfm-sign-out" class="wfm-button quiet" type="button" hidden>Sign out</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="wfm-login" class="wfm-login-wrap">
+        <form id="wfm-login-form" class="wfm-login-card">
+          <p class="eyebrow">RESTRICTED STAFF ACCESS</p>
+          <h1>Workforce Control</h1>
+          <p class="muted">Shift plans, attendance, activity adherence and daily operational briefings.</p>
+          <label>Staff email<input id="wfm-email" type="email" autocomplete="username" maxlength="180" required></label>
+          <label>Password<input id="wfm-password" type="password" autocomplete="current-password" maxlength="200" required></label>
+          <button class="wfm-button primary" type="submit">Sign in</button>
+          <p id="wfm-login-status" class="wfm-status" role="status" aria-live="polite"></p>
+          <p class="security-note">No public registration. Access is checked by Supabase Auth and a separate server-side workforce permission map.</p>
+        </form>
+      </section>
+
+      <section id="wfm-app" hidden>
+        <div class="wfm-heading">
+          <div><p class="eyebrow">RUFFNECK ENTERTAINMENT · PEOPLE OPERATIONS</p><h1>Workforce Control</h1><p class="muted">Plan the work, record attendance and manage operational time without inventing live call activity.</p></div>
+          <div class="wfm-staff-pill"><strong id="wfm-staff-label">Staff member</strong><small id="wfm-staff-scope">Workforce permissions</small></div>
+        </div>
+
+        <div class="wfm-metrics" aria-label="Workforce metrics">
+          <article><span>My shifts</span><strong id="wfm-metric-shifts">0</strong></article>
+          <article><span>Clocked in</span><strong id="wfm-metric-clocked">0</strong></article>
+          <article><span>Currently on break</span><strong id="wfm-metric-breaks">0</strong></article>
+          <article><span>Briefings to acknowledge</span><strong id="wfm-metric-briefings">0</strong></article>
+        </div>
+
+        <div class="wfm-grid">
+          <section class="wfm-panel my-shift-panel">
+            <div class="wfm-panel-head"><div><p class="eyebrow">PERSONAL WORKSPACE</p><h2>My shift</h2></div><button id="wfm-refresh" class="wfm-button outline" type="button">Refresh</button></div>
+            <div id="wfm-my-shift" class="shift-card"><div class="empty-state">Your published shifts will appear here.</div></div>
+            <div class="activity-controls">
+              <h3>Record current activity</h3>
+              <p class="muted small">Choose the activity you are actually performing. These records support schedule adherence; they do not monitor your device or infer call state.</p>
+              <div class="activity-buttons">
+                <button data-activity="customer_work" type="button" class="wfm-button activity">Customer operations</button>
+                <button data-activity="break" type="button" class="wfm-button activity">Break</button>
+                <button data-activity="lunch" type="button" class="wfm-button activity">Lunch</button>
+                <button data-activity="briefing" type="button" class="wfm-button activity">Briefing</button>
+                <button data-activity="training" type="button" class="wfm-button activity">Training</button>
+                <button data-activity="coaching" type="button" class="wfm-button activity">Coaching</button>
+                <button data-activity="quality_assurance" type="button" class="wfm-button activity">Quality assurance</button>
+                <button data-activity="back_office" type="button" class="wfm-button activity">Back office</button>
+                <button data-activity="prayer" type="button" class="wfm-button activity">Prayer break</button>
+              </div>
+              <div class="shift-actions"><button id="wfm-clock-in" class="wfm-button primary" type="button" disabled>Clock in</button><button id="wfm-clock-out" class="wfm-button danger" type="button" disabled>Clock out</button></div>
+              <p id="wfm-my-status" class="wfm-status" role="status" aria-live="polite"></p>
+            </div>
+          </section>
+
+          <section class="wfm-panel briefing-panel">
+            <div class="wfm-panel-head"><div><p class="eyebrow">DAILY OPERATIONS</p><h2>Briefing groups</h2></div><span class="wfm-time-tag">07:30 · 14:00</span></div>
+            <p class="muted small">Morning and afternoon product/service updates, operational changes, security notices, queue priorities and knowledge checks.</p>
+            <div class="briefing-tools" id="wfm-briefing-tools" hidden>
+              <label>Briefing date<input id="wfm-briefing-date" type="date"></label>
+              <label>Department<select id="wfm-briefing-department"></select></label>
+              <button id="wfm-create-briefings" class="wfm-button outline" type="button">Create standard 07:30 and 14:00 briefings</button>
+            </div>
+            <div id="wfm-briefing-list" class="briefing-list"><div class="empty-state">Briefings will appear here.</div></div>
+            <p id="wfm-briefing-status" class="wfm-status" role="status" aria-live="polite"></p>
+          </section>
+        </div>
+
+        <section class="wfm-panel team-panel" id="wfm-team-panel" hidden>
+          <div class="wfm-panel-head"><div><p class="eyebrow">SUPERVISOR VIEW</p><h2>Team roster and live attendance</h2></div><button id="wfm-new-shift" class="wfm-button primary" type="button">Schedule a shift</button></div>
+          <div class="team-filters"><label>Roster date<input id="wfm-roster-date" type="date"></label><label>Department<select id="wfm-team-department"></select></label></div>
+          <div class="table-wrap"><table><thead><tr><th>Staff account</th><th>Department</th><th>Shift</th><th>Attendance</th><th>Current activity</th><th>Adherence</th></tr></thead><tbody id="wfm-team-rows"><tr><td colspan="6">Team roster will appear here.</td></tr></tbody></table></div>
+          <p id="wfm-team-status" class="wfm-status" role="status" aria-live="polite"></p>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="wfm-shift-dialog" class="wfm-dialog">
+    <form id="wfm-shift-form" class="dialog-form">
+      <div class="wfm-panel-head"><div><p class="eyebrow">ROSTER PLANNER</p><h2>Publish a shift</h2></div><button type="button" class="icon-close" data-close="wfm-shift-dialog" aria-label="Close">×</button></div>
+      <label>Staff member<select id="wfm-shift-staff" required></select></label>
+      <label>Department<select id="wfm-shift-department" required></select></label>
+      <div class="form-two"><label>Shift date<input id="wfm-shift-date" type="date" required></label><label>Timezone<input id="wfm-timezone" type="text" readonly></label></div>
+      <div class="form-two"><label>Start time<input id="wfm-shift-start" type="time" value="08:00" required></label><label>End time<input id="wfm-shift-end" type="time" value="17:00" required></label></div>
+      <div class="block-builder"><div class="wfm-panel-head"><h3>Planned activities</h3><button type="button" id="wfm-add-block" class="wfm-button outline small-button">Add block</button></div><p class="muted small">Blocks should cover customer work, breaks, lunch, briefings or training. With no blocks, the whole shift is planned as customer operations.</p><div id="wfm-block-list"></div></div>
+      <p id="wfm-shift-status" class="wfm-status" role="status" aria-live="polite"></p>
+      <div class="dialog-actions"><button type="button" class="wfm-button outline" data-close="wfm-shift-dialog">Cancel</button><button type="submit" class="wfm-button primary">Publish shift</button></div>
+    </form>
+  </dialog>
+  <script type="module" src="/js/wfm-workbench.js"></script>
+</body>
+</html>

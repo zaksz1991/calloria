@@ -1,58 +1,80 @@
+
+> calloria@1.4.0 test
+> node --test tests/*.test.mjs
+
 TAP version 13
-# Subtest: validates multichannel work items and preserves supported product references
-ok 1 - validates multichannel work items and preserves supported product references
+# Subtest: department-scoped shift validation accepts a valid shift
+ok 1 - department-scoped shift validation accepts a valid shift
   ---
-  duration_ms: 2.51729
+  duration_ms: 2.2122
   type: 'test'
   ...
-# Subtest: blocks a user from creating work in departments outside their grant
-ok 2 - blocks a user from creating work in departments outside their grant
+# Subtest: shift validation rejects an unauthorised department
+ok 2 - shift validation rejects an unauthorised department
   ---
-  duration_ms: 0.381572
+  duration_ms: 0.628316
   type: 'test'
   ...
-# Subtest: rejects unsupported channels, malformed CRM IDs and missing summaries
-ok 3 - rejects unsupported channels, malformed CRM IDs and missing summaries
+# Subtest: shift validation enforces four-to-sixteen-hour duration
+ok 3 - shift validation enforces four-to-sixteen-hour duration
   ---
-  duration_ms: 0.296537
+  duration_ms: 0.160887
   type: 'test'
   ...
-# Subtest: blocks credentials and payment secrets from interaction summaries
-ok 4 - blocks credentials and payment secrets from interaction summaries
+# Subtest: planned activity blocks default to customer operations
+ok 4 - planned activity blocks default to customer operations
   ---
-  duration_ms: 0.236328
+  duration_ms: 0.246813
   type: 'test'
   ...
-# Subtest: enforces the interaction state machine and agent ownership
-ok 5 - enforces the interaction state machine and agent ownership
+# Subtest: planned activity blocks reject overlaps and off-shift times
+ok 5 - planned activity blocks reject overlaps and off-shift times
   ---
-  duration_ms: 0.386379
+  duration_ms: 0.303367
   type: 'test'
   ...
-# Subtest: requires a valid wrap-up disposition and non-sensitive summary
-ok 6 - requires a valid wrap-up disposition and non-sensitive summary
+# Subtest: adherence is calculated from matched planned and recorded activity minutes
+ok 6 - adherence is calculated from matched planned and recorded activity minutes
   ---
-  duration_ms: 0.191272
+  duration_ms: 0.299792
   type: 'test'
   ...
-# Subtest: calculates status counts without inventing missing statuses
-ok 7 - calculates status counts without inventing missing statuses
+# Subtest: open actual activity intervals are measured only to the current time
+ok 7 - open actual activity intervals are measured only to the current time
   ---
-  duration_ms: 0.206734
+  duration_ms: 0.164873
   type: 'test'
   ...
-# Subtest: computes SLA state and formats elapsed time
-ok 8 - computes SLA state and formats elapsed time
+# Subtest: current activity returns only an interval active at the supplied time
+ok 8 - current activity returns only an interval active at the supplied time
   ---
-  duration_ms: 0.288515
+  duration_ms: 0.202839
   type: 'test'
   ...
-1..8
-# tests 8
+# Subtest: briefing dates reject invalid calendar dates
+ok 9 - briefing dates reject invalid calendar dates
+  ---
+  duration_ms: 0.419569
+  type: 'test'
+  ...
+# Subtest: local datetime conversion preserves local browser timezone offset
+ok 10 - local datetime conversion preserves local browser timezone offset
+  ---
+  duration_ms: 0.483223
+  type: 'test'
+  ...
+# Subtest: safe text and UUID validation reject malformed identifiers
+ok 11 - safe text and UUID validation reject malformed identifiers
+  ---
+  duration_ms: 0.160507
+  type: 'test'
+  ...
+1..11
+# tests 11
 # suites 0
-# pass 8
+# pass 11
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 70.071877
+# duration_ms 65.607783

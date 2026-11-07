@@ -9,5 +9,10 @@
     "skipLibCheck": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["supabase/functions/calloria-agent-desk/**/*.ts", "supabase/functions/calloria-agent-desk/**/*.d.ts"]
+  "include": [
+    "supabase/functions/calloria-agent-desk/**/*.ts",
+    "supabase/functions/calloria-agent-desk/**/*.d.ts",
+    "supabase/functions/calloria-workforce/**/*.ts",
+    "supabase/functions/calloria-workforce/**/*.d.ts"
+  ]
 }

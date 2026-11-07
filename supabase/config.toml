@@ -1,3 +1,24 @@
-# Merge the Phase 8 entry into the existing config.toml; retain all other entries.
+# CALLORIA Edge Function settings.
+# Existing AI and telemetry settings are preserved. Staff functions validate
+# signed-in users in their handler and therefore use verify_jwt = false.
+
+[functions.calloria-ai-assist]
+verify_jwt = true
+
+[functions.calloria-game-telemetry]
+verify_jwt = false
+
+[functions.calloria-customer-care]
+verify_jwt = false
+
+[functions.calloria-case-desk]
+verify_jwt = false
+
+[functions.calloria-customer-360]
+verify_jwt = false
+
 [functions.calloria-agent-desk]
+verify_jwt = false
+
+[functions.calloria-workforce]
 verify_jwt = false

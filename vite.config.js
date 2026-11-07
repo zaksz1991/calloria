@@ -1,8 +1,6 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 
-// Phase 8 overlay. Preserve any additional project-specific inputs/plugins
-// already present in the live repository when merging this new entry.
 export default defineConfig({
   base: '/',
   publicDir: false,
@@ -19,7 +17,8 @@ export default defineConfig({
         customerCare: resolve(process.cwd(), 'customer-care.html'),
         caseDesk: resolve(process.cwd(), 'case-desk.html'),
         customer360: resolve(process.cwd(), 'customer-360.html'),
-        agentDesk: resolve(process.cwd(), 'agent-desk.html')
+        agentDesk: resolve(process.cwd(), 'agent-desk.html'),
+        workforce: resolve(process.cwd(), 'workforce.html')
       },
       output: {
         manualChunks(id) {
