@@ -15,7 +15,8 @@ export default defineConfig({
       input: {
         main: resolve(process.cwd(), 'index.html'),
         customerCare: resolve(process.cwd(), 'customer-care.html'),
-        caseDesk: resolve(process.cwd(), 'case-desk.html')
+        caseDesk: resolve(process.cwd(), 'case-desk.html'),
+        customer360: resolve(process.cwd(), 'customer-360.html')
       },
       output: {
         manualChunks(id) {

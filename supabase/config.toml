@@ -1,3 +1,5 @@
+# CALLORIA function configuration. Merge these entries with the existing file;
+# retain all unrelated Supabase function settings.
 [functions.calloria-ai-assist]
 verify_jwt = true
 
@@ -8,4 +10,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.calloria-case-desk]
+verify_jwt = false
+
+[functions.calloria-customer-360]
 verify_jwt = false

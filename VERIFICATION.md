@@ -1,22 +1,26 @@
-# CALLORIA Phase 6 verification report
+# CALLORIA Phase 7 verification report
 
 Date: 2026-11-07
 
 ## Checks performed
 
-- `node --check` on the three Phase 6 browser modules and the Vite configuration: PASS.
-- `node --test tests/*.test.mjs`: 7 tests passed, 0 failed.
-- TypeScript static check on `calloria-case-desk` and the updated `calloria-customer-care` Edge Functions using local Deno/Supabase declarations: PASS.
-- HTML parser checks for `customer-care.html` and `case-desk.html`: PASS.
-- Static SQL checks: namespaced case/event/rate-limit objects; RLS enabled; public/anon/authenticated privileges revoked; service-role-only access/RPC grants; no destructive DDL: PASS.
-- Archive integrity: checked after packaging.
+- `node --check` on `customer-360-engine.js`, `customer-360-workbench.js` and `vite.config.js`: PASS.
+- `node --test tests/customer-360-engine.test.mjs`: 8 passed, 0 failed.
+- TypeScript `tsc --noEmit` using the included Deno/Supabase ambient declarations: PASS.
+- HTML parser check for `customer-360.html` and the updated Phase 6 `case-desk.html`: PASS.
+- Static inspection of SQL for namespaced objects, RLS enablement, revoked browser grants, restricted service-role grants and absence of destructive changes to existing CALLORIA/Prospector objects: PASS.
+- ZIP integrity check: PASS (after packaging).
 
 ## Not performed
 
-- Full Vite production build or full pre-existing CALLORIA test suite.
-- Execution of migration 007 against the shared Supabase project.
-- Live Edge Function deployment or live Supabase/Groq integration test.
-- Real browser rendering, staff login, production case submission, or Android device benchmark.
+- Full existing repository `npm test` suite.
+- Full Vite production build. This workspace does not contain the complete CALLORIA repository or installed app dependencies.
+- Execution of migration 008 against the shared Supabase project.
+- Supabase Edge Function deployment or live authentication/database request.
+- Browser/desktop/mobile rendering, staff login, cross-platform account lookup, or physical device test.
+- Live sync with RuffNeck Learn, Prospector, Connect, Social Hub, Kano Run or Kano Keke.
 - GitHub commit or Vercel deployment.
 
-The package is a source integration bundle, not a live deployment. Confirm existing migration history before applying migration 007. Never rerun migrations 001–004. Keep all secrets in Supabase Edge Function Secrets and do not expose them in Vercel or source control.
+## Scope limits
+
+The package is a staff-only Customer 360 source overlay for the Phase 6 baseline. It adds encrypted CRM records, HMAC blind-index searches, an interaction timeline, consent history, identity verification workflow, a static product recommendation catalogue and supervisor erasure. It does not make account changes on any of the six RuffNeck platforms, process transactions, send external messages, or invoke Groq with CRM profile data.

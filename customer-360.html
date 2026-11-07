@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#07121d" />
+  <meta name="description" content="CALLORIA staff-only Customer 360 CRM." />
+  <title>CALLORIA · Customer 360</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/calloria-mark.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles/customer-360.css" />
+</head>
+<body>
+  <div class="crm-shell">
+    <header class="crm-header">
+      <a class="brand" href="/" aria-label="Return to CALLORIA"><span class="brand-mark">C</span><span><strong>CALLORIA</strong><small>STAFF CUSTOMER INTELLIGENCE</small></span></a>
+      <nav><a href="/case-desk">Case desk</a><a href="/customer-care">Customer care</a><a href="/">Simulator</a><button id="sign-out" class="button button-quiet" hidden>Sign out</button></nav>
+    </header>
+
+    <main>
+      <section id="login-panel" class="login-panel">
+        <div class="eyebrow">RESTRICTED STAFF ACCESS</div>
+        <h1>Customer 360</h1>
+        <p class="muted">A consent-governed customer record for support continuity, service interactions and responsible product guidance.</p>
+        <form id="login-form" class="form-stack">
+          <label>Staff email<input id="staff-email" type="email" autocomplete="username" required maxlength="180" /></label>
+          <label>Password<input id="staff-password" type="password" autocomplete="current-password" required maxlength="200" /></label>
+          <button class="button button-primary" type="submit">Sign in</button>
+          <div id="login-status" class="status" role="status" aria-live="polite"></div>
+        </form>
+        <p class="security-footnote">No public staff registration. Access is controlled by the Supabase CRM staff permission map and verified again by the server for every action.</p>
+      </section>
+
+      <section id="crm-panel" hidden>
+        <div class="page-heading"><div><div class="eyebrow">RUFFNECK ENTERTAINMENT · CUSTOMER RELATIONSHIP MANAGEMENT</div><h1>Customer 360</h1><p class="muted">One verified record, clear consent, useful service history. No guessing and no unnecessary data collection.</p></div><div id="staff-badge" class="staff-badge"></div></div>
+        <div class="crm-grid">
+          <aside class="sidebar-card">
+            <div class="section-title"><div><h2>Find a customer</h2><p>Exact email / phone, or name tokens.</p></div></div>
+            <form id="search-form" class="search-form"><input id="customer-search" aria-label="Search customer" placeholder="Name, email or phone" maxlength="180" required /><button class="button button-primary" type="submit">Search</button></form>
+            <div id="search-results" class="search-results"><div class="empty-state">Search results will appear here.</div></div>
+            <button id="new-contact-button" type="button" class="button button-outline full-width">Create customer record</button>
+            <div class="data-note"><strong>Identity rules</strong><p>Names alone never prove identity. Do not merge records using a shared device, family name or guess. Use the official platform or approved contact-verification process before marking an identity verified.</p></div>
+          </aside>
+
+          <section class="profile-card">
+            <div id="no-selection" class="empty-profile"><div class="empty-icon">◎</div><h2>Select a customer record</h2><p>Customer information, consent history and interaction timeline will appear here after an authorised search.</p></div>
+            <div id="profile-content" hidden>
+              <div class="profile-heading"><div><div class="eyebrow">CUSTOMER PROFILE</div><h2 id="profile-name">Customer</h2><p id="profile-meta" class="muted"></p></div><div class="profile-actions"><div id="profile-id" class="profile-id"></div><button id="erase-contact-button" type="button" class="button button-danger" hidden>Erase CRM record</button></div></div>
+              <div class="profile-columns">
+                <section class="subcard"><h3>Contact details</h3><div id="contact-details" class="detail-list"></div></section>
+                <section class="subcard"><h3>Consent preferences</h3><div id="consent-list" class="consent-list"></div><div id="consent-history" class="consent-history"></div><p class="muted small-note">Changes require the customer's explicit decision and are recorded as new consent events.</p></section>
+              </div>
+              <section class="subcard"><div class="section-title"><div><h3>Linked identities</h3><p>Associations remain unverified until a supervisor checks them independently.</p></div><button id="add-identity-button" type="button" class="button button-outline">Link identity</button></div><div id="identity-list" class="identity-list"></div></section>
+              <section class="subcard timeline-section"><div class="section-title"><div><h3>Interaction timeline</h3><p>Personal-guidance content is deliberately not retained.</p></div><button id="add-interaction-button" type="button" class="button button-outline">Log interaction</button></div><div id="interaction-list" class="timeline-list"></div></section>
+              <section class="subcard"><div class="section-title"><div><h3>RuffNeck portfolio</h3><p>Show a product when the customer asks. Proactive cross-selling requires marketing consent.</p></div></div><div class="recommendation-actions"><button id="requested-recommendations" class="button button-outline" type="button">Customer requested information</button><button id="proactive-recommendations" class="button button-primary" type="button">Consent-based recommendations</button></div><div id="recommendation-list" class="recommendation-list"></div></section>
+            </div>
+          </section>
+        </div>
+        <div id="crm-status" class="status global-status" role="status" aria-live="polite">Ready.</div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="new-contact-dialog" class="modal">
+    <form id="new-contact-form" class="modal-form">
+      <div class="modal-heading"><div><div class="eyebrow">NEW CUSTOMER RECORD</div><h2>Create customer record</h2></div><button class="icon-button" type="button" data-close="new-contact-dialog" aria-label="Close">×</button></div>
+      <label>Customer name (optional)<input id="new-name" maxlength="100" autocomplete="off" /></label>
+      <label>Email address<input id="new-email" type="email" maxlength="180" autocomplete="off" /></label>
+      <label>Phone number<input id="new-phone" type="tel" maxlength="40" autocomplete="off" placeholder="Include country code where possible" /></label>
+      <label>Owning department<select id="new-department" required></select></label>
+      <label>Preferred contact method<select id="new-preferred"><option value="none">No preference</option><option value="email">Email</option><option value="phone">Phone</option><option value="whatsapp">WhatsApp</option></select></label>
+      <label class="check-row"><input id="service-consent" type="checkbox" required /><span>Customer has been informed and explicitly agrees to CALLORIA storing the minimum contact record needed to provide the requested service.</span></label>
+      <label class="check-row"><input id="marketing-consent" type="checkbox" /><span>Customer separately opted in to receive relevant marketing and proactive product recommendations.</span></label>
+      <label class="check-row"><input id="personalization-consent" type="checkbox" /><span>Customer separately opted in to product recommendation personalisation. This does not permit storing sensitive personal-guidance details.</span></label>
+      <p class="modal-warning">Do not enter passwords, OTPs, payment credentials, full identity-document numbers or sensitive health / relationship details. Do not mark marketing or personalisation consent unless the customer explicitly opted in.</p>
+      <div id="new-contact-error" class="status" role="alert"></div>
+      <button class="button button-primary full-width" type="submit">Create record</button>
+    </form>
+  </dialog>
+
+  <dialog id="identity-dialog" class="modal">
+    <form id="identity-form" class="modal-form">
+      <div class="modal-heading"><div><div class="eyebrow">IDENTITY ASSOCIATION</div><h2>Link identity</h2></div><button class="icon-button" type="button" data-close="identity-dialog" aria-label="Close">×</button></div>
+      <label>Identity type<select id="identity-type"><option value="email">Email</option><option value="phone">Phone</option><option value="platform_account">Platform account reference</option><option value="guest_profile">Guest profile reference</option></select></label>
+      <label>Identity value<input id="identity-value" maxlength="200" autocomplete="off" required /></label>
+      <p class="modal-warning">Only link an identifier when the customer has authorised the association. Do not enter passwords, OTPs, API tokens or identity-document numbers. New links are unverified.</p>
+      <div id="identity-error" class="status" role="alert"></div><button class="button button-primary full-width" type="submit">Create unverified link</button>
+    </form>
+  </dialog>
+
+  <dialog id="verify-identity-dialog" class="modal">
+    <form id="verify-identity-form" class="modal-form">
+      <div class="modal-heading"><div><div class="eyebrow">SUPERVISOR CONTROL</div><h2>Review identity</h2></div><button class="icon-button" type="button" data-close="verify-identity-dialog" aria-label="Close">×</button></div>
+      <input id="verify-identity-id" type="hidden" />
+      <label>Evidence reference<input id="verification-evidence" maxlength="180" autocomplete="off" placeholder="Non-sensitive reference to the independent verification check" /></label>
+      <p class="modal-warning">Only verify after an independent check through an approved platform sign-in or contact-verification procedure. Never use a caller's name, caller ID alone, or an unverified email/phone claim as proof.</p>
+      <div class="verify-actions"><button id="reject-identity-button" class="button button-outline" type="button">Reject link</button><button class="button button-primary" type="submit">Mark verified</button></div>
+      <div id="verify-identity-error" class="status" role="alert"></div>
+    </form>
+  </dialog>
+
+  <dialog id="interaction-dialog" class="modal">
+    <form id="interaction-form" class="modal-form">
+      <div class="modal-heading"><div><div class="eyebrow">SERVICE HISTORY</div><h2>Log interaction</h2></div><button class="icon-button" type="button" data-close="interaction-dialog" aria-label="Close">×</button></div>
+      <label>Channel<select id="interaction-channel"><option value="voice">Voice call</option><option value="email">Email</option><option value="live_chat">Live chat</option><option value="social">Social media</option><option value="whatsapp">WhatsApp</option><option value="website">Website</option><option value="portal">Customer portal</option><option value="in_person">In person</option><option value="game">Game support</option></select></label>
+      <label>Direction<select id="interaction-direction"><option value="inbound">Inbound</option><option value="outbound">Outbound</option><option value="internal">Internal handoff</option></select></label>
+      <label>Interaction category<select id="interaction-type"><option value="platform_support">Platform support</option><option value="service_enquiry">Service enquiry</option><option value="sales_enquiry">Sales enquiry</option><option value="complaint">Complaint</option><option value="personal_guidance">Personal guidance</option><option value="general_customer_care">General customer care</option></select></label>
+      <label>RuffNeck product (optional)<select id="interaction-platform"><option value="">Not applicable</option><option value="ruffneck-learn">RuffNeck Learn</option><option value="ruffneck-prospector">RuffNeck Prospector</option><option value="ruffneck-connect">RuffNeck Connect</option><option value="ruffneck-social-hub">RuffNeck Social Hub</option><option value="kano-run">Kano Run / Kano Life</option><option value="kano-keke">Kano Keke</option></select></label>
+      <label>Related case reference (optional)<input id="interaction-case-reference" maxlength="24" autocomplete="off" placeholder="CC-YYMMDD-ABC234" /></label>
+      <label id="interaction-summary-label">Brief factual summary<textarea id="interaction-summary" rows="3" maxlength="500" placeholder="Record the request, action taken and next step. Do not include credentials or unnecessary personal details."></textarea></label>
+      <p class="modal-warning">For personal-guidance interactions the system stores only a generic interaction marker, not the customer's story, diagnosis, relationship details or emotional disclosures.</p>
+      <div id="interaction-error" class="status" role="alert"></div><button class="button button-primary full-width" type="submit">Save interaction</button>
+    </form>
+  </dialog>
+
+  <script type="module" src="/js/customer-360-workbench.js"></script>
+</body>
+</html>

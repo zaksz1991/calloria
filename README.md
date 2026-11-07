@@ -1,78 +1,92 @@
-# CALLORIA Phase 6 — Secure Case Management and Staff Desk
+# CALLORIA Phase 7 — Customer 360 CRM and Consent-Governed Portfolio Desk
 
-Phase 6 completes the human-follow-up path that Phase 5 deliberately left as a limitation. It adds guest case submission, private customer status tracking, and a restricted staff queue for authorised employees.
+**Build date:** 7 November 2026  
+**Target baseline:** CALLORIA Phase 6 package (Phases 4–6 integrated)  
+**Migration:** `202611070008_calloria_customer_360.sql`  
+**New Edge Function:** `calloria-customer-360`  
+**New staff page:** `/customer-360`
 
-## What this phase adds
+## Purpose
 
-### Customer-facing
+Phase 7 adds a restricted Customer 360 workspace for the agents supporting RuffNeck Entertainment products and services. It gives authorised employees a minimal customer profile, masked contact information, a consent ledger, linked identity references, a service interaction timeline, and a consent-controlled portfolio recommendation view.
 
-- A support-case form from the Customer Care workbench.
-- Optional customer name and optional email/phone follow-up details.
-- Required, explicit storage consent before a case is saved.
-- Sensitive identifiers and credentials are redacted from case descriptions.
-- Case descriptions, names, and optional contact details are encrypted using AES-GCM before being written to Supabase.
-- A random case reference and 256-bit access token are issued after successful submission.
-- The raw access token is shown once, never stored in the database or browser storage, and is required with the reference to check status.
-- Customers can view public status updates and a limited case timeline.
-- No email, SMS, WhatsApp or external-platform message is sent automatically. Staff must use authorised channels.
+It is a CRM foundation. It does **not** claim that CALLORIA is already synchronised with the account databases or internal APIs of RuffNeck Learn, Prospector, Connect, Social Hub, Kano Run or Kano Keke.
 
-### Staff-facing
+## Included capabilities
 
-- New `/case-desk` multi-page entry.
-- Supabase email/password sign-in.
-- Server-side access allowlist with supervisor and department-scoped agent roles.
-- Customer case queue with status filters and search.
-- Decrypted case details and optional contact details shown only to authorised staff.
-- Department routing, assignment to self, and status changes.
-- Customer-visible progress updates.
-- Internal notes encrypted separately and shown only to authorised staff.
-- Public event history is available to customers; private notes are excluded from customer status lookups.
-- Database case events record the staff user ID responsible for an update.
+- Staff sign-in through the existing Supabase Auth project; no public CRM registration.
+- A separate server-side `CALLORIA_CRM_AGENT_ACCESS` permission map with supervisor/agent roles and department scoping.
+- Customer lookup by exact email, exact phone, or name tokens. Blind indexes are HMAC-SHA256; the browser never receives raw contact details.
+- New customer records require an email or phone and explicit service-contact consent. Marketing and AI-personalisation choices are stored separately and default to `not_granted` unless the customer explicitly opts in.
+- Name, email and phone payloads are encrypted at rest by the Edge Function using AES-256-GCM with a derived key. No encryption or HMAC secret is sent to the browser.
+- Contact search results expose masked email and phone only.
+- Interaction timeline for voice, email, live chat, social, WhatsApp, website, portal, in-person and game support. Interaction notes are encrypted.
+- Optional CALLORIA case reference on an interaction. This is a reference only; staff still open Case Desk to review the underlying case.
+- Personal-guidance events store a generic marker only. Relationship details, emotional disclosures, diagnostic details and other sensitive narratives are deliberately not retained in CRM.
+- Consent changes are appended to the consent history and require explicit customer confirmation.
+- Identity linking is supervisor-only. Newly linked email, phone, platform-account and guest-profile references begin unverified. A supervisor can record an independent verification decision; only a hash of the non-sensitive evidence reference is stored.
+- Erasure of a CRM record is supervisor-only, requires a documented customer erasure reference, and cascades to CRM interactions, identities and consent rows. A non-sensitive audit event remains. Case Desk records are separate and follow their own retention rules.
+- Product recommendations distinguish customer-requested information from proactive cross-selling. Proactive recommendations require explicit marketing consent and are suppressed for 30 days after a personal-guidance interaction.
+- The portfolio includes RuffNeck Learn, Prospector, Connect, Social Hub, Kano Run / Kano Life and Kano Keke.
 
-## Files to integrate
+## Important operational boundaries
 
-Use the Phase 5 installation as the base. This is an additive package with complete replacements only for the listed files:
+1. **No automatic account access.** Staff cannot use this CRM to sign in as a customer, change a customer's account, make payments, issue refunds, connect social accounts or modify games/platform data.
+2. **No direct platform integrations in this phase.** The six platforms are represented in a high-level catalogue and recommendation view. Product availability, account status, prices, API support, service levels and commercial terms must be checked with the owning product team or the official platform before being promised.
+3. **No AI inference over CRM profiles in this phase.** Phase 7 uses deterministic portfolio rules. The `ai_personalization` consent field is a forward-looking governance control and does not mean CRM data is currently sent to Groq or another model.
+4. **No marketing by default.** A customer asking for product information may receive the requested information without opting into marketing. Proactive cross-selling remains disabled unless marketing consent is explicitly granted.
+5. **No cross-selling from a personal-guidance interaction.** Proactive commercial recommendations are suppressed for 30 days following a recorded personal-guidance interaction. The guidance content itself is not stored.
+6. **Identity is not inferred.** A name, caller ID, shared device or unverified email/phone claim is not proof that a customer controls an account. Only the documented verification process can change an identity from unverified to verified.
+7. **No automatic CRM retention purge.** Supervisors can erase a CRM contact on a documented customer request. A scheduled retention/expiry policy and operational review cadence must be configured before production launch. Case Desk retention is managed separately.
+8. **No external messaging.** The CRM does not automatically send email, SMS, WhatsApp or social-media messages.
 
-| Package file | CALLORIA repository destination | Action |
+## Overlay / integration files
+
+Use the Phase 6 source package as the base. Copy these files into the repository:
+
+| Package path | Repository path | Action |
 |---|---|---|
-| `customer-care.html` | `customer-care.html` | Replace with Phase 6 version |
-| `js/customer-care-workbench.js` | `js/customer-care-workbench.js` | Replace with Phase 6 version |
-| `js/case-desk-engine.js` | `js/case-desk-engine.js` | Add |
-| `case-desk.html` | `case-desk.html` | Add |
-| `js/case-desk-workbench.js` | `js/case-desk-workbench.js` | Add |
-| `styles/customer-care.css` | `styles/customer-care.css` | Replace with Phase 6 version |
-| `styles/case-desk.css` | `styles/case-desk.css` | Add |
-| `vite.config.js` | `vite.config.js` | Replace with Phase 6 version; preserves the Phase 5 Vite settings and adds the staff page entry |
-| `supabase/functions/calloria-customer-care/index.ts` | same path | Replace with the updated intent classifier; preserves the Phase 5 retrieval and safety logic |
-| `supabase/functions/calloria-case-desk/index.ts` | same path | Add |
-| `supabase/migrations/202611070007_calloria_case_desk.sql` | `supabase/migrations/` | Add and apply once |
-| `supabase/config.toml` | `supabase/config.toml` | Merge the new `calloria-case-desk` section; do not overwrite unrelated function settings |
+| `customer-360.html` | `customer-360.html` | Add |
+| `case-desk.html` | `case-desk.html` | Replace with version containing Customer 360 navigation link |
+| `js/customer-360-engine.js` | `js/customer-360-engine.js` | Add |
+| `js/customer-360-workbench.js` | `js/customer-360-workbench.js` | Add |
+| `styles/customer-360.css` | `styles/customer-360.css` | Add |
+| `assets/ruffneck-catalog.json` | `assets/ruffneck-catalog.json` | Add reference catalogue snapshot |
+| `vite.config.js` | `vite.config.js` | Replace only when using the supplied Phase 6 baseline; adds the Customer 360 page entry |
+| `supabase/functions/calloria-customer-360/index.ts` | same path | Add and deploy |
+| `supabase/migrations/202611070008_calloria_customer_360.sql` | `supabase/migrations/` | Add and apply once |
+| `supabase/config.toml` | `supabase/config.toml` | Merge the new function entry; preserve unrelated settings |
+| `tests/customer-360-engine.test.mjs` | `tests/` | Add |
 
-Do not replace `index.html`, `main.js`, the 3D world files, `package.json`, or the Phase 5 knowledge files with this package. Existing Customer Care launch links and Phase 5 AI retrieval remain intact.
+Do not overwrite `index.html`, `main.js`, `production-world.js`, the Phase 5 knowledge modules, the Phase 6 case engine, or the existing package dependencies. Keep any later changes in your current Vite configuration; the supplied file is based on the Phase 6 three-page configuration only.
+
+The repository currently sets `cleanUrls: true` in `vercel.json`, so the built `customer-360.html` page is intended to be served at `/customer-360` after the new Vite input is integrated.
 
 ## Database migration
 
-1. Check Supabase migration history before applying anything.
-2. Migrations 001–004 are protected and must not be rerun.
-3. Phase 5 migration 005 and 006 are prerequisites for the Phase 5 AI Customer Care retrieval endpoint. Apply them only if they have not already been applied.
-4. Apply `202611070007_calloria_case_desk.sql` once.
+- Confirm that migrations `202611070005`, `202611070006` and `202611070007` are already applied from the preceding phases.
+- Apply `202611070008_calloria_customer_360.sql` **once**.
+- Do not rerun migrations 001–007.
+- The migration creates only `calloria_crm_*` tables, indexes and grants. It does not alter Prospector tables, shared profile/auth tables, other CALLORIA knowledge tables, case-desk tables, triggers or existing policies.
+- All five CRM tables have RLS enabled. Direct privileges are revoked from `public`, `anon` and `authenticated`; the browser cannot access CRM tables directly. The Edge Function uses the service role after authenticating and authorising a staff user.
+- Interaction, consent and audit records are insert-only for the service role. Identity rows permit update only for the supervisor verification decision. Contact rows permit update/delete for profile activity and the supervisor erasure action.
 
-The migration creates only `calloria_cc_*` tables, indexes and RPC functions. It does not alter Prospector tables, existing CALLORIA knowledge tables, profiles, organisations, authentication triggers or existing policies. The case tables have RLS enabled, no client policies, and no `anon` or `authenticated` privileges. Only the Edge Function's service role can read or write them.
+## Supabase Edge Function settings
 
-## Supabase Edge Function
+Deploy `supabase/functions/calloria-customer-360/index.ts` as `calloria-customer-360`.
 
-Deploy `calloria-case-desk` from `supabase/functions/calloria-case-desk/index.ts`.
+Set the function's `verify_jwt` to **OFF** because this function handles its own CORS preflight and validates the Supabase user token inside the handler with `admin.auth.getUser(token)`. This is not a public endpoint: every non-preflight action requires a valid signed-in user UUID present in `CALLORIA_CRM_AGENT_ACCESS`. Do not remove the in-function token check or allow unlisted users.
 
-Set this function's **Verify JWT** option to OFF. Guest users need to create cases and check status without registering. Staff access is separately verified inside the function against a signed-in Supabase user and the server-side department permission map. Turning off gateway JWT verification does not grant staff access and does not expose service-role credentials.
+Add these secrets under **Supabase → Edge Functions → Secrets**:
 
-Keep these secrets in Supabase Edge Function Secrets, never in Vercel/browser variables:
+- `CALLORIA_ALLOWED_ORIGINS` — comma-separated exact permitted origins, including `https://calloria.vercel.app` and only the local development origins actually used.
+- `CALLORIA_CRM_ENCRYPTION_SECRET` — new high-entropy secret, at least 32 bytes. Keep it stable; rotating it without re-encrypting the records will make old contact/interaction data unreadable.
+- `CALLORIA_CRM_IDENTITY_HMAC_SECRET` — a different new high-entropy secret, at least 32 bytes. Keep it stable; changing it will break blind-index search for existing records.
+- `CALLORIA_CRM_AGENT_ACCESS` — JSON mapping existing Supabase Auth user UUIDs to roles and departments.
 
-- `CALLORIA_ALLOWED_ORIGINS` — exact allowed origins. Include `https://calloria.vercel.app` and only the local origins actually used.
-- `CALLORIA_CASE_ENCRYPTION_SECRET` — a newly generated, high-entropy secret of at least 32 bytes. Generate it with a trusted password manager or secrets manager and store it only in Supabase secrets. Do not send it in chat, source files, GitHub or Vercel.
-- `CALLORIA_CASE_RATE_LIMIT_SALT` — a separate high-entropy secret recommended for HMAC rate-limit fingerprints. When omitted, the function uses the Supabase service-role secret as the HMAC key.
-- `CALLORIA_CASE_AGENT_ACCESS` — a JSON object mapping Supabase Auth user UUIDs to their role and department access.
+The Edge Function also uses the platform-provided `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Keep the service-role key, encryption secret and HMAC secret out of Vercel browser variables, source files, chat and GitHub.
 
-Example structure for `CALLORIA_CASE_AGENT_ACCESS` (replace the placeholder IDs with actual user UUIDs from Supabase Authentication → Users):
+Example `CALLORIA_CRM_AGENT_ACCESS` structure (replace the IDs with actual staff UUIDs from Supabase Authentication → Users):
 
 ```json
 {
@@ -82,58 +96,38 @@ Example structure for `CALLORIA_CASE_AGENT_ACCESS` (replace the placeholder IDs 
   },
   "22222222-2222-4222-8222-222222222222": {
     "role": "agent",
-    "departments": ["RuffNeck Products and Platform Support", "Technical Support and IT"]
+    "departments": ["RuffNeck Products and Platform Support"]
+  },
+  "33333333-3333-4333-8333-333333333333": {
+    "role": "agent",
+    "departments": ["Sales and Service Enquiries", "General Customer Care"]
   }
 }
 ```
 
-A supervisor must have `departments: ["*"]`. An agent must have explicit department names. Supported department values are:
+Supported departments are the exact values already used by Phase 6: RuffNeck Products and Platform Support; Sales and Service Enquiries; Complaints and Service Recovery; Personal Development and Wellbeing Information; General Customer Care; Email and Written Support; Social Media Support; Technical Support and IT; Quality Assurance and Customer Experience; Safeguarding and Trained Human Support; Learning and Career Development.
 
-- `RuffNeck Products and Platform Support`
-- `Sales and Service Enquiries`
-- `Complaints and Service Recovery`
-- `Personal Development and Wellbeing Information`
-- `General Customer Care`
-- `Email and Written Support`
-- `Social Media Support`
-- `Technical Support and IT`
-- `Quality Assurance and Customer Experience`
-- `Safeguarding and Trained Human Support`
-- `Learning and Career Development`
+Keep this map separate from `CALLORIA_CASE_AGENT_ACCESS`. That prevents an agent's Case Desk access from automatically granting access to CRM identity and contact data. Grant only the minimum required department permissions. A supervisor must use `departments: ["*"]`.
 
-All listed staff accounts must already exist in the shared Supabase Auth project. Do not expose public staff registration. Grant only the departments required for each employee. Supervisors can view and route all case departments; agents can only view and update cases in their configured departments. The staff console supports taking ownership of a case or leaving it unassigned. Cross-agent reassignment is not exposed in this phase.
+## Browser environment
 
-Keep `CALLORIA_CASE_ENCRYPTION_SECRET` stable. Changing it without re-encrypting existing case details will make old case details and private notes unreadable. The raw customer tracking token cannot be recovered because only its SHA-256 hash is stored. A customer who loses it must submit a new case or contact support through an official channel.
-
-## Vercel environment and routes
-
-The staff and customer pages use the existing public variables:
+Use only the existing public Supabase settings in Vercel:
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY` or `VITE_SUPABASE_PUBLISHABLE_KEY`
 
-Do not place the Groq key, Supabase service-role key, case encryption secret, or rate-limit salt in Vercel. The staff console uses the existing Supabase Auth project. The multi-page build adds `/case-desk` and preserves `/` and `/customer-care`.
+Do not put `CALLORIA_CRM_ENCRYPTION_SECRET`, `CALLORIA_CRM_IDENTITY_HMAC_SECRET`, `CALLORIA_CRM_AGENT_ACCESS` or the service-role key in Vercel.
 
-## Data protection and operational limits
+## Recommended rollout
 
-- Contact details, names, case subjects, descriptions and internal notes are encrypted at rest using AES-GCM. The Edge Function is the only component that decrypts them for authorised staff.
-- Customer-provided phone numbers, emails, account/card numbers and credential patterns are redacted from case descriptions. Contact details intentionally entered in the separate contact field are encrypted, not redacted.
-- Customers can only read a case with both the public reference and the random access token. The reference alone is not sufficient.
-- Rate-limit records store HMAC hashes, short time buckets and counts, not raw IP addresses or enquiry text.
-- Case data is inaccessible after its 180-day expiry. Expired rows are purged opportunistically as the case endpoint receives requests; this is not yet a guaranteed nightly deletion schedule. A scheduled database cleanup is a separate operational control before production rollout.
-- Customer cases are not automatically emailed, texted, assigned to a named human or guaranteed a resolution time. Staff must review the queue and use separately authorised contact channels.
-- The case desk does not process payments, refunds, change accounts, access private customer accounts, or contact customers on WhatsApp/social platforms automatically.
-- Critical self-harm, violence, abuse or immediate-danger content is refused as a routine case and redirected to emergency/human assistance. The ticket desk is not a crisis-response service.
-- All staff permitted by the configured access map can access decrypted details in their assigned departments. The initial model does not include field-level redaction or separate safeguarding case visibility beyond department scoping; keep safeguarding staff in a separately restricted department and avoid granting wildcard access unnecessarily.
+1. Integrate the Phase 7 files into the Phase 6 baseline and merge Vite/Supabase config entries.
+2. Apply migration 008 after checking Supabase migration history.
+3. Add the three new CRM secrets and a narrowly scoped CRM staff permission map.
+4. Deploy `calloria-customer-360` and verify that an unauthorised user receives 401/403, an authorised staff member can use `whoami`, and a staff account outside the allowlist is denied.
+5. Build and test the Vite app; open `/customer-360` and `/case-desk` from the deployed preview.
+6. Test contact creation, exact search, name search, consent updates, interaction logging, personal-guidance redaction, identity linking/verification, proactive recommendation suppression and CRM erasure with synthetic data only.
+7. Confirm database backups, encryption-secret custody, staff offboarding, consent handling and retention before entering live customer information.
 
-## Deployment order
+## Verification status
 
-1. Merge the listed files into the current Phase 5 repository.
-2. Apply migration 007 after checking migration history.
-3. Configure the encryption secret and staff permission map in Supabase Edge Function Secrets.
-4. Redeploy `calloria-customer-care` with the expanded life-guidance classifier. Keep its existing Phase 5 secrets and guest access setting.
-5. Deploy `calloria-case-desk` and leave Verify JWT OFF for guest endpoints; staff routes remain protected by explicit server-side verification.
-6. Add the function's new Verify JWT setting to Supabase `config.toml` without deleting other sections.
-7. Rebuild and deploy the existing Vercel project.
-8. Test a guest case, status lookup with correct and incorrect access tokens, a department-scoped agent login, a supervisor login, status updates, private notes and cross-department access denial.
-
+See `VERIFICATION.md`. This package is an integration overlay. It has not been pushed to GitHub, deployed to Supabase or Vercel, or connected to live product account APIs.
