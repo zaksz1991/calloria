@@ -1,50 +1,57 @@
 # CALLORIA — Contact Centre Career & Operations Simulator
 
-**Build:** 0.6.0 — Voice Practice, Workforce Operations & Character Activity  
-**Product:** A browser-first contact-centre career and operations simulator. Recruitment is the entry gate; the main experience is simulated employment, customer operations, workforce routines and career progression.
+**Build:** 0.7.0 — Multi-channel Customer Operations  
+**Product:** A browser-first contact-centre career and operations simulator. Recruitment is the entry gate; the main experience is simulated employment, multi-channel customer operations, workforce routines and career progression.
 
-## What changed in 0.6.0
+## What changed in 0.7.0
 
-### Optional voice practice
-- Added an optional customer-statement playback action using the browser's speech synthesis capability.
-- Added explicit microphone consent before any audio capture or live transcription.
-- Added up to 30 seconds of local microphone sample recording and in-page playback using `MediaRecorder` when supported.
-- Added optional browser speech recognition with an `en-NG` language hint when the browser exposes the API.
-- Added a typed-response fallback for browsers and devices without microphone or speech-recognition support.
-- Added transcript sanitation for PINs, OTPs, passwords, account/card details and long payment-card digit sequences.
-- Kept audio blobs, object URLs and transcripts in temporary page memory only. They are not added to the employment save or uploaded by CALLORIA. Voice tools are stopped and temporary media references are cleared when the page is hidden or unloaded.
-- Added a visible privacy notice explaining that browser speech recognition may be processed by the browser's speech service.
+### Multi-channel customer support
+- Added a digital operations desk for synthetic email, live-chat and social-media enquiries.
+- Added six scripted sample contacts across the three channels, including a public POS complaint, a mobile access issue, a transfer investigation and service feedback.
+- Added priority-aware sorting, channel filters, specialist routing groups, assigned-agent records and queue refresh.
+- Added conversation threads, editable channel-specific response starters, agent replies and optional scripted customer follow-up.
+- Added explicit after-contact dispositions: resolved, pending customer and escalated.
+- Added mandatory factual notes, CRM case creation and preserved digital transcript details when the interaction is closed.
+- Added separate channel workload, first-response, response-target risk, resolution, escalation and practice-QA metrics.
+- Added digital activity to the overall performance dashboard and promotion KPI input.
 
-### Agent state and shift operations
-- Added agent states: Available, Busy, Wrap-up, Break and Offline.
-- Added an 08:00–17:00 simulated work schedule with morning, lunch and afternoon break windows.
-- Added minute-based schedule adherence, including late-start and break deviations.
-- Added state transitions when inbound/outbound contacts begin, enter after-contact work, complete or are cancelled.
-- Added a single-shift-per-simulated-workday rule and an explicit next-workday action so players are not forced to wait through an overnight clock cycle.
-- Added shift history with recorded adherence results.
-- Added team-leader coaching records with feedback, action plans, score and follow-up date.
+### Privacy and customer protection
+- Blocks agent replies that explicitly request a PIN, password, one-time code or full payment-card number pattern.
+- Applies an additional practice check to social responses: full-quality privacy handling requires directing account-specific support to a verified/private channel.
+- Encourages agents to acknowledge customers, take ownership, explain a next step and leave a traceable record.
+- Customer names, messages, references and interactions are synthetic training data only.
 
-### Character activity
-- Added agent activity state updates to the 3D workplace layer.
-- Desk GLB characters can cross-fade between available animation clips whose names match working, typing, writing, idle, seated or rest states.
-- Local fallback desk characters have restrained arm motion for working and listening states.
-- Existing GLB asset references remain external runtime assets; their licensing, browser loading and animation coverage are not verified in this release.
+### Practice QA boundary
+The digital-response check is deterministic and keyword/rule based. It checks acknowledgement, ownership, next-step clarity and privacy handling. It is not an AI model, a certified QA scorecard or a substitute for human review. The example email, live-chat and social response targets are illustrative game values; they are not contractual or regulatory service levels.
 
-### Preserved capabilities
-- Recruitment application, assessment, practical call simulation and employment acceptance.
-- Prioritised inbound queue, scripted customer scenarios, hold/resume, transfer, supervisor requests and after-contact work.
+## Preserved capabilities
+- Recruitment application, aptitude screening, practical call assessment and employment acceptance.
+- 3D workplace exploration, desktop movement, mobile touch controls and workstation interaction.
+- Prioritised inbound voice queue, scripted calls, hold/resume, transfer, supervisor requests and after-contact work.
 - Outbound campaigns, callbacks, suppression controls and dispositions.
-- CRM cases, operational timeline, knowledge base, performance and career views.
+- CRM case history, operational event timeline, knowledge base, performance and career views.
 - Morning and afternoon briefings, specialist department assignment, annual promotion attempts, cross-selling, commendations and synthetic enterprise-system workflow records.
-- Desktop movement, first-person 3D workplace and mobile touch controls.
+- Optional consent-based voice practice, local recording, speech recognition where supported and agent shift-state animation selection.
+- Shift schedule, breaks, adherence, coaching and shift history.
 
-## Current operating model
+## Operating model
 
 The simulation clock advances 30 in-game seconds for each real second. A full nine-hour shift therefore takes 18 real minutes when left running continuously. The player begins at 07:00, can attend the 07:30 morning briefing, and may start the scheduled shift from 08:00. The 14:00 afternoon briefing is available in its scheduled in-game window.
 
-Default break windows are 10:00–10:15, 12:30–13:00 and 15:00–15:15. The player must manually start and end each break. Break adherence is calculated against the configured schedule.
+Default break windows are 10:00–10:15, 12:30–13:00 and 15:00–15:15. The player must manually start and end each break. Break adherence is calculated against the configured schedule. An agent must complete the active call or digital conversation before taking a break or ending the shift.
 
-Voice practice is supplemental to the existing scripted call decision flow. A recorded sample or speech transcript does not currently drive scenario branching or automatic QA scoring. Customer statement playback depends on the browser's speech synthesis voice availability. Microphone recording and speech recognition depend on browser/device support and explicit permission.
+## Multi-channel workflow
+
+1. Start the simulated shift and open Digital.
+2. Filter the queue by Email, Live chat or Social media, or inspect all channels.
+3. Accept a priority-routed synthetic customer contact while the agent is available.
+4. Read the customer thread and channel handling guide.
+5. Write a reply. Unsafe credential solicitation and full payment-card-number patterns are blocked.
+6. Receive the scripted customer follow-up where one is available.
+7. Complete after-contact work using a resolved, pending-customer or escalated disposition and factual notes.
+8. Review the resulting CRM case and channel metrics in the Cases and Stats views.
+
+A digital interaction occupies the agent until it is completed or placed into a documented pending-customer/escalation disposition. The current version does not simulate several concurrent chats for one agent.
 
 ## Build and hosting
 
@@ -58,24 +65,26 @@ Vercel settings:
 - Build command: `npm run build`
 - Output directory: `dist`
 
-The project includes automated syntax and regression checks in its package scripts. The supplied deployment guide uses GitHub Desktop and the Vercel dashboard for the normal GUI-based release path.
+The project includes automated syntax and regression checks in its package scripts. The deployment guide uses GitHub Desktop and the Vercel dashboard for the GUI-based release path.
 
 ## Simulation and privacy boundaries
 
-- All customers, calls, account records, cases, campaigns, callbacks, salaries and performance values are synthetic gameplay data.
+- All people, customers, conversations, platform messages, cases, accounts, campaigns, callbacks, salaries and performance values are synthetic gameplay data.
+- The digital operations desk does not connect to Gmail, Outlook, Instagram, Facebook, X, WhatsApp, live chat providers or other external channels.
 - The enterprise systems sandbox does not connect to real ICC, CRM, Finacle or other bank systems and cannot initiate real transactions.
 - The application does not place real telephone calls or connect to live customer queues.
-- Local profile and operational records remain in browser local storage. They are not server-backed, tenant-scoped or synchronised across devices.
+- Player progress and operational records remain in browser local storage. They are not server-backed, tenant-scoped or synchronised across devices.
 - Optional audio samples and transcripts remain in page memory only and are not persisted in the employment save. Browser speech recognition may use a browser-controlled recognition service; this is disclosed before use.
-- Do not use real customer data or speak PINs, passwords, OTPs, full account numbers or payment-card details during practice. Redaction is a defensive filter, not a guarantee that every sensitive phrase can be detected.
-- Voice practice currently supports player sample capture and browser transcription, not a live AI customer conversation or automatic voice-based call scoring.
-- Animation switching depends on matching clips in the loaded character GLB. If the selected third-party model has no matching clips, the corresponding animation cannot be shown. Approved first-party assets must replace external runtime references before commercial release.
+- Do not use real customer data or enter PINs, passwords, OTPs, full account numbers or payment-card details during practice. The response filter is defensive and is not guaranteed to detect every unsafe phrase or number format.
+- Voice practice does not drive customer scenario branching or automatic voice QA scoring.
+- Digital practice scoring is deterministic and must not be treated as an approved organisational scorecard.
+- GLB animation switching depends on compatible clips in the selected character asset. External model licensing, loading, CORS and animation coverage remain to be verified.
 - This is a development simulator, not a finished commercial product or a certified contact-centre workforce platform.
 
 ## Project structure
 
 ```text
-CALLORIA-v0.6.0/
+CALLORIA-v0.7.0/
 ├── index.html
 ├── styles.css
 ├── vite.config.js
@@ -84,6 +93,7 @@ CALLORIA-v0.6.0/
 ├── js/
 │   ├── main.js
 │   ├── operations-engine.js
+│   ├── multichannel-engine.js
 │   ├── workforce-engine.js
 │   ├── shift-engine.js
 │   ├── voice-engine.js
@@ -93,6 +103,7 @@ CALLORIA-v0.6.0/
 ├── tests/
 │   ├── calloria.test.mjs
 │   ├── operations-engine.test.mjs
+│   ├── multichannel-engine.test.mjs
 │   ├── workforce-engine.test.mjs
 │   ├── shift-engine.test.mjs
 │   └── voice-engine.test.mjs
@@ -101,10 +112,11 @@ CALLORIA-v0.6.0/
 
 ## Release verification
 
-- JavaScript syntax checks: passed.
-- Automated tests: 40/40 passed.
+- JavaScript syntax checks: passed in the release preparation environment.
+- Automated regression tests: 55/55 passed in release preparation.
 - ZIP integrity: checked when the release archive is packaged.
-- Vite production bundle: not verified in this environment unless the final dependency installation and build succeed.
-- Browser microphone permissions, actual speech recognition, audio output, 3D animation-clip transitions, GLB runtime loading and Android/iOS physical-device QA: not independently verified.
+- Vite production bundle: only reported as passed if dependencies are available and `vite build` completes.
+- Browser UI, message flow, screen-reader/accessibility behaviour, 3D asset loading, WebGL rendering, and physical-device QA on Android/iOS require browser/device verification.
+- No GitHub commit or Vercel deployment is implied by this ZIP package.
 
-Build 0.6.0 is a development milestone. It adds optional local voice practice and workforce routines while retaining scripted customer interactions. Multi-channel email/chat/social operations, server persistence and multi-user organisation support remain future milestones.
+Build 0.7.0 is a development milestone. It adds scripted multi-channel written customer support and shared CRM case records. External platform integrations, multi-agent concurrency, server persistence and multi-tenant organisation management remain future milestones.

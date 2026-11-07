@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.7.0 — Multi-channel customer operations
+
+- Added simulated email, live-chat and social-media customer queues with channel-specific response targets and specialist routing.
+- Added priority-first digital queue sorting, agent assignment and lifecycle states for queued, active, awaiting customer, pending customer, resolved and escalated contacts.
+- Added threaded customer/agent message history, editable channel-specific reply starters, scripted customer follow-up and mandatory after-contact disposition with factual CRM notes and retained transcript details in CRM.
+- Added privacy controls that block explicit requests for PINs, passwords, one-time codes and full payment-card number patterns before a reply is recorded.
+- Added a public-social-response quality check that rewards directing account-specific help to an approved private or verified channel.
+- Added deterministic rule-based practice QA dimensions for acknowledgement, ownership, next-step clarity and privacy. This is not an AI or human QA assessment.
+- Added channel workload, first-response, SLA-risk, resolution, escalation and QA metrics, with digital results included in the performance dashboard and promotion KPI inputs.
+- Added CRM case linkage and operational event history for completed digital conversations.
+- Added the Digital navigation item and a matching 3D workstation destination; existing recruitment, voice operations, workforce intelligence and shift controls are retained.
+- Added 14 multi-channel engine tests and one application integration test; regression suite now contains 55 tests.
+- All customer accounts, platforms, inboxes and messages remain synthetic; no real email or social platform integration is present.
+
+
 ## 0.6.0 — Voice practice, character activity and workforce operations
 
 - Added browser-based customer statement playback using speech synthesis when available.

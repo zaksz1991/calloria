@@ -1,12 +1,12 @@
 # CALLORIA Product Roadmap
 
-**Current milestone:** 0.6.0 — Voice Practice, Workforce Operations & Character Activity  
-**Next milestone:** 0.7.0 — Multi-channel Customer Operations  
+**Current milestone:** 0.7.0 — Multi-channel Customer Operations  
+**Next milestone:** 0.8.0 — Organisation Platform  
 **Product definition:** A browser-first 3D contact-centre career and operations simulator. Recruitment is the entry gate; the core experience is the employee's daily customer operations, performance and career progression.
 
 Previous milestones: 0.1.0 functional prototype, 0.2.0 3D workplace, 0.3.0 game-first and mobile controls, 0.4.0 contact-centre operations, and 0.5.0 workforce intelligence.
 
-## Current baseline — Build 0.6.0
+## Current baseline — Build 0.7.0
 
 ### Recruitment and career
 - Candidate application, aptitude/judgement/security assessment, practical customer-call assessment, offer and employment acceptance.
@@ -18,6 +18,8 @@ Previous milestones: 0.1.0 functional prototype, 0.2.0 3D workplace, 0.3.0 game-
 - After-contact work with required factual notes and constrained dispositions.
 - Outbound campaign tasks, callbacks, opt-out suppression and completion controls.
 - CRM case history, queue metrics, knowledge base and performance views.
+- Synthetic email, live-chat and social-media queues, channel-aware routing, threaded conversations, privacy checks, digital after-contact work and CRM case linkage.
+- Digital first-response, workload, QA, resolution, escalation and illustrative response-target metrics.
 
 ### Workforce intelligence
 - 07:30 morning and 14:00 afternoon simulated briefing windows.
@@ -43,28 +45,22 @@ Previous milestones: 0.1.0 functional prototype, 0.2.0 3D workplace, 0.3.0 game-
 - Queue and workforce logic remain single-player browser simulation; localStorage is not a secure, server-backed employee record.
 - No real banking service, customer account, transaction, telephone system, live contact centre or enterprise application is connected.
 
-## Next milestone — Build 0.7.0: Multi-channel Customer Operations
+## Completed milestone — Build 0.7.0: Multi-channel Customer Operations
 
-### Email support
-- Simulated email inbox with queue assignment, age, priority, templates, reply drafting and factual case notes.
-- Attachments limited to synthetic training files in a controlled sandbox.
-- Email-to-CRM case linkage, transfer, escalation and response-time measurement.
+- Simulated email, live-chat and social-media queues with channel-specific response targets.
+- Priority sorting, channel filters, specialist routing and one-at-a-time agent assignment.
+- Threaded messages, editable channel-specific reply starters, scripted customer follow-up and explicit digital-contact lifecycle states.
+- Privacy controls that block explicit PIN, password, OTP and full payment-card-number solicitation patterns.
+- Public-social reply guidance requiring a private/verified channel for account-specific support to obtain full privacy practice credit.
+- Rule-based practice checks for acknowledgement, ownership, next-step clarity and privacy.
+- Mandatory after-contact disposition, factual notes, CRM case creation and retained conversation transcripts.
+- Channel-aware workload, first-response, SLA-risk, resolution, escalation and QA metrics.
 
-### Live chat
-- Concurrent chat queue with assignment, response timers, canned responses, transfer and escalation.
-- Typing indicators and scripted customer sentiment changes.
-- Conversation transcript retained in the simulated CRM case history.
-
-### Social and messaging support
-- Simulated brand inbox for Instagram, Facebook, X and approved messaging-style scenarios.
-- Public-response versus private-message decision controls.
-- Consent, privacy, identity checks and platform-policy handling.
-- Cross-channel customer history and case continuity.
-
-### Channel-aware performance
-- Separate workload, SLA, quality and resolution measures for voice, email, chat and social.
-- Role-based metrics to avoid comparing dissimilar channel work unfairly.
-- Team-leader allocation, coaching and QA sampling across channels.
+### 0.7.0 boundaries
+- Email, chat and social accounts are simulated only; no external platform API or mailbox is connected.
+- Only one digital contact can be active for the player at a time; concurrent chat handling is not yet implemented.
+- There are no attachments, live typing indicators, external media uploads, automated language model responses or platform webhooks.
+- Channel service targets and deterministic response checks are illustrative and require organisation approval before any real-world training use.
 
 ## Build 0.8.0 — Organisation Platform
 

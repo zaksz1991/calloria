@@ -134,3 +134,27 @@ test('voice practice and shift operations are wired with explicit privacy contro
   assert.match(world, /setAgentActivity/);
   assert.match(css, /\.voice-practice-panel/);
 });
+
+
+test('multi-channel operations are reachable and linked to existing work systems', async () => {
+  const [html, main, engine, css, packageJson] = await Promise.all([
+    read('index.html'), read('js/main.js'), read('js/multichannel-engine.js'), read('styles.css'), read('package.json')
+  ]);
+  const pkg = JSON.parse(packageJson);
+  assert.equal(pkg.version, '0.7.0');
+  assert.match(html, /data-view=["']digital["']/);
+  assert.match(html, /BUILD 0\.7\.0/);
+  for (const item of ['function renderDigital','function acceptDigital','function submitDigitalReply','function finishDigitalContact','function receiveDigitalFollowUp','case \'digital\': renderDigital()']) {
+    assert.ok(main.includes(item), `missing digital integration: ${item}`);
+  }
+  for (const action of ['accept-digital','refresh-digital-queue','deliver-digital-followup']) assert.ok(main.includes(action));
+  for (const channel of ['email','live_chat','social']) assert.ok(engine.includes(channel));
+  assert.match(main, /state\.cases\.push\(/);
+  assert.match(main, /function digitalReplyTemplates/);
+  assert.match(main, /data-digital-template/);
+  assert.match(main, /crm-digital-transcript/);
+  assert.match(main, /digitalQueueMetrics/);
+  assert.match(css, /\.digital-workspace/);
+  assert.match(css, /\.digital-queue-row/);
+  assert.match(engine, /Unsafe reply blocked/);
+});
