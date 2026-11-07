@@ -1,29 +1,27 @@
-# CALLORIA 3D World Rebuild — Phase 2
+# CALLORIA 3D World Rebuild — Phase 3
 
 ## Focus
 
-Phase 2 improves the staff layer and render cost while keeping the Phase 1 world and its existing application contract.
+Phase 3 is a visual world-dressing and material-quality pass built on the Phase 2 replacement. It keeps the world API and station callbacks intact.
 
-- Replaces the simple face dots with visible eye whites/irises, brows, nose, mouth and headset details.
-- Adds uniform plackets, collars, staff badges and lanyards.
-- Uses separate pivots for heads, arms and legs, with typing, listening, standing gestures and footfall animation.
-- Fills all 12 agent desks on high-capability devices; balanced and low profiles keep smaller crowds.
-- Adds support staff in supervisor, IT, training and QA zones on balanced/high profiles.
-- Merges character component geometry into vertex-coloured batches. This reduces per-person mesh submissions while preserving material colour differences.
-- Keeps the local-only asset model; no GLB upload or remote model download is required.
+- Adds tileable wood, carpet and plaster textures generated locally at startup.
+- Adds window framing, ceiling acoustic rafts, service rails, HVAC diffuser detail and floor wayfinding inlays.
+- Dresses agent desks with computer towers, cable trays, IP phones, keypads, webcams, writing mats, mugs and paper stacks.
+- Completes training-room seating and adds additional QA/supervisor consoles.
+- Adds IT service counter, printer and network patch panel detail.
+- Adds a staff-lounge kitchenette, water dispenser and coffee machine.
+- Adds reception waiting chairs and access readers.
+- Adds safety equipment, exit marker, briefing and service-standard boards, and department wayfinding.
+- Uses GPU instancing for repeated static details and does not fetch remote models or textures.
 
 ## Install
 
-This package is an upgrade to the Phase 1 replacement from the previous package. Replace only:
-
-`js/production-world.js`
-
-Use the complete file in this ZIP. Do not copy only selected functions. Do not replace `main.js`, `index.html`, business/workforce engines, Supabase files, migrations, or tests.
+Replace only `js/production-world.js` with the complete file in this package. This is the next sequential replacement after Phase 2. Do not copy selected snippets. Do not replace `main.js`, `index.html`, gameplay/workforce engines, Supabase files, migrations, or tests.
 
 ## Compatibility
 
-The module preserves `initProductionWorld(THREE, host, callbacks)` and the existing return methods/getters, station IDs, callback names, touch control IDs and graphics profile storage key.
+The module retains `initProductionWorld(THREE, host, callbacks)`, station IDs, callback names, existing touch control IDs, graphics profile persistence, and the existing world return interface.
 
-## Verification limits
+## Visual limits
 
-The complete file passed JavaScript syntax validation. This package was not run against the full repository test suite, a real browser/WebGL context, a physical Android device or Vercel. No FPS gain is claimed as measured. The character geometry remains original procedural 3D geometry, not photorealistic scanned/GLB humans.
+This remains a procedural Three.js environment. It does not introduce photorealistic GLB characters or scanned architectural assets. It adds material texture and scene dressing while keeping the no-upload, no-remote-asset approach.

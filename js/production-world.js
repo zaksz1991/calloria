@@ -1,5 +1,5 @@
 /*
- * CALLORIA — 3D workplace world rebuild, Phase 1
+ * CALLORIA — 3D workplace world rebuild, Phase 3
  * Complete replacement for js/production-world.js.
  *
  * Design goals:
@@ -122,7 +122,13 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     plantLight: mat('plant-leaf-light', '#73a86a', 0.94),
     gold: mat('warm-accent', '#d0a15f', 0.58, 0.12),
     emissive: mat('light-diffuser', '#fff6d8', 0.38, 0, { emissive: '#fff1c9', emissiveIntensity: 0.42 }),
-    statusGreen: mat('status-green', '#21c69e', 0.45, 0.05, { emissive: '#0b7d65', emissiveIntensity: 0.35 })
+    statusGreen: mat('status-green', '#21c69e', 0.45, 0.05, { emissive: '#0b7d65', emissiveIntensity: 0.35 }),
+    safetyRed: mat('safety-red', '#c64d42', 0.58, 0.04),
+    safetyWhite: mat('safety-white', '#f2f1e8', 0.7),
+    equipmentBlue: mat('equipment-blue', '#316c82', 0.62, 0.12),
+    rubber: mat('rubber', '#1c2b34', 0.9),
+    paper: mat('paper', '#e6e9df', 0.94),
+    plantPot: mat('planter-ceramic', '#857363', 0.48, 0.04)
   };
 
   function makeCanvasTexture(draw, width = 1024, height = 640) {
@@ -152,6 +158,66 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
   floorTexture.repeat.set(12, 10);
   mats.floor.map = floorTexture; mats.floor.needsUpdate = true;
+
+  // Phase 3 surface pass: low-frequency, tileable textures add material
+  // definition without adding more mesh submissions or remote asset requests.
+  const woodTexture = makeCanvasTexture((ctx, w, h) => {
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 180; i++) {
+      const y = (i * 29) % h;
+      const x = (i * 83) % w;
+      const length = w * (0.28 + ((i * 17) % 66) / 100);
+      ctx.strokeStyle = i % 4 === 0 ? 'rgba(55,31,17,.16)' : 'rgba(255,238,211,.16)';
+      ctx.lineWidth = i % 5 === 0 ? 2 : 1;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.bezierCurveTo(x + length * .22, y - 3, x + length * .72, y + 3, x + length, y);
+      ctx.stroke();
+    }
+    for (let i = 0; i < 14; i++) {
+      ctx.strokeStyle = 'rgba(75,44,24,.11)'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse((i * 67) % w, (i * 91) % h, 10 + (i % 4) * 5, 3 + (i % 3), .08, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }, 512, 512);
+  woodTexture.wrapS = woodTexture.wrapT = THREE.RepeatWrapping;
+  woodTexture.repeat.set(2.2, 1.3);
+  mats.wood.map = woodTexture; mats.wood.needsUpdate = true;
+  mats.woodLight.map = woodTexture; mats.woodLight.needsUpdate = true;
+
+  const carpetTexture = makeCanvasTexture((ctx, w, h) => {
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+    for (let y = 0; y < h; y += 3) {
+      ctx.fillStyle = y % 6 ? 'rgba(255,255,255,.035)' : 'rgba(8,25,34,.075)';
+      ctx.fillRect(0, y, w, 1);
+    }
+    for (let x = 0; x < w; x += 3) {
+      ctx.fillStyle = x % 6 ? 'rgba(255,255,255,.025)' : 'rgba(8,25,34,.06)';
+      ctx.fillRect(x, 0, 1, h);
+    }
+    for (let i = 0; i < 900; i++) {
+      const x = (i * 73 + i * i * 3) % w, y = (i * 137 + i * i * 5) % h;
+      ctx.fillStyle = i % 2 ? 'rgba(255,255,255,.08)' : 'rgba(10,25,32,.07)';
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }, 512, 512);
+  carpetTexture.wrapS = carpetTexture.wrapT = THREE.RepeatWrapping;
+  carpetTexture.repeat.set(9, 7);
+  mats.carpet.map = carpetTexture; mats.carpet.needsUpdate = true;
+
+  const plasterTexture = makeCanvasTexture((ctx, w, h) => {
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 2600; i++) {
+      const x = (i * 71 + i * i * 11) % w, y = (i * 149 + i * i * 7) % h;
+      ctx.fillStyle = i % 3 ? 'rgba(40,61,65,.025)' : 'rgba(255,255,255,.08)';
+      ctx.fillRect(x, y, 1 + (i % 2), 1 + (i % 2));
+    }
+  }, 512, 512);
+  plasterTexture.wrapS = plasterTexture.wrapT = THREE.RepeatWrapping;
+  plasterTexture.repeat.set(3, 1.5);
+  mats.wall.map = plasterTexture; mats.wall.needsUpdate = true;
+  mats.wallLight.map = plasterTexture; mats.wallLight.needsUpdate = true;
 
   const screenTexture = makeCanvasTexture((ctx, w, h) => {
     ctx.fillStyle = '#0b1f2d'; ctx.fillRect(0, 0, w, h);
@@ -574,6 +640,210 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     addSphere(scene, 'planter-foliage', [x, 1.28, z], [0.55, 0.8, 0.55], mats.plant);
     addSphere(scene, 'planter-leaf', [x + 0.22, 1.36, z - 0.16], [0.29, 0.55, 0.3], mats.plantLight, smallSphereGeo);
   }
+
+  // -----------------------------------------------------------------------
+  // PHASE 3 — architectural finish, workstation equipment and lived-in detail
+  // -----------------------------------------------------------------------
+  // Repeated elements are instanced. The open ceiling remains intentional so
+  // the launch preview retains a clear view into the full office floor.
+
+  // Window frames and sills make the perimeter glazing read as fitted windows.
+  const windowFrames = [];
+  for (const side of [-1, 1]) {
+    const x = side * 19.43;
+    for (const z of [-11.5, -3.5, 4.5, 12.5]) {
+      windowFrames.push({ x, y: 2.15, z: z - 2.18, sx: 0.12, sy: 2.02, sz: 0.09 });
+      windowFrames.push({ x, y: 2.15, z: z + 2.18, sx: 0.12, sy: 2.02, sz: 0.09 });
+      windowFrames.push({ x, y: 1.17, z, sx: 0.16, sy: 0.11, sz: 4.42 });
+      windowFrames.push({ x, y: 3.13, z, sx: 0.16, sy: 0.11, sz: 4.42 });
+      windowFrames.push({ x: side * 19.34, y: 2.15, z, sx: 0.13, sy: 2.02, sz: 0.075 });
+    }
+  }
+  addInstances('perimeter-window-frames', boxGeo, mats.metal, windowFrames);
+
+  // Acoustic ceiling rafts, service rails and HVAC units add scale overhead
+  // without placing a roof over the camera or increasing shadow-map cost.
+  const acousticRafts = [], serviceRails = [], ventSlats = [];
+  for (const x of [-10.4, -5.2, 0, 5.2, 10.4]) {
+    for (const z of [-8.0, -2.8, 2.4, 7.6, 12.8]) {
+      acousticRafts.push({ x, y: 4.43, z, sx: 3.65, sy: 0.075, sz: 0.12 });
+    }
+  }
+  for (const z of [-15.8, -8, 0, 8, 15.8]) {
+    serviceRails.push({ x: 0, y: 4.52, z, sx: 38.0, sy: 0.055, sz: 0.055 });
+  }
+  for (const x of [-13.6, -6.8, 6.8, 13.6]) {
+    // Small linear HVAC diffusers mounted above the side rooms.
+    for (const z of [-11.2, -1.8, 8.0]) {
+      ventSlats.push({ x, y: 4.16, z, sx: 1.5, sy: 0.07, sz: 0.52 });
+    }
+  }
+  addInstances('acoustic-ceiling-rafter-panels', boxGeo, mats.wallDark, acousticRafts);
+  addInstances('ceiling-service-rails', boxGeo, mats.metal, serviceRails);
+  addInstances('hvac-diffuser-cassettes', boxGeo, mats.white, ventSlats);
+  const ventLines = [];
+  for (const x of [-13.6, -6.8, 6.8, 13.6]) {
+    for (const z of [-11.2, -1.8, 8.0]) {
+      for (let i = -2; i <= 2; i++) ventLines.push({ x: x + i * 0.22, y: 4.115, z, sx: 0.025, sy: 0.018, sz: 0.42 });
+    }
+  }
+  addInstances('hvac-vent-slats', boxGeo, mats.darkMetal, ventLines);
+
+  // Clear pedestrian routes and department boundaries use thin flush inlays.
+  const floorInlays = [];
+  for (const x of [-10.25, 10.25]) {
+    floorInlays.push({ x, y: 0.012, z: 0, sx: 0.065, sy: 0.018, sz: 29.4 });
+  }
+  for (const z of [-8.5, 8.6]) {
+    floorInlays.push({ x: 0, y: 0.013, z, sx: 19.6, sy: 0.018, sz: 0.055 });
+  }
+  for (const z of [-13.9, -11.8, -9.7, -7.6, -5.5, -3.4, -1.3, 0.8, 2.9, 5.0, 7.1, 9.2, 11.3, 13.4]) {
+    floorInlays.push({ x: 0, y: 0.01, z, sx: 0.9, sy: 0.014, sz: 0.035 });
+  }
+  addInstances('floor-wayfinding-inlays', boxGeo, mats.gold, floorInlays);
+
+  // Desk equipment gives each live station a recognisable contact-centre setup.
+  const cpuCases = [], cpuFronts = [], cpuLights = [], cableTrays = [];
+  const phoneBases = [], phoneDisplays = [], phoneKeys = [], deskMats = [], webcams = [];
+  const cupBases = [], paperStacks = [];
+  for (const station of stations) {
+    const { x, z } = station;
+    cpuCases.push({ x: x - 1.12, y: 0.37, z: z - 0.22, sx: 0.34, sy: 0.59, sz: 0.48 });
+    cpuFronts.push({ x: x - 1.12, y: 0.38, z: z + 0.027, sx: 0.23, sy: 0.42, sz: 0.018 });
+    cpuLights.push({ x: x - 1.12, y: 0.55, z: z + 0.041, sx: 0.045, sy: 0.035, sz: 0.012 });
+    cableTrays.push({ x, y: 0.58, z: z - 0.42, sx: 1.75, sy: 0.07, sz: 0.16 });
+    phoneBases.push({ x: x + 1.02, y: 0.96, z: z + 0.12, sx: 0.37, sy: 0.06, sz: 0.25 });
+    phoneDisplays.push({ x: x + 1.02, y: 1.005, z: z + 0.015, sx: 0.19, sy: 0.035, sz: 0.012 });
+    for (let key = 0; key < 6; key++) {
+      phoneKeys.push({ x: x + 0.91 + (key % 3) * 0.105, y: 0.999, z: z + 0.12 + Math.floor(key / 3) * 0.075, sx: 0.045, sy: 0.018, sz: 0.035 });
+    }
+    deskMats.push({ x, y: 0.927, z: z + 0.19, sx: 1.05, sy: 0.018, sz: 0.47 });
+    webcams.push({ x: x - 0.52, y: 1.82, z: z - 0.39, sx: 0.13, sy: 0.055, sz: 0.07 });
+    webcams.push({ x: x + 0.52, y: 1.82, z: z - 0.39, sx: 0.13, sy: 0.055, sz: 0.07 });
+    cupBases.push({ x: x - 1.02, y: 1.06, z: z + 0.24, sx: 0.14, sy: 0.14, sz: 0.14 });
+    paperStacks.push({ x: x + 0.43, y: 0.985, z: z + 0.24, sx: 0.34, sy: 0.045, sz: 0.24 });
+  }
+  addInstances('workstation-computer-towers', boxGeo, mats.darkMetal, cpuCases);
+  addInstances('workstation-computer-front-panels', boxGeo, mats.black, cpuFronts);
+  addInstances('workstation-computer-activity-lights', boxGeo, mats.statusGreen, cpuLights);
+  addInstances('workstation-cable-management-trays', boxGeo, mats.darkMetal, cableTrays);
+  addInstances('workstation-desk-phones', boxGeo, mats.screenFrame, phoneBases);
+  addInstances('workstation-phone-displays', boxGeo, mats.statusGreen, phoneDisplays);
+  addInstances('workstation-phone-keypads', boxGeo, mats.metal, phoneKeys);
+  addInstances('workstation-writing-mats', boxGeo, mats.blueDark, deskMats);
+  addInstances('monitor-webcams', boxGeo, mats.black, webcams);
+  addInstances('workstation-mugs', cylinderGeo, mats.white, cupBases);
+  addInstances('workstation-paper-stacks', boxGeo, mats.paper, paperStacks);
+
+  // Training seating becomes complete furniture instead of floating seat pads.
+  const trainingBacks = [], trainingLegs = [];
+  for (const z of [-10.6, -9.2]) for (const x of [-15.25, -13.1, -10.95]) {
+    trainingBacks.push({ x, y: 0.91, z: z + 0.28, sx: 0.72, sy: 0.68, sz: 0.12 });
+    for (const sx of [-0.25, 0.25]) {
+      for (const sz of [-0.23, 0.23]) trainingLegs.push({ x: x + sx, y: 0.27, z: z + sz, sx: 0.055, sy: 0.52, sz: 0.055 });
+    }
+  }
+  addInstances('training-chair-backrests', boxGeo, mats.chair, trainingBacks);
+  addInstances('training-chair-legs', boxGeo, mats.metal, trainingLegs);
+  addBox(scene, 'training-facilitator-platform', [4.4, 0.16, 0.72], [-13.1, 0.13, -13.55], mats.woodLight);
+  addSign('STAFF DEVELOPMENT', 'PRODUCT KNOWLEDGE  /  CUSTOMER CARE  /  COMPLIANCE', [-13.1, 2.98, -12.9], [4.9, 0.82], 0, '#3e86a4');
+
+  // QA and supervisor worktops receive review consoles and readable display faces.
+  const reviewScreens = [], reviewBases = [], supervisorScreens = [], supervisorBases = [];
+  for (const x of [11.55, 14.65]) {
+    reviewBases.push({ x, y: 1.18, z: -10.18, sx: 0.10, sy: 0.48, sz: 0.10 });
+    reviewScreens.push({ x, y: 1.59, z: -10.18, sx: 1.25, sy: 0.74, sz: 0.07 });
+  }
+  for (const x of [12.35, 13.85]) {
+    supervisorScreens.push({ x, y: 1.48, z: -1.3, sx: 0.92, sy: 0.55, sz: 0.06 });
+    supervisorBases.push({ x, y: 1.16, z: -1.3, sx: 0.08, sy: 0.34, sz: 0.08 });
+  }
+  addInstances('qa-review-monitor-stands', boxGeo, mats.metal, reviewBases);
+  addInstances('qa-review-monitor-bezels', boxGeo, mats.screenFrame, reviewScreens);
+  addInstances('supervisor-console-monitor-stands', boxGeo, mats.metal, supervisorBases);
+  addInstances('supervisor-console-monitors', boxGeo, mats.screenFrame, supervisorScreens);
+  const reviewScreenFaces = reviewScreens.map((item) => ({ ...item, z: item.z + 0.041, sx: 1.12, sy: 0.62, sz: 0.012 }));
+  const supervisorScreenFaces = supervisorScreens.map((item) => ({ ...item, z: item.z + 0.036, sx: 0.82, sy: 0.45, sz: 0.012 }));
+  addInstances('qa-review-screen-faces', boxGeo, mats.screen, reviewScreenFaces);
+  addInstances('supervisor-screen-faces', boxGeo, mats.screen, supervisorScreenFaces);
+
+  // A compact helpdesk counter and printer make the IT bay read as an actual unit.
+  addBox(scene, 'it-service-counter-top', [3.8, 0.13, 0.84], [13.1, 0.93, 7.2], mats.woodLight);
+  addBox(scene, 'it-service-counter-front', [3.75, 0.82, 0.12], [13.1, 0.48, 7.58], mats.wallDark);
+  addBox(scene, 'it-printer-base', [0.78, 0.56, 0.62], [15.1, 1.18, 7.15], mats.white);
+  addBox(scene, 'it-printer-top', [0.86, 0.09, 0.68], [15.1, 1.51, 7.15], mats.darkMetal);
+  addBox(scene, 'it-printer-output', [0.48, 0.035, 0.28], [15.1, 1.57, 7.0], mats.paper);
+  addBox(scene, 'it-network-wall-panel', [2.25, 1.35, 0.12], [11.1, 2.2, 11.12], mats.darkMetal);
+  const networkPorts = [];
+  for (let row = 0; row < 4; row++) for (let col = 0; col < 6; col++) {
+    networkPorts.push({ x: 10.35 + col * 0.29, y: 1.78 + row * 0.22, z: 11.04, sx: 0.07, sy: 0.07, sz: 0.025 });
+  }
+  addInstances('it-network-port-indicators', boxGeo, mats.statusGreen, networkPorts);
+
+  // Staff lounge: water dispenser, kitchenette, cups and soft seating details.
+  addBox(scene, 'lounge-kitchen-counter', [3.6, 0.16, 0.72], [-13.1, 0.92, 0.05], mats.woodLight);
+  addBox(scene, 'lounge-kitchen-base', [3.5, 0.82, 0.58], [-13.1, 0.43, 0.17], mats.wallDark);
+  addBox(scene, 'lounge-water-dispenser-base', [0.48, 0.78, 0.48], [-16.0, 0.53, 0.08], mats.white);
+  addCylinder(scene, 'lounge-water-bottle', [-16.0, 1.35, 0.08], [0.19, 0.46, 0.19], mats.equipmentBlue, lowCylinderGeo);
+  addBox(scene, 'lounge-water-tap-panel', [0.31, 0.24, 0.035], [-16.0, 0.94, 0.335], mats.darkMetal);
+  addBox(scene, 'lounge-coffee-machine', [0.52, 0.56, 0.42], [-12.2, 1.28, 0.04], mats.darkMetal);
+  addBox(scene, 'lounge-coffee-machine-display', [0.25, 0.13, 0.025], [-12.2, 1.37, 0.263], mats.statusGreen);
+  const sofaPillows = [];
+  for (const x of [-14.25, -13.1, -11.95]) sofaPillows.push({ x, y: 1.11, z: 3.0, sx: 0.78, sy: 0.42, sz: 0.22 });
+  addInstances('lounge-sofa-cushions', boxGeo, mats.blue, sofaPillows);
+
+  // Reception waiting area and controlled staff access.
+  const waitingSeats = [], waitingBacks = [], waitingLegs = [], accessScanners = [];
+  for (const x of [-17.65, -15.0, -12.35]) {
+    waitingSeats.push({ x, y: 0.54, z: 15.55, sx: 0.9, sy: 0.16, sz: 0.78 });
+    waitingBacks.push({ x, y: 1.02, z: 15.91, sx: 0.9, sy: 0.78, sz: 0.14 });
+    for (const dx of [-0.32, 0.32]) for (const dz of [-0.24, 0.24]) {
+      waitingLegs.push({ x: x + dx, y: 0.26, z: 15.55 + dz, sx: 0.06, sy: 0.52, sz: 0.06 });
+    }
+  }
+  for (const x of [-17.8, -12.2]) accessScanners.push({ x, y: 1.12, z: 13.8, sx: 0.32, sy: 0.72, sz: 0.25 });
+  addInstances('reception-waiting-seats', boxGeo, mats.chair, waitingSeats);
+  addInstances('reception-waiting-seat-backs', boxGeo, mats.chair, waitingBacks);
+  addInstances('reception-waiting-seat-legs', boxGeo, mats.metal, waitingLegs);
+  addInstances('reception-access-control-readers', boxGeo, mats.darkMetal, accessScanners);
+  const accessReaderLights = accessScanners.map((item) => ({ x: item.x, y: 1.36, z: item.z + 0.135, sx: 0.14, sy: 0.07, sz: 0.02 }));
+  addInstances('reception-access-reader-indicators', boxGeo, mats.statusGreen, accessReaderLights);
+
+  // Safety and operational wall fittings: fire points, exit markers and a
+  // service clock. These are static local meshes, not external dependencies.
+  for (const x of [-19.48, 19.48]) {
+    addBox(scene, 'wall-mounted-fire-extinguisher', [0.28, 0.76, 0.24], [x, 0.66, 0.0], mats.safetyRed);
+    addBox(scene, 'fire-extinguisher-label', [0.18, 0.23, 0.018], [x, 0.74, 0.132], mats.safetyWhite);
+  }
+  // Two narrow posts support the exit marker across the open reception threshold.
+  addBox(scene, 'exit-marker-left-support', [0.10, 3.6, 0.10], [-1.05, 1.8, 16.82], mats.metal);
+  addBox(scene, 'exit-marker-right-support', [0.10, 3.6, 0.10], [1.05, 1.8, 16.82], mats.metal);
+  addBox(scene, 'main-exit-sign-panel', [2.1, 0.48, 0.08], [0, 3.84, 16.82], mats.statusGreen);
+  addSign('EMERGENCY EXIT', 'KEEP ACCESS CLEAR', [0, 3.84, 16.76], [1.95, 0.42], Math.PI, '#1d9c79');
+  addBox(scene, 'operations-values-board-frame', [5.6, 1.62, 0.14], [0, 2.05, -16.77], mats.woodLight);
+  addSign('SERVICE  •  RESPECT  •  RESOLUTION', 'LISTEN CAREFULLY  /  TAKE OWNERSHIP  /  CLOSE THE LOOP', [0, 2.07, -16.68], [5.25, 1.34], 0, '#b78b53');
+  addBox(scene, 'staff-noticeboard-frame', [3.2, 1.8, 0.14], [-8.4, 2.0, -16.77], mats.woodLight);
+  addSign('TEAM BRIEFINGS', '07:30  MORNING  •  14:00  AFTERNOON', [-8.4, 2.0, -16.68], [2.94, 1.42], 0, '#3e86a4');
+  addBox(scene, 'staff-noticeboard-frame-right', [3.2, 1.8, 0.14], [8.4, 2.0, -16.77], mats.woodLight);
+  addSign('QUALITY STANDARD', 'ACCURACY  /  EMPATHY  /  COMPLIANCE', [8.4, 2.0, -16.68], [2.94, 1.42], 0, '#8d6f9b');
+
+  // Small acoustic wall panels break up the long blank wall surfaces.
+  const wallPanels = [];
+  for (const x of [-16, -11, -6, 0, 6, 11, 16]) {
+    wallPanels.push({ x, y: 1.95, z: -16.72, sx: 2.1, sy: 1.0, sz: 0.045 });
+  }
+  addInstances('rear-wall-acoustic-panels', boxGeo, mats.blueDark, wallPanels);
+  const wallPanelAccents = [];
+  for (const x of [-16, -11, -6, 0, 6, 11, 16]) {
+    wallPanelAccents.push({ x, y: 1.42, z: -16.685, sx: 1.65, sy: 0.035, sz: 0.018 });
+  }
+  addInstances('rear-wall-panel-accent-lines', boxGeo, mats.teal, wallPanelAccents);
+
+  // Visual wayfinding signs mark the floor and department entrances.
+  addSign('EMAIL & BACK OFFICE', 'WRITTEN CUSTOMER SUPPORT', [-9.9, 2.58, 8.3], [4.3, 0.76], Math.PI, '#3e86a4');
+  addSign('SOCIAL & DIGITAL', 'CHAT  /  SOCIAL CARE  /  MESSAGING', [-9.9, 2.58, -1.4], [4.3, 0.76], Math.PI, '#1f9a91');
+  addSign('EMAIL & BACK OFFICE', 'WRITTEN CUSTOMER SUPPORT', [-19.54, 2.55, 8.25], [4.0, 0.72], Math.PI / 2, '#3e86a4');
+  addSign('SOCIAL & DIGITAL', 'CHAT  /  SOCIAL CARE  /  MESSAGING', [-19.54, 2.55, -7.5], [3.25, 0.72], Math.PI / 2, '#1f9a91');
 
   // Preview camera and first-person controller.
   const preview = { azimuth: 0.52, elevation: 0.43, radius: 40.5, target: new THREE.Vector3(0, 1.25, -0.35) };
