@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.calloria-customer-care]
 verify_jwt = false
+
+[functions.calloria-case-desk]
+verify_jwt = false

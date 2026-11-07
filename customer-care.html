@@ -19,7 +19,7 @@
         <span class="care-mark">C</span>
         <span><strong>CALLORIA</strong><small>EVERY CALL. EVERY CUSTOMER. EVERY CAREER.</small></span>
       </a>
-      <div class="header-meta"><span class="status-dot"></span><span>RUFFNECK CUSTOMER CARE</span><a href="/">Return to simulator</a></div>
+      <div class="header-meta"><span class="status-dot"></span><span>RUFFNECK CUSTOMER CARE</span><a href="/case-desk">Staff Case Desk</a><a href="/">Return to simulator</a></div>
     </header>
 
     <main class="care-layout">
@@ -57,6 +57,36 @@
           </article>
         </div>
         <div id="care-status" class="care-status" role="status" aria-live="polite">Ready for your enquiry.</div>
+        <div class="case-tools">
+          <button id="case-open-button" type="button" class="case-primary">Open a support case</button>
+          <button id="case-track-toggle" type="button" class="case-secondary" aria-expanded="false" aria-controls="case-lookup-panel">Track an existing case</button>
+        </div>
+        <section id="case-lookup-panel" class="case-lookup" hidden aria-label="Track a support case">
+          <div><strong>CASE STATUS</strong><p>Enter the case reference and the private access code issued when the case was created.</p></div>
+          <form id="case-lookup-form" class="case-lookup-form">
+            <label>Case reference<input id="case-reference" name="caseReference" autocomplete="off" placeholder="CC-261107-ABC234" required></label>
+            <label>Case access code<input id="case-access-token" name="accessToken" autocomplete="off" spellcheck="false" required></label>
+            <button type="submit" id="case-lookup-submit">Check status</button>
+          </form>
+          <div id="case-lookup-result" class="case-result" role="status" aria-live="polite"></div>
+        </section>
+        <dialog id="case-dialog" class="case-dialog" aria-labelledby="case-dialog-title">
+          <form id="case-create-form" class="case-form">
+            <div class="case-dialog-heading"><div><div class="eyebrow">HUMAN CUSTOMER CARE</div><h2 id="case-dialog-title">Create a support case</h2><p>Save a reference so you can check its status later. This does not create an emergency response or guarantee an immediate callback.</p></div><button type="button" id="case-dialog-close" class="dialog-close" aria-label="Close">×</button></div>
+            <label>Case subject<input id="case-subject" name="subject" maxlength="120" required></label>
+            <label>Product or service<select id="case-platform" name="platformId"><option value="">General / not applicable</option><option value="ruffneck-learn">RuffNeck Learn</option><option value="ruffneck-prospector">RuffNeck Prospector</option><option value="ruffneck-connect">RuffNeck Connect</option><option value="ruffneck-social-hub">RuffNeck Social Hub</option><option value="kano-run">Kano Run / Kano Life</option><option value="kano-keke">Kano Keke</option></select></label>
+            <label>Describe the issue<textarea id="case-description" name="description" rows="5" maxlength="1800" required placeholder="Explain what happened and what outcome you are requesting. Do not include passwords, PINs, OTPs, full account numbers or highly sensitive personal details."></textarea></label>
+            <div class="case-contact-grid">
+              <label>Name (optional)<input id="case-customer-name" name="customerName" maxlength="100" autocomplete="name"></label>
+              <label>Follow-up method<select id="case-contact-preference" name="contactPreference"><option value="none">No contact details</option><option value="email">Email</option><option value="phone">Phone</option></select></label>
+            </div>
+            <label id="case-contact-label" hidden>Contact detail<input id="case-contact" name="contact" maxlength="180" autocomplete="off"></label>
+            <label class="case-consent"><input id="case-consent" type="checkbox" required><span>I consent to CALLORIA storing this support case for up to 180 days for review and resolution. Any optional contact detail is encrypted and used only for this case. I understand the case is not an emergency service and response timing is not guaranteed.</span></label>
+            <div class="case-form-footer"><span>Never submit passwords, PINs, OTPs, payment credentials or another person's private information.</span><button type="submit" id="case-create-submit">Submit support case</button></div>
+            <div id="case-create-error" class="case-form-error" role="alert"></div>
+            <div id="case-created-result" class="case-created-result" hidden role="status" aria-live="polite"></div>
+          </form>
+        </dialog>
         <form id="question-form" class="composer">
           <label class="sr-only" for="question">Your question</label>
           <textarea id="question" name="question" rows="2" maxlength="1800" placeholder="Type your question. Do not include passwords, PINs, OTPs or full account details." required></textarea>

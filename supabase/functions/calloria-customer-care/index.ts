@@ -63,7 +63,7 @@ function stringifyFields(record: Record<string, unknown>): string {
   return Object.entries(record).map(([key, value]) => `${key} ${typeof value === 'string' ? value : JSON.stringify(value ?? '')}`).join(' ');
 }
 function classify(message: string): string {
-  if (/\b(relationship|marriage|parent|parenting|child|habit|morals?|conduct|philosoph|psycholog|emotional intelligence|stress|wellbeing|well-being|personal development|career development|motivation|confidence|communication|family)\b/i.test(message)) return 'personal_guidance';
+  if (/\b(life guidance|relationship|marriage|parent|parenting|child|habit|morals?|conduct|philosoph|psycholog|therapeut|therapy|counsel|advice|advise|emotional intelligence|stress|wellbeing|well-being|personal development|career|motivation|confidence|communication|family|self[- ]help|self[- ]care)\b/i.test(message)) return 'personal_guidance';
   if (/\b(refund|complaint|complain|unresolved|escalat|poor service|charged|debit|payment failed|not received|case review|service recovery)\b/i.test(message)) return 'complaint';
   if (/\b(quote|quotation|price|pricing|cost|offer|service|consult|hire|buy|purchase|sales|subscription)\b/i.test(message)) return 'service_enquiry';
   if (/\b(ruffneck|kano run|kano-keke|kano keke|lms|prospector|connect|social hub|platform|course|enrol|enroll|login|sign in|account|app|game|website|site)\b/i.test(message)) return 'platform_support';

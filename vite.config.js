@@ -14,7 +14,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(process.cwd(), 'index.html'),
-        customerCare: resolve(process.cwd(), 'customer-care.html')
+        customerCare: resolve(process.cwd(), 'customer-care.html'),
+        caseDesk: resolve(process.cwd(), 'case-desk.html')
       },
       output: {
         manualChunks(id) {
