@@ -13,6 +13,7 @@ import { validateCloudPolicy } from './cloud-security.js';
 import { CUSTOMER_PERSONAS, CUSTOMER_ISSUES, createCustomerScenario, submitCustomerTurn, finalizeCustomerScenario, customerIntelligenceMetrics } from './customer-intelligence-engine.js';
 import { DEFAULT_QA_SCORECARD, createScorecard, createHumanQAReview, createQADispute, resolveQADispute, createCalibrationSession, humanQAMetrics } from './qa-workspace-engine.js';
 import { AI_MODEL_OPTIONS, loadTenantAIAssistSettings, saveTenantAIAssistSettings, requestAIAssist } from './ai-assist-engine.js';
+import { startPublicGameServices, refreshPublicGameStats } from './game-platform.js';
 import { configureCloudEmploymentSync, markCloudEmploymentSyncReady, loadCloudEmploymentSnapshot, scheduleCloudEmploymentSave, flushCloudEmploymentSave } from './cloud-employment-sync.js';
 
 let THREE = null;
@@ -1211,7 +1212,7 @@ function renderAIAssistPanel(reviewable) {
   if (!cloud) return `<section class="panel ai-assist-panel"><div class="panel-head"><div><h3>AI-assisted customer intelligence</h3><p>Tenant-controlled analysis, suggested QA observations and coaching.</p></div><span class="pill amber">CLOUD REQUIRED</span></div><p class="muted-note">Sign in to a Supabase organisation workspace before using AI assistance. Local demo mode never sends transcripts to an external service.</p></section>`;
   if (aiSettingsLoading || (aiSettingsOrgId !== cloud.activeOrganization.id && !aiSettingsLoaded)) return `<section class="panel ai-assist-panel"><div class="panel-head"><div><h3>AI-assisted customer intelligence</h3><p>Loading organisation AI policy…</p></div><span class="pill">LOADING</span></div></section>`;
   if (aiSettingsError) return `<section class="panel ai-assist-panel"><div class="panel-head"><div><h3>AI-assisted customer intelligence</h3><p>Tenant AI settings could not be loaded.</p></div><span class="pill red">SETUP REQUIRED</span></div><p class="muted-note">${escapeHTML(aiSettingsError)}. Apply Supabase migration 003 and redeploy the CALLORIA AI Edge Function.</p></section>`;
-  const settings = aiTenantSettings || { enabled:false, model:'gpt-6-luna', dailyRequestLimit:100, configured:false };
+  const settings = aiTenantSettings || { enabled:false, model:'openai/gpt-oss-20b', dailyRequestLimit:100, configured:false };
   const canManage = canCloudRole(cloud.membership?.role, 'policies:manage');
   const modelOptions = AI_MODEL_OPTIONS.map(item => `<option value="${escapeHTML(item.id)}" ${settings.model===item.id?'selected':''}>${escapeHTML(item.label)}</option>`).join('');
   const interactionOptions = reviewable.map(item => `<option value="${escapeHTML(item.id)}" ${item.id===state.qaSelectedInteractionId?'selected':''}>${escapeHTML(item.id)} · ${escapeHTML(item.issueId)} · ${escapeHTML(item.channel)}</option>`).join('');
@@ -1291,7 +1292,7 @@ function renderView() {
   };
   const [eyebrow,title,desc] = config[state.currentView] || config.overview;
   $('#pageEyebrow').textContent = eyebrow; $('#pageTitle').textContent = title; $('#pageDescription').textContent = desc;
-  $('#pageActions').innerHTML = state.hired && state.currentView!=='overview' ? `<span class="pill ${state.shiftActive?'green':'amber'}">${state.shiftActive?'SHIFT ACTIVE':'OFF SHIFT'}</span>` : '';
+  $('#pageActions').innerHTML = `<button type="button" class="btn outline return-to-game-btn" data-action="return-to-game">RETURN TO 3D GAME</button>${state.hired && state.currentView!=='overview' ? `<span class="pill ${state.shiftActive?'green':'amber'}">${state.shiftActive?'SHIFT ACTIVE':'OFF SHIFT'}</span>` : ''}`;
   switch(state.currentView){
     case 'overview': renderOverview(); break;
     case 'inbound': renderInbound(); break;
@@ -1728,6 +1729,7 @@ function receiveDigitalFollowUp() {
 
 function handleAction(action,event={}){
   switch(action){
+    case 'return-to-game': enter3dFloor(); break;
     case 'open-application':openApplication();break;
     case 'begin-assessment':beginAssessment();break;
     case 'assessment-next':{
@@ -1923,7 +1925,7 @@ async function initWorld(){
     const module=await import('./production-world.js');
     productionWorld=await module.initProductionWorld(THREE,host,{
       onAssetsReady:result=>{
-        const label=result.loaded?`${result.loaded} 3D STAFF ASSETS READY`:'LOCAL STAFF MODELS ACTIVE';
+        const label=result.loaded?`${result.loaded} 3D STAFF ASSETS READY`:'OPTIMISED LOCAL STAFF MODELS ACTIVE';
         const status=$('#assetStatus');if(status)status.textContent=label;
       },
       onImmersiveChange:active=>{
@@ -1932,9 +1934,11 @@ async function initWorld(){
         if(active){
           $('#headerStatus').textContent='LIVE WORKPLACE · FLOOR 04';
           $('#enterFloorButton')?.classList.add('hidden');
+          document.body.classList.add('calloria-game-playing');
         }else{
           $('#headerStatus').textContent=state.hired?'EMPLOYEE WORKSPACE':'RECRUITMENT PORTAL';
           $('#enterFloorButton')?.classList.remove('hidden');
+          document.body.classList.remove('calloria-game-playing');
         }
       },
       onNearestStation:station=>{
@@ -1954,9 +1958,11 @@ async function initWorld(){
     });
     productionWorld.setAgentActivity?.(state.agentStatus||'offline');
     const enterButton=$('#enterFloorButton');if(enterButton)enterButton.disabled=false;
+    const playButton=$('#launchPlayButton');if(playButton){playButton.disabled=false;playButton.querySelector('span').textContent='PLAY NOW';}
   }catch(error){
     console.error('CALLORIA world initialisation failed:',error);
-    host.innerHTML='<div class="world-fallback">The 3D environment could not be initialised. Check WebGL 2 support and reload the game assets.</div>';
+    host.innerHTML='<div class="world-fallback">The 3D floor is unavailable on this browser or device. You can still use the Operations Desk.</div>';
+    const playButton=$('#launchPlayButton');if(playButton){playButton.disabled=true;playButton.querySelector('span').textContent='3D UNAVAILABLE';}
   }
 }
 
@@ -1973,10 +1979,11 @@ function open3dStationPanel(station){
 }
 
 function close3dStationPanel(){ $('#stationPanel')?.classList.add('hidden'); }
-function enter3dFloor(){ if(productionWorld){$('#mouseLookNote')?.classList.add('hidden');productionWorld.enter();} }
-function exit3dFloor(){ close3dStationPanel();productionWorld?.exit(); }
+function enter3dFloor(){ if(productionWorld){startPublicGameServices();$('#mouseLookNote')?.classList.add('hidden');document.body.classList.add('calloria-game-launch','calloria-game-playing');productionWorld.enter();} }
+function exit3dFloor(){ close3dStationPanel();productionWorld?.exit();document.body.classList.remove('calloria-game-playing'); }
 function open3dWorkView(view){
   close3dStationPanel();
+  document.body.classList.remove('calloria-game-launch','calloria-game-playing');
   if(view==='recruitment'){
     exit3dFloor();state.currentView='overview';renderView();document.querySelector('.content-wrap')?.scrollIntoView({behavior:'smooth',block:'start'});return;
   }
@@ -1991,6 +1998,8 @@ function open3dWorkView(view){
 
 window.addEventListener('pagehide',()=>{ void flushCloudEmploymentSave(); });
 $('#enterFloorButton')?.addEventListener('click',enter3dFloor);
+$('#launchPlayButton')?.addEventListener('click',enter3dFloor);
+$('#launchDeskButton')?.addEventListener('click',()=>{startPublicGameServices();document.body.classList.remove('calloria-game-launch','calloria-game-playing');state.currentView='overview';renderView();});
 $('#exitFloorButton')?.addEventListener('click',exit3dFloor);
 $('#mouseLookNote')?.addEventListener('click',()=>{try{document.querySelector('#worldCanvas canvas')?.requestPointerLock?.();$('#mouseLookNote').classList.add('hidden');}catch{}});
 document.addEventListener('click',event=>{
@@ -2045,5 +2054,6 @@ window.addEventListener('calloria:cloud-context', async event=>{
 
 const cloudInit = initializeCloudPlatform();
 initClock();renderView();
+void refreshPublicGameStats();
 cloudInit.then(()=>{if(getCloudPlatformState().mode==='active')renderView();}).catch(error=>console.error('CALLORIA cloud initialisation failed:',error));
 import('three').then(module=>{THREE=module;initWorld();}).catch(error=>{console.warn('Three.js could not be loaded; keeping the operational interface available.',error);$('#worldCanvas').innerHTML='<div class="world-fallback">3D preview could not load. The operational workspace remains available.</div>';});

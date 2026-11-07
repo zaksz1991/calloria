@@ -1,38 +1,43 @@
-# CALLORIA v1.3.1 — Email Registration Validation Hotfix
+# CALLORIA v1.4.0
 
-- Improved email normalisation for copy/paste and browser autofill edge cases.
-- Added IDN domain conversion, plus-addressing and multi-part domain coverage.
-- Replaced the vague email error with actionable format guidance.
-- Preserved the Create account tab after sign-up errors.
-- No Supabase migration changes. This hotfix does not alter shared database objects.
+## Game-first experience and guest access
+- Replaced the initial website/dashboard-first presentation with a full-screen 3D game launch screen.
+- Added immediate guest play. Supabase sign-in, account creation and organisation workspaces remain optional.
+- Added an optional Operations Desk route and a persistent return-to-3D-game action.
+- Clarified that guest progress is stored locally on the current browser/device.
 
-# CALLORIA v1.3.0 — AI-Assisted Customer Intelligence
+## Rendering and loading performance
+- Reduced procedural texture-generation work during world startup.
+- Added a device capability profile using touch support, available memory, CPU cores and Save-Data hints.
+- Lower-end/touch profiles use lower pixel-ratio caps, no real-time shadow maps, fewer accent lights and local staff models.
+- High-detail third-party staff assets are requested only when the player enters the 3D floor; mobile/low-end profiles skip those downloads.
+- Removed the duplicate remote reception GLB load; the local reception model remains.
+- Paused rendering while the page is hidden or the world host is outside the viewport.
+- Throttled menu preview to 14–20 FPS and gameplay to 30–40 FPS, depending on device profile.
 
-## Added
-- Tenant-controlled AI assistance in the Human QA workspace.
-- Supabase Edge Function gateway using the OpenAI Responses API; provider credentials remain server-side.
-- Two supported tenant model selections: `gpt-6-luna` and `gpt-6.1-terra`.
-- Explicit per-analysis consent before a redacted synthetic transcript is transmitted.
-- A dedicated AI transcript preserves both customer prompts and agent replies while keeping the existing human QA evidence transcript unchanged.
-- Client- and server-side redaction for credential-like strings, long numeric identifiers and email addresses.
-- AI-generated sentiment, intent, interaction summary, possible risk flags, QA observations, coaching ideas and follow-up checklist.
-- Exact transcript quote verification before an AI QA evidence suggestion is displayed as verified.
-- Mandatory human approval boundary: AI output never creates or changes an official human QA review, dispute, promotion score or employee decision.
-- Organisation-level enable/disable setting, model selection and daily usage limit (1–5,000 requests).
-- Atomic tenant daily quota enforcement in PostgreSQL.
-- Usage counter stores request counts only; transcript text and provider response are not written to the AI usage table.
+## Live game stats and sponsorship inventory
+- Added anonymous visitor/session telemetry through a Supabase Edge Function.
+- Added live player, cumulative anonymous browser-profile, session and daily browser-profile metrics.
+- Added an approved sponsor campaign slot on the game launch screen with impression/click event recording.
+- Public counts are blank/unavailable until migration 004 and the telemetry Edge Function are deployed. No sample/fabricated counts are shown.
+- “Total players” represents unique anonymous browser profiles, not verified unique human beings. Clearing browser storage or changing devices may create another profile.
 
-## Security and data limits
-- AI requests require a valid Supabase user session and an active membership in the selected organisation.
-- Tenant settings are readable by active members and writable only by users with organisation policy-management permission.
-- The Edge Function requires a server-side `OPENAI_API_KEY`, enforces organisation settings and redaction, and does not log request bodies.
-- The browser contains no provider API key and calls only the authenticated Supabase Edge Function.
-- Only synthetic training transcripts are in scope. Audio is not sent.
-- Provider request uses `store: false`; this is not a promise of zero provider-side processing or retention. Review provider contractual terms and data controls before enabling the feature for any non-synthetic data.
-- The feature is disabled by default. It is unavailable until migration 003 and the Edge Function are deployed.
+## Groq provider
+- Reconfigured the existing server-side CALLORIA AI-assist function to use Groq's OpenAI-compatible Chat Completions endpoint.
+- Supported model IDs: `openai/gpt-oss-20b` and `openai/gpt-oss-120b`.
+- Provider credentials are read only from Supabase Edge Function Secrets as `GROQ_API_KEY`; no provider secret is included in Vercel client variables, browser code, `.env.example` or this archive.
+- Existing transcript redaction, tenant membership checks, usage quota and human approval requirements remain.
 
-## Preserved
-All recruitment, 3D workplace, voice and digital operations, workforce/briefing, promotion, CRM, organisation tenancy, employment snapshot, human QA, dispute and calibration workflows from v1.2.0 remain in the package.
+## Database changes
+- Added additive migration `202611070004_calloria_game_platform.sql` for game visitor/session telemetry and sponsor campaign/event storage.
+- Migration 004 changes only the CALLORIA AI settings model constraint and adds `calloria_`-prefixed game tables/functions. It does not alter Prospector tables or Supabase Auth triggers.
+- Do not rerun migrations 001–003; they have already been applied in the shared project.
 
-## Verification boundary
-The Node regression suite and syntax checks are run for this package. SQL is statically inspected by regression tests, not executed against a live Supabase database. The Deno Edge Function, live provider request, Vite production build, browser/mobile behaviour, live tenant isolation and deployment must be validated in the target project before production use.
+## Verification limits
+- Automated tests and JavaScript syntax checks are listed in `VERIFICATION-REPORT.md`.
+- No production build, live Supabase function deployment, live Groq inference request, browser/device profiling or Vercel deployment is claimed unless separately recorded there.
+
+- Added adaptive pixel-ratio control based on a smoothed main-thread render-submission-time estimate; this is not a GPU timer.
+- Reduced local ceiling point lights for low-cost device profiles.
+- Hid the game launch overlay after entering first-person gameplay.
+- Lowered procedural texture resolution/anisotropy on low-cost profiles and skipped GLTF/SkeletonUtils imports when remote character assets are disabled.

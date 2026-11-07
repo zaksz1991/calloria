@@ -7,12 +7,12 @@ import {
 } from '../js/ai-assist-engine.js';
 
 test('AI tenant settings accept only supported models and bounded daily quotas', () => {
-  assert.deepEqual(validateAIAssistSettings({ enabled: true, model: 'gpt-6-luna', dailyRequestLimit: 100 }), {
-    enabled: true, model: 'gpt-6-luna', dailyRequestLimit: 100, redactionRequired: true
+  assert.deepEqual(validateAIAssistSettings({ enabled: true, model: 'openai/gpt-oss-20b', dailyRequestLimit: 100 }), {
+    enabled: true, model: 'openai/gpt-oss-20b', dailyRequestLimit: 100, redactionRequired: true
   });
   assert.equal(AI_MODEL_OPTIONS.length, 2);
   assert.throws(() => validateAIAssistSettings({ model: 'unknown-model', dailyRequestLimit: 100 }), /supported/);
-  assert.throws(() => validateAIAssistSettings({ model: 'gpt-6-luna', dailyRequestLimit: 5001 }), /between 1 and 5,000/);
+  assert.throws(() => validateAIAssistSettings({ model: 'openai/gpt-oss-20b', dailyRequestLimit: 5001 }), /between 1 and 5,000/);
 });
 
 test('AI transcript preparation bounds the content and redacts credential-like identifiers', () => {
@@ -59,7 +59,7 @@ test('AI request requires an organisation and sends only the redacted synthetic 
   let sent = null;
   const client = { functions: { invoke: async (_name, options) => {
     sent = options.body;
-    return { data: { model: 'gpt-6-luna', analysis: {
+    return { data: { model: 'openai/gpt-oss-20b', analysis: {
       sentiment: 'neutral', customerIntent: 'Enquire', interactionSummary: 'A short practice exchange.', riskFlags: [], qaSuggestions: [], coachingRecommendations: [], followUpChecklist: []
     } }, error: null };
   } } };
@@ -75,7 +75,7 @@ test('AI request requires an organisation and sends only the redacted synthetic 
 });
 
 test('tenant AI settings read and save through the scoped Supabase client', async () => {
-  const existing = { organization_id:'org-1', enabled:true, model:'gpt-6-luna', daily_request_limit:20, redaction_required:true, updated_at:'2026-11-07T00:00:00Z' };
+  const existing = { organization_id:'org-1', enabled:true, model:'openai/gpt-oss-20b', daily_request_limit:20, redaction_required:true, updated_at:'2026-11-07T00:00:00Z' };
   const client = { from(table) {
     assert.equal(table, 'calloria_ai_settings');
     return {
@@ -84,8 +84,8 @@ test('tenant AI settings read and save through the scoped Supabase client', asyn
     };
   } };
   assert.equal((await loadTenantAIAssistSettings(client, 'org-1')).enabled, true);
-  const saved = await saveTenantAIAssistSettings(client, 'org-1', 'user-1', { enabled:false, model:'gpt-6.1-terra', dailyRequestLimit:25 });
+  const saved = await saveTenantAIAssistSettings(client, 'org-1', 'user-1', { enabled:false, model:'openai/gpt-oss-120b', dailyRequestLimit:25 });
   assert.equal(saved.enabled, false);
-  assert.equal(saved.model, 'gpt-6.1-terra');
+  assert.equal(saved.model, 'openai/gpt-oss-120b');
   assert.equal(saved.dailyRequestLimit, 25);
 });

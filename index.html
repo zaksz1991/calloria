@@ -13,7 +13,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
-<body>
+<body class="calloria-game-launch">
   <div class="app-shell calloria-shell">
     <header class="topbar">
       <a class="brand-lockup" href="/" aria-label="CALLORIA home">
@@ -47,7 +47,7 @@
       <button class="nav-item" data-view="organization" aria-label="Organisation administration"><span class="nav-icon">▣</span><span>Organisation</span></button>
       <div class="sidebar-bottom">
         <div class="support-card"><div class="support-icon">?</div><div><strong>Simulation support</strong><small>Game assistance</small></div><span>↗</span></div>
-        <div class="version-label">CALLORIA · BUILD 1.3.1</div>
+        <div class="version-label">CALLORIA · BUILD 1.4.0</div>
       </div>
     </aside>
 
@@ -55,6 +55,28 @@
       <section class="world-panel" aria-label="CALLORIA 3D workplace">
         <div id="worldCanvas" class="world-canvas" aria-label="Interactive 3D contact centre floor"></div>
         <div class="world-vignette"></div>
+        <section id="gameLaunchScreen" class="game-launch-screen" aria-label="CALLORIA game menu">
+          <div class="game-launch-top">
+            <a class="game-brand" href="/" aria-label="CALLORIA game home"><span class="game-brand-mark">C</span><span><strong>CALLORIA</strong><small>THE CONTACT CENTRE CAREER SIMULATOR</small></span></a>
+            <div class="game-launch-account"><span class="guest-badge">GUEST PLAY AVAILABLE</span><button type="button" class="game-account-button" data-cloud-open-account>OPTIONAL ACCOUNT</button></div>
+          </div>
+          <div class="game-launch-copy">
+            <span class="game-kicker"><i></i> A LIVING CUSTOMER OPERATIONS WORLD</span>
+            <h1>Step inside.<br><em>Build your career.</em></h1>
+            <p>Explore a working contact centre, learn the role, serve customers and progress from new recruit to operations leader.</p>
+            <div class="game-launch-actions">
+              <button id="launchPlayButton" class="game-primary-button" type="button" disabled><span>PLAY NOW</span><b>↗</b></button>
+              <button id="launchDeskButton" class="game-secondary-button" type="button">OPERATIONS DESK</button>
+            </div>
+            <small class="guest-save-note">No registration required. Guest progress stays on this device. Anonymous play statistics use a random browser ID.</small>
+          </div>
+          <div class="game-launch-footer">
+            <div id="gameStatsBar" class="game-stats-bar" aria-live="polite">
+              <div class="game-stat"><strong>—</strong><span>LIVE PLAYERS</span></div><div class="game-stat"><strong>—</strong><span>TOTAL PLAYERS</span></div><div class="game-stat"><strong>—</strong><span>GAME SESSIONS</span></div><div class="game-stat-status">CONNECTING TO LIVE STATISTICS</div>
+            </div>
+            <aside id="gameSponsorSlot" class="game-sponsor-slot" aria-label="Company sponsorship"><span class="sponsor-label">BRAND PARTNERSHIPS</span><strong>Company placements inside the CALLORIA world</strong><small>Approved company sponsorships may appear here. No campaign is currently scheduled.</small></aside>
+          </div>
+        </section>
         <div class="world-title">
           <div class="eyebrow"><span class="eyebrow-line"></span> IMMERSIVE CAREER SIMULATION</div>
           <h1 id="worldHeading">Your next shift starts here.</h1>

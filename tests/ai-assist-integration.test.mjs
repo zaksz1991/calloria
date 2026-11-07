@@ -20,11 +20,12 @@ test('provider secrets are absent from browser config and only accepted by serve
   const env = await read('.env.example');
   const client = await read('js/ai-assist-engine.js');
   const edge = await read('supabase/functions/calloria-ai-assist/index.ts');
-  assert.doesNotMatch(env, /OPENAI_API_KEY|SERVICE_ROLE|SUPABASE_SECRET_KEY/);
+  assert.doesNotMatch(env, /GROQ_API_KEY|SERVICE_ROLE|SUPABASE_SECRET_KEY|OPENAI_API_KEY/);
   assert.doesNotMatch(client, /OPENAI_API_KEY|api\.openai\.com|Bearer\s*\+?\s*apiKey/i);
-  assert.match(edge, /Deno\.env\.get\('OPENAI_API_KEY'\)/);
-  assert.match(edge, /api\.openai\.com\/v1\/responses/);
-  assert.match(edge, /store:\s*false/);
+  assert.match(edge, /Deno\.env\.get\('GROQ_API_KEY'\)/);
+  assert.match(edge, /api\.groq\.com\/openai\/v1\/chat\/completions/);
+  assert.match(edge, /response_format:[\s\S]*json_schema/);
+  assert.doesNotMatch(edge, /OPENAI_API_KEY|api\.openai\.com/);
   assert.match(edge, /originIsAllowed/);
   assert.match(edge, /CALLORIA_ALLOWED_ORIGINS must contain the exact permitted application origins/);
   assert.doesNotMatch(edge, /Access-Control-Allow-Origin':\s*'\*'/);

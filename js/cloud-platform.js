@@ -4,7 +4,7 @@ const env = import.meta.env || {};
 const config = resolveSupabaseConfig(env);
 const state = {
   configured: config.mode !== 'demo',
-  mode: config.mode,
+  mode: config.mode === 'cloud' ? 'guest' : config.mode,
   ready: false,
   session: null,
   user: null,
@@ -78,14 +78,14 @@ function renderConfigurationFailure() {
 
 function renderAuthGate(activeTab = 'signin') {
   gateShell(`
-    <span class="cloud-kicker">IDENTITY & ACCESS</span>
-    <h1>Sign in to CALLORIA</h1>
-    <p>Your login is managed by Supabase Auth. Organisation membership and permissions are checked by the database.</p>
+    <span class="cloud-kicker">OPTIONAL ACCOUNT</span>
+    <h1>Save your CALLORIA progress</h1>
+    <p>You can play immediately without an account. Sign in or create an account only for cloud saves, organisation workspaces and cross-device progression.</p>
     ${gateNotice()}
     <div class="cloud-tabs"><button type="button" data-cloud-tab="signin" class="${activeTab==='signin'?'active':''}">Sign in</button><button type="button" data-cloud-tab="signup" class="${activeTab==='signup'?'active':''}">Create account</button></div>
     <form id="cloudSignInForm" class="cloud-form ${activeTab==='signin'?'':'hidden'}"><label>Email address<input name="email" type="email" autocomplete="username" required maxlength="254" placeholder="you@organisation.com"></label><label>Password<input name="password" type="password" autocomplete="current-password" required minlength="8"></label><button class="cloud-primary" type="submit">Sign in securely</button><button class="cloud-text-button" type="button" data-cloud-action="reset-password">Send password reset email</button></form>
     <form id="cloudSignUpForm" class="cloud-form ${activeTab==='signup'?'':'hidden'}"><label>Full name<input name="fullName" type="text" autocomplete="name" required minlength="2" maxlength="100" placeholder="Your full name"></label><label>Email address<input name="email" type="email" inputmode="email" autocapitalize="none" spellcheck="false" autocomplete="email" required maxlength="254" placeholder="name@example.com"></label><label>Password<input name="password" type="password" autocomplete="new-password" required minlength="10" placeholder="At least 10 characters"></label><button class="cloud-primary" type="submit">Create account</button><p class="cloud-muted">Email confirmation may be required before you can enter an organisation.</p></form>
-    <div class="cloud-security-foot"><span class="cloud-lock">●</span> PostgreSQL Row Level Security is part of the required tenant migration.</div>`);
+    <button type="button" class="cloud-guest-button" data-cloud-action="continue-guest">Continue playing as guest</button><div class="cloud-security-foot"><span class="cloud-lock">●</span> Account creation is optional. Guest progress is saved on this device.</div>`);
 }
 
 function renderWorkspaceGate() {
@@ -100,6 +100,7 @@ function renderWorkspaceGate() {
     ${invitationMarkup}
     <details class="cloud-create-details"><summary>Create a new organisation</summary><form id="cloudCreateOrgForm" class="cloud-form"><label>Organisation name<input name="name" minlength="2" maxlength="80" required placeholder="e.g. Northern Customer Services"></label><label>Industry<select name="industry"><option>Banking and financial services</option><option>Telecommunications</option><option>E-commerce and retail</option><option>Insurance</option><option>Healthcare administration</option><option>Travel and hospitality</option><option>Logistics and utilities</option><option>General customer service</option></select></label><button class="cloud-primary" type="submit">Create organisation workspace</button></form></details>
     <button class="cloud-text-button" type="button" data-cloud-action="signout">Sign out</button>
+    <button class="cloud-guest-button" type="button" data-cloud-action="continue-guest">Continue playing without a workspace</button>
     <div class="cloud-security-foot"><span class="cloud-lock">●</span> Switching workspaces changes the tenant-scoped local simulation profile.</div>`);
 }
 
@@ -145,7 +146,7 @@ async function requireClient() {
   const { createClient } = await import('@supabase/supabase-js');
   state.client = createClient(config.url, config.key, {
     auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true, flowType: 'pkce' },
-    global: { headers: { 'x-client-info': 'calloria-v1.3.1' } }
+    global: { headers: { 'x-client-info': 'calloria-v1.4.0' } }
   });
   return state.client;
 }
@@ -224,7 +225,36 @@ function renderSessionControl() {
     control.className = 'cloud-session-control';
     topbar.append(control);
   }
-  control.innerHTML = `<span class="cloud-session-dot"></span><span title="${html(state.user?.email)}">${html(state.user?.email || 'Authenticated')}</span><button type="button" data-cloud-session-signout>Sign out</button>`;
+  if (state.session && state.activeOrganization) {
+    control.innerHTML = `<span class="cloud-session-dot"></span><span title="${html(state.user?.email)}">${html(state.user?.email || 'Authenticated')}</span><button type="button" data-cloud-open-account>Workspace</button><button type="button" data-cloud-session-signout>Sign out</button>`;
+  } else if (state.session) {
+    control.innerHTML = `<span class="cloud-session-dot"></span><span title="${html(state.user?.email)}">Account signed in</span><button type="button" data-cloud-open-account>Account & workspaces</button>`;
+  } else if (config.mode === 'cloud') {
+    control.innerHTML = `<span class="cloud-session-dot guest"></span><span>Guest mode</span><button type="button" data-cloud-open-account>Optional account</button>`;
+  } else {
+    control.innerHTML = `<span class="cloud-session-dot guest"></span><span>Guest mode</span>`;
+  }
+}
+
+function dismissGateToGuest() {
+  gateHost?.remove();
+  gateHost = null;
+  setAppLocked(false);
+  state.mode = 'guest';
+  state.ready = true;
+  setMessage();
+  renderSessionControl();
+}
+
+function openAccountGate() {
+  if (state.mode === 'misconfigured' || state.mode === 'error') {
+    showGate();
+    bindGateEvents();
+    return;
+  }
+  if (!state.session) renderAuthGate('signup');
+  else showGate();
+  bindGateEvents();
 }
 
 async function enterWorkspace(organizationId) {
@@ -353,10 +383,11 @@ async function doSignOut() {
   state.passwordRecovery = false;
   state.session = null; state.user = null; state.organizations = []; state.activeOrganization = null;
   state.membership = null; state.members = []; state.invitations = []; state.audit = [];
-  state.mode = 'cloud'; state.ready = false;
+  state.mode = 'guest'; state.ready = true;
   window.dispatchEvent(new CustomEvent('calloria:cloud-context', { detail: { signedOut: true } }));
-  setMessage('You have signed out.'); renderAuthGate(); bindGateEvents();
-  document.getElementById('cloudSessionControl')?.remove();
+  setMessage('You have signed out. Guest play remains available.');
+  dismissGateToGuest();
+  renderSessionControl();
 }
 
 function setBusy(value) {
@@ -379,6 +410,7 @@ function bindGateEvents() {
       catch (error) { setMessage('', errorText(error)); showGate(); }
       finally { setBusy(false); }
     };
+    if (action?.dataset.cloudAction === 'continue-guest') { dismissGateToGuest(); return; }
     if (action?.dataset.cloudAction === 'reload') { window.location.reload(); return; }
     if (action?.dataset.cloudAction === 'reset-password') return run(handlePasswordReset);
     if (action?.dataset.cloudAction === 'signout') return run(doSignOut);
@@ -425,6 +457,10 @@ function bindSessionControl() {
   if (document.documentElement.dataset.cloudSignOutBound === 'true') return;
   document.documentElement.dataset.cloudSignOutBound = 'true';
   document.addEventListener('click', async event => {
+    if (event.target.closest('[data-cloud-open-account]')) {
+      openAccountGate();
+      return;
+    }
     if (!event.target.closest('[data-cloud-session-signout]') || busy) return;
     try { await doSignOut(); }
     catch (error) { console.error('CALLORIA sign-out failed:', error); window.alert(errorText(error)); }
@@ -436,16 +472,17 @@ export async function selectCloudOrganization(organizationId) {
 }
 
 export async function initializeCloudPlatform() {
+  bindSessionControl();
   if (config.mode === 'demo') {
-    state.mode = 'demo'; state.ready = true;
+    state.mode = 'guest'; state.ready = true;
+    renderSessionControl();
     return state;
   }
   if (config.mode === 'misconfigured') {
-    state.mode = 'misconfigured'; state.ready = false; state.error = 'Invalid or incomplete Supabase URL or publishable key.';
-    renderConfigurationFailure(); bindGateEvents();
+    state.mode = 'misconfigured'; state.ready = true; state.error = 'Supabase account services are unavailable because the project URL or public key is incomplete. Guest play remains available.';
+    renderSessionControl();
     return state;
   }
-  renderLoadingGate(); bindGateEvents(); bindSessionControl();
   try {
     const client = await requireClient();
     const { data, error } = await client.auth.getSession();
@@ -456,39 +493,44 @@ export async function initializeCloudPlatform() {
       window.setTimeout(async () => {
         if (event === 'SIGNED_OUT') {
           state.session = null; state.user = null; state.organizations = []; state.activeOrganization = null;
-          state.membership = null; state.passwordRecovery = false; state.mode = 'cloud'; state.ready = false; showGate(); bindGateEvents();
-          document.getElementById('cloudSessionControl')?.remove();
+          state.membership = null; state.passwordRecovery = false; state.mode = 'guest'; state.ready = true;
+          gateHost?.remove(); gateHost = null; setAppLocked(false); renderSessionControl();
           window.dispatchEvent(new CustomEvent('calloria:cloud-context', { detail: { signedOut: true } }));
         } else if (event === 'PASSWORD_RECOVERY' && session?.user) {
           state.session = session; state.user = session.user; state.passwordRecovery = true;
           renderPasswordRecoveryGate(); bindGateEvents();
         } else if (session?.user && !state.activeOrganization) {
           state.session = session; state.user = session.user;
-          try { await loadMemberships(); showGate(); bindGateEvents(); }
-          catch (error) { setMessage('', errorText(error)); showGate(); bindGateEvents(); }
+          try { await loadMemberships(); state.mode = 'guest'; state.ready = true; renderSessionControl(); }
+          catch (error) { setMessage('', errorText(error)); state.mode = 'guest'; state.ready = true; renderSessionControl(); }
         } else if (session) {
-          state.session = session; state.user = session.user;
+          state.session = session; state.user = session.user; renderSessionControl();
         }
       }, 0);
     });
     if (state.session) {
-      await loadMemberships();
-      let preferred = null;
-      try { preferred = sessionStorage.getItem(`calloria.active-org.${state.user.id}`); } catch { /* storage may be disabled */ }
-      if (preferred && state.organizations.some(item => item.id === preferred)) {
-        await enterWorkspace(preferred);
-      } else if (state.organizations.length === 1) {
-        await enterWorkspace(state.organizations[0].id);
-      } else {
-        showGate(); bindGateEvents();
+      try {
+        await loadMemberships();
+        let preferred = null;
+        try { preferred = sessionStorage.getItem(`calloria.active-org.${state.user.id}`); } catch { /* session preference is optional */ }
+        if (preferred && state.organizations.some(item => item.id === preferred)) {
+          await loadActiveWorkspace(preferred);
+        } else if (state.organizations.length === 1) {
+          await loadActiveWorkspace(state.organizations[0].id);
+        } else {
+          state.mode = 'guest'; state.ready = true; renderSessionControl();
+        }
+      } catch (error) {
+        console.warn('CALLORIA account context is unavailable; continuing in guest mode.', error);
+        state.mode = 'guest'; state.ready = true; renderSessionControl();
       }
     } else {
-      showGate(); bindGateEvents();
+      state.mode = 'guest'; state.ready = true; renderSessionControl();
     }
-    state.ready = true;
   } catch (error) {
-    state.mode = 'error'; state.error = errorText(error); state.ready = false;
-    renderConfigurationFailure();
+    console.warn('CALLORIA cloud account services are unavailable; continuing in guest mode.', error);
+    state.mode = 'guest'; state.ready = true; state.error = errorText(error);
+    renderSessionControl();
   }
   return state;
 }

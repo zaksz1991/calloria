@@ -17,6 +17,12 @@ const ASSET_URLS = {
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 export async function initProductionWorld(THREE, host, callbacks = {}) {
+  const touchDevice = window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+  const deviceMemory = Number(navigator.deviceMemory || 0);
+  const cpuCores = Number(navigator.hardwareConcurrency || 0);
+  const saveData = Boolean(navigator.connection?.saveData);
+  const lowEndDevice = touchDevice || (deviceMemory > 0 && deviceMemory <= 4) || (cpuCores > 0 && cpuCores <= 4) || saveData;
+
   let RoundedBoxGeometry = null;
   let GLTFLoader = null;
   let SkeletonUtils = null;
@@ -24,16 +30,16 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
 
   const helperResults = await Promise.allSettled([
     import('three/addons/geometries/RoundedBoxGeometry.js'),
-    import('three/addons/loaders/GLTFLoader.js'),
-    import('three/addons/utils/SkeletonUtils.js'),
+    lowEndDevice ? Promise.resolve(null) : import('three/addons/loaders/GLTFLoader.js'),
+    lowEndDevice ? Promise.resolve(null) : import('three/addons/utils/SkeletonUtils.js'),
     import('three/addons/utils/BufferGeometryUtils.js')
   ]);
   if (helperResults[0].status === 'fulfilled') RoundedBoxGeometry = helperResults[0].value.RoundedBoxGeometry;
   else console.warn('Rounded box helper unavailable; standard box geometry will be used.', helperResults[0].reason);
-  if (helperResults[1].status === 'fulfilled') GLTFLoader = helperResults[1].value.GLTFLoader;
-  else console.warn('GLTFLoader unavailable; local character fallbacks will be used.', helperResults[1].reason);
-  if (helperResults[2].status === 'fulfilled') SkeletonUtils = helperResults[2].value;
-  else console.warn('Skinned model cloning helper unavailable; rigged duplicates will be reduced.', helperResults[2].reason);
+  if (helperResults[1].status === 'fulfilled' && helperResults[1].value) GLTFLoader = helperResults[1].value.GLTFLoader;
+  else if (!lowEndDevice) console.warn('GLTFLoader unavailable; local character fallbacks will be used.', helperResults[1].reason);
+  if (helperResults[2].status === 'fulfilled' && helperResults[2].value) SkeletonUtils = helperResults[2].value;
+  else if (!lowEndDevice) console.warn('Skinned model cloning helper unavailable; rigged duplicates will be reduced.', helperResults[2].reason);
   if (helperResults[3].status === 'fulfilled') mergeGeometries = helperResults[3].value.mergeGeometries;
   else console.warn('Geometry merge helper unavailable; workstation meshes will remain separate.', helperResults[3].reason);
 
@@ -42,12 +48,14 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   scene.fog = new THREE.Fog('#d7e1e4', 38, 78);
 
   const camera = new THREE.PerspectiveCamera(62, 1, 0.08, 120);
-  const touchDevice = window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
-  const renderer = new THREE.WebGLRenderer({ antialias: !touchDevice, alpha: false, powerPreference: 'high-performance' });
+  const renderer = new THREE.WebGLRenderer({ antialias: !lowEndDevice, alpha: false, powerPreference: lowEndDevice ? 'low-power' : 'high-performance' });
   const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, touchDevice ? 1 : window.innerWidth < 900 ? 1.1 : 1.5));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const textureAnisotropy = lowEndDevice ? Math.min(2, maxAnisotropy) : Math.min(8, maxAnisotropy);
+  const pixelRatioCap = lowEndDevice ? 0.9 : window.innerWidth < 900 ? 1.0 : 1.25;
+  let currentPixelRatio = Math.min(window.devicePixelRatio || 1, pixelRatioCap);
+  renderer.setPixelRatio(currentPixelRatio);
+  renderer.shadowMap.enabled = !lowEndDevice;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.18;
@@ -116,14 +124,14 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(repeat[0], repeat[1]);
-    texture.anisotropy = Math.min(8, maxAnisotropy);
+    texture.anisotropy = textureAnisotropy;
     texture.needsUpdate = true;
     return texture;
   }
 
   const carpetTexture = makeTexture((ctx, w, h) => {
     ctx.fillStyle = '#263b4a'; ctx.fillRect(0, 0, w, h);
-    for (let i = 0; i < 28000; i++) {
+    for (let i = 0; i < (lowEndDevice ? 2500 : 7000); i++) {
       const x = Math.random() * w, y = Math.random() * h;
       const a = 0.025 + Math.random() * 0.07;
       ctx.fillStyle = Math.random() > 0.5 ? `rgba(210,225,224,${a})` : `rgba(4,12,18,${a})`;
@@ -132,33 +140,33 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     ctx.strokeStyle = 'rgba(180,205,208,.055)'; ctx.lineWidth = 2;
     for (let x = 0; x <= w; x += 128) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
     for (let y = 0; y <= h; y += 128) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
-  }, 1024, 1024, [12, 11]);
+  }, lowEndDevice ? 512 : 1024, lowEndDevice ? 512 : 1024, [12, 11]);
   const woodTexture = makeTexture((ctx, w, h) => {
     ctx.fillStyle = '#78583e'; ctx.fillRect(0, 0, w, h);
-    for (let i = 0; i < 420; i++) {
+    for (let i = 0; i < 150; i++) {
       const y = Math.random() * h;
       ctx.strokeStyle = `rgba(${Math.random() > .5 ? '35,20,12' : '226,185,139'},${.025 + Math.random() * .1})`;
       ctx.lineWidth = .5 + Math.random() * 2;
       ctx.beginPath(); ctx.moveTo(0, y); ctx.bezierCurveTo(w * .25, y + Math.random() * 25 - 12, w * .7, y + Math.random() * 18 - 9, w, y + Math.random() * 12 - 6); ctx.stroke();
     }
-  }, 1024, 512, [2, 1]);
+  }, lowEndDevice ? 512 : 1024, lowEndDevice ? 256 : 512, [2, 1]);
   const fabricTexture = makeTexture((ctx, w, h) => {
     ctx.fillStyle = '#243b4b'; ctx.fillRect(0, 0, w, h);
-    for (let i = 0; i < 52000; i++) {
+    for (let i = 0; i < (lowEndDevice ? 2500 : 6500); i++) {
       const x = Math.random() * w, y = Math.random() * h;
       const a = Math.random() * .1;
       ctx.fillStyle = i % 2 ? `rgba(230,240,240,${a})` : `rgba(0,0,0,${a})`;
       ctx.fillRect(x, y, 2, 1);
     }
-  }, 512, 512, [2, 2]);
+  }, lowEndDevice ? 256 : 512, lowEndDevice ? 256 : 512, [2, 2]);
   const plasterTexture = makeTexture((ctx, w, h) => {
     ctx.fillStyle = '#d9e0df'; ctx.fillRect(0, 0, w, h);
-    for (let i = 0; i < 18000; i++) {
+    for (let i = 0; i < (lowEndDevice ? 1800 : 4500); i++) {
       const v = Math.random() > .5 ? 255 : 70;
       ctx.fillStyle = `rgba(${v},${v},${v},${Math.random() * .035})`;
       ctx.fillRect(Math.random() * w, Math.random() * h, 2, 2);
     }
-  }, 512, 512, [4, 3]);
+  }, lowEndDevice ? 256 : 512, lowEndDevice ? 256 : 512, [4, 3]);
   materials.floor.map = carpetTexture;
   materials.fabric.map = fabricTexture;
   materials.fabricLight.map = fabricTexture;
@@ -191,7 +199,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
       });
       ctx.fillStyle = '#123c43'; ctx.fillRect(w-165,h-38,130,22);
       ctx.fillStyle = '#85e1cf'; ctx.font='700 11px Arial';ctx.fillText('SYSTEM ONLINE',w-151,h-23);
-    }, 768, 432, [1,1]);
+    }, lowEndDevice ? 384 : 768, lowEndDevice ? 216 : 432, [1,1]);
   }
 
   // Architectural shell.
@@ -229,10 +237,15 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     addMesh(scene, beam, x, 5.52, 0, false, false);
   }
   const lightPanels = [];
+  let lightPanelIndex = 0;
   for (let x = -12; x <= 12; x += 12) for (let z = -8; z <= 8; z += 8) {
     const panel = roundedBox(2.7, .045, 1.25, .08, new THREE.MeshStandardMaterial({ color: '#fffdf2', emissive: '#fff0c6', emissiveIntensity: 1.1, roughness: .18 }));
     addMesh(scene, panel, x, 5.56, z, false, false);
-    const glow = new THREE.PointLight('#fff0d3', 4.4, 8, 1.8); glow.position.set(x, 5.12, z); scene.add(glow); lightPanels.push(glow);
+    // Emissive ceiling panels replace most local point lights on lower-cost profiles.
+    if (!lowEndDevice && lightPanelIndex % 2 === 0) {
+      const glow = new THREE.PointLight('#fff0d3', 3.2, 7, 1.8); glow.position.set(x, 5.12, z); scene.add(glow); lightPanels.push(glow);
+    }
+    lightPanelIndex++;
   }
 
   // Structural columns, acoustic wall panels and room markers.
@@ -521,10 +534,10 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
 
   // Window-side light and interior illumination.
   scene.add(new THREE.HemisphereLight('#e2f0f2','#1d2f3b',1.75));
-  const keyLight=new THREE.DirectionalLight('#fff4dd',4.2);keyLight.position.set(-11,17,11);keyLight.castShadow=true;keyLight.shadow.mapSize.set(touchDevice ? 1024 : 2048,touchDevice ? 1024 : 2048);keyLight.shadow.camera.left=-22;keyLight.shadow.camera.right=22;keyLight.shadow.camera.top=22;keyLight.shadow.camera.bottom=-22;keyLight.shadow.bias=-.00018;keyLight.shadow.normalBias=.025;scene.add(keyLight);
+  const keyLight=new THREE.DirectionalLight('#fff4dd',4.2);keyLight.position.set(-11,17,11);keyLight.castShadow=!lowEndDevice;keyLight.shadow.mapSize.set(1024,1024);keyLight.shadow.camera.left=-22;keyLight.shadow.camera.right=22;keyLight.shadow.camera.top=22;keyLight.shadow.camera.bottom=-22;keyLight.shadow.bias=-.00018;keyLight.shadow.normalBias=.025;scene.add(keyLight);
   const fillLight=new THREE.DirectionalLight('#b2d5e4',1.35);fillLight.position.set(14,9,-9);scene.add(fillLight);
-  const warmAccent=new THREE.PointLight('#55cdbb',18,22,2);warmAccent.position.set(-11,3.4,-10);scene.add(warmAccent);
-  const receptionGlow=new THREE.PointLight('#e8b76c',11,11,2);receptionGlow.position.set(-11,3,10);scene.add(receptionGlow);
+  if(!lowEndDevice){const warmAccent=new THREE.PointLight('#55cdbb',12,18,2);warmAccent.position.set(-11,3.4,-10);scene.add(warmAccent);
+  const receptionGlow=new THREE.PointLight('#e8b76c',8,9,2);receptionGlow.position.set(-11,3,10);scene.add(receptionGlow);}
 
   // Camera and interaction state.
   const preview = { azimuth: .43, elevation: .22, radius: 27, target: new THREE.Vector3(0,1.5,-.4) };
@@ -538,6 +551,9 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   let nearestStation = null;
   let currentStation = null;
   let frameId = 0;
+  let loopActive = false;
+  let lastRenderTime = 0;
+  let hostInView = true;
   const clock = new THREE.Clock();
   const mixers = [];
   const walkers = [];
@@ -661,15 +677,15 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
 
   async function loadExternalAssets() {
     const results=[];
-    if(!loader){addFallbackStaff();return {loaded:0, fallback:4};}
-    const staffPerModel = window.innerWidth < 900 || (navigator.deviceMemory && navigator.deviceMemory <= 4) ? 1 : 2;
+    if(!loader || lowEndDevice){addFallbackStaff();return {loaded:0,fallback:4,mode:lowEndDevice?'local-low-performance':'local-no-loader'};}
+    const staffPerModel = 2;
     try {
       const count=await loadCharacter(ASSET_URLS.businessman,staffPerModel,0);results.push(count);
     } catch(error) { console.warn('Business character asset did not load; local employee meshes will be used.',error); }
     try {
       const count=await loadCharacter(ASSET_URLS.woman,staffPerModel,1);results.push(count);
     } catch(error) { console.warn('Woman character asset did not load; local employee meshes will be used.',error); }
-    let loaded=results.reduce((a,b)=>a+b,0);
+    const loaded=results.reduce((a,b)=>a+b,0);
     if(loaded<4){
       for(let i=0;i<4-loaded;i++){
         const actor=createFallbackEmployee(i+loaded);const lane=i%2?1:-1;
@@ -677,13 +693,9 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
         fallbackCharacters.push({root:actor,phase:i*.9,base:[lane*10,5-i*3]});
       }
     }
-    try {
-      const receptionGltf=await loader.loadAsync(ASSET_URLS.reception);
-      const model=receptionGltf.scene;model.scale.setScalar(1.12);model.position.set(-12.6,0,10.2);model.rotation.y=.12;
-      model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
-      scene.add(model);receptionGroup.visible=false;
-    } catch(error){console.warn('Reception asset unavailable; detailed local reception model remains active.',error);}
-    return {loaded,fallback:4-loaded};
+    // The locally modelled reception remains in place. A second remote reception GLB
+    // added network latency and duplicate geometry without improving gameplay.
+    return {loaded,fallback:4-loaded,mode:'lazy-desktop-assets'};
   }
 
   // Small interactive station status lights.
@@ -694,17 +706,26 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
   });
 
   let assetsReady=false;
-  let assetMessage='Loading high-detail employee models';
-  loadExternalAssets().then(result=>{
-    assetsReady=true;
-    assetMessage=result.loaded?`${result.loaded} high-detail staff models loaded`:'Staff model fallback active';
-    if(callbacks.onAssetsReady)callbacks.onAssetsReady(result);
-  }).catch(error=>{
-    assetsReady=true;assetMessage='Local staff models active';
-    console.warn('3D employee asset loader failed:',error);
-    addFallbackStaff();
-    if(callbacks.onAssetsReady)callbacks.onAssetsReady({loaded:0,fallback:4});
-  });
+  let assetLoadPromise=null;
+  let assetMessage='Staff models load when gameplay starts';
+  function ensureAssetsLoaded(){
+    if(assetLoadPromise)return assetLoadPromise;
+    assetMessage='Preparing contact-centre staff';
+    assetLoadPromise=loadExternalAssets().then(result=>{
+      assetsReady=true;
+      assetMessage=result.loaded?`${result.loaded} external staff models plus local fallbacks`:'Optimised local staff models active';
+      callbacks.onAssetsReady?.(result);
+      return result;
+    }).catch(error=>{
+      assetsReady=true;assetMessage='Optimised local staff models active';
+      console.warn('3D employee asset loader failed:',error);
+      addFallbackStaff();
+      const result={loaded:0,fallback:4,mode:'local-fallback'};
+      callbacks.onAssetsReady?.(result);
+      return result;
+    });
+    return assetLoadPromise;
+  }
 
   // Preview camera controls.
   function setPreviewCamera(){
@@ -718,15 +739,50 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     const w=Math.max(1,host.clientWidth||900),h=Math.max(1,host.clientHeight||380);
     camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);
   };
+  let renderCostAverageMs = 0;
+  let lastAdaptiveResolutionCheck = 0;
+  function adaptResolution(renderCostMs, timestamp) {
+    renderCostAverageMs = renderCostAverageMs ? renderCostAverageMs * 0.88 + renderCostMs * 0.12 : renderCostMs;
+    if (!lastAdaptiveResolutionCheck) { lastAdaptiveResolutionCheck = timestamp; return; }
+    if (timestamp - lastAdaptiveResolutionCheck < 2500) return;
+    lastAdaptiveResolutionCheck = timestamp;
+    let nextRatio = currentPixelRatio;
+    if (renderCostAverageMs > (lowEndDevice ? 17 : 21)) nextRatio = Math.max(0.6, currentPixelRatio * 0.85);
+    else if (renderCostAverageMs < 8) nextRatio = Math.min(pixelRatioCap, currentPixelRatio + 0.05);
+    if (Math.abs(nextRatio - currentPixelRatio) >= 0.025) {
+      currentPixelRatio = Number(nextRatio.toFixed(2));
+      renderer.setPixelRatio(currentPixelRatio);
+      resize();
+    }
+  }
   const resizeObserver='ResizeObserver' in window?new ResizeObserver(resize):null;
   if(resizeObserver)resizeObserver.observe(host);else window.addEventListener('resize',resize);
   resize();
+
+  function startRenderLoop(){
+    if(loopActive || document.hidden || (!hostInView && !immersive))return;
+    loopActive=true;lastRenderTime=0;clock.start();frameId=requestAnimationFrame(animate);
+  }
+  function stopRenderLoop(){
+    loopActive=false;
+    if(frameId)cancelAnimationFrame(frameId);
+    frameId=0;
+  }
+  const visibilityObserver=typeof IntersectionObserver!=='undefined'?new IntersectionObserver(entries=>{
+    hostInView=entries.some(entry=>entry.isIntersecting);
+    if(hostInView||immersive)startRenderLoop();else stopRenderLoop();
+  },{threshold:0.01}):null;
+  visibilityObserver?.observe(host);
+  const onVisibilityChange=()=>{if(document.hidden)stopRenderLoop();else startRenderLoop();};
+  document.addEventListener('visibilitychange',onVisibilityChange);
 
   function setImmersive(value) {
     immersive=Boolean(value);
     host.closest('.world-panel')?.classList.toggle('is-immersive',immersive);
     document.body.classList.toggle('calloria-immersive',immersive);
     if(immersive){
+      ensureAssetsLoaded();
+      startRenderLoop();
       player.x=0;player.z=12.2;player.yaw=0;player.pitch=-.035;
       touchMove.x=0;touchMove.y=0;touchMove.sprinting=false;
       const stick=document.getElementById('touchStick');
@@ -738,6 +794,7 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
       keys.clear();touchMove.x=0;touchMove.y=0;touchMove.sprinting=false;touchMove.pointerId=null;
       nearestStation=null;currentStation=null;setPreviewCamera();
       if(callbacks.onImmersiveChange)callbacks.onImmersiveChange(false);
+      if(hostInView)startRenderLoop();else stopRenderLoop();
     }
   }
 
@@ -918,11 +975,15 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     });
   }
 
-  function animate(){
-    frameId=requestAnimationFrame(animate);
-    const delta=Math.min(clock.getDelta(),.045),elapsed=clock.elapsedTime;
-    updateWalkers(delta,elapsed);updatePlayer(delta);
-    if(!immersive){
+  function animate(timestamp=performance.now()){
+    if(!loopActive)return;
+    if(document.hidden || (!hostInView && !immersive)){stopRenderLoop();return;}
+    const targetInterval=immersive?(lowEndDevice?1000/30:1000/40):(lowEndDevice?1000/14:1000/20);
+    if(lastRenderTime && timestamp-lastRenderTime<targetInterval){frameId=requestAnimationFrame(animate);return;}
+    const delta=Math.min(clock.getDelta(),.05),elapsed=clock.elapsedTime;
+    lastRenderTime=timestamp;
+    if(immersive){updateWalkers(delta,elapsed);updatePlayer(delta);}
+    else{
       camera.position.lerp(new THREE.Vector3(
         preview.target.x+Math.sin(preview.azimuth)*Math.cos(preview.elevation)*preview.radius,
         preview.target.y+Math.sin(preview.elevation)*preview.radius,
@@ -930,9 +991,12 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
       ),.035);
       camera.lookAt(preview.target);
     }
+    const renderStartedAt = performance.now();
     renderer.render(scene,camera);
+    adaptResolution(performance.now() - renderStartedAt, timestamp);
+    frameId=requestAnimationFrame(animate);
   }
-  animate();
+  startRenderLoop();
 
   return {
     scene,camera,renderer,stations,
@@ -941,6 +1005,9 @@ export async function initProductionWorld(THREE, host, callbacks = {}) {
     get immersive(){return immersive;},
     get nearestStation(){return nearestStation;},
     get assetMessage(){return assetMessage;},
-    dispose(){cancelAnimationFrame(frameId);resizeObserver?.disconnect();window.removeEventListener('resize',resize);document.body.classList.remove('touch-device','calloria-immersive');renderer.dispose();host.replaceChildren();}
+    get lowEndDevice(){return lowEndDevice;},
+    get pixelRatio(){return currentPixelRatio;},
+    get assetsReady(){return assetsReady;},
+    dispose(){stopRenderLoop();visibilityObserver?.disconnect();resizeObserver?.disconnect();window.removeEventListener('resize',resize);document.removeEventListener('visibilitychange',onVisibilityChange);document.body.classList.remove('touch-device','calloria-immersive');renderer.dispose();host.replaceChildren();}
   };
 }

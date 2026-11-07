@@ -1,2 +1,5 @@
 [functions.calloria-ai-assist]
 verify_jwt = true
+
+[functions.calloria-game-telemetry]
+verify_jwt = false

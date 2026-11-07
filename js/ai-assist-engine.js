@@ -5,8 +5,8 @@
  */
 
 export const AI_MODEL_OPTIONS = Object.freeze([
-  Object.freeze({ id: 'gpt-6-luna', label: 'GPT-6 Luna · efficient review' }),
-  Object.freeze({ id: 'gpt-6.1-terra', label: 'GPT-6.1 Terra · deeper analysis' })
+  Object.freeze({ id: 'openai/gpt-oss-20b', label: 'Groq · GPT-OSS 20B · fast review' }),
+  Object.freeze({ id: 'openai/gpt-oss-120b', label: 'Groq · GPT-OSS 120B · deeper analysis' })
 ]);
 
 const clean = value => String(value ?? '').trim();
@@ -30,7 +30,7 @@ export function isSyntheticCustomerLabInteraction(interaction) {
 }
 
 export function validateAIAssistSettings(input = {}) {
-  const model = clean(input.model || 'gpt-6-luna');
+  const model = clean(input.model || 'openai/gpt-oss-20b');
   if (!AI_MODEL_OPTIONS.some(option => option.id === model)) {
     throw new TypeError('Select a supported CALLORIA AI model.');
   }
@@ -108,7 +108,7 @@ export async function loadTenantAIAssistSettings(client, organizationId) {
     .select('organization_id,enabled,model,daily_request_limit,redaction_required,updated_at')
     .eq('organization_id', organizationId).maybeSingle();
   if (error) throw error;
-  if (!data) return { enabled: false, model: 'gpt-6-luna', dailyRequestLimit: 100, redactionRequired: true, configured: false };
+  if (!data) return { enabled: false, model: 'openai/gpt-oss-20b', dailyRequestLimit: 100, redactionRequired: true, configured: false };
   return { ...validateAIAssistSettings(data), redactionRequired: data.redaction_required !== false, configured: true, updatedAt: data.updated_at || null };
 }
 

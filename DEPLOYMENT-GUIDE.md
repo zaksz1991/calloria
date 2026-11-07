@@ -1,89 +1,80 @@
-# CALLORIA 1.3.0 — GUI deployment guide
+# CALLORIA v1.4.0 deployment guide
 
-Target repository: `zaksz1991/calloria`  
-Target Vercel site: `https://calloria.vercel.app`  
-Production branch: `main`
+## Existing project layout
 
-## 1. Replace the repository files
+- Keep the existing Vercel project `calloria` and repository `zaksz1991/calloria`.
+- Keep the existing Supabase project used by RuffNeck Prospector. CALLORIA uses the same project and must not change Prospector's Site URL.
+- Keep the current Vercel variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` and, if retained for compatibility, `VITE_SUPABASE_ANON_KEY`.
+- These variables are browser-public Supabase project URL/key values. Never put a service-role key or Supabase secret key into a `VITE_` variable.
 
-1. Download and extract `CALLORIA-v1.3.0.zip` in Windows File Explorer.
-2. Open the existing `zaksz1991/calloria` repository in GitHub Desktop. If it is not on this computer, clone the existing repository using GitHub Desktop.
-3. In GitHub Desktop, choose **Repository → Show in Explorer**.
-4. Copy the contents of the extracted `CALLORIA-v1.3.0` folder into the existing repository root. Do not copy an outer wrapper folder and do not delete the hidden `.git` folder.
-5. Allow File Explorer to replace matching files and add the new cloud modules, tests and Supabase migration folder.
-6. Review the changed-file list in GitHub Desktop. The release should include the updated `package.json`, `index.html`, `js/main.js`, `js/ai-assist-engine.js`, `js/customer-intelligence-engine.js`, `supabase/migrations/202611070003_calloria_ai_assistance.sql`, `supabase/functions/calloria-ai-assist/index.ts`, `supabase/config.toml`, and updated documentation/tests.
-7. Use the summary `CALLORIA v1.3.0 — AI-assisted customer intelligence`, commit to `main` and push.
+## Vercel
 
-## 2. Apply Supabase setup before adding Vercel variables
+1. Upload the complete v1.4.0 source to the existing `main` branch of `zaksz1991/calloria` using the user's normal GitHub GUI workflow.
+2. Let the existing Vercel project build the updated branch.
+3. Confirm the deployed start screen reports `CALLORIA · BUILD 1.4.0` in the application metadata/version details. The visible launch screen is full-screen; the operations desk remains a secondary route.
+4. Vercel environment changes require a new deployment. No Groq key belongs in Vercel.
 
-Follow `SUPABASE-SETUP.md` in full. Apply `supabase/migrations/202611070001_calloria_server_tenancy.sql` in Supabase SQL Editor. Configure Email Auth and allowed redirect URLs. Confirm the six tenant tables exist and have RLS enabled.
+## Supabase database
 
-Do not configure the Vercel cloud variables until the migration has been applied. With a configured Supabase URL/key but a missing database schema, CALLORIA intentionally blocks access rather than silently switching to local mode.
+Migrations 001–003 have already been applied in the shared Supabase project. Do not run them again.
 
-## 3. Vercel project settings
+Apply only this new migration, once, in Supabase SQL Editor:
 
-In the existing Vercel project:
+`supabase/migrations/202611070004_calloria_game_platform.sql`
 
-- Framework preset: Vite
-- Root directory: `./`
-- Install command: `npm install`
-- Build command: `npm run build`
-- Output directory: `dist`
-- Node.js: 22.x or later (22.12.0 minimum)
+Migration 004 adds CALLORIA-prefixed telemetry/sponsor tables and RPCs, and changes only `calloria_ai_settings.model` to Groq-supported model IDs. It does not alter Prospector's tables or Supabase Auth triggers. Keep a database backup/restore point before any schema maintenance.
 
-Under **Settings → Environment Variables**, add:
+## Groq API key — exact place to add it
 
-- `VITE_SUPABASE_URL` — Supabase Project URL
-- `VITE_SUPABASE_PUBLISHABLE_KEY` — Supabase publishable key (preferred)
+1. Open the existing Supabase project `ruffneck-prospector`.
+2. In the project sidebar, open **Edge Functions**.
+3. Open **Secrets** (sometimes shown as **Edge Function Secrets**).
+4. Add a secret:
+   - Key: `GROQ_API_KEY`
+   - Value: the Groq API key held in the user's Groq account. Paste it directly into the Supabase secret field; do not paste it into ChatGPT, the repository, `.env.example`, Vercel, browser storage or source files.
+5. Add/confirm another secret:
+   - Key: `CALLORIA_ALLOWED_ORIGINS`
+   - Value: `https://calloria.vercel.app`
+   - If other allowed CALLORIA preview origins are used, add those exact origins as comma-separated values. Do not add broad wildcards.
+6. Click Save.
 
-`VITE_SUPABASE_ANON_KEY` is accepted for projects still using the legacy anon key. Do not add a service-role or secret key to any `VITE_` variable. Vite embeds client variables in the public site bundle.
+`GROQ_API_KEY` is a project-level Edge Function secret. It is available to Edge Functions in this Supabase project, but is not exposed to the browser. Only server code that explicitly reads `Deno.env.get('GROQ_API_KEY')` uses it. If the same Groq key value is also used by another website, both sites draw from the same Groq account/key quota and billing. Adding it to Supabase does not edit that other website's Vercel environment.
 
-Apply variables to the correct Production and Preview scopes, save and trigger a new deployment. Keep `calloria.vercel.app` attached to this same Vercel project.
+## Deploy the Edge Functions through the Supabase Dashboard
 
-## 4. First deployment checks
+The Supabase Dashboard supports Edge Function creation and deployment using **Deploy a new function → Via Editor**, and existing functions can be edited and redeployed from their details page.
 
-1. Confirm CALLORIA branding and Build 1.3.0 are visible.
-2. Confirm the sign-in/create-account gate appears when cloud variables are configured.
-3. Create an account, confirm the email and sign in.
-4. Create the first organisation; confirm the user becomes owner.
-5. Change an organisation policy and confirm a server audit event is recorded.
-6. Create a staff invitation. Confirm the interface explicitly says no email was sent.
-7. Accept the invitation from a second confirmed account using the invited email.
-8. Confirm that the invited account sees only its organisation membership.
-9. Test owner/admin, manager, supervisor, QA, agent and trainee permissions.
-10. Run every case in `supabase/tests/tenant-isolation-checklist.md` and record evidence.
-11. Confirm local game saves are separate when switching accounts and organisation tenants in the same browser.
-12. Confirm that clearing browser storage removes local simulation progress but does not remove Supabase identity or organisation records.
-13. Re-test recruitment, voice, inbound/outbound, digital support, workforce, mobile controls and 3D workplace behaviour.
+### AI assist function
 
-## 5. Verification boundary
+- Function name: `calloria-ai-assist`
+- Source: `supabase/functions/calloria-ai-assist/index.ts`
+- Keep JWT verification enabled. `supabase/config.toml` records `verify_jwt = true`.
+- Deploy the function after the secret is saved.
 
-Automated Node regression tests and JavaScript syntax checks are included in this release. The SQL migration was reviewed and statically tested through source-level checks, but it has not been executed against a live PostgreSQL/Supabase project in the release environment. Live RLS isolation, authentication emails, invitation acceptance, production build, deployment, browser rendering and physical Android/iOS behaviour remain unverified until the checks above are completed.
+### Public game telemetry function
 
-No GitHub commit, Vercel deployment, Supabase migration execution or live tenant-isolation result is implied by this ZIP package.
+- Function name: `calloria-game-telemetry`
+- Source: `supabase/functions/calloria-game-telemetry/index.ts`
+- It validates the exact browser Origin against `CALLORIA_ALLOWED_ORIGINS` and uses server-injected Supabase secret credentials. No user session is required for anonymous game counters.
+- JWT verification is intentionally disabled for this public telemetry endpoint; do not disable origin validation or publish a Supabase service key.
+- Deploy this function after migration 004 and the secret `CALLORIA_ALLOWED_ORIGINS` are configured.
 
+## Sponsor campaigns
 
-## v1.0.0 database release order
-1. In Supabase SQL Editor, apply `202611070002_calloria_employment_persistence.sql` after the existing tenancy migration.
-2. Confirm the `calloria_employment_records` table and `save_calloria_employment_snapshot` function exist.
-3. Deploy this application build with the existing public Supabase URL and publishable/anon key environment variables. Do not expose a service-role or secret key.
-4. Sign in with a test account, enter an organisation, complete or modify a harmless synthetic training action, reload, and confirm the progress is restored.
-5. Sign in as a second organisation member and confirm the employee cannot read another member's private snapshot unless the role has operations-read permission. Test separate organisations with separate test accounts.
+The launch screen only displays campaigns with status `active`, placement `game_launch`, and a current start/end window. New campaigns default to `pending`; an authorised database administrator must vet and approve the advertiser/creative before changing status to `active`. Image and destination URLs must use HTTPS. The launch-screen placement is implemented; an advertiser self-service portal, invoicing, campaign billing, in-world billboards and sponsored scenarios are future work.
 
+## Guest/account behaviour
 
-## 6. Apply v1.3 AI assistance setup before enabling the feature
+- Visitors can start the 3D game without registering or signing in.
+- Guest simulation progress is stored in the browser's local storage on that device.
+- Signing in is optional and is needed for organisation workspaces and cloud employment saves.
+- Do not assume local guest progress automatically transfers to an account.
 
-1. Follow sections 7–10 of `SUPABASE-SETUP.md`. Apply migration `202611070003_calloria_ai_assistance.sql` after migrations 001 and 002.
-2. Deploy the `calloria-ai-assist` Supabase Edge Function from `supabase/functions/calloria-ai-assist/index.ts`. Keep JWT verification on.
-3. Add `OPENAI_API_KEY` to Supabase Edge Function secrets, not Vercel. Add `CALLORIA_ALLOWED_ORIGINS` with the exact production origin.
-4. Confirm the Edge Function deployment is healthy and a signed-in owner/admin can load the tenant AI settings panel.
-5. Only then enable the feature for a test organisation. Run an explicit-consent synthetic interaction analysis and confirm that it appears only as an advisory draft.
-6. Confirm that no AI result is inserted into the Human QA register until a human completes the normal review form.
-7. Test an agent role and a second organisation. Direct setting updates must be denied by PostgreSQL RLS and usage quota must remain tenant-scoped.
+## Checks after deployment
 
-Do not add the OpenAI API key to Vercel or to any `VITE_` environment variable. The app's browser bundle must contain only the Supabase URL and publishable/anon key.
-
-
-## v1.3.1 email registration hotfix
-
-This release changes client-side email normalisation and registration error presentation only. It adds no SQL migration. Do not rerun migrations 001, 002 or 003 when deploying this hotfix. A fresh Vercel deployment is required for the updated browser bundle to take effect.
+- Visit `https://calloria.vercel.app` in a private/incognito browser and confirm the game launch screen appears without a registration prompt.
+- Start gameplay, exit and return to the game menu.
+- Test keyboard/mouse and touch controls.
+- Check that live statistics display real values only after migration 004 and the telemetry function are deployed; otherwise the interface should show unavailable dashes.
+- Confirm the other site sharing the Supabase project still signs in and its existing Prospector workspace/data remain accessible.
+- Use a synthetic Customer Lab interaction to test Groq only after an authenticated organisation and its AI settings are configured.

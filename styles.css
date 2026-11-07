@@ -375,3 +375,56 @@ table{color:#d8e6e7}th{color:#85a4ad;background:rgba(255,255,255,.035)}td{border
 .ai-suggestion-list{display:grid;gap:8px}.ai-suggestion-list article{padding:10px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.025)}.ai-suggestion-list article>div{display:flex;justify-content:space-between;gap:10px}.ai-suggestion-list article b{font-size:10px;color:var(--ink)}.ai-suggestion-list article strong{font:800 13px Manrope;color:var(--teal)}.ai-suggestion-list article p{margin:6px 0;font-size:9px;line-height:1.5;color:var(--muted)}.ai-suggestion-list article small{display:block;font-size:8px;line-height:1.5}.evidence-good{color:#19a781}.evidence-warning{color:#c58b38}
 .ai-result-block ul{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:9px;line-height:1.65}.ai-disclaimer{margin-top:14px;padding-top:11px;border-top:1px solid var(--line);font-size:9px!important;color:var(--muted)!important}
 @media(max-width:600px){.ai-settings-grid{grid-template-columns:1fr}.ai-status-line,.ai-result-heading{flex-direction:column;align-items:flex-start}.ai-status-line strong{text-align:left}}
+
+
+/* CALLORIA v1.4.0 — immersive game-first start screen and performance controls */
+html,body.calloria-game-launch{width:100%;height:100%;min-height:100%;overflow:hidden;background:#06121d}
+body.calloria-game-launch .app-shell{min-height:100%;height:100%;overflow:hidden}
+body.calloria-game-launch .topbar,body.calloria-game-launch .sidebar,body.calloria-game-launch .content-wrap{display:none!important}
+body.calloria-game-launch .main-area{margin:0;width:100%;height:100%;min-height:100%;padding:0}
+body.calloria-game-launch .world-panel{position:fixed;inset:0;width:100vw;height:100dvh;min-height:0;margin:0;border:0;border-radius:0;overflow:hidden;z-index:1;background:radial-gradient(ellipse at 54% 44%,#395f6b 0%,#172f40 48%,#06121d 100%)}
+body.calloria-game-launch .world-canvas,body.calloria-game-launch .world-canvas canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+body.calloria-game-playing #gameLaunchScreen{display:none!important}
+body.calloria-game-launch .world-vignette{position:absolute;inset:0;z-index:2;background:linear-gradient(90deg,rgba(3,12,21,.88) 0%,rgba(3,12,21,.72) 34%,rgba(3,12,21,.13) 74%,rgba(3,12,21,.22) 100%),linear-gradient(0deg,rgba(3,12,21,.8) 0%,transparent 43%,rgba(3,12,21,.35) 100%)}
+.game-launch-screen{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(20px,3.5vw,48px);color:#f5faf8;pointer-events:none}
+.game-launch-screen button,.game-launch-screen a{pointer-events:auto}
+.game-launch-top{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.game-brand{display:flex;align-items:center;gap:12px;color:#f7fbfa;text-decoration:none}
+.game-brand-mark{width:42px;height:42px;display:grid;place-items:center;border:1px solid rgba(122,232,208,.62);border-radius:12px;background:linear-gradient(145deg,#14b89f,#075c69);font:900 25px Manrope;box-shadow:0 10px 30px rgba(0,0,0,.28)}
+.game-brand>span:last-child{display:grid;gap:4px}.game-brand strong{font:900 15px Manrope;letter-spacing:2.2px}.game-brand small{font-size:8px;letter-spacing:1.35px;color:#a6c2c8;font-weight:800}
+.game-launch-account{display:flex;align-items:center;gap:12px}.guest-badge{padding:8px 10px;border:1px solid rgba(95,216,189,.32);border-radius:30px;background:rgba(9,47,49,.52);font:800 8px Manrope;letter-spacing:1px;color:#90e4cc}
+.game-account-button{border:1px solid rgba(222,243,239,.3);border-radius:7px;background:rgba(8,24,35,.55);color:#edf6f4;padding:10px 13px;font:800 8px Manrope;letter-spacing:1px;cursor:pointer}
+.game-launch-copy{width:min(550px,58vw);margin:auto 0;transform:translateY(-1.5vh);pointer-events:none}
+.game-kicker{display:flex;align-items:center;gap:9px;color:#83e4cc;font:800 9px Manrope;letter-spacing:2px}
+.game-kicker i{width:23px;height:1px;background:#65d7bf;box-shadow:0 0 12px #65d7bf}
+.game-launch-copy h1{margin:17px 0 13px;font:900 clamp(42px,6.2vw,82px)/.98 Manrope,sans-serif;letter-spacing:-3.5px;color:#f5faf8;text-shadow:0 8px 35px rgba(0,0,0,.4)}
+.game-launch-copy h1 em{font-style:normal;color:#7ce0c9}
+.game-launch-copy>p{max-width:435px;margin:0;color:#c5d6d9;font-size:clamp(12px,1.2vw,15px);line-height:1.75;text-shadow:0 2px 10px #07121a}
+.game-launch-actions{display:flex;align-items:center;gap:12px;margin-top:25px;pointer-events:auto}
+.game-primary-button,.game-secondary-button{min-height:48px;border-radius:7px;padding:0 20px;font:900 9px Manrope;letter-spacing:1.5px;cursor:pointer;transition:transform .16s,filter .16s}
+.game-primary-button{min-width:176px;display:flex;align-items:center;justify-content:space-between;gap:20px;border:1px solid #79e4cb;background:linear-gradient(120deg,#18b89e,#087a7d);color:#fff;box-shadow:0 12px 34px rgba(0,0,0,.28)}
+.game-primary-button b{font-size:16px}.game-secondary-button{border:1px solid rgba(222,243,239,.32);background:rgba(8,24,35,.58);color:#edf6f4}
+.game-primary-button:hover,.game-secondary-button:hover{transform:translateY(-2px);filter:brightness(1.1)}
+.game-primary-button:disabled{opacity:.55;cursor:wait;transform:none}
+.guest-save-note{display:block;margin-top:12px;color:#aac1c8;font-size:9px;letter-spacing:.15px}
+.game-launch-footer{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,340px);align-items:end;gap:22px}
+.game-stats-bar{display:flex;align-items:flex-end;gap:clamp(14px,2.6vw,34px);min-width:0;padding:13px 0 2px}
+.game-stat{display:grid;gap:4px;min-width:70px}.game-stat strong{font:900 clamp(18px,2.1vw,26px) Manrope;color:#f4fbf7}.game-stat span{font:800 7px Manrope;letter-spacing:1.3px;color:#9bb7be;white-space:nowrap}
+.game-stat-status{margin-left:auto;align-self:center;color:#7ce0c9;font:800 7px Manrope;letter-spacing:1px;text-align:right}
+.game-sponsor-slot{display:grid;gap:6px;padding:13px 15px;border:1px solid rgba(215,239,235,.2);border-radius:9px;background:rgba(5,20,30,.66);backdrop-filter:blur(8px);box-shadow:0 9px 30px rgba(0,0,0,.16)}
+.game-sponsor-slot .sponsor-label{font:900 7px Manrope;letter-spacing:1.3px;color:#8bdeca}.game-sponsor-slot strong{font:800 10px Manrope;color:#f2f7f5}.game-sponsor-slot small{font-size:8px;line-height:1.5;color:#adc1c6}.game-sponsor-slot img{width:100%;max-height:92px;object-fit:cover;border-radius:5px}.game-sponsor-slot a{width:max-content;color:#83e4ce;font:900 8px Manrope;text-decoration:none;letter-spacing:1px}
+.return-to-game-btn{border-color:rgba(19,172,151,.45)!important;color:#0c8c7b!important}
+.cloud-guest-button{width:100%;margin-top:12px;padding:12px;border:1px solid rgba(74,207,179,.35);border-radius:8px;background:rgba(34,151,130,.12);color:#b4f2df;font:800 10px Manrope;cursor:pointer}
+@media(max-width:760px){
+  .page-actions{display:flex!important;flex-wrap:wrap;gap:7px}
+  .return-to-game-btn{min-height:34px;padding:7px 9px;font-size:8px}
+  body.calloria-game-launch .world-panel{height:100dvh;min-height:0}
+  .game-launch-screen{padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 14px)}
+  .game-brand-mark{width:36px;height:36px;font-size:21px}.game-brand strong{font-size:12px}.game-brand small{font-size:6px;letter-spacing:.8px}
+  .game-launch-account{gap:6px}.guest-badge{display:none}.game-account-button{padding:8px 9px;font-size:7px}
+  .game-launch-copy{width:min(100%,440px);margin:auto 0;transform:translateY(-1vh)}
+  .game-kicker{font-size:7px;letter-spacing:1.35px}.game-launch-copy h1{font-size:clamp(38px,10.5vw,58px);letter-spacing:-2.2px;margin:13px 0 10px}.game-launch-copy>p{max-width:330px;font-size:11px;line-height:1.6}
+  .game-launch-actions{gap:8px;margin-top:18px}.game-primary-button,.game-secondary-button{min-height:45px;padding:0 12px;font-size:8px;letter-spacing:.9px}.game-primary-button{min-width:145px}.game-secondary-button{white-space:nowrap}.guest-save-note{font-size:8px}
+  .game-launch-footer{grid-template-columns:1fr;gap:8px}.game-stats-bar{gap:12px;flex-wrap:wrap;padding:7px 0}.game-stat{min-width:60px;gap:3px}.game-stat strong{font-size:19px}.game-stat span{font-size:6px;letter-spacing:.8px}.game-stat-status{flex-basis:100%;margin-left:0;text-align:left;font-size:6px}.game-sponsor-slot{padding:9px 11px;gap:4px}.game-sponsor-slot strong{font-size:9px}.game-sponsor-slot small{font-size:7px}.game-sponsor-slot img{max-height:55px}
+}
+@media(max-width:380px){.game-launch-copy h1{font-size:36px}.game-launch-copy>p{font-size:10px}.game-secondary-button{font-size:7px;padding:0 9px}.game-primary-button{min-width:128px}}

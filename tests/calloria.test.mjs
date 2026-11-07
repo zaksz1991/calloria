@@ -142,9 +142,9 @@ test('multi-channel operations are reachable and linked to existing work systems
     read('index.html'), read('js/main.js'), read('js/multichannel-engine.js'), read('styles.css'), read('package.json')
   ]);
   const pkg = JSON.parse(packageJson);
-  assert.equal(pkg.version, '1.3.1');
+  assert.equal(pkg.version, '1.4.0');
   assert.match(html, /data-view=["']digital["']/);
-  assert.match(html, /BUILD 1\.3\.1/);
+  assert.match(html, /BUILD 1\.4\.0/);
   for (const item of ['function renderDigital','function acceptDigital','function submitDigitalReply','function finishDigitalContact','function receiveDigitalFollowUp','case \'digital\': renderDigital()']) {
     assert.ok(main.includes(item), `missing digital integration: ${item}`);
   }
@@ -166,9 +166,9 @@ test('organisation administration is reachable and preserves the local workspace
     read('index.html'), read('js/main.js'), read('js/organization-engine.js'), read('package.json'), read('styles.css')
   ]);
   const pkg = JSON.parse(packageJson);
-  assert.equal(pkg.version, '1.3.1');
+  assert.equal(pkg.version, '1.4.0');
   assert.match(html, /data-view=["']organization["']/);
-  assert.match(html, /BUILD 1\.3\.1/);
+  assert.match(html, /BUILD 1\.4\.0/);
   assert.match(main, /function renderOrganizationWorkspace/);
   assert.match(main, /case 'organization': renderOrganizationWorkspace\(\)/);
   for (const form of ['orgCreateForm','orgMemberForm','orgPolicyForm']) assert.ok(main.includes(form));
@@ -186,9 +186,9 @@ test('human QA workspace is reachable and wired to evidence-linked review workfl
     read('index.html'), read('js/main.js'), read('js/qa-workspace-engine.js'),
     read('js/customer-intelligence-engine.js'), read('styles.css'), read('package.json')
   ]);
-  assert.equal(JSON.parse(pkg).version, '1.3.1');
+  assert.equal(JSON.parse(pkg).version, '1.4.0');
   assert.match(html, /data-view=["']qa["']/);
-  assert.match(html, /BUILD 1\.3\.1/);
+  assert.match(html, /BUILD 1\.4\.0/);
   assert.match(main, /function renderQAWorkspace/);
   assert.match(main, /case 'qa': renderQAWorkspace\(\)/);
   for (const form of ['humanQaReviewForm','qaScorecardForm','qaDisputeForm','qaResolveDisputeForm','qaCalibrationForm']) assert.ok(main.includes(form));
