@@ -1,67 +1,41 @@
-# CALLORIA v1.8 — Customer Reception Journey
+# CALLORIA v1.9 — Supervisor Intervention
 
-## What this changes
+## Purpose
 
-This upgrade turns the existing static reception customer placements into a small, event-driven walk-in customer journey:
+Adds an approved supervisor GLB to the existing production Three.js world. When the Customer Intelligence event bridge emits an escalated customer interaction, one supervisor is dispatched from the existing supervisor office zone to reception. Further escalations are queued. The supervisor can resolve the complaint or return the interaction to the original agent through an accessible in-game control panel.
 
-- approved customer GLBs start in the reception waiting area;
-- the Customer Intelligence `active` event calls the customer to the counter;
-- agent-turn reactions update only the avatar assigned to that scenario;
-- `escalated` holds the visitor at the counter and emits `calloria:customer-supervisor-requested`;
-- a supervisor UI can respond using `calloria:customer-world-command` with `action: 'supervisor-arrived'`, then `action: 'supervisor-resolved'` or `action: 'resume'`;
-- `completed` starts the departure route and hides the visitor after leaving the room;
-- when only one avatar is available, additional interactions wait in a FIFO queue.
-
-It uses the existing scene and render loop. No additional WebGL renderer is created. The existing GLB approval checks and procedural fallback remain in place.
+This package does not replace `main.js`, `production-world.js`, `customer-world-integration.js`, `customer-reception-journey.js`, `package.json`, Supabase files, or original GLB models.
 
 ## Files
 
-Replace the complete existing file:
+- Replace the root `vite.config.js` with the complete version in this package.
+- Add `build/calloria-supervisor-intervention-plugin.js`.
+- Add `build/calloria-supervisor-case-bridge-plugin.js`.
+- Add `js/supervisor-intervention.js`.
+- Add `js/supervisor-intervention-core.js`.
+- Add `styles/calloria-supervisor-intervention.css`.
+- Add `tests/supervisor-intervention.test.mjs`.
 
-- `js/customer-world-integration.js`
+Keep all existing Vite plugins and build inputs. The supplied config preserves the current main-branch config and registers the new plugin last with `enforce: 'post'`, so it runs after the existing customer-world transform.
 
-Add:
+## Required model approval
 
-- `js/customer-reception-journey.js`
-- `tests/customer-reception-journey.test.mjs`
+In CALLORIA, open `/asset-inspector.html` and approve `Office Female` in the Supervisors category. The runtime only loads the approved supervisor model. It checks model dimensions, rig, bones, triangle budget and texture dimensions before adding it to the production scene. The `bad-supervisor` asset is a fallback only when it is explicitly approved and `office-female-supervisor` is not approved.
 
-No other existing application files are replaced.
+If no eligible model is approved or the model has no compatible walking animation/leg bones, the game remains operational and shows a clear supervisor-model availability message. It does not substitute an unrelated character.
 
-## Event contract
+## In-game behaviour
 
-The existing Customer Intelligence integration already dispatches `calloria:customer-reaction` with `scenarioId`, `emotion`, `reaction`, `turn`, `patience` and `status`.
-
-This upgrade also dispatches:
-
-- `calloria:customer-world-state` — customer state transitions;
-- `calloria:customer-supervisor-requested` — escalation requiring supervisor attention.
-
-Supervisor controls can be sent from the browser with:
-
-```js
-window.dispatchEvent(new CustomEvent('calloria:customer-world-command', {
-  detail: { scenarioId: 'CIL-...', action: 'supervisor-arrived' }
-}));
-
-window.dispatchEvent(new CustomEvent('calloria:customer-world-command', {
-  detail: { scenarioId: 'CIL-...', action: 'supervisor-resolved' }
-}));
-```
-
-These commands are event contracts only; this version does not create a supervisor GLB actor or a new supervisor UI. The existing project must subscribe to the escalation event and decide when the supervisor has arrived or completed the intervention.
+- `calloria:customer-reaction` with `status: 'escalated'` dispatches the supervisor.
+- One supervisor handles one escalation at a time; additional cases queue without duplication.
+- When the supervisor arrives, the in-game panel offers `Record supervisor review` or `Return case to agent`.
+- `Record supervisor review` saves a supervisor disposition to the active synthetic Customer Intelligence Lab session and operation timeline, then returns the supervisor to the office.
+- `Return case to agent` records that the case was handed back and returns the supervisor to the office.
+- The customer session remains `escalated`; mandatory QA review is not silently closed or downgraded. The user must still finalise the escalated practice case through CALLORIA's existing QA flow.
+- A customer completed in the existing engine while the supervisor is en route also sends the supervisor back.
 
 ## Tests
 
-Run the focused regression tests using the project's existing test command or:
+The package includes Node's built-in test suite at `tests/supervisor-intervention.test.mjs`. It covers queueing, de-duplication, phase transitions, completion, disposal and both Vite transformation contracts. The main application source is not edited; a guarded Vite post-transform adds a small event bridge to the existing application state.
 
-```sh
-node --test tests/customer-reception-journey.test.mjs
-```
-
-The pure journey controller has no Three.js dependency, so these tests do not require a browser or WebGL context.
-
-## Deployment boundary
-
-This package does not modify `vite.config.js`, `js/main.js`, `js/production-world.js`, `package.json`, the customer intelligence engine, Supabase schema, or original GLB files. Existing Vite integration already calls `attachCalloriaWorldCustomers()` and updates the returned layer inside the production render loop.
-
-A successful unit test is not a substitute for the full Vercel build or an in-browser check of the actual customer assets.
+Full Vercel build and actual browser rendering must still be verified in the deployed project. This package has not been deployed to the repository.

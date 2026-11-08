@@ -1,0 +1,38 @@
+.calloria-supervisor-panel {
+  position: fixed;
+  z-index: 10020;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: min(390px, calc(100vw - 28px));
+  padding: 15px;
+  border: 1px solid rgba(211, 174, 111, .58);
+  border-radius: 13px;
+  color: #f7f4ed;
+  background: rgba(17, 28, 39, .97);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, .34);
+  font: 500 14px/1.45 system-ui, sans-serif;
+}
+.calloria-supervisor-panel[hidden] { display: none !important; }
+.calloria-supervisor-panel__title {
+  display: block;
+  margin-bottom: 7px;
+  color: #e8c78f;
+  font-size: 12px;
+  letter-spacing: .11em;
+}
+.calloria-supervisor-panel__message { margin: 0 0 12px; color: #e9edf1; }
+.calloria-supervisor-panel__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.calloria-supervisor-panel__actions[hidden] { display: none !important; }
+.calloria-supervisor-panel button {
+  min-height: 40px;
+  padding: 8px 11px;
+  border: 1px solid #b98d51;
+  border-radius: 8px;
+  color: #17212a;
+  background: #e5c18a;
+  font: 650 12px/1.2 system-ui, sans-serif;
+  cursor: pointer;
+}
+.calloria-supervisor-panel button:last-child { color: #f4f1eb; background: #354657; border-color: #73869a; }
+.calloria-supervisor-panel button:disabled { opacity: .55; cursor: wait; }
+.calloria-supervisor-panel a { display: inline-block; margin-top: 11px; color: #e8c78f; }
