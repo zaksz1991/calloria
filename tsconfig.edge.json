@@ -23,6 +23,8 @@
     "supabase/functions/calloria-sales-desk/**/*.ts",
     "supabase/functions/calloria-sales-desk/**/*.d.ts",
     "supabase/functions/calloria-contact-routing/**/*.ts",
-    "supabase/functions/calloria-contact-routing/**/*.d.ts"
+    "supabase/functions/calloria-contact-routing/**/*.d.ts",
+    "supabase/functions/calloria-whatsapp/**/*.ts",
+    "supabase/functions/calloria-whatsapp/**/*.d.ts"
   ]
 }

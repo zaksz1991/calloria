@@ -23,7 +23,8 @@ export default defineConfig({
         salesDesk: resolve(process.cwd(), 'sales-desk.html'),
         supportRouter: resolve(process.cwd(), 'support-router.html'),
         routingControl: resolve(process.cwd(), 'routing-control.html'),
-        voiceSimulator: resolve(process.cwd(), 'voice-simulator.html')
+        voiceSimulator: resolve(process.cwd(), 'voice-simulator.html'),
+        whatsappInbox: resolve(process.cwd(), 'whatsapp-inbox.html')
       },
       output: {
         manualChunks(id) {

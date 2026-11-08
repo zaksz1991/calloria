@@ -1,70 +1,126 @@
-# CALLORIA Phase 13 — Voice Practice Studio & Conversation Quality Engine
+# CALLORIA Phase 14 — WhatsApp Business Cloud Integration
 
-**New staff page:** `/voice-simulator.html`  
-**Agent Desk navigation:** updated `agent-desk.html`  
-**New browser modules:** `js/voice-simulator-engine.js`, `js/voice-simulator-workbench.js`  
-**New stylesheet:** `styles/voice-simulator.css`
+## Scope
 
-Phase 13 adds a structured role-play environment for training CALLORIA staff across the RuffNeck portfolio, games, complaints, security and the personal-guidance department. It is a practice simulator, not a live telephony connection.
+Phase 14 adds the first provider-connected external messaging channel to CALLORIA: the official Meta WhatsApp Business Platform Cloud API. It is an incremental overlay on the Phase 13-integrated CALLORIA repository, not a full repository replacement.
 
-## Included capabilities
+The staff page is `/whatsapp-inbox.html`.
 
-- Sixteen scripted practice scenarios covering RuffNeck Learn, Prospector, Connect, Social Hub, Kano Run/Kano Life, Kano Keke, customer complaints, security, relationships, parenting and career development.
-- Inbound support and outbound complaint-callback practice.
-- English, Hausa, Yoruba, Igbo and Nigerian Pidgin sample scripts. Native-speaker review is required before using translated scenarios as formal language-proficiency assessments.
-- Persona and emotional-state feedback. Empathy, discovery and appropriate guidance can reduce simulated customer tension; an unconsented or premature sales pitch increases it.
-- Professional greeting, empathy, open discovery, safe verification, accurate explanation, step-by-step guidance, understanding confirmation, consent, referral, safeguarding escalation and closing actions.
-- Optional browser text-to-speech for the latest customer line. Voice availability depends on the installed browser/device language packs.
-- Hold and resume controls. Hold time is excluded from active handling time, and speed does not increase the score.
-- After-contact work and a structured practice disposition.
-- A seven-part quality rubric weighted to 100. A critical security, privacy, consent or safeguarding failure blocks a pass regardless of the numerical score.
-- Local practice history scoped to the signed-in staff UUID. It stores scenario, score, disposition and competency gaps, not conversation transcripts or the outcome-summary free text.
+### Included
 
-## Mandatory quality rules
+- Meta webhook verification handshake using `CALLORIA_META_WEBHOOK_VERIFY_TOKEN`.
+- HMAC-SHA256 validation of the raw webhook body using `CALLORIA_META_APP_SECRET` before JSON parsing.
+- Strict matching to the configured Meta `phone_number_id`, preventing events from another number on the same Meta app from entering this inbox.
+- Encrypted WhatsApp contact, profile-name and message storage (AES-256-GCM/HKDF); keyed HMAC contact lookup; masked phone numbers in the browser.
+- Inbound message and delivery-status handling with provider-message idempotency.
+- Automatic Contact Routing creation/attachment using the existing Phase 12 `calloria_route_create_request` flow and existing Agent Desk encrypted-summary key.
+- Staff authentication through Supabase Auth plus the existing `CALLORIA_ROUTING_ACCESS` permission map. A staff grant must explicitly include the `whatsapp` channel, an allowed department, appropriate skills/languages and a compatible Agent Desk grant.
+- Assigned Agent Desk work item required before a normal agent can open/reply. Supervisors are restricted to their configured department scopes.
+- Outbound human text replies through Meta Cloud API, with a 24-hour service-window check, customer opt-out check, per-staff send limit and conservative handling of ambiguous provider timeouts.
+- `STOP` / `UNSUBSCRIBE` / equivalent instructions block further sends and clear recorded marketing and service-follow-up consent. `START` reopens service replies only; it does not reinstate marketing or follow-up consent.
+- Marketing and service-follow-up consent recorded separately, with staff identity, evidence type and a non-sensitive reference to the actual evidence.
+- An explicit retention purge function: conversations and encrypted messages become eligible after 180 days without activity when no active routed work remains; webhook idempotency records are eligible after 30 days.
 
-- Never request a password, passcode, OTP, PIN, CVV, full payment-card number or API secret.
-- On verification-required scenarios, do not disclose case or account details before the simulated approved verification step.
-- Suspicious-code and safeguarding scenarios require the safeguarding hand-off to pass.
-- Customer-requested product information can be answered as requested. Proactive cross-selling requires a separate affirmative marketing-consent step and a confirmed outcome on the original issue. Service consent is not marketing consent.
-- Personal guidance is general and non-clinical. It does not diagnose, prescribe treatment or replace a qualified professional. Immediate danger or clinical risk must be escalated to qualified human support.
-- Product information in the scripts is high-level. Staff must verify current feature availability, account status, pricing and limits in the relevant owning platform before making commitments.
+### Deliberate limitations
 
-## Authentication and data boundaries
+- This phase supports Meta WhatsApp Business Cloud API only. It is not WhatsApp Web automation and does not scrape or control a personal WhatsApp account.
+- Only free-form text replies are implemented. They are blocked once the 24-hour customer-service window expires. Approved template creation/approval/sending is not included.
+- Proactive marketing, outbound campaigns and cross-sell broadcasts are not implemented. Consent fields are records only; they are not an outbound marketing trigger.
+- Inbound image, audio, video, document, sticker, location and other non-text events are recorded as a typed placeholder. Media is not downloaded or displayed in this phase.
+- No telephone carrier/PSTN, email provider, social-network inbox or live-chat provider is connected by this phase.
+- Language and intent classification are lightweight heuristics, not AI translation or a definitive assessment. Agents must confirm the routing details with the customer.
+- The send result is marked `unknown` rather than automatically retried when a network timeout or incomplete provider response makes delivery ambiguous. Check the Meta conversation before manually retrying.
+- The `calloria_wa_purge_expired()` SQL function is included but is not scheduled automatically. Configure a trusted Supabase Cron invocation before treating retention as automated.
 
-- The page uses the existing Supabase browser configuration (`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` or `VITE_SUPABASE_PUBLISHABLE_KEY`).
-- Staff authentication is checked by the existing `calloria-agent-desk` Edge Function `whoami` action and its existing `CALLORIA_AGENT_WORKSPACE_ACCESS` permission map.
-- No new Supabase table, migration, Edge Function, function secret or service-role credential is introduced.
-- Practice history is saved only in this browser's local storage under a key scoped to the staff Auth UUID. It is not synchronised between devices or sent to Supabase.
-- No microphone capture, speech recognition, call recording, customer data ingestion, external call, message, provider connection or AI/Groq request is made.
-- Practice scores are training feedback only. They do not enter official monthly scorecards, QA reviews, promotion eligibility, payroll or disciplinary workflows.
+## Integration baseline and files
 
-## Integrate on the Phase 12 baseline
+Base this overlay on the Phase 13-integrated project. Preserve existing game files, the existing launch experience, all prior phases and local modifications.
 
-This is an incremental overlay for a repository that already contains the Phase 12 routing integration and all earlier phases. It is not a complete CALLORIA repository snapshot.
+New files:
 
-### Add
+- `whatsapp-inbox.html`
+- `js/whatsapp-engine.js`
+- `js/whatsapp-inbox-workbench.js`
+- `styles/whatsapp-inbox.css`
+- `supabase/functions/calloria-whatsapp/index.ts`
+- `supabase/functions/calloria-whatsapp/whatsapp-engine.ts`
+- `supabase/functions/calloria-whatsapp/deno-globals.d.ts`
+- `supabase/migrations/202611070014_calloria_whatsapp_channel.sql`
+- `tests/whatsapp-engine.test.mjs`
+- `tests/whatsapp-contract.test.mjs`
 
-| Package file | Repository path |
+Complete replacement/merge files included:
+
+- `agent-desk.html` — adds the WhatsApp Inbox navigation link and clarifies which channels are provider-connected.
+- `vite.config.js` — preserves the Phase 13 multi-page inputs and adds `whatsapp-inbox.html`.
+- `package.json` — preserves the Phase 13 scripts and adds checks for the Phase 14 browser modules.
+- `supabase/config.toml` — preserves prior function settings and sets `calloria-whatsapp` to `verify_jwt = false`; Meta does not send a Supabase JWT to its webhook, so the function verifies Meta's signature itself and independently verifies Supabase Auth for staff actions.
+- `tsconfig.edge.json` — adds the Phase 14 Edge Function to static checking.
+
+The Edge Function includes its own local helper file so the function can be deployed as a self-contained function folder. The browser module is kept separately for Vite.
+
+## Installation sequence
+
+1. Confirm that the Phase 13-integrated repository contains the earlier CALLORIA pages, Phase 12 Contact Routing objects and Edge Function, Phase 8 Agent Desk, Phase 9 Workforce, and their configured secrets.
+2. Merge the included `vite.config.js`, `package.json`, `supabase/config.toml`, and `tsconfig.edge.json` with any project-specific changes. Do not replace other repository files wholesale.
+3. Add the new HTML, browser modules, stylesheet, tests and `supabase/functions/calloria-whatsapp/` folder.
+4. Check Supabase migration history. Confirm `202611070013_calloria_contact_routing.sql` is already applied. Apply `202611070014_calloria_whatsapp_channel.sql` exactly once.
+5. Deploy the complete `calloria-whatsapp` Edge Function folder, including both `index.ts` and `whatsapp-engine.ts`.
+6. Configure the Supabase Edge Function secrets listed below. Do not put private Meta or encryption secrets in Vercel.
+7. In the Meta Developer app, add/configure the WhatsApp product and subscribe the app's webhook to the `messages` field. Use the callback URL below and enter the exact same verification-token secret. Confirm the webhook's `phone_number_id` matches the server secret.
+8. Confirm that the Meta app/business has an approved WhatsApp Business sender number and an access token with the permissions required by the Cloud API. Complete Meta's business verification or number onboarding requirements as applicable to the account.
+9. Add `whatsapp` to the channel list for only those staff UUIDs authorised to handle WhatsApp in the existing `CALLORIA_ROUTING_ACCESS` map. Ensure their department, language and skill scopes match the published Workforce shifts and Phase 12 routing rules. Do not use broad wildcard grants for ordinary agents.
+10. Deploy the Vercel multi-page app after the migration, function and configuration are in place.
+11. Configure a trusted scheduled invocation of `public.calloria_wa_purge_expired()` if automated retention is required. Until this scheduler exists, retention eligibility is recorded but deletion is not automatic.
+
+### Supabase migration
+
+`202611070014_calloria_whatsapp_channel.sql`
+
+This migration creates only `calloria_wa_*` objects and references the existing Phase 12 Contact Routing records. It does not alter Prospector tables, existing authentication triggers, existing shared organization records, or prior CALLORIA phase tables.
+
+**Do not rerun migrations 001–013.** Do not execute migration 014 more than once. Verify the database migration history before applying it.
+
+### Edge Function webhook callback
+
+`https://<SUPABASE_PROJECT_REF>.supabase.co/functions/v1/calloria-whatsapp`
+
+The Meta callback uses GET for webhook verification and signed POST requests for event delivery. Subscribe to the `messages` field. The endpoint processes only the phone number ID matching `CALLORIA_META_PHONE_NUMBER_ID`.
+
+### Supabase Edge Function secrets
+
+Set these under **Supabase Dashboard → Edge Functions → Secrets**:
+
+| Secret | Purpose |
 |---|---|
-| `voice-simulator.html` | `voice-simulator.html` |
-| `js/voice-simulator-engine.js` | `js/voice-simulator-engine.js` |
-| `js/voice-simulator-workbench.js` | `js/voice-simulator-workbench.js` |
-| `styles/voice-simulator.css` | `styles/voice-simulator.css` |
-| `tests/voice-simulator-engine.test.mjs` | `tests/voice-simulator-engine.test.mjs` |
-| `tests/voice-simulator-contract.test.mjs` | `tests/voice-simulator-contract.test.mjs` |
+| `CALLORIA_META_WEBHOOK_VERIFY_TOKEN` | Private string used for Meta's GET webhook challenge |
+| `CALLORIA_META_APP_SECRET` | Meta app secret used to verify `X-Hub-Signature-256` |
+| `CALLORIA_META_ACCESS_TOKEN` | Server-only Cloud API access token |
+| `CALLORIA_META_PHONE_NUMBER_ID` | The one approved/supported Meta sender phone-number ID |
+| `CALLORIA_META_GRAPH_API_VERSION` | Explicit supported API version in `vNN.0` format; use the version supported by the Meta app |
+| `CALLORIA_WHATSAPP_DATA_KEY` | Random secret of at least 32 bytes for AES-GCM data encryption |
+| `CALLORIA_WHATSAPP_LOOKUP_SECRET` | Independent random secret of at least 32 bytes for HMAC contact lookup |
 
-### Replace with the complete merged files included
+Existing secrets that must remain configured and unchanged:
 
-- `agent-desk.html` — Phase 12 Agent Desk page with a Voice Practice navigation link.
-- `vite.config.js` — Phase 12 multi-page Vite inputs plus `voice-simulator.html`.
-- `package.json` — Phase 12 dependency/script baseline with syntax checks for the two new browser modules.
+- `CALLORIA_AGENT_DESK_ENCRYPTION_SECRET` — must remain the same value already used by the Phase 8 Agent Desk; WhatsApp creates a compatible encrypted work-item summary.
+- `CALLORIA_ROUTING_ACCESS` — existing staff access map; approved WhatsApp staff entries must include `whatsapp` in `channels`.
+- `CALLORIA_ALLOWED_ORIGINS` — must include the production CALLORIA origin, e.g. `https://calloria.vercel.app`.
+- Supabase supplies `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to its Edge Function runtime. Do not expose the service-role key in browser/Vercel public variables.
 
-Review local changes before replacing those three files. Preserve any later edits in the actual repository. Do not replace `index.html`, the 3D game entry points, existing world/renderer files, existing Agent Desk workbench, Supabase functions, knowledge catalogue, migrations or any prior phase modules with older snapshots.
+Generate the new encryption and lookup secrets in a trusted password manager or secret generator. Keep them separate. Do not send them in chat, add them to GitHub, put them in `VITE_*` variables, or reuse the Groq key.
 
-## Build and deployment boundaries
+The browser still uses the existing public Vercel variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (or the configured publishable key). These are not substitutes for the server-side secrets above.
 
-- No Supabase migration is required.
-- No Edge Function deployment is required; the page calls the existing Agent Desk `whoami` endpoint solely to check staff authorisation.
-- The Vite multi-page configuration must include the new page or a direct deployed route may return 404.
-- The browser must already have the same public Supabase configuration and the existing Agent Desk function access map configured.
-- A full production build and browser end-to-end test require the complete user's Phase 12-integrated CALLORIA checkout. The overlay workspace does not contain the complete 3D simulator or every earlier phase file.
+## Operational controls
+
+- The Meta Business Messaging Policy requires opt-in for subsequent business-initiated messaging, requires businesses to respect opt-outs, and permits non-template replies to a user message only during the 24-hour customer-service window. Outside that window, only approved templates may be sent. This phase blocks free-form sends outside the window and deliberately does not implement templates.
+- Keep the WhatsApp Business profile, contact information, service descriptions and business identity accurate. Review Meta's current policy and message pricing for the Nigerian market before launch.
+- Do not ask customers for passwords, OTPs, PINs, CVVs, API keys, full card numbers or financial account numbers. The outbound check blocks common credential-request phrases, but it is a safety aid, not a complete content moderation system.
+- Do not use this channel for clinical diagnosis or treatment. Route immediate-risk disclosures to trained safeguarding staff and established human escalation paths. Avoid collecting sensitive health details that are not necessary for the requested support.
+- Do not repurpose WhatsApp thread information for unrelated profiling, nor expose one customer's messages to another customer.
+- Evidence references must point to a real consent record. Do not paste private conversation contents or sensitive details into the reference field.
+
+## Verification boundaries
+
+The package tests the local classification/normalisation utilities and checks source-level security/integration contracts. A passing local test suite does not prove that a Meta Business account is approved, webhooks are subscribed, Supabase secrets are correct, a live sender number is connected, or the Vercel site is deployed.
