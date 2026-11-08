@@ -1,31 +1,33 @@
-# CALLORIA Customer Avatar v1.5 — Installation
+# CALLORIA Customer World Integration v1.6
 
-This is a focused replacement for the customer avatar preview lifecycle. It reduces repeated WebGL context creation during the Customer Intelligence Lab's normal re-render cycle and updates customer body language when the latest agent response changes the reaction state.
+This additive upgrade places approved customer/visitor GLB characters into the existing production-world reception using the existing Three.js scene and animation loop. It does not create another WebGLRenderer. It also forwards synthetic Customer Intelligence Lab persona/reaction changes to the reception visitors.
 
 ## Files
 
-Replace:
-
-- `js/customer-avatar-stage.js`
-
 Add:
+- `js/customer-world-integration.js`
+- `build/calloria-customer-world-plugin.js`
+- `tests/customer-world-integration.test.mjs`
 
-- `js/customer-avatar-lifecycle.js`
-- `tests/customer-avatar-lifecycle.test.mjs`
+Replace the root `vite.config.js` with the supplied complete version. It preserves the current main entry points, public asset handling, existing world plugin and optimized GLB plugin, and adds the customer-world plugin.
 
-Do not replace `js/main.js`, `js/production-world.js`, `vite.config.js`, `package.json`, the customer intelligence engine, the GLB registry, or any original GLB files.
+Do not replace `js/main.js`, `js/production-world.js`, `package.json`, the existing customer-intelligence engine, or any GLB asset.
 
-## Requirements
+## Important behavior
 
-This patch expects the existing v1.4 customer-avatar files and current CALLORIA GLB loader/registry. It uses the existing Three.js dependency and does not add packages or change build configuration.
+- Only `robbert-visitor` and/or `ribbert-customer` models explicitly approved in the GLB Asset Inspector are eligible.
+- Models must pass the existing runtime customer-rig validator.
+- Low/balanced graphics tiers show one customer. High tier may show two.
+- Characters appear in the existing reception/check-in queue, not in a separate preview renderer.
+- The existing world renderer and animation loop are reused.
+- New customer sessions reset the reception characters to the selected persona's initial emotion. Each submitted response forwards the calculated customer reaction and patience to the world.
+- If no customer asset is approved or compatible, the existing workplace continues normally without forcing an unverified model into the scene.
+- Existing GLB files are not overwritten.
 
-## Verification
+## Run
 
-Run the project's normal test command and production build in CI. The included lifecycle tests are standalone Node tests. This package has not been tested against the live Vercel deployment or in a real browser/device; confirm the previous v1.4 build correction has passed before promoting this patch.
+Commit these files to `main`. Run the repository's existing tests and Vercel build. Then open the GLB Asset Inspector on the deployed origin and approve at least one suitable customer/visitor GLB. Refresh the CALLORIA workplace. Customer figures should appear at reception. Start a synthetic Customer Intelligence Lab scenario and submit an agent response; the reception visitor's body language/available animation should respond to the persona and calculated reaction.
 
-## Behaviour
+## Verification boundary
 
-- Same selected customer GLB: retains one renderer, scene, loaded model and animation mixer across panel re-renders; reattaches the canvas to the new DOM container and updates the emotional motion target.
-- Different selected customer GLB: disposes the previous stage and creates a new stage for the newly selected model.
-- No approved compatible GLB: keeps the existing instruction/fallback message; it does not display unapproved customer models.
-- Page exit: stops animation, disconnects observers/listeners and disposes the renderer and shared loader cache.
+The included tests validate the build transform and event bridge. They do not prove that either downloaded customer model passes the runtime rig test or that it looks natural in the actual browser. The world integration reports loaded/rejected model status through `calloria:customer-world-ready` and the optional `onCustomerWorldReady` callback.
