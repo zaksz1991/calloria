@@ -1,12 +1,13 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
+import { calloriaGLBWorldPlugin } from './build/calloria-glb-world-plugin.js';
 
 export default defineConfig({
   base: '/',
-  // CALLORIA's GLB files are stored under public/assets/models.
-  // Vite must copy public/ into dist/ for the deployed URLs to work.
+  // Required: all committed model files live under public/assets/models.
   publicDir: 'public',
   appType: 'spa',
+  plugins: [calloriaGLBWorldPlugin()],
   build: {
     outDir: 'dist',
     emptyOutDir: true,

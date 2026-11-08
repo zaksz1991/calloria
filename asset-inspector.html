@@ -20,7 +20,7 @@
       <div>
         <p class="eyebrow">GLB / GLTF QUALITY CONTROL</p>
         <h1>Asset inspection studio</h1>
-        <p class="intro-copy">Preview each committed model, verify that the browser can load it, and inspect geometry, materials, textures, skeletons and animation clips before it enters the live workplace.</p>
+        <p class="intro-copy">Preview each committed model and inspect geometry, materials, textures, skeletons and animation clips. Explicitly approve suitable agent models before the live workplace can use them.</p>
       </div>
       <div class="intro-actions">
         <button id="scanAllButton" class="button primary">Run compatibility scan</button>
@@ -59,7 +59,7 @@
         <article class="preview-panel panel">
           <div class="panel-heading preview-heading"><div><p class="eyebrow">LIVE MODEL PREVIEW</p><h2 id="previewTitle">Select a model</h2><p id="previewPath" class="file-path">No model selected</p></div><span id="previewStatus" class="status-pill neutral">NOT INSPECTED</span></div>
           <div id="previewHost" class="preview-host"><div class="preview-placeholder"><span class="placeholder-mark">C</span><strong>3D preview waiting</strong><small>Choose a model from the repository list.</small></div></div>
-          <div class="preview-toolbar"><span>Drag to rotate · Scroll to zoom · Right-drag to pan</span><div class="toolbar-actions"><select id="animationSelect" aria-label="Animation clip" disabled><option value="">No animation loaded</option></select><button id="playAnimationButton" class="button mini" disabled>Play</button><button id="resetCameraButton" class="button mini" disabled>Reset view</button></div></div>
+          <div class="preview-toolbar"><span>Drag to rotate · Scroll to zoom · Right-drag to pan</span><div class="toolbar-actions"><select id="animationSelect" aria-label="Animation clip" disabled><option value="">No animation loaded</option></select><button id="playAnimationButton" class="button mini" disabled>Play</button><button id="resetCameraButton" class="button mini" disabled>Reset view</button><button id="approveModelButton" class="button mini approval-button" disabled>Approve for workplace</button></div></div>
         </article>
 
         <section class="metrics-grid" aria-label="Model inspection metrics">

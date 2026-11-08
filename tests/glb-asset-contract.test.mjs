@@ -5,9 +5,9 @@ import { GLB_ASSET_REGISTRY, GLB_ASSET_BASE, getGLBAssetById } from '../js/glb-a
 
 const root = new URL('../', import.meta.url);
 
-test('catalogue contains the 16 committed CALLORIA GLB assets', () => {
+test('catalogue contains all 16 committed CALLORIA GLB assets', () => {
   assert.equal(GLB_ASSET_REGISTRY.length, 16);
-  assert.equal(new Set(GLB_ASSET_REGISTRY.map((asset) => asset.id)).size, GLB_ASSET_REGISTRY.length);
+  assert.equal(new Set(GLB_ASSET_REGISTRY.map((asset) => asset.id)).size, 16);
   assert.ok(GLB_ASSET_REGISTRY.every((asset) => asset.url.startsWith(GLB_ASSET_BASE) && asset.path.endsWith('.glb')));
 });
 
@@ -28,16 +28,25 @@ test('catalogue maps models to the repository paths supplied for CALLORIA', () =
   for (const [id, path] of Object.entries(expected)) assert.equal(getGLBAssetById(id).path, path);
 });
 
-test('Vite serves the public asset directory and builds the inspector as a page', async () => {
+test('Vite serves public assets and builds the inspector page', async () => {
   const config = await readFile(new URL('vite.config.js', root), 'utf8');
   assert.match(config, /publicDir:\s*'public'/);
   assert.match(config, /assetInspector:\s*resolve\(process\.cwd\(\),\s*'asset-inspector\.html'\)/);
+  assert.match(config, /calloriaGLBWorldPlugin\(\)/);
 });
 
-test('production loader uses Three GLTFLoader and skinned-safe cloning', async () => {
+test('GLB loader uses Three GLTFLoader and skinned-safe cloning', async () => {
   const source = await readFile(new URL('js/glb-asset-loader.js', root), 'utf8');
   assert.match(source, /GLTFLoader/);
   assert.match(source, /SkeletonUtils\.js/);
   assert.match(source, /export class CalloriaGLBAssetLoader/);
   assert.match(source, /export function inspectGLTFAsset/);
+});
+
+test('inspector requires human review approval before production use', async () => {
+  const html = await readFile(new URL('asset-inspector.html', root), 'utf8');
+  const source = await readFile(new URL('js/glb-asset-inspector.js', root), 'utf8');
+  assert.match(html, /id="approveModelButton"/);
+  assert.match(source, /approvedAssetIds/);
+  assert.match(source, /function canApproveForWorkplace/);
 });

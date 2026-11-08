@@ -17,6 +17,7 @@ const initialState = () => ({ filter: 'All', query: '', selectedId: '', scan: {}
 const storageKey = 'calloria.glb-inspector.v1';
 let state = initialState();
 try { state = { ...state, ...JSON.parse(localStorage.getItem(storageKey) || '{}') }; } catch { /* Local inspection history is optional. */ }
+if (!Array.isArray(state.approvedAssetIds)) state.approvedAssetIds = [];
 const loader = new CalloriaGLBAssetLoader();
 const reportMap = new Map(Object.entries(state.reports || {}));
 let renderer;
@@ -195,6 +196,25 @@ function buildWarnings(report) {
   return warnings;
 }
 
+function canApproveForWorkplace(report) {
+  if (!report || report.category !== 'Characters' || report.group !== 'Agents') return false;
+  if (!report.hasRig || report.animationCount < 1 || report.triangleCount > 150000) return false;
+  if (!report.dimensions || report.dimensions.y < 1 || report.dimensions.y > 2.6) return false;
+  return report.animations.some((clip) => /idle|stand|standing|rest|breath|listen|talk|conversation|sit|sitting|seated|typing|type|computer|desk|work/i.test(clip.name));
+}
+
+function updateApprovalButton(report) {
+  const button = $('#approveModelButton');
+  if (!button) return;
+  const approved = state.approvedAssetIds.includes(report?.id);
+  button.disabled = !canApproveForWorkplace(report);
+  button.textContent = approved ? 'Approved · remove' : 'Approve for workplace';
+  button.setAttribute('aria-pressed', approved ? 'true' : 'false');
+  button.title = canApproveForWorkplace(report)
+    ? 'Visual approval is your decision. Only approved, rigged agent models with animation clips can enter the live workplace.'
+    : 'Approval requires an agent character, a skeleton, at least one suitable animation, human-scale dimensions and no more than 150,000 triangles.';
+}
+
 function renderReport(report) {
   $('#metricTriangles').textContent = money(report.triangleCount);
   $('#triangleRating').textContent = complexityLabel(report.triangleCount);
@@ -221,6 +241,7 @@ function renderReport(report) {
   $('#reportDetails').innerHTML = items.map(([label, value]) => `<div class="report-item"><span>${escapeHTML(label)}</span><strong>${escapeHTML(value)}</strong></div>`).join('');
   $('#warningList').innerHTML = buildWarnings(report).map(([className, message]) => `<div class="${className}">${escapeHTML(message)}</div>`).join('');
   $('#downloadReportButton').disabled = reportMap.size === 0;
+  updateApprovalButton(report);
   updateSummary();
 }
 
@@ -233,6 +254,8 @@ function resetMetrics() {
   $('#metricAnimationNames').textContent = 'No clips inspected';
   $('#metricFileSize').textContent = 'File size: —';
   $('#reportClass').textContent = 'Awaiting model';
+  $('#approveModelButton').disabled = true;
+  $('#approveModelButton').textContent = 'Approve for workplace';
   $('#reportDetails').innerHTML = '<p class="empty-report">Load a model to populate its technical report.</p>';
   $('#warningList').replaceChildren();
 }
@@ -360,6 +383,7 @@ function downloadReport() {
     reportType: 'GLB asset compatibility scan',
     generatedAt: new Date().toISOString(),
     catalogueCount: GLB_ASSET_REGISTRY.length,
+    approvedAssetIds: [...state.approvedAssetIds],
     reports: GLB_ASSET_REGISTRY.map((asset) => reportMap.get(asset.id) || {
       id: asset.id, name: asset.name, url: asset.url, status: state.scan?.[asset.id]?.status || 'not_inspected', error: state.scan?.[asset.id]?.error || null
     }),
@@ -385,6 +409,21 @@ $('#categoryFilters').addEventListener('click', (event) => {
 });
 $('#scanAllButton').addEventListener('click', () => void runFullScan());
 $('#downloadReportButton').addEventListener('click', downloadReport);
+$('#approveModelButton').addEventListener('click', () => {
+  const report = reportMap.get(state.selectedId);
+  if (!canApproveForWorkplace(report)) return;
+  const approved = new Set(state.approvedAssetIds);
+  if (approved.has(report.id)) approved.delete(report.id);
+  else approved.add(report.id);
+  state.approvedAssetIds = [...approved];
+  persist();
+  updateApprovalButton(report);
+  setScanStatus(
+    approved.has(report.id) ? 'Model approved for workplace integration' : 'Workplace approval removed',
+    `${report.name} · this approval is stored in this browser only.`,
+    100
+  );
+});
 $('#resetCameraButton').addEventListener('click', () => {
   if (!controls) return;
   camera.position.set(3.9, 2.6, 4.8);
