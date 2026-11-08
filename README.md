@@ -1,136 +1,164 @@
-# CALLORIA Phase 15 — Resend Email Support Channel
+# CALLORIA Phase 16 — RuffNeck Website Live Chat & Self-Service Widget
 
-## Scope
+## Release scope
 
-Phase 15 adds a provider-connected email channel to the Phase 14-integrated CALLORIA project. It uses Resend for inbound receiving and outbound customer-service replies. It is an incremental overlay, not a complete replacement repository.
+Phase 16 adds one guest-first, first-party web-chat channel for the six RuffNeck websites and a staff Live Chat Inbox. It extends the Phase 15-integrated CALLORIA project. It is an incremental overlay, not a replacement for the simulator, 3D world, prior support channels or existing application modules.
 
-The staff workspace is `/email-inbox.html` and is linked from Agent Desk and WhatsApp Inbox.
+### Customer experience
 
-### Included
+- A self-service-first floating support widget is served by CALLORIA at the stable path `/widgets/calloria-chat.js`.
+- A separate widget configuration is used on each of the six RuffNeck product websites; the backend derives the product identity from the browser's exact `Origin`, not the customer-supplied product field.
+- Guests can use the widget without registration, password or account creation.
+- Quick-help cards provide product-specific steps and a link to the relevant platform homepage.
+- Customers can begin a private conversation by choosing a topic, language and message, then giving explicit consent to encrypted storage and authorised staff handling.
+- The chat does not collect a name, email address or telephone number. Common email, phone, card-like number and credential patterns are redacted before persistence.
+- A random 256-bit visitor token is returned once. Only its SHA-256 hash is stored server-side. The browser keeps the token in `sessionStorage`, scoped to that product website and browser tab. Clearing browser session storage or changing devices loses the customer-side session; a new request can be opened.
+- Visitor messages are refreshed by polling every six seconds while the widget is open and the page is visible. This is near-live polling, not a WebSocket or carrier connection.
+- Each message send uses a client-generated idempotency UUID retained through retries; the database enforces uniqueness per conversation so a retry after an ambiguous network response does not create a duplicate message.
+- The customer can continue messaging while the route is queued or assigned. When the route is completed, the widget becomes read-only and the customer may start another chat.
 
-- Resend `email.received` webhook with Svix signature validation over the exact raw request body before JSON parsing.
-- Inbound email body/header retrieval through the Resend Receiving API; webhook metadata is not mistaken for full email content.
-- Strict routing only for the exact receiving addresses configured in `CALLORIA_EMAIL_INBOUND_ADDRESSES`.
-- Email parsing, safe HTML-to-text conversion, common-language detection for English, Hausa, Yoruba, Igbo and Nigerian Pidgin, and heuristic routing across all six RuffNeck products plus customer-care topics.
-- Automatic Contact Routing creation/attachment using the existing Phase 12 route creation flow and Phase 8 Agent Desk encrypted-summary key.
-- Email thread matching by RFC Message-ID, In-Reply-To and References; sent Resend Message-IDs are retrieved where available and added to a bounded thread-reference index for subsequent replies.
-- AES-256-GCM/HKDF encryption for email addresses, display names, subject, body and attachment metadata. Sender lookup and thread correlation use a separate keyed HMAC.
-- Staff sign-in through Supabase Auth and the existing `CALLORIA_ROUTING_ACCESS` map. A staff grant must explicitly include `email`, a permitted department and existing contact-centre skill scope.
-- Normal agents must claim the linked Contact Routing item before they can read or reply. Supervisors remain restricted to their department scope.
-- Human-authorised, plain-text transactional replies through the Resend API. Replies include `In-Reply-To` and `References` headers to preserve mail-client threading where Message-ID data is available. The optional Reply-To environment value is validated as a mailbox before use.
-- A per-staff outbound limit of 20 sends per minute. An ambiguous provider/network result is marked `unknown` and blocks another send on that thread until staff inspect the Resend log. CALLORIA does not automatically retry an ambiguous send.
-- Encrypted attachment metadata only. The channel does not download, open, inspect or scan attachment contents.
-- Explicit retention purge function: email threads and encrypted message records become eligible after 180 days when no active route remains; webhook idempotency rows after 30 days; send-limit buckets after two days.
+### Routing and staff handling
 
-### Deliberate limitations
+- Every accepted conversation creates a `live_chat` Contact Routing request and the existing Agent Desk work item in the same database transaction as the initial encrypted message.
+- Topic-to-department, skill and priority mapping reuses the approved Phase 12 routing categories. Complaints start high priority. Safeguarding starts urgent and requires the safeguarding skill.
+- A small additional keyword safety net can elevate some English, Hausa, Yoruba, Igbo and Pidgin phrases to urgent safeguarding. It is only a conservative routing aid: it is not a complete crisis detector or substitute for trained human review.
+- Agents must first claim the interaction through the existing Routing Control page. The new Live Chat Inbox only shows conversations inside the staff member's department and assignment scope. Agent access also checks the approved specialist skill.
+- Supervisors can view conversations within their permitted departments. Replies are allowed only while the linked route remains assigned.
+- Staff use `/live-chat-inbox.html`. Links are added to Agent Desk, WhatsApp Inbox and Email Inbox.
+- The existing `CALLORIA_ROUTING_ACCESS` map must explicitly include `live_chat` for each authorised user. No wildcard is added automatically.
 
-- This release connects Resend, not Gmail, Microsoft 365, Outlook or another existing shared mailbox. Use a Resend-managed `.resend.app` receiving address or a dedicated custom receiving domain/subdomain.
-- It handles customer-initiated service emails and agent replies. Email campaigns, bulk marketing, promotional cross-sell, automated follow-ups and unattended outbound email are not implemented.
-- Outbound replies are plain text only. HTML email templates, signature management, inline images and attachment sending are not included.
-- Attachments are represented by encrypted metadata only. No file download, malware scanning, antivirus verdict, preview or secure-upload processing is provided. Staff must not open unexpected attachments; request files through an approved secure upload method.
-- The inbox currently displays up to 100 most recent threads visible to the staff permission scope. It does not implement a full historical export or provider mailbox synchronisation.
-- Inbound language/intent classification is heuristic, not AI translation or a definitive assessment. Staff must confirm the actual customer need.
-- Resend acceptance is not proof of delivery or that the recipient read the message. Delivery/bounce/complaint status webhooks and in-app deliverability reporting are not included in this phase.
-- The retention purge function is not scheduled automatically. Configure a trusted Supabase Cron invocation before treating deletion as automated.
+### Privacy and security boundaries
 
-## Integration baseline and files
+- Message bodies are encrypted at application level using AES-256-GCM with an HKDF-derived key. They are not stored as plaintext in the new message table.
+- The initial Agent Desk work-item summary uses the existing Phase 8 HKDF/AES-GCM derivation and the exact existing `CALLORIA_AGENT_DESK_ENCRYPTION_SECRET`, so the Agent Desk can read the routed work item. Do not rotate that existing secret.
+- Visitor tokens are random 256-bit hex values; only SHA-256 token hashes are stored. Token checks are constant-time comparisons.
+- Public browser origins are exact-allowlisted. The Edge Function also checks the origin against a fixed six-product origin-to-platform map. CORS is not treated as the visitor authentication mechanism; the unguessable visitor token is required for every history or send operation.
+- Staff requests require a Supabase Auth user JWT and an explicit server-side `CALLORIA_ROUTING_ACCESS` grant. The function has `verify_jwt = false` because public guest requests share the endpoint; staff authentication is enforced in the handler. Supabase documents the distinction between gateway JWT verification and handler-level authorization in its [Authorization headers guide](https://supabase.com/docs/guides/functions/auth-headers).
+- All three new tables have RLS enabled, and direct `anon`, `authenticated` and `public` table privileges are revoked. Only the service role can reach the data through this Edge Function. This follows Supabase's guidance to combine RLS with explicit grants and to protect `SECURITY DEFINER` functions with a pinned `search_path` and narrowed execute grants ([RLS guide](https://supabase.com/docs/guides/database/postgres/row-level-security), [database functions guide](https://supabase.com/docs/guides/database/functions)).
+- Rate limits: five new chats per ten-minute connection fingerprint, fifteen customer messages per minute per session, thirty history fetches per minute per session, thirty staff replies per minute per staff account. Only HMAC fingerprints are persisted; raw client IP is not stored.
+- A conversation is limited to 300 messages. Message text is limited to 3,000 characters. Attachments, file uploads, customer names, phone numbers, email addresses, payments and account changes are not supported in this channel.
+- All customer text is rendered using `textContent`; message HTML is never injected into the DOM.
+- Do not treat browser storage, consent or origin checks as identity verification for a RuffNeck account. This is a conversation support channel, not a login or account-recovery proofing flow.
 
-Base this overlay on the Phase 14-integrated CALLORIA repository. Preserve the existing game files, entry experience, prior phase modules and any local changes.
+## Files added
 
-New files:
+| Package path | Purpose |
+|---|---|
+| `widgets/calloria-chat.js` | Embeddable, self-service-first widget. Vite emits it at `/widgets/calloria-chat.js`. |
+| `live-chat-inbox.html` | Staff inbox page. |
+| `styles/live-chat-inbox.css` | Responsive staff inbox styling. |
+| `js/live-chat-inbox-workbench.js` | Supabase Auth and staff inbox workbench. |
+| `js/web-chat-engine.js` | Browser-side topic, language and self-service catalogue validation used by tests. |
+| `supabase/functions/calloria-web-chat/index.ts` | Guest and staff request handler. |
+| `supabase/functions/calloria-web-chat/web-chat-engine.ts` | Function-local routing and redaction logic. |
+| `supabase/functions/calloria-web-chat/deno-globals.d.ts` | Local TypeScript declarations. |
+| `supabase/migrations/202611080016_calloria_web_chat.sql` | Isolated web-chat tables and service-role functions. |
+| `tests/web-chat-engine.test.mjs` | Topic, language, safeguarding and redaction tests. |
+| `tests/web-chat-contract.test.mjs` | Origin, RLS, routing, widget and staff-scope contract tests. |
 
-- `email-inbox.html`
-- `js/email-engine.js`
-- `js/email-inbox-workbench.js`
-- `styles/email-inbox.css`
-- `supabase/functions/calloria-email/index.ts`
-- `supabase/functions/calloria-email/email-engine.ts`
-- `supabase/functions/calloria-email/deno-globals.d.ts`
-- `supabase/migrations/202611080015_calloria_email_channel.sql`
-- `tests/email-engine.test.mjs`
-- `tests/email-contract.test.mjs`
+### Merged/replacement files
 
-Complete replacement/merge files included:
+- `agent-desk.html` — adds a Live Chat Inbox navigation link.
+- `email-inbox.html` — adds a Live Chat navigation link.
+- `whatsapp-inbox.html` — adds a Live Chat navigation link.
+- `vite.config.js` — adds the Live Chat Inbox page and a stable, unhashed widget output path while retaining all Phase 15 page entries.
+- `package.json` — preserves existing Phase 15 scripts/dependencies and adds syntax checks for Phase 16 modules.
+- `supabase/config.toml` — preserves existing function settings and adds `calloria-web-chat` with `verify_jwt = false`.
+- `tsconfig.edge.json` — includes the new Edge Function for static TypeScript checking.
 
-- `agent-desk.html` — adds an Email Inbox link and clarifies that live provider-backed channels are handled in their dedicated inboxes.
-- `whatsapp-inbox.html` — adds an Email Inbox link.
-- `vite.config.js` — preserves the prior multi-page app inputs and adds `email-inbox.html`.
-- `package.json` — preserves the Phase 14 scripts and adds syntax checks for the new email browser modules.
-- `supabase/config.toml` — preserves prior settings and adds `calloria-email` with `verify_jwt = false`. Resend does not send a Supabase JWT to the webhook; the function validates the Svix signature and independently verifies Supabase Auth for staff requests.
-- `tsconfig.edge.json` — includes the new Email Edge Function in static checking.
-
-The Edge Function is self-contained in its folder; deploy the full `calloria-email/` directory, not just `index.ts`.
+The package also retains the Phase 15 source and verification README as references. The included migration 014 and 015 files are historical dependencies; they are not to be run again.
 
 ## Installation sequence
 
-1. Confirm the Phase 14-integrated repository contains Phase 12 Contact Routing, Phase 8 Agent Desk, Phase 14 WhatsApp, the prior application pages and the existing configured staff/security secrets.
-2. Merge the included `package.json`, `vite.config.js`, `supabase/config.toml` and `tsconfig.edge.json` with any project-specific changes. Do not replace other repository files wholesale.
-3. Add `email-inbox.html`, both `js/email-*` modules, `styles/email-inbox.css`, the full `supabase/functions/calloria-email/` folder and the two email tests. Use the included Agent Desk and WhatsApp Inbox HTML replacements or manually preserve the added Email Inbox navigation links.
-4. Check Supabase migration history. Confirm migrations `202611070001` through `202611070014` are already applied. Apply `202611080015_calloria_email_channel.sql` exactly once. Do not rerun earlier migrations.
-5. Deploy the complete `calloria-email` Edge Function folder.
-6. Set the new secrets listed below in **Supabase Dashboard → Edge Functions → Secrets**. Never put private provider, lookup or encryption keys in Vercel or browser `VITE_*` variables.
-7. In Resend, configure an inbound receiving address/domain and add a webhook subscribed to `email.received`. Use the callback URL below. Copy the webhook signing secret into `RESEND_WEBHOOK_SECRET`.
-8. Set `CALLORIA_EMAIL_INBOUND_ADDRESSES` to the exact lower-case email addresses configured to receive CALLORIA support mail. A received message addressed to an unlisted address is rejected from ingestion.
-9. Verify the outbound sender domain in Resend and set `CALLORIA_EMAIL_FROM` to a verified sender. Configure `CALLORIA_EMAIL_REPLY_TO` only when a valid, monitored reply mailbox is intended.
-10. Add `email` to the `channels` list only for the staff UUIDs authorised to handle email in the existing `CALLORIA_ROUTING_ACCESS` map. Ensure their department, skill and language scopes are accurate. Do not grant a wildcard department to ordinary agents.
-11. Confirm `CALLORIA_ALLOWED_ORIGINS` includes the production CALLORIA origin, e.g. `https://calloria.vercel.app`. Deploy the Vercel app only after migration, function and secrets are configured.
-12. Configure a trusted scheduled invocation of `public.calloria_email_purge_expired()` if automated retention deletion is required. Until that scheduler exists, expiry is recorded but deletion is not automatic.
+1. Use the Phase 15-integrated CALLORIA repository as the baseline. Preserve all user changes and all existing simulator/3D world files.
+2. Merge the included `package.json`, `vite.config.js`, `supabase/config.toml` and `tsconfig.edge.json`. Do not blindly replace newer local configuration.
+3. Add the widget, page, workbench, stylesheet, Edge Function folder and new tests. Use the included Agent Desk / Email Inbox / WhatsApp Inbox pages or preserve the new Live Chat navigation links in your customised versions.
+4. Check Supabase migration history. Confirm migrations `202611070001` through `202611080015` are already applied. Apply **only** `202611080016_calloria_web_chat.sql`, exactly once.
+5. Deploy the complete `supabase/functions/calloria-web-chat/` directory. Do not deploy only `index.ts`; the function-local `web-chat-engine.ts` is required.
+6. Add the new secrets listed below in **Supabase Dashboard → Edge Functions → Secrets**. Do not add private keys to Vercel or browser code.
+7. Add the six exact production product origins to `CALLORIA_WEB_CHAT_ALLOWED_ORIGINS` as a comma-separated list, with no trailing slash and no wildcard.
+8. Keep `CALLORIA_ALLOWED_ORIGINS` for CALLORIA staff functions. It must include the production CALLORIA origin used by `/live-chat-inbox.html`, e.g. `https://calloria.vercel.app`.
+9. Add `live_chat` to the `channels` array of every authorised user in the existing `CALLORIA_ROUTING_ACCESS` JSON map. Keep their real department, trained skills and languages; do not grant safeguarding to untrained staff. Agents need an explicit department. The map must also retain the `general_customer_care` foundation skill.
+10. Ensure the same authorised employee is still present in the existing Agent Desk access configuration where that configuration is used. Keep the permission scopes aligned.
+11. Deploy the updated CALLORIA Vercel site after the migration and Edge Function are configured. This publishes `/widgets/calloria-chat.js` and `/live-chat-inbox.html`.
+12. Add the appropriate embed snippet from `examples/platform-embed-snippets.md` to each RuffNeck website repository. This is a separate change in each of the six product repositories; this Phase 16 ZIP does not modify those repositories or deploy their frontends.
+13. On each product site, preserve the site's existing security headers/CSP and allow only the CALLORIA widget script host and Supabase Function endpoint in `script-src`/`connect-src` where those directives are defined. Do not disable the site's Content Security Policy.
+14. Configure the approved Supabase retention invocation for `public.calloria_webchat_purge_expired()` if scheduled deletion is required. The function exists, but this phase does not create a scheduler. Existing route retention and closure rules are preserved.
+15. Test at least one guest conversation from each of the six production origins, then claim the routed interaction through Routing Control, reply from the Live Chat Inbox, and confirm the reply appears in the customer's original browser session.
 
-## Supabase migration
+## Supabase secrets
 
-`202611080015_calloria_email_channel.sql`
-
-The migration creates only `calloria_email_*` tables and RPCs. It references the existing Phase 12 `calloria_route_requests` and `calloria_route_create_request` flow. It does not intentionally modify Prospector tables, shared authentication triggers, existing organization records or prior CALLORIA tables.
-
-**Do not rerun migrations 001–014.** The archive retains a copy of Phase 14 migration 014 for source continuity and regression checks; it is not a new migration and must not be applied again. Confirm the migration history and apply migration 015 exactly once.
-
-## Resend configuration
-
-### Inbound webhook callback
-
-`https://<SUPABASE_PROJECT_REF>.supabase.co/functions/v1/calloria-email`
-
-Subscribe to **`email.received`**. The function requires the Resend/Svix headers `svix-id`, `svix-timestamp` and `svix-signature`; it verifies the raw body before processing.
-
-Resend's inbound webhook payload contains message metadata. CALLORIA then fetches the full received email through the Receiving API before encrypting and storing it. See Resend's [Inbound Email documentation](https://resend.com/features/inbound) and [webhook signature guidance](https://resend.com/changelog/managing-webhooks-via-api).
-
-### Receiving domain safety
-
-You can start with a Resend-managed `<address>@<id>.resend.app` receiving address. For a branded receiving address, configure a dedicated domain or subdomain in Resend. If the root domain already receives mail through Google Workspace, Microsoft 365 or another provider, do **not** replace its root MX records for this integration. Use a separate receiving subdomain (for example, `support.example.com`) and follow the exact MX records Resend displays for that subdomain.
-
-### Supabase Edge Function secrets
-
-Set these new values under **Supabase Dashboard → Edge Functions → Secrets**:
+Add these new values under **Supabase → Edge Functions → Secrets**:
 
 | Secret | Purpose |
 |---|---|
-| `RESEND_API_KEY` | Server-only Resend API key for receiving retrieval and human-authorised replies |
-| `RESEND_WEBHOOK_SECRET` | Resend webhook signing secret (normally begins with `whsec_`) |
-| `CALLORIA_EMAIL_FROM` | Verified sender, e.g. `CALLORIA Support <support@your-verified-domain.example>` |
-| `CALLORIA_EMAIL_REPLY_TO` | Optional valid monitored reply address |
-| `CALLORIA_EMAIL_INBOUND_ADDRESSES` | Exact comma-separated lower-case addresses allowed to enter CALLORIA |
-| `CALLORIA_EMAIL_DATA_KEY` | Independent random secret with at least 32 bytes for AES-GCM encryption |
-| `CALLORIA_EMAIL_LOOKUP_SECRET` | Separate random secret with at least 32 bytes for HMAC thread and sender lookup |
+| `CALLORIA_WEB_CHAT_ALLOWED_ORIGINS` | Exact comma-separated six product origins listed below. |
+| `CALLORIA_WEB_CHAT_DATA_KEY` | Independent random secret, at least 32 bytes, used for chat message AES-256-GCM/HKDF encryption. |
+| `CALLORIA_WEB_CHAT_LOOKUP_SECRET` | Separate independent random secret, at least 32 bytes, used for visitor-rate HMACs and request fingerprints. |
+
+`CALLORIA_WEB_CHAT_ALLOWED_ORIGINS` value:
+
+```text
+https://ruffneck-lms.vercel.app,https://ruffneck-prospector.vercel.app,https://ruffneck-connect.vercel.app,https://ruffneck-social-hub.vercel.app,https://kano-run.vercel.app,https://kano-keke.vercel.app
+```
 
 Existing secrets that must remain configured and unchanged:
 
-- `CALLORIA_AGENT_DESK_ENCRYPTION_SECRET` — must remain the exact same value used by the existing Phase 8 Agent Desk so its routed interaction summaries can be decrypted by authorised staff.
-- `CALLORIA_ROUTING_ACCESS` — existing staff permission map; authorised email staff must include `email` in `channels`.
-- `CALLORIA_ALLOWED_ORIGINS` — must include the deployed CALLORIA origin.
+- `CALLORIA_AGENT_DESK_ENCRYPTION_SECRET` — the exact existing Phase 8 secret, reused to encrypt the Agent Desk summary. Do not rotate it.
+- `CALLORIA_ROUTING_ACCESS` — extend only the authorised staff entries to include `live_chat` and accurate skills/departments/languages.
+- `CALLORIA_ALLOWED_ORIGINS` — retain the existing CALLORIA staff origin allowlist.
 - Supabase supplies `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the Edge Function runtime.
 
-Do not alter or repurpose `GROQ_API_KEY`, the Prospector secrets or any existing provider credentials. Generate both new encryption/lookup secrets independently using a trusted password manager or secret generator. Never send them in chat, commit them to GitHub or add them to Vercel public environment variables.
+Do not change `GROQ_API_KEY`, any existing Prospector credentials, the WhatsApp provider secrets or the Resend email secrets. Do not place `CALLORIA_WEB_CHAT_DATA_KEY`, `CALLORIA_WEB_CHAT_LOOKUP_SECRET`, the service-role key or any provider secret in Vercel `VITE_*` variables.
 
-The browser continues to use the existing public `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (or configured publishable key). These public values are not substitutes for server-side secrets.
+The widget needs only the Supabase project URL and the public anon/publishable key. Those public values are intentionally visible in browser code. They are not private encryption or service-role secrets.
 
-## Operational controls
+## Embedding on the six product websites
 
-- Every inbound request must pass signed webhook validation, exact recipient allowlisting and sender/address validation before it can be stored.
-- Full sender address, display name, subject, body and attachment metadata are encrypted at rest. Sender and thread correlation use keyed HMAC values rather than plaintext indexed identifiers.
-- The browser renders message content using `textContent`; it does not inject customer-provided HTML into the page.
-- Customer messages are attached to the existing department and skill routing system. Agents cannot read or reply until the associated route is assigned to them. Supervisors are limited to their configured departments.
-- Outbound is restricted to a staff reply on an assigned email route. It is not a newsletter, marketing, lead-nurture or cross-sell campaign engine.
-- If Resend returns an ambiguous timeout/server result, CALLORIA marks it `unknown` and blocks subsequent sends for that thread. Staff must inspect Resend's email logs and recipient mailbox before deciding whether a manual retry is safe.
-- A successful Resend API response means accepted by the provider, not delivered, read or acted upon by the customer.
-- Do not open unexpected customer attachments. This release only stores attachment metadata and does not perform malware scanning.
-- Personal guidance, crisis and other sensitive enquiries continue to follow the existing safeguarding and human escalation policies. Email intake classification is only a routing aid, not a diagnosis or clinical service.
+Use the six product-specific examples in `examples/platform-embed-snippets.md`. The generic format is:
+
+```html
+<script defer
+  src="https://calloria.vercel.app/widgets/calloria-chat.js"
+  data-calloria-chat
+  data-platform="ruffneck-learn"
+  data-endpoint="https://YOUR_SUPABASE_PROJECT_REF.supabase.co/functions/v1/calloria-web-chat"
+  data-anon-key="YOUR_PUBLIC_SUPABASE_ANON_OR_PUBLISHABLE_KEY"></script>
+```
+
+Place it before `</body>` on the corresponding product website. Use the matching `data-platform` from the six examples. The backend still derives and validates the product ID from the exact request origin; the `data-platform` attribute is only a local widget configuration guard.
+
+## Database migration
+
+`202611080016_calloria_web_chat.sql`
+
+Creates only:
+
+- `calloria_webchat_conversations`
+- `calloria_webchat_messages`
+- `calloria_webchat_rate_limits`
+- service-role-only rate-limit, conversation-create, atomic message-write and purge functions
+
+Conversation creation calls the Phase 12 `calloria_route_create_request` function inside a database transaction. That function creates the existing `calloria_ops_work_items` Agent Desk record and `calloria_route_requests` row. The web-chat conversation and first encrypted message are created in that same transaction, so a failed chat insert rolls back the routing work item too.
+
+Subsequent customer and staff messages are written through `calloria_webchat_add_message`. It locks the conversation and linked routing row, verifies that the session and route remain open, rechecks assignment before an agent reply, enforces the 300-message cap, inserts the encrypted message and updates the conversation timestamp atomically. Both visitor and staff retries use a stable client idempotency UUID. Message reads are capped at the same 300-message conversation limit.
+
+The migration references existing Phase 12 routing. It does not re-create or modify the route function, Agent Desk tables, authentication triggers, Prospector tables or any prior customer-care modules.
+
+**Do not rerun migrations 001–015.** Apply migration 016 once only after confirming its Phase 12/15 prerequisites.
+
+## Operational limitations
+
+- The widget is not yet embedded in the six platform deployments; those are six separate repository changes.
+- The widget uses six-second polling, not a persistent WebSocket. Background tabs pause polling.
+- The widget works only on the six hard-coded RuffNeck production domains and origins enabled in `CALLORIA_WEB_CHAT_ALLOWED_ORIGINS`. Preview deployments, custom domains and localhost are intentionally blocked until explicitly reviewed and added to the origin/product map.
+- It is an in-browser conversation. It does not send an email, SMS, WhatsApp notification or push alert when a customer closes the tab.
+- If the customer loses the tab/session storage or changes device/browser, they cannot recover that guest token. They can open a new chat.
+- This phase has no file uploads, attachments, voice/video calling, remote co-browsing, AI-generated customer replies, marketing broadcasts or payment/account changes.
+- The self-service text is a compact static copy of approved Phase 4 guidance. Dynamic pricing, product availability, live account status, course enrolment status and game inventory must still be checked on the respective platform.
+- Keyword-based safeguarding detection is incomplete. A customer can still choose the safeguarding topic directly. CALLORIA remains non-emergency support; urgent safety concerns require the approved human escalation process.
+- Full Vite application build, live database migration, live Supabase Edge Function deployment, browser-origin testing, end-to-end customer-to-agent testing and Vercel deployment were not performed for this overlay.
+
+## Verification
+
+See `VERIFICATION.md` for exact local checks and the boundary of what they prove.

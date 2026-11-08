@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07121d">
+  <meta name="description" content="Restricted CALLORIA first-party website live chat inbox.">
+  <title>CALLORIA · Live Chat Inbox</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/calloria-mark.svg">
+  <link rel="stylesheet" href="/styles/live-chat-inbox.css">
+</head>
+<body>
+  <div class="live-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="CALLORIA home"><span class="brand-mark">C</span><span><b>CALLORIA</b><small>LIVE CHAT OPERATIONS</small></span></a>
+      <nav aria-label="Staff navigation">
+        <a href="/agent-desk.html">Agent Desk</a><a href="/routing-control.html">Routing Control</a><a href="/whatsapp-inbox.html">WhatsApp</a><a href="/email-inbox.html">Email</a><a href="/customer-care">Customer Care</a>
+        <button id="sign-out" class="button quiet" hidden>Sign out</button>
+      </nav>
+    </header>
+    <main>
+      <section id="login-panel" class="login-wrap">
+        <div class="login-card">
+          <div class="eyebrow">RESTRICTED STAFF ACCESS</div>
+          <h1>Website Live Chat</h1>
+          <p class="muted">Sign in with a CALLORIA staff account that has explicit Live Chat channel permission. Agents must claim the linked request through Routing Control before opening or replying.</p>
+          <form id="login-form" class="stack-form">
+            <label>Staff email<input id="staff-email" type="email" autocomplete="username" required maxlength="180"></label>
+            <label>Password<input id="staff-password" type="password" autocomplete="current-password" required maxlength="200"></label>
+            <button class="button primary" type="submit">Sign in</button>
+            <div id="login-status" class="status" role="status" aria-live="polite"></div>
+          </form>
+          <p class="security-note">No public registration. Supabase Auth verifies the staff session; the server independently checks channel, specialist skill, assignment and department scope.</p>
+        </div>
+      </section>
+      <section id="workspace" hidden>
+        <div class="page-heading">
+          <div><div class="eyebrow">RUFFNECK ENTERTAINMENT · DIGITAL CUSTOMER CARE</div><h1>Website Live Chat</h1><p class="muted">One shared human-support inbox for the six RuffNeck platforms. Public chat uses guest sessions; agents reply only through assigned Contact Routing work.</p></div>
+          <div class="staff-card"><b id="staff-name">Staff member</b><small id="staff-scope">Live Chat permission</small></div>
+        </div>
+        <div class="notice-strip"><strong>Channel status</strong><span id="channel-config">Checking encrypted storage and website origins…</span></div>
+        <div class="metrics">
+          <article><span>Conversations in scope</span><strong id="metric-total">0</strong></article>
+          <article><span>Waiting for assignment</span><strong id="metric-queued">0</strong></article>
+          <article><span>Assigned conversations</span><strong id="metric-assigned">0</strong></article>
+          <article><span>Customer replied last</span><strong id="metric-followup">0</strong></article>
+        </div>
+        <div class="inbox-layout">
+          <aside class="conversation-panel">
+            <div class="panel-heading"><div><div class="eyebrow">GUEST WEBSITE SESSIONS</div><h2>Live conversations</h2></div><button id="refresh" class="button outline" type="button">Refresh</button></div>
+            <label class="search-label">Search permitted conversations<input id="conversation-search" type="search" placeholder="Search platform, route, topic or message"></label>
+            <div id="conversation-list" class="conversation-list"><div class="empty-state">Sign in to load conversations in your staff scope.</div></div>
+          </aside>
+          <section class="message-panel">
+            <div id="empty-detail" class="empty-detail"><div class="empty-icon">◌</div><h2>Select a conversation</h2><p>Customer messages and routing assignment details appear here after your permission is checked.</p></div>
+            <div id="conversation-detail" hidden>
+              <div class="thread-heading">
+                <div><div class="eyebrow" id="conversation-reference">CONVERSATION REFERENCE</div><h2 id="conversation-platform">Website customer</h2><p id="conversation-meta" class="muted"></p></div>
+                <span id="route-badge" class="route-badge">Checking assignment…</span>
+              </div>
+              <div id="route-meta" class="route-meta"></div>
+              <div id="message-history" class="message-history" aria-live="polite"></div>
+              <div class="reply-card">
+                <div class="reply-heading"><strong>Customer response</strong><span class="muted small">Human-authored · plain text</span></div>
+                <form id="reply-form">
+                  <label for="reply-text">Message<textarea id="reply-text" rows="4" maxlength="3000" placeholder="Write a clear, factual response. Never request passwords, PINs, OTPs, recovery codes or payment-card secrets." required></textarea></label>
+                  <div class="reply-footer"><small>Replies appear in the customer's open browser session. CALLORIA does not collect customer email or phone details in this channel.</small><button id="send-reply" class="button primary" type="submit">Send reply</button></div>
+                </form>
+                <div id="reply-status" class="status" role="status" aria-live="polite"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+        <div id="global-status" class="global-status status" role="status" aria-live="polite">Ready.</div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="/js/live-chat-inbox-workbench.js"></script>
+</body>
+</html>

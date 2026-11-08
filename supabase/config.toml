@@ -37,3 +37,6 @@ verify_jwt = false
 
 [functions.calloria-email]
 verify_jwt = false
+
+[functions.calloria-web-chat]
+verify_jwt = false

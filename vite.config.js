@@ -25,9 +25,14 @@ export default defineConfig({
         routingControl: resolve(process.cwd(), 'routing-control.html'),
         voiceSimulator: resolve(process.cwd(), 'voice-simulator.html'),
         whatsappInbox: resolve(process.cwd(), 'whatsapp-inbox.html'),
-        emailInbox: resolve(process.cwd(), 'email-inbox.html')
+        emailInbox: resolve(process.cwd(), 'email-inbox.html'),
+        liveChatInbox: resolve(process.cwd(), 'live-chat-inbox.html'),
+        calloriaChatWidget: resolve(process.cwd(), 'widgets/calloria-chat.js')
       },
       output: {
+        entryFileNames(chunk) {
+          return chunk.name === 'calloriaChatWidget' ? 'widgets/calloria-chat.js' : 'assets/[name]-[hash].js';
+        },
         manualChunks(id) {
           if (id.includes('/node_modules/three/')) return 'three-engine';
         }
