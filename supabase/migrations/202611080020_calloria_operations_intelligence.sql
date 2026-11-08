@@ -149,18 +149,42 @@ begin
   into v_departments from depts d left join created c using(department) left join resolved r using(department) left join active a using(department);
 
   with days as (
-    select generate_series(date_trunc('day',p_since),date_trunc('day',p_until - interval '1 second'),interval '1 day')::date day
+    select series.day_value::date as calendar_day
+    from generate_series(
+      date_trunc('day', p_since),
+      date_trunc('day', p_until - interval '1 second'),
+      interval '1 day'
+    ) as series(day_value)
   ), created as (
-    select created_at::date day,count(*) n from public.calloria_ops_work_items
-    where department=any(p_departments) and created_at >= p_since and created_at < p_until
-      and (p_staff_user_id is null or assigned_to=p_staff_user_id) group by created_at::date
+    select created_at::date as calendar_day, count(*) as n
+    from public.calloria_ops_work_items
+    where department = any(p_departments)
+      and created_at >= p_since and created_at < p_until
+      and (p_staff_user_id is null or assigned_to = p_staff_user_id)
+    group by created_at::date
   ), resolved as (
-    select resolved_at::date day,count(*) n from public.calloria_ops_work_items
-    where department=any(p_departments) and status='resolved' and resolved_at >= p_since and resolved_at < p_until
-      and (p_staff_user_id is null or assigned_to=p_staff_user_id) group by resolved_at::date
+    select resolved_at::date as calendar_day, count(*) as n
+    from public.calloria_ops_work_items
+    where department = any(p_departments)
+      and status = 'resolved'
+      and resolved_at >= p_since and resolved_at < p_until
+      and (p_staff_user_id is null or assigned_to = p_staff_user_id)
+    group by resolved_at::date
   )
-  select coalesce(jsonb_agg(jsonb_build_object('day',d.day,'received',coalesce(c.n,0),'resolved',coalesce(r.n,0)) order by d.day),'[]'::jsonb)
-  into v_daily from days d left join created c using(day) left join resolved r using(day);
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'day', d.calendar_day,
+        'received', coalesce(c.n, 0),
+        'resolved', coalesce(r.n, 0)
+      ) order by d.calendar_day
+    ),
+    '[]'::jsonb
+  )
+  into v_daily
+  from days d
+  left join created c using (calendar_day)
+  left join resolved r using (calendar_day);
 
   if p_staff_user_id is null then
     select jsonb_build_object(
