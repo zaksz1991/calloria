@@ -1,13 +1,17 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 import { calloriaGLBWorldPlugin } from './build/calloria-glb-world-plugin.js';
+import { calloriaMeshoptRuntimePlugin } from './build/calloria-meshopt-runtime-plugin.js';
 
 export default defineConfig({
   base: '/',
-  // Required: all committed model files live under public/assets/models.
+  // All committed models live under public/assets/models.
   publicDir: 'public',
   appType: 'spa',
-  plugins: [calloriaGLBWorldPlugin()],
+  plugins: [
+    calloriaGLBWorldPlugin(),
+    calloriaMeshoptRuntimePlugin()
+  ],
   build: {
     outDir: 'dist',
     emptyOutDir: true,
