@@ -46,3 +46,6 @@ verify_jwt = false
 
 [functions.calloria-voice-telephony]
 verify_jwt = false
+
+[functions.calloria-sms]
+verify_jwt = false

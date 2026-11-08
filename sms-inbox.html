@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#07121d" />
+  <meta name="description" content="CALLORIA restricted staff SMS support inbox." />
+  <title>CALLORIA · SMS Inbox</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/calloria-mark.svg" />
+  <link rel="stylesheet" href="/styles/sms-inbox.css" />
+</head>
+<body>
+  <div class="sms-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="CALLORIA home"><span class="brand-mark">C</span><span><b>CALLORIA</b><small>OMNICHANNEL OPERATIONS</small></span></a>
+      <nav class="topnav">
+        <a href="/agent-desk.html">Agent Desk</a><a href="/routing-control.html">Routing Control</a><a href="/voice-console.html">Voice</a><a href="/whatsapp-inbox.html">WhatsApp</a><a href="/email-inbox.html">Email</a><a href="/live-chat-inbox.html">Live Chat</a><a href="/social-inbox.html">Social</a>
+        <button id="sign-out" class="button quiet" type="button" hidden>Sign out</button>
+      </nav>
+    </header>
+    <main>
+      <section id="login-panel" class="login-wrap">
+        <div class="login-card">
+          <div class="eyebrow">RESTRICTED STAFF ACCESS</div>
+          <h1>SMS Inbox</h1>
+          <p class="muted">Handle customer-initiated SMS enquiries and service updates. Outbound marketing and bulk messaging are disabled.</p>
+          <form id="login-form" class="stack-form">
+            <label>Staff email<input id="staff-email" type="email" autocomplete="username" required maxlength="180"></label>
+            <label>Password<input id="staff-password" type="password" autocomplete="current-password" required maxlength="200"></label>
+            <button class="button primary" type="submit">Sign in to SMS support</button>
+            <div id="login-status" class="status" role="status" aria-live="polite"></div>
+          </form>
+          <p class="security-note">Supabase Auth and the server-side CALLORIA Routing staff permission map control access. No public registration.</p>
+        </div>
+      </section>
+      <section id="workspace" hidden>
+        <div class="workspace-heading">
+          <div><div class="eyebrow">RUFFNECK ENTERTAINMENT · CUSTOMER OPERATIONS</div><h1>SMS Support Inbox</h1><p class="muted">Customer-initiated messages enter skills-based queues. Claim the interaction through Routing Control before replying.</p></div>
+          <div class="staff-panel"><span id="staff-name">Staff member</span><small id="staff-scope">Department permissions</small></div>
+        </div>
+        <div class="provider-banner" id="provider-config" role="status">Checking Termii configuration…</div>
+        <div class="metric-row">
+          <article><span>Visible threads</span><strong id="metric-total">0</strong></article>
+          <article><span>Waiting</span><strong id="metric-queued">0</strong></article>
+          <article><span>Assigned</span><strong id="metric-assigned">0</strong></article>
+          <article><span>Awaiting reply</span><strong id="metric-reply">0</strong></article>
+        </div>
+        <div class="sms-grid">
+          <aside class="panel thread-panel">
+            <div class="panel-head"><div><div class="eyebrow">CUSTOMER MESSAGES</div><h2>SMS queue</h2></div><button id="refresh-inbox" class="button outline" type="button">Refresh</button></div>
+            <input id="thread-search" class="search-input" type="search" placeholder="Search reference, department or preview" aria-label="Search SMS threads">
+            <div id="thread-list" class="thread-list"><div class="empty-state">Your permitted SMS support threads will appear here after sign-in.</div></div>
+          </aside>
+          <section class="panel conversation-panel">
+            <div id="empty-detail" class="empty-detail"><div class="empty-symbol">▤</div><h2>Select an SMS thread</h2><p>Customer messages, routing status and reply controls appear here.</p></div>
+            <div id="thread-detail" hidden>
+              <div class="conversation-heading"><div><div class="eyebrow" id="route-reference">SMS THREAD</div><h2 id="thread-title">Customer SMS</h2><p id="thread-meta" class="muted"></p></div><span id="route-badge" class="route-badge">Awaiting claim</span></div>
+              <div id="route-meta" class="route-meta"></div>
+              <div id="thread-warning" class="thread-warning" hidden></div>
+              <div id="message-history" class="message-history" aria-live="polite"></div>
+              <form id="reply-form" class="reply-form">
+                <label>Customer-support reply<textarea id="reply-text" rows="4" maxlength="480" placeholder="Write a clear service response. Never include passwords, OTPs, PINs, payment data or API secrets." required></textarea></label>
+                <div id="sms-length-info" class="sms-length-info" aria-live="polite">0/480 characters · GSM-7 · 0 segments</div>
+                <div class="reply-footer"><span id="reply-policy" class="muted small">One-to-one customer support only. No marketing or bulk sends.</span><button id="send-reply" class="button primary" type="submit" disabled>Send SMS reply</button></div>
+                <div id="reply-status" class="status" role="status" aria-live="polite"></div>
+              </form>
+              <div class="notice-card"><strong>Customer choice and Nigerian DND</strong><p>CALLORIA honours its own STOP suppression and never sends marketing through this inbox. Customers can also manage network-level Do-Not-Disturb using NCC short code <b>2442</b>. A CALLORIA START message does not grant marketing consent.</p></div>
+            </div>
+          </section>
+        </div>
+        <div id="global-status" class="global-status status" role="status" aria-live="polite">Ready.</div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="/js/sms-inbox-workbench.js"></script>
+</body>
+</html>

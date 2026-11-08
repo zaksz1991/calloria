@@ -12,7 +12,7 @@ const departments = [
   'Social Media Support','Technical Support and IT','Quality Assurance and Customer Experience',
   'Safeguarding and Trained Human Support','Learning and Career Development'
 ];
-const channels = ['voice','email','live_chat','social','whatsapp','website','portal','game','back_office'];
+const channels = ['voice','email','live_chat','social','whatsapp','sms','website','portal','game','back_office'];
 const priorities = ['low','normal','high','urgent'];
 const statuses = ['pending','claimed','active','on_hold','after_contact_work','resolved','escalated','cancelled'];
 const transitions: Record<string, string[]> = {

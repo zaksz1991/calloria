@@ -26,7 +26,7 @@ const EMAIL_DEPARTMENTS = [
   'Social Media Support','Technical Support and IT','Quality Assurance and Customer Experience',
   'Safeguarding and Trained Human Support','Learning and Career Development'
 ];
-const STAFF_CHANNELS = ['voice','email','live_chat','social','whatsapp','website','portal','game','back_office'];
+const STAFF_CHANNELS = ['voice','email','live_chat','social','whatsapp','sms','website','portal','game','back_office'];
 const STAFF_SKILLS = ['platform_support','account_access','technical_support','sales','complaints','personal_guidance','safeguarding','learning_advice','social_support','general_customer_care'];
 type Grant = { role:'agent'|'supervisor'|'people_admin'; departments:string[]; skills:string[]; channels:string[]; languages:string[]; maxConcurrency:number };
 const accessMap:Record<string,Grant> = {};

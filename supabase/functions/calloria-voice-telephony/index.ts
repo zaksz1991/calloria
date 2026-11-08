@@ -21,7 +21,7 @@ const encoder=new TextEncoder();
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const UUID_ANY=/^[0-9a-f-]{36}$/i;
 const ALLOWED_SKILLS=['platform_support','account_access','technical_support','sales','complaints','personal_guidance','safeguarding','learning_advice','social_support','general_customer_care'];
-const ALLOWED_CHANNELS=['voice','email','live_chat','social','whatsapp','website','portal','game','back_office'];
+const ALLOWED_CHANNELS=['voice','email','live_chat','social','whatsapp','sms','website','portal','game','back_office'];
 const ALLOWED_LANGUAGES=['en','ha','yo','ig','pcm'];
 const DEPARTMENTS:string[]=[...new Set(VOICE_DEPARTMENTS.map(row=>row.department))];
 

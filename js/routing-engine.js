@@ -6,7 +6,7 @@ export const DEPARTMENTS = Object.freeze([
   'Technical Support and IT', 'Quality Assurance and Customer Experience',
   'Safeguarding and Trained Human Support', 'Learning and Career Development'
 ]);
-export const CHANNELS = Object.freeze(['voice','email','live_chat','social','whatsapp','website','portal','game','back_office']);
+export const CHANNELS = Object.freeze(['voice','email','live_chat','social','whatsapp','sms','website','portal','game','back_office']);
 export const LANGUAGES = Object.freeze(['en','ha','yo','ig','pcm']);
 export const PRIORITIES = Object.freeze(['low','normal','high','urgent']);
 export const PLATFORMS = Object.freeze([

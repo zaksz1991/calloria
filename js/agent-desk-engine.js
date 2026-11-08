@@ -1,5 +1,5 @@
 /** Pure domain rules for the CALLORIA Omnichannel Agent Desk. */
-export const CHANNELS = Object.freeze(['voice', 'email', 'live_chat', 'social', 'whatsapp', 'website', 'portal', 'game', 'back_office']);
+export const CHANNELS = Object.freeze(['voice', 'email', 'live_chat', 'social', 'whatsapp', 'sms', 'website', 'portal', 'game', 'back_office']);
 export const DIRECTIONS = Object.freeze(['inbound', 'outbound', 'internal']);
 export const PRIORITIES = Object.freeze(['low', 'normal', 'high', 'urgent']);
 export const STATUSES = Object.freeze(['pending', 'claimed', 'active', 'on_hold', 'after_contact_work', 'resolved', 'escalated', 'cancelled']);

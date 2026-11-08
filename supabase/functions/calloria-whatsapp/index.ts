@@ -20,7 +20,7 @@ const accessRaw = env('CALLORIA_ROUTING_ACCESS');
 const encoder = new TextEncoder();
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const CONSENT_SOURCES = ['customer_message','customer_webform','recorded_call','signed_form','existing_consent_record'];
-const STAFF_CHANNELS = ['voice','email','live_chat','social','whatsapp','website','portal','game','back_office'];
+const STAFF_CHANNELS = ['voice','email','live_chat','social','whatsapp','sms','website','portal','game','back_office'];
 const STAFF_SKILLS = ['platform_support','account_access','technical_support','sales','complaints','personal_guidance','safeguarding','learning_advice','social_support','general_customer_care'];
 const STAFF_DEPARTMENTS = [
   'RuffNeck Products and Platform Support','Sales and Service Enquiries','Complaints and Service Recovery',

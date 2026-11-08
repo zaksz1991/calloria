@@ -1,138 +1,138 @@
-# CALLORIA Phase 18 — Nigerian PSTN Voice Channel
+# CALLORIA Phase 19 — Termii SMS Support
 
-Phase 18 adds the first external telephone-network connector to CALLORIA using Signals by PressOne Programmable Voice. It is an incremental overlay on the Phase 17 project, not a replacement for the full CALLORIA game or earlier channel integrations.
+Phase 19 adds a restricted, one-to-one Nigerian SMS support channel to the Phase 18-integrated CALLORIA codebase.
 
-## What is included
+## What this phase adds
 
-- A staff-only Voice Operations page at `/voice-console.html`.
-- Inbound voice webhook with five language choices: English, Hausa, Yoruba, Igbo and Nigerian Pidgin.
-- Six call destinations: RuffNeck Products and Platform Support; Sales and Service Enquiries; Complaints and Service Recovery; Personal Development and Wellbeing Information; General Customer Care; Safeguarding and Trained Human Support.
-- Skills, department, language, published-shift and workload eligibility checks before a configured handset is rung.
-- New inbound voice interactions created in the existing Phase 12 Contact Routing / Agent Desk workflow.
-- Outbound callbacks only when the customer explicitly requested or agreed to the callback, the agent records a traceable consent-evidence reference, and a different supervisor or People Administrator approves it.
-- Customer phone number HMAC matching, server-side encryption, masked staff views, provider signature verification, idempotent provider events and call request deduplication.
-- Atomic reservation of a single on-call handset and a recheck of agent workload before outbound calls.
-- Recording is hard-disabled in the schema and OneML. No `Record` verb is generated.
+- A staff-only SMS inbox at `/sms-inbox.html`.
+- Termii inbound SMS webhook processing and delivery-report updates.
+- Routing into the existing CALLORIA Contact Routing and Agent Desk queues.
+- Classification for the full RuffNeck portfolio: Learn, Prospector, Connect, Social Hub, Kano Run and Kano Keke.
+- Support routing for platform/account access, technical issues, complaints, sales enquiries, personal guidance, learning/career and safeguarding.
+- Conservative English, Hausa, Yoruba, Igbo and Nigerian Pidgin language hints; agents must confirm language with customers.
+- One-to-one support replies only, using Termii's `dnd` channel. There is no bulk send or `generic` promotional fallback.
+- Staff access through Supabase Auth plus the existing `CALLORIA_ROUTING_ACCESS` permissions map.
+- SMS sender and body encryption, keyed phone lookup, webhook signature verification, idempotency and delivery-status tracking.
+- `STOP` / `START` / `HELP` command handling and CALLORIA-local opt-out enforcement.
+- Character-encoding and segment estimate in the composer (GSM-7 or UCS-2). This is an estimate, not a billing quote.
+- Recovery of outbound records stuck in `sending`: after three minutes they become `unknown`. The inbox blocks unsafe retry until staff checks Termii delivery records.
 
-## Important operating limits
+## Important scope boundaries
 
-This release is a telephone-network connector, not a full PBX or browser softphone:
+This is a source integration package, not an activated Termii account or deployed CALLORIA service. No provider API key, sender ID, account balance, paid plan, Supabase migration or Vercel deployment was created or changed here.
 
-- Calls ring a configured staff mobile handset. CALLORIA does not yet use the browser microphone.
-- Each department has one designated on-call handset in `CALLORIA_VOICE_RING_GROUPS_JSON`; it is not a multi-agent hunt group.
-- The inbound `<Dial>` action reports its result after the handset leg ends. The related Agent Desk item is therefore linked/assigned for post-call work, not presented as a live browser call-control session while the conversation is in progress.
-- Hold, mute, transfer, conference, supervisor whisper/barge, live monitoring, call recording, transcription and media streaming are not enabled.
-- When no eligible handset is available, CALLORIA creates a queued support route and tells the caller to use online support or call later. This package does not provide a voicemail box or an automatic queue callback.
-- Outbound calling is limited to an approved callback tied to an assigned inbound voice case. No cold calling, bulk dialing or automated marketing is included.
-- A provider timeout is treated as uncertain. CALLORIA blocks another attempt with the same idempotency request; staff must check the Signals call history before taking further action.
+CALLORIA SMS is not a marketing channel. Only a customer-originated support interaction may receive a one-to-one service response. The implementation is capped at one Nigerian mobile recipient per send, rejects promotional content, and uses the provider's `dnd` route only after that route is explicitly enabled by provider confirmation. It never silently falls back to `generic`.
 
-## Files added or updated
+The SMS composer estimates message segments because the GSM-7 and Unicode encoding paths have different segment capacities. Actual carrier/provider segmentation and charges depend on the submitted message and provider/network processing; the UI does not calculate a monetary price.
 
-- `voice-console.html` and `styles/voice-console.css`
-- `js/voice-telephony-engine.js` and `js/voice-console-workbench.js`
-- `supabase/functions/calloria-voice-telephony/`
-- `supabase/migrations/202611080018_calloria_voice_telephony.sql`
-- Updated `vite.config.js`, `package.json`, `tsconfig.edge.json`, `supabase/config.toml`
-- Updated Agent Desk, Email Inbox, WhatsApp Inbox, Live Chat Inbox and Social Inbox navigation links
-- Phase 18 automated tests in `tests/voice-telephony-*.test.mjs`
+### Two different STOP mechanisms
 
-## Integration baseline and preservation
+- `STOP` received by CALLORIA creates a CALLORIA-local suppression record and blocks CALLORIA outbound SMS. `START` can clear a keyword-based CALLORIA suppression, but a fresh customer-originated message must follow before the next staff reply. `START` does not grant marketing consent. A staff-imposed suppression cannot be removed by customer `START`.
+- Nigeria's network-level Do-Not-Disturb preference is controlled separately by the NCC short code `2442`. CALLORIA cannot turn off or override a subscriber's NCC DND selection. A CALLORIA `START` message does not change it.
 
-Use the Phase 17-integrated CALLORIA repository as the baseline. Merge the listed files and configuration entries into the existing project. Do not replace the entire repository with this overlay. Preserve `index.html`, `js/main.js`, `js/game.js`, 3D assets, earlier operations, Supabase migrations and existing environment variables.
+The provider's DND transactional route must be approved/activated by Termii for this specific account. Until then, outbound sending remains disabled by configuration.
 
-This archive contains migration copies for Phases 14–17 for continuity and regression checks. **Do not execute those earlier migration files again.** Check the Supabase migration history and apply only `202611080018_calloria_voice_telephony.sql`, once, after migrations 001–017 have already been applied successfully.
+## Integration baseline
 
-The migration creates only `calloria_voice_*` objects. It does not update, rename or delete Prospector tables, existing authentication triggers, or earlier CALLORIA tables. Do not rerun migrations 001–017.
+Merge this overlay into the **Phase 18-integrated** CALLORIA repository. It is not a standalone replacement for the entire game. It does not include the complete original game source or the root `index.html` and other Phase 1–18 application files that are expected to remain in the repository.
 
-## Supabase deployment
+Files in this package replace or extend the matching files in the Phase 18-integrated project. Preserve all other project files. In particular, do not replace the main game, `index.html`, original world files, or existing game assets with this overlay.
 
-1. In the Supabase project used by CALLORIA, confirm migrations 001–017 are present. Apply `202611080018_calloria_voice_telephony.sql` once.
-2. Deploy the complete `calloria-voice-telephony` Edge Function folder.
-3. Add the new secrets below in **Supabase → Edge Functions → Secrets**. Never place provider credentials in Vercel client-side environment variables or commit them to GitHub.
-4. Preserve existing secrets, especially `CALLORIA_AGENT_DESK_ENCRYPTION_SECRET`, `CALLORIA_ROUTING_ACCESS`, `CALLORIA_ALLOWED_ORIGINS` and all existing WhatsApp, Resend, Meta and Groq credentials.
-5. In the existing `CALLORIA_ROUTING_ACCESS` JSON, retain every current staff record and existing permission. Add `voice` to the channel array only for trained handlers. They also need the `general_customer_care` skill, their exact department skill, permitted language codes, and the correct role. Supported roles are `agent`, `supervisor` and `people_admin`; `maxConcurrency` must be 1–10.
-6. Configure the Signals Voice Application only after the function has been deployed and its webhook secrets have been saved.
+## Database migration
 
-### New Supabase Edge Function secrets
+New migration:
 
-| Secret | Required value |
+`supabase/migrations/202611080019_calloria_sms_channel.sql`
+
+Before applying it, confirm that CALLORIA migrations `001` through `018` are already present in the shared Supabase project's migration history and that the Phase 18 Contact Routing / Agent Desk schema exists. Apply migration `019` once only. Do not rerun migrations `001`–`018`.
+
+Migration 019 creates only `calloria_sms_*` tables/functions and expands the channel checks on the two existing CALLORIA operational routing tables (`calloria_ops_work_items` and `calloria_route_requests`) to allow `sms`. It does not intentionally change Prospector tables, generic profiles/organisations, existing authentication triggers, or shared access policies.
+
+New SMS tables:
+
+- `calloria_sms_threads`
+- `calloria_sms_messages`
+- `calloria_sms_suppressions`
+- `calloria_sms_preferences`
+- `calloria_sms_webhook_events`
+- `calloria_sms_send_limits`
+
+All have RLS enabled and direct browser privileges revoked. The Edge Function accesses them with the Supabase service role after doing its own staff authentication and permission checks. Do not place the service-role key in Vercel client environment variables.
+
+The migration also adds service-role-only maintenance functions:
+
+- `calloria_sms_reconcile_stale_sends()` — run by the inbox before queue display. It converts any outbound send left in `sending` for more than three minutes to `unknown`; a new customer inbound is required before a subsequent reply can be reserved.
+- `calloria_sms_purge_expired()` — deletes SMS threads/messages after 180 days and minimal webhook fingerprints after 30 days. Suppression and preference records are retained to protect the opt-out. The function is available but this package does not configure a scheduler; create a supported scheduled invocation in Supabase only after reviewing the organisation's retention policy.
+
+## Edge Functions
+
+New function:
+
+`supabase/functions/calloria-sms/`
+
+Deploy `calloria-sms` after applying migration 019.
+
+This package also includes updated copies of the existing Agent Desk, Contact Routing and provider-channel Edge Function folders. Their staff-permission validators now accept `sms` in the channel grant. Deploy these updated copies together with Phase 19, otherwise an existing channel/function may reject the new `sms` permission in `CALLORIA_ROUTING_ACCESS`:
+
+- `calloria-agent-desk`
+- `calloria-contact-routing`
+- `calloria-whatsapp`
+- `calloria-email`
+- `calloria-web-chat`
+- `calloria-social-inbox`
+- `calloria-voice-telephony`
+
+Keep the other function versions and settings intact. The package's `supabase/config.toml` includes `[functions.calloria-sms] verify_jwt = false` because Termii's webhook does not carry a Supabase user JWT; the Edge Function verifies the provider signature itself. Staff actions require Supabase Auth bearer validation inside the function.
+
+## Supabase Edge Function Secrets
+
+Add the following secrets through the Supabase dashboard's Edge Function Secrets UI. Do not add private values to Vercel or commit them to the repository.
+
+| Secret | Purpose |
 |---|---|
-| `SIGNALS_ACCOUNT_SID` | Voice Account SID (`AC` plus 32 hexadecimal characters) |
-| `SIGNALS_AUTH_TOKEN` | Voice Account auth token; also signs Signals webhooks |
-| `CALLORIA_VOICE_BUSINESS_NUMBER` | A Nigerian E.164 caller-ID number owned and eligible in the Signals project, e.g. `+2342013300117` |
-| `CALLORIA_VOICE_PUBLIC_URL` | Exact deployed function URL, without a trailing slash or query string: `https://<project-ref>.supabase.co/functions/v1/calloria-voice-telephony` |
-| `CALLORIA_VOICE_DATA_KEY` | New high-entropy secret, at least 32 UTF-8 bytes, for encrypted telephone numbers |
-| `CALLORIA_VOICE_LOOKUP_SECRET` | New independent high-entropy secret, at least 32 UTF-8 bytes, for keyed phone-number matching |
-| `CALLORIA_VOICE_AGENT_LINES_JSON` | JSON map from staff Auth UUID to an enabled, verified Nigerian mobile handset |
-| `CALLORIA_VOICE_RING_GROUPS_JSON` | JSON map from exact department name to one on-call staff Auth UUID |
-| `CALLORIA_VOICE_NUMBERS_JSON` | JSON array of the CALLORIA-owned Signals DIDs accepted for inbound calls; it must include the configured business caller-ID number |
+| `TERMII_API_KEY` | Termii account API key |
+| `TERMII_BASE_URL` | Exact account-specific HTTPS API base URL shown by Termii |
+| `TERMII_SENDER_ID` | Sender ID approved for the account (3–11 alphanumeric characters) |
+| `TERMII_WEBHOOK_SECRET` | Secret Termii uses to sign webhook payloads; confirm the value and signature header with Termii |
+| `TERMII_DND_ROUTE_ENABLED` | Set to literal `true` only after Termii confirms that DND transactional routing is enabled for the account; otherwise leave unset/false |
+| `CALLORIA_SMS_DATA_KEY` | New independent secret, at least 32 bytes, for SMS phone/body encryption |
+| `CALLORIA_SMS_LOOKUP_SECRET` | New independent secret, at least 32 bytes, for keyed phone lookup |
 
-Example `CALLORIA_VOICE_AGENT_LINES_JSON` shape (replace the placeholder UUID and number with actual staff data):
+Preserve the existing values of `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CALLORIA_ALLOWED_ORIGINS`, `CALLORIA_ROUTING_ACCESS`, and `CALLORIA_AGENT_DESK_ENCRYPTION_SECRET`. Do not rotate or reuse the Groq key or the WhatsApp, Resend, Meta or Signals provider credentials.
 
-```json
-{
-  "00000000-0000-4000-8000-000000000000": {
-    "phone": "+2348031234567",
-    "enabled": true
-  }
-}
-```
+`TERMII_BASE_URL` is account-specific. Use the exact HTTPS host from the Termii dashboard; do not guess a regional hostname. The implementation allows only HTTPS `termii.com` hosts and uses the documented `/api/sms/send` path.
 
-Example `CALLORIA_VOICE_RING_GROUPS_JSON` shape:
+### Staff permissions
 
-```json
-{
-  "RuffNeck Products and Platform Support": "00000000-0000-4000-8000-000000000000",
-  "Sales and Service Enquiries": "00000000-0000-4000-8000-000000000000",
-  "Complaints and Service Recovery": "00000000-0000-4000-8000-000000000000",
-  "Personal Development and Wellbeing Information": "00000000-0000-4000-8000-000000000000",
-  "General Customer Care": "00000000-0000-4000-8000-000000000000",
-  "Safeguarding and Trained Human Support": "00000000-0000-4000-8000-000000000000"
-}
-```
+In the existing `CALLORIA_ROUTING_ACCESS` secret, preserve every current staff record and permission. Add `sms` to the `channels` array only for employees authorised to handle SMS. Their records still require explicit department grants, supported language grants, appropriate skills, and the common `general_customer_care` skill. A `people_admin` grant cannot read customer message content.
 
-Example `CALLORIA_VOICE_NUMBERS_JSON` shape:
+For example, add the channel to a specific existing staff record; do not replace the entire access map with a sample. The supported channel name is exactly `sms`.
 
-```json
-[
-  { "number": "+2342013300117", "label": "RuffNeck Main Customer Care" }
-]
-```
+## Termii provider setup
 
-The placeholders above are examples, not real staff or telephone details. Every ring-group staff UUID must have an enabled agent line, `voice` permission, matching department, required skill, `general_customer_care`, and the selected language. Use the same exact department names shown above. The single-line-per-department design is intentional for this phase.
+1. Activate the Termii account and obtain the API key and the account-specific base URL.
+2. Complete sender ID registration/approval for the sender ID you will use.
+3. Confirm with Termii that the account can use the DND transactional route for legitimate customer-support responses. Keep `TERMII_DND_ROUTE_ENABLED` false until confirmation.
+4. Configure the inbound SMS and delivery-report webhook destination as:
 
-The Calls API uses HTTP Basic authentication with the Voice Account SID and auth token. Do not substitute a Signals API Bearer key; Signals documents these as separate credentials and APIs.
+   `https://<SUPABASE_PROJECT_REF>.supabase.co/functions/v1/calloria-sms`
 
-## Signals Voice Application settings
+5. Configure Termii to send the `X-Termii-Signature` header using the exact webhook signing secret stored as `TERMII_WEBHOOK_SECRET`. Do not assume that the Termii API key is also the webhook signing secret.
+6. Confirm the actual inbound SMS and delivery report event formats against the Termii account's webhook documentation/test facility before enabling production traffic. The parser accepts the tested `incoming_sms` / `message_id` field family, but live provider payload shape and delivery are not verified by this package.
+7. Verify one inbound support message and its routing entry, one delivery report, an opted-out number, and one reply to a customer-originated message in a controlled test before general activation.
 
-In the Signals console, create a Programmable Voice application and route the CALLORIA-owned DID to it.
+## Operational behaviour
 
-- **Voice URL:** `https://<project-ref>.supabase.co/functions/v1/calloria-voice-telephony?flow=inbound`
-- **Voice URL method:** `POST`
-- **Status callback URL:** `https://<project-ref>.supabase.co/functions/v1/calloria-voice-telephony?flow=status`
-- **Status callback method:** `POST`
-- **Fallback URL:** configure a short XML/OneML response hosted on infrastructure separate from the Supabase function. It should say CALLORIA is temporarily unavailable and hang up. Do not point the fallback back to the same function host.
+- Incoming SMS is normalised to Nigerian mobile `234` format and encrypted before persistence.
+- Sensitive credentials, customer email/phone strings and account/financial-like numbers are redacted from the stored message copy and routing summary.
+- `STOP`, `STOPALL`, `UNSUBSCRIBE`, `CANCEL`, `END` and `QUIT` activate CALLORIA-local suppression.
+- `START`, `UNSTOP` and `SUBSCRIBE` clear only a keyword-based CALLORIA suppression; the next separate customer message is required before a support reply. `START` is never marketing consent.
+- `HELP` creates a General Customer Care routing request; CALLORIA does not send an automatic outbound reply.
+- Agents must claim the work item through existing Routing Control before opening/replying in the SMS Inbox.
+- Only messages in a customer-initiated support thread may be answered. Replies are one-to-one and rate-limited to 20 per staff user per minute.
+- Unknown provider outcomes are not auto-retried. Staff must check the Termii message log. A stale `sending` record is marked `unknown` after three minutes to prevent a second send while the first might have succeeded.
+- This release has no MMS, attachments, broadcasts, bulk messages, automated promotional messages, scheduling, or customer-initiated outbound campaigns.
 
-`CALLORIA_VOICE_PUBLIC_URL` must match the exact scheme, host and path that Signals calls. The function uses the configured public URL plus the actual query string to verify `X-Twilio-Signature`. A host, path, port, or query mismatch causes a webhook rejection.
+## Verification boundary
 
-## Provider account, compliance and cost
-
-Signals requires full KYC verification before Developer Mode is enabled. The published Signals Terms of Service (updated 13 October 2026) list a Base plan of **₦500,000 per year excluding VAT**, including one Nigerian number and five simultaneous calls; Nigerian calls are listed at **₦14–₦19.50 per minute including VAT**. Additional numbers are listed at ₦15,000 or ₦25,000 per month depending on provider. Confirm the current order form, taxes, number availability and actual rates with Signals before purchasing or enabling billable traffic.
-
-This package does not create a Signals account, buy a phone number, enable Developer Mode, fund a balance or make a live call. Do not activate paid telephony until the organisation approves the recurring and per-minute charges.
-
-## Security and customer safeguards
-
-- Signals webhook requests are verified using the Voice Account auth token and the exact public URL plus sorted form fields.
-- Staff requests require a fresh Supabase Auth user check and explicit `voice` channel grant.
-- Customer and agent phone numbers are encrypted before database storage. Staff views show masked values; callback approval uses an HMAC lookup, not plaintext phone numbers.
-- Callback evidence must be traceable to the relevant interaction. A different supervisor or People Administrator must approve. Self-approval is blocked.
-- Callback approval is tied to the original route, requester and exact phone hash; the authorization is consumed once and expires after seven days.
-- The database rechecks shift and capacity inside a staff-scoped transaction. Inbound dial reservation prevents the same configured handset from being rung by two concurrent CALLORIA calls.
-- Outbound callback volume is capped at ten reservations per staff member per rolling hour.
-- Recording is fixed to `off`; no call media, recording or transcript is persisted by CALLORIA in this phase.
-- Provider timeouts are treated as uncertain rather than retried automatically.
-
-## Verification performed
-
-See `VERIFICATION.md`. The complete included Phase 14–18 test suite and Edge Function TypeScript typecheck are run before packaging. SQL has static contract checks, but this overlay has not been applied to a live Supabase database. The full production Vite build cannot be verified from this overlay alone because the repository's base game files and complete installed build environment are not included.
+The included checks validate JavaScript syntax, the Edge Function TypeScript project, HTML structure, configuration syntax, package tests and ZIP integrity. They do not execute SQL against your Supabase project, call Termii, verify sender ID/DND route activation, or deploy any source to GitHub/Vercel. The overlay also does not include the complete original game source, so a full repository production build must be run after merging it into the full Phase 18-integrated repository.

@@ -1,42 +1,27 @@
-# Phase 18 Verification Report
+# Phase 19 Verification Report
 
-## Automated checks
+## Automated checks completed
 
 | Check | Result |
 |---|---:|
-| Included Node test suite (Phases 14–18) | **111 passed, 0 failed** |
-| Phase 18 focused contract tests | **30 passed, 0 failed** |
-| `node --check js/voice-telephony-engine.js` | Passed |
-| `node --check js/voice-console-workbench.js` | Passed |
-| `node --check vite.config.js` | Passed |
-| `tsc --noEmit -p tsconfig.edge.json` | Passed |
-| Migration namespace/RLS/service-role checks | Passed (static) |
-| Provider signature, call-SID binding and status-sequence checks | Passed (static) |
-| Callback approval, idempotency and concurrency reservation checks | Passed (static) |
-| ZIP archive integrity | Passed after final packaging |
+| Combined included Node test suite | **133 passed, 0 failed** |
+| Phase 19 SMS unit + contract tests | **22 passed, 0 failed** |
+| Full included Supabase Edge Function TypeScript project (`tsc -p tsconfig.edge.json`) | **PASS** |
+| JavaScript syntax across included `js/`, `widgets/` and Vite config | **PASS** |
+| Root HTML parse and duplicate-ID scan | **PASS** |
+| JSON/TOML syntax checks | **PASS** |
+| ZIP archive integrity | **PASS** |
 
-## What was fixed during verification
+The combined test suite includes the Phase 14–18 regression tests plus the new Phase 19 SMS behaviour and integration contracts. The Phase 19 tests cover Nigerian number normalisation, data redaction, intent and language classification, STOP/START/HELP behaviour, delivery status mapping, DND-only payload construction, raw-body HMAC-SHA512 verification, channel permission integration, RLS/service-role boundaries, early delivery-report reconciliation, stale outbound-send recovery, DLR/send race reconciliation, and SMS segment estimates.
 
-- Confirmed the outbound work-item query explicitly retrieves `channel` before enforcing the `voice` restriction.
-- Callback route authorization now checks the staff member's allowed language as well as assignment, department and skills.
-- Added atomic handset reservation for inbound calls and a shared staff-scoped advisory lock for outbound reservations.
-- Rechecked shift and workload capacity inside the outbound database reservation function to reduce race conditions.
-- Counted active provider voice calls alongside active Agent Desk work when enforcing workforce concurrency.
-- Prevented an API response arriving late from replacing a newer status callback state.
-- Bound each signed Gather/Dial action to the exact registered inbound `CallSid` and direction.
-- Prevented status events from being written for unknown provider call IDs; retained out-of-order events without regressing the current call status.
-- Required the configured business caller ID to be a valid Nigerian number also present in the project's owned-number allowlist.
-- Corrected CORS preflight handling to return a body-less HTTP 204 response.
-- Returned a multilingual caller fallback when the handset dial fails.
+## Not performed / not verified
 
-## Not verified
+- Full Vite production build. This Phase 19 overlay does not include the complete original game repository and its main `index.html`/game source files. A full production build must run after this overlay is merged into the full Phase 18-integrated repository.
+- SQL migration execution or PostgreSQL runtime validation against the shared Supabase project.
+- Live Termii API credentials, sender-ID approval, account-specific base URL, webhook delivery, DND route activation, inbound SMS or delivery-report testing.
+- Real handset delivery, provider billing or carrier/network delivery timing.
+- GitHub commit or Vercel deployment.
 
-- No live Supabase migration was run.
-- No Supabase Edge Function was deployed or tested against the user's project.
-- No Signals account, API credential, number, paid plan or balance was created or changed.
-- No real inbound or outbound telephone call was placed.
-- Signals webhook signature verification was tested through unit/static contract tests, not a real provider delivery.
-- No full Vite production build or browser end-to-end test was run because this overlay does not contain the full CALLORIA base source, including the game entry files and all earlier phase files.
-- No GitHub commit or Vercel deployment was made.
+## Package integrity
 
-This is an incremental source overlay based on the Phase 17 integration package. It is not a live telephony deployment.
+The ZIP contains the Phase 18 integration overlay with Phase 19 updates, migration 019, the new `calloria-sms` Edge Function, staff SMS inbox and tests. It is a source overlay, not a standalone CALLORIA repository or a deployed provider connection.
