@@ -3,7 +3,9 @@ import { resolve } from 'node:path';
 
 export default defineConfig({
   base: '/',
-  publicDir: false,
+  // The GLB catalogue lives in public/assets/models. Vite must copy public/
+  // into dist/ so /assets/models/*.glb resolves after Vercel deployment.
+  publicDir: 'public',
   appType: 'spa',
   build: {
     outDir: 'dist',
@@ -32,6 +34,7 @@ export default defineConfig({
         smsInbox: resolve(process.cwd(), 'sms-inbox.html'),
         operationsIntelligence: resolve(process.cwd(), 'operations-intelligence.html'),
         knowledgeOperations: resolve(process.cwd(), 'knowledge-operations.html'),
+        assetInspector: resolve(process.cwd(), 'asset-inspector.html'),
         calloriaChatWidget: resolve(process.cwd(), 'widgets/calloria-chat.js')
       },
       output: {

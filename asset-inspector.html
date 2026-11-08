@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#081724">
+  <meta name="description" content="CALLORIA 3D asset inspector for GLB character, office and equipment models.">
+  <title>CALLORIA · 3D Asset Inspector</title>
+  <link rel="stylesheet" href="/styles/glb-asset-inspector.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Return to CALLORIA">C <span>CALLORIA</span></a>
+    <div class="topbar-title"><span>GRAPHICS PIPELINE</span><strong>3D ASSET INSPECTOR</strong></div>
+    <a class="back-link" href="/">Back to simulator</a>
+  </header>
+
+  <main class="page-shell">
+    <section class="intro-row">
+      <div>
+        <p class="eyebrow">GLB / GLTF QUALITY CONTROL</p>
+        <h1>Asset inspection studio</h1>
+        <p class="intro-copy">Preview each committed model, verify that the browser can load it, and inspect geometry, materials, textures, skeletons and animation clips before it enters the live workplace.</p>
+      </div>
+      <div class="intro-actions">
+        <button id="scanAllButton" class="button primary">Run compatibility scan</button>
+        <button id="downloadReportButton" class="button secondary" disabled>Export report</button>
+      </div>
+    </section>
+
+    <section class="summary-grid" aria-label="Asset catalogue summary">
+      <article class="summary-card"><span>REGISTERED ASSETS</span><strong id="assetTotal">16</strong><small>Models in this repository</small></article>
+      <article class="summary-card"><span>SUCCESSFULLY LOADED</span><strong id="loadedTotal">0</strong><small>Browser loader confirmations</small></article>
+      <article class="summary-card"><span>RIGGED CHARACTERS</span><strong id="riggedTotal">—</strong><small>Skinned meshes with skeletons</small></article>
+      <article class="summary-card"><span>ANIMATED MODELS</span><strong id="animatedTotal">—</strong><small>At least one animation clip</small></article>
+    </section>
+
+    <section class="scan-status" aria-live="polite">
+      <div class="scan-status-line"><strong id="scanStatusTitle">Ready for inspection</strong><span id="scanStatusText">Select a model to preview it, or run a sequential scan of the catalogue.</span></div>
+      <div class="progress-track"><div id="scanProgress" class="progress-fill"></div></div>
+    </section>
+
+    <section class="workspace">
+      <aside class="asset-sidebar panel">
+        <div class="panel-heading"><div><p class="eyebrow">LIBRARY</p><h2>Repository assets</h2></div><span id="visibleCount" class="count-pill">16</span></div>
+        <label class="search-label" for="assetSearch">SEARCH MODELS</label>
+        <input id="assetSearch" class="search-input" type="search" placeholder="Search by name or file…" autocomplete="off">
+        <div class="filter-row" id="categoryFilters">
+          <button class="filter-chip active" data-filter="All">All</button>
+          <button class="filter-chip" data-filter="Characters">Characters</button>
+          <button class="filter-chip" data-filter="Office">Office</button>
+          <button class="filter-chip" data-filter="Accessories">Accessories</button>
+        </div>
+        <div id="assetList" class="asset-list" aria-label="Available GLB models"></div>
+        <p class="sidebar-footnote">Models are loaded one at a time for preview. The full scan downloads each file sequentially.</p>
+      </aside>
+
+      <section class="detail-column">
+        <article class="preview-panel panel">
+          <div class="panel-heading preview-heading"><div><p class="eyebrow">LIVE MODEL PREVIEW</p><h2 id="previewTitle">Select a model</h2><p id="previewPath" class="file-path">No model selected</p></div><span id="previewStatus" class="status-pill neutral">NOT INSPECTED</span></div>
+          <div id="previewHost" class="preview-host"><div class="preview-placeholder"><span class="placeholder-mark">C</span><strong>3D preview waiting</strong><small>Choose a model from the repository list.</small></div></div>
+          <div class="preview-toolbar"><span>Drag to rotate · Scroll to zoom · Right-drag to pan</span><div class="toolbar-actions"><select id="animationSelect" aria-label="Animation clip" disabled><option value="">No animation loaded</option></select><button id="playAnimationButton" class="button mini" disabled>Play</button><button id="resetCameraButton" class="button mini" disabled>Reset view</button></div></div>
+        </article>
+
+        <section class="metrics-grid" aria-label="Model inspection metrics">
+          <article class="metric-card"><span>TRIANGLES</span><strong id="metricTriangles">—</strong><small id="triangleRating">Not inspected</small></article>
+          <article class="metric-card"><span>MESHES</span><strong id="metricMeshes">—</strong><small id="metricSkinned">Skinned meshes: —</small></article>
+          <article class="metric-card"><span>MATERIALS / TEXTURES</span><strong id="metricMaterials">—</strong><small id="metricTextureSize">Texture count: —</small></article>
+          <article class="metric-card"><span>RIG / BONES</span><strong id="metricRig">—</strong><small id="metricBoneCount">Bone count: —</small></article>
+          <article class="metric-card"><span>ANIMATION CLIPS</span><strong id="metricAnimations">—</strong><small id="metricAnimationNames">No clips inspected</small></article>
+          <article class="metric-card"><span>MODEL DIMENSIONS</span><strong id="metricDimensions">—</strong><small id="metricFileSize">File size: —</small></article>
+        </section>
+
+        <section class="panel report-panel">
+          <div class="panel-heading"><div><p class="eyebrow">TECHNICAL REPORT</p><h2>Compatibility details</h2></div><span id="reportClass" class="count-pill">Awaiting model</span></div>
+          <div id="reportDetails" class="report-grid"><p class="empty-report">Load a model to populate its technical report.</p></div>
+          <div id="warningList" class="warning-list"></div>
+        </section>
+      </section>
+    </section>
+    <footer class="page-footer">CALLORIA graphics pipeline · Inspection does not imply production approval. Visual appearance, rig quality, animation quality, licensing and mobile performance still require review.</footer>
+  </main>
+  <script type="module" src="/js/glb-asset-inspector.js"></script>
+</body>
+</html>
