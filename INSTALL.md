@@ -1,33 +1,27 @@
-# CALLORIA Customer World Integration v1.6
+# CALLORIA Customer World Activation v1.7
 
-This additive upgrade places approved customer/visitor GLB characters into the existing production-world reception using the existing Three.js scene and animation loop. It does not create another WebGLRenderer. It also forwards synthetic Customer Intelligence Lab persona/reaction changes to the reception visitors.
+## Purpose
 
-## Files
+The repository already contains `js/customer-world-integration.js` and `build/calloria-customer-world-plugin.js`, but the current `vite.config.js` does not import or register that plugin. As a result, the reception-customer layer and the customer-reaction event bridge are not applied during the Vite build.
 
-Add:
-- `js/customer-world-integration.js`
-- `build/calloria-customer-world-plugin.js`
-- `tests/customer-world-integration.test.mjs`
+This patch activates the existing v1.6 integration. It does not add a second renderer and does not replace gameplay or customer-intelligence source files.
 
-Replace the root `vite.config.js` with the supplied complete version. It preserves the current main entry points, public asset handling, existing world plugin and optimized GLB plugin, and adds the customer-world plugin.
+## Apply
 
-Do not replace `js/main.js`, `js/production-world.js`, `package.json`, the existing customer-intelligence engine, or any GLB asset.
+1. Replace the repository-root `vite.config.js` with the complete file in this package.
+2. Add `tests/customer-world-activation.test.mjs`.
+3. Keep the already-committed files below unchanged:
+   - `build/calloria-customer-world-plugin.js`
+   - `js/customer-world-integration.js`
+   - `js/customer-avatar-profile.js`
+   - `js/glb-asset-loader.js`
+   - `js/glb-asset-registry.js`
+4. Commit the two changed/added files to `main`.
 
-## Important behavior
+Do not replace `package.json`, `package-lock.json`, `js/main.js`, `js/production-world.js`, the original GLB files, or any Supabase files.
 
-- Only `robbert-visitor` and/or `ribbert-customer` models explicitly approved in the GLB Asset Inspector are eligible.
-- Models must pass the existing runtime customer-rig validator.
-- Low/balanced graphics tiers show one customer. High tier may show two.
-- Characters appear in the existing reception/check-in queue, not in a separate preview renderer.
-- The existing world renderer and animation loop are reused.
-- New customer sessions reset the reception characters to the selected persona's initial emotion. Each submitted response forwards the calculated customer reaction and patience to the world.
-- If no customer asset is approved or compatible, the existing workplace continues normally without forcing an unverified model into the scene.
-- Existing GLB files are not overwritten.
+## Checks
 
-## Run
+The new test runs under the existing `npm test` command (`node --test tests/*.test.mjs`). It verifies plugin registration order, world attachment/update/disposal transforms, reaction-event bridge composition with the existing Customer Avatar plugin, idempotence, and safe refusal when source anchors drift.
 
-Commit these files to `main`. Run the repository's existing tests and Vercel build. Then open the GLB Asset Inspector on the deployed origin and approve at least one suitable customer/visitor GLB. Refresh the CALLORIA workplace. Customer figures should appear at reception. Start a synthetic Customer Intelligence Lab scenario and submit an agent response; the reception visitor's body language/available animation should respond to the persona and calculated reaction.
-
-## Verification boundary
-
-The included tests validate the build transform and event bridge. They do not prove that either downloaded customer model passes the runtime rig test or that it looks natural in the actual browser. The world integration reports loaded/rejected model status through `calloria:customer-world-ready` and the optional `onCustomerWorldReady` callback.
+A complete production build and browser rendering still need to be confirmed by the repository's deployment after this patch is committed. This package does not claim those checks have already passed.
