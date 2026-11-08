@@ -28,6 +28,7 @@ export default defineConfig({
         emailInbox: resolve(process.cwd(), 'email-inbox.html'),
         liveChatInbox: resolve(process.cwd(), 'live-chat-inbox.html'),
         socialInbox: resolve(process.cwd(), 'social-inbox.html'),
+        voiceConsole: resolve(process.cwd(), 'voice-console.html'),
         calloriaChatWidget: resolve(process.cwd(), 'widgets/calloria-chat.js')
       },
       output: {

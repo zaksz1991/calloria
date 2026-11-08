@@ -43,3 +43,6 @@ verify_jwt = false
 
 [functions.calloria-social-inbox]
 verify_jwt = false
+
+[functions.calloria-voice-telephony]
+verify_jwt = false

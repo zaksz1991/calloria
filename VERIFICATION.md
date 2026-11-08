@@ -1,48 +1,42 @@
-# CALLORIA Phase 17 Verification Report
+# Phase 18 Verification Report
 
-## Checks completed in the exported Phase 16 + Phase 17 overlay
+## Automated checks
 
-| Check | Result | Scope |
-|---|---|---|
-| Complete included test suite | **81 passed, 0 failed** | All tests shipped in the overlay, including Phases 15–17 channel tests |
-| Phase 17 focused tests | **20 passed, 0 failed** | Social classification, redaction, webhook normalization, policy and integration contracts |
-| JavaScript syntax | **PASS** | `social-inbox-engine.js`, `social-inbox-workbench.js`, `vite.config.js` |
-| Edge Function TypeScript static check | **PASS** | `tsc --noEmit -p tsconfig.edge.json` |
-| JSON / TOML parse | **PASS** | `package.json`, `tsconfig.edge.json`, `supabase/config.toml` |
-| HTML structure / duplicate IDs | **PASS** | Social Inbox and four modified channel/staff pages; no duplicate IDs |
-| SQL namespace and privilege checks | **PASS** | Migration creates only `calloria_social_*` tables, enables RLS, and revokes browser access |
-| Concurrent-send guard | **PASS** | One unresolved outbound reply per conversation, plus the staff rate limit |
-| ZIP integrity | **PASS** | Phase 17 delivery archive integrity test passed |
+| Check | Result |
+|---|---:|
+| Included Node test suite (Phases 14–18) | **111 passed, 0 failed** |
+| Phase 18 focused contract tests | **30 passed, 0 failed** |
+| `node --check js/voice-telephony-engine.js` | Passed |
+| `node --check js/voice-console-workbench.js` | Passed |
+| `node --check vite.config.js` | Passed |
+| `tsc --noEmit -p tsconfig.edge.json` | Passed |
+| Migration namespace/RLS/service-role checks | Passed (static) |
+| Provider signature, call-SID binding and status-sequence checks | Passed (static) |
+| Callback approval, idempotency and concurrency reservation checks | Passed (static) |
+| ZIP archive integrity | Passed after final packaging |
 
-## Build limitation
+## What was fixed during verification
 
-A full Vite production build was attempted but could not run in this exported overlay because the Vite CLI is not installed (`vite: not found`). The overlay does not include the complete CALLORIA game source tree. The repository-wide `npm run check` also cannot run here because base files such as `js/main.js` are supplied by the full repository, not this incremental overlay. This is not evidence that the integrated full repository build passes or fails. Re-run the production build and repository check after integrating the overlay into the complete Phase 16-integrated repository with its normal dependencies installed.
+- Confirmed the outbound work-item query explicitly retrieves `channel` before enforcing the `voice` restriction.
+- Callback route authorization now checks the staff member's allowed language as well as assignment, department and skills.
+- Added atomic handset reservation for inbound calls and a shared staff-scoped advisory lock for outbound reservations.
+- Rechecked shift and workload capacity inside the outbound database reservation function to reduce race conditions.
+- Counted active provider voice calls alongside active Agent Desk work when enforcing workforce concurrency.
+- Prevented an API response arriving late from replacing a newer status callback state.
+- Bound each signed Gather/Dial action to the exact registered inbound `CallSid` and direction.
+- Prevented status events from being written for unknown provider call IDs; retained out-of-order events without regressing the current call status.
+- Required the configured business caller ID to be a valid Nigerian number also present in the project's owned-number allowlist.
+- Corrected CORS preflight handling to return a body-less HTTP 204 response.
+- Returned a multilingual caller fallback when the handset dial fails.
 
-## Not run / not verified
+## Not verified
 
-- Full Vite production build against the complete repository.
-- Supabase SQL migration against the user's shared project.
-- Supabase Edge Function deployment.
-- Meta App Review / Advanced Access approval.
-- Facebook Page or Instagram Professional account token validity and permission scopes.
-- Live Meta webhook signature / delivery.
-- Live Messenger or Instagram message send / receipt.
-- End-to-end Routing Control claim, staff reply and native Meta inbox confirmation.
-- Physical browser / device testing.
-- GitHub commit or Vercel deployment.
+- No live Supabase migration was run.
+- No Supabase Edge Function was deployed or tested against the user's project.
+- No Signals account, API credential, number, paid plan or balance was created or changed.
+- No real inbound or outbound telephone call was placed.
+- Signals webhook signature verification was tested through unit/static contract tests, not a real provider delivery.
+- No full Vite production build or browser end-to-end test was run because this overlay does not contain the full CALLORIA base source, including the game entry files and all earlier phase files.
+- No GitHub commit or Vercel deployment was made.
 
-## Security scope reviewed in source
-
-- Raw Meta webhook request body is HMAC-verified through `X-Hub-Signature-256` before JSON handling.
-- Webhook verify token and Meta App Secret are separate secrets.
-- Meta account tokens remain server-side Supabase Edge Function configuration.
-- Social staff actions require Supabase Auth verification and explicit `CALLORIA_ROUTING_ACCESS` grants containing the `social` channel.
-- Conversation access is checked against the linked assigned route and permitted department / skill scope.
-- Customer messages and provider-scoped sender identifiers are encrypted with dedicated Social Inbox data keys.
-- The new database tables have RLS enabled and no direct `anon` or `authenticated` privileges.
-- Provider webhook message IDs and staff idempotency IDs are unique. A partial unique index prevents multiple unresolved outbound sends in one conversation.
-- Staff outbound replies are rate-limited to 20 per staff account per minute through the existing Phase 12 routing limiter.
-- The standard 24-hour customer-initiated reply window is enforced in the browser, Edge Function and database reservation RPC.
-- Uncertain provider sends block further replies pending native Meta inbox review.
-
-These are automated and source-level checks only. They are not a live penetration test, provider certification or deployment verification.
+This is an incremental source overlay based on the Phase 17 integration package. It is not a live telephony deployment.

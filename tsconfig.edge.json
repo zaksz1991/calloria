@@ -31,6 +31,8 @@
     "supabase/functions/calloria-web-chat/**/*.ts",
     "supabase/functions/calloria-web-chat/**/*.d.ts",
     "supabase/functions/calloria-social-inbox/**/*.ts",
-    "supabase/functions/calloria-social-inbox/**/*.d.ts"
+    "supabase/functions/calloria-social-inbox/**/*.d.ts",
+    "supabase/functions/calloria-voice-telephony/**/*.ts",
+    "supabase/functions/calloria-voice-telephony/**/*.d.ts"
   ]
 }

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#10233f"><meta name="robots" content="noindex,nofollow">
+  <title>CALLORIA · Voice Operations</title>
+  <link rel="stylesheet" href="/styles/voice-console.css">
+</head>
+<body>
+  <div class="voice-shell">
+    <header class="topbar">
+      <div class="brand-lockup"><a class="brand-mark" href="/">C</a><div><p class="eyebrow">RUFFNECK ENTERTAINMENT</p><h1>CALLORIA <span>VOICE OPERATIONS</span></h1></div></div>
+      <nav class="top-links"><a href="/agent-desk.html">Agent Desk</a><a href="/routing-control.html">Routing Control</a><a href="/workforce.html">Workforce</a><button id="sign-out" class="button quiet" type="button" hidden>Sign out</button></nav>
+    </header>
+
+    <main>
+      <section id="login-panel" class="login-layout">
+        <div class="intro-card">
+          <p class="eyebrow">LIVE CUSTOMER TELEPHONY</p><h2>Voice operations, tied to the customer record.</h2>
+          <p>Receive real customer calls on the department's configured on-call handset. Place outbound calls only from supervisor-approved customer callback authorizations.</p>
+          <div class="voice-guardrails"><span>Call recording: OFF</span><span>Outbound: approval required</span><span>Customer data: encrypted</span></div>
+        </div>
+        <form id="login-form" class="login-card">
+          <p class="eyebrow">STAFF AUTHENTICATION</p><h2>Sign in</h2>
+          <label>Email address<input id="login-email" type="email" autocomplete="username" required></label>
+          <label>Password<input id="login-password" type="password" autocomplete="current-password" required></label>
+          <button class="button primary full" type="submit">Open Voice Operations</button>
+          <p id="login-status" class="status" role="status"></p>
+        </form>
+      </section>
+
+      <section id="workspace" hidden>
+        <div class="page-heading"><div><p class="eyebrow">VOICE · INBOUND / OUTBOUND</p><h2>Telephony control desk</h2><p id="staff-scope" class="muted">Authenticated staff scope</p></div><div class="provider-state"><span id="provider-dot"></span><div><strong id="provider-state">Checking voice provider</strong><small id="provider-detail">Configuration status only; live connectivity is not implied.</small></div></div></div>
+        <div class="metric-grid">
+          <article class="metric-card"><span>Calls in view</span><strong id="metric-calls">0</strong><small>Provider event records</small></article>
+          <article class="metric-card"><span>Inbound waiting</span><strong id="metric-queued">0</strong><small>Voice routes awaiting claim</small></article>
+          <article class="metric-card"><span>Callback approvals</span><strong id="metric-pending">0</strong><small>Awaiting supervisor decision</small></article>
+          <article class="metric-card"><span>Agent line</span><strong id="metric-line">Not set</strong><small>Verified handset mapping</small></article>
+        </div>
+
+        <div class="content-grid">
+          <section class="panel callback-panel">
+            <div class="panel-title"><div><p class="eyebrow">OUTBOUND CONTROL</p><h3>Request a customer callback</h3></div><span class="tag review">Supervisor approval</span></div>
+            <p class="muted">Use this only when the customer explicitly requested a call or gave permission for a specific service follow-up. A manager must approve each callback. The customer number is encrypted and is never returned to the browser after submission.</p>
+            <form id="callback-request-form" class="form-grid">
+              <label>Assigned CALLORIA work reference<input id="callback-route-ref" required maxlength="40" placeholder="CR-YYYYMMDD-XXXXXX"></label>
+              <label>Customer mobile number<input id="callback-phone" type="tel" inputmode="tel" autocomplete="off" required placeholder="+2348012345678"></label>
+              <label>Permission type<select id="callback-consent-type" required><option value="customer_requested_callback">Customer requested a callback</option><option value="service_follow_up_permission">Customer agreed to a service follow-up</option></select></label>
+              <label>When did the customer agree?<input id="callback-requested-at" type="datetime-local" required></label>
+              <label class="span-two">Consent evidence reference<input id="callback-evidence" required maxlength="100" placeholder="Case / CRM consent / interaction evidence reference"></label>
+              <label class="check-row span-two"><input id="callback-confirmed" type="checkbox" required><span>I confirm the customer explicitly requested or agreed to this callback, and the evidence reference identifies where that permission was recorded.</span></label>
+              <button class="button primary span-two" type="submit">Submit for supervisor approval</button>
+            </form>
+            <div id="callback-request-status" class="status" role="status"></div>
+          </section>
+
+          <section class="panel start-call-panel">
+            <div class="panel-title"><div><p class="eyebrow">APPROVED CALLBACK ONLY</p><h3>Start outbound call</h3></div><span class="tag locked">No cold dialing</span></div>
+            <p class="muted">The provider rings your configured agent handset first. After you answer, it dials the approved customer number and presents the configured business caller ID.</p>
+            <form id="outbound-form" class="form-grid">
+              <label>Approved callback reference<input id="outbound-callback-ref" required maxlength="40" placeholder="VCA-YYYYMMDD-XXXXXX"></label>
+              <label>Assigned work reference<input id="outbound-route-ref" required maxlength="40" placeholder="CR-YYYYMMDD-XXXXXX"></label>
+              <label class="span-two">Re-enter the customer number<input id="outbound-phone" type="tel" inputmode="tel" required placeholder="Same +234 number approved by supervisor"></label>
+              <button id="start-call" class="button primary span-two" type="submit">Place approved callback</button>
+            </form>
+            <div id="outbound-status" class="status" role="status"></div>
+          </section>
+        </div>
+
+        <section class="panel approvals-panel">
+          <div class="panel-title"><div><p class="eyebrow">DUAL CONTROL</p><h3>Callback approval queue</h3></div><button id="refresh-voice" class="button outline" type="button">Refresh</button></div>
+          <div id="callback-list" class="record-list"><p class="empty-state">No callback approvals in your permitted work.</p></div>
+        </section>
+
+        <section class="panel calls-panel">
+          <div class="panel-title"><div><p class="eyebrow">VOICE HISTORY</p><h3>Recent call records</h3></div><span class="tag privacy">Recording OFF</span></div>
+          <div class="table-wrap"><table><thead><tr><th>Call reference</th><th>Direction</th><th>Customer / line</th><th>Department</th><th>Status</th><th>Duration</th><th>Created</th></tr></thead><tbody id="call-history"><tr><td colspan="7" class="empty-state">No calls to display.</td></tr></tbody></table></div>
+          <p class="footnote">Caller numbers remain masked. Call recording and transcription are disabled in this release. Live hold, transfer, conference and browser microphone controls are not enabled.</p>
+        </section>
+
+        <div class="notice-panel"><strong>Operational boundaries</strong><p>Inbound routing uses a single designated on-call handset per department, configured by an administrator. CALLORIA records call status and links the interaction to skills-based routing; it does not yet provide a browser softphone or dynamically select an available agent from the live workforce roster. Agents answer on their configured phone. Do not record calls outside a separately approved consent and retention implementation.</p></div>
+        <div id="global-status" class="global-status status" role="status" aria-live="polite">Ready.</div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="/js/voice-console-workbench.js"></script>
+</body>
+</html>
