@@ -40,3 +40,6 @@ verify_jwt = false
 
 [functions.calloria-web-chat]
 verify_jwt = false
+
+[functions.calloria-social-inbox]
+verify_jwt = false

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07121d">
+  <meta name="description" content="Restricted CALLORIA Instagram and Facebook Messenger support inbox.">
+  <title>CALLORIA · Social Inbox</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/calloria-mark.svg">
+  <link rel="stylesheet" href="/styles/social-inbox.css">
+</head>
+<body>
+  <div class="social-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="CALLORIA home"><span class="brand-mark">C</span><span><b>CALLORIA</b><small>SOCIAL CUSTOMER OPERATIONS</small></span></a>
+      <nav aria-label="Staff navigation">
+        <a href="/agent-desk.html">Agent Desk</a><a href="/routing-control.html">Routing Control</a><a href="/whatsapp-inbox.html">WhatsApp</a><a href="/email-inbox.html">Email</a><a href="/live-chat-inbox.html">Live Chat</a>
+        <button id="sign-out" class="button quiet" hidden>Sign out</button>
+      </nav>
+    </header>
+    <main>
+      <section id="login-panel" class="login-wrap">
+        <div class="login-card">
+          <div class="eyebrow">RESTRICTED STAFF ACCESS</div>
+          <h1>Social Media Inbox</h1>
+          <p class="muted">Handle customer-initiated Instagram Direct and Facebook Messenger conversations. Agents must claim the linked work through Routing Control first.</p>
+          <form id="login-form" class="stack-form">
+            <label>Staff email<input id="staff-email" type="email" autocomplete="username" required maxlength="180"></label>
+            <label>Password<input id="staff-password" type="password" autocomplete="current-password" required maxlength="200"></label>
+            <button class="button primary" type="submit">Sign in</button>
+            <div id="login-status" class="status" role="status" aria-live="polite"></div>
+          </form>
+          <p class="security-note">No public registration. Supabase Auth verifies the staff session; the server checks social-channel permission, specialist skills, department scope and assignment.</p>
+        </div>
+      </section>
+      <section id="workspace" hidden>
+        <div class="page-heading">
+          <div><div class="eyebrow">RUFFNECK ENTERTAINMENT · META BUSINESS MESSAGING</div><h1>Social Media Inbox</h1><p class="muted">One human-operated inbox for Instagram Direct and Facebook Messenger. Public comments, publishing, broadcasts and unsolicited outbound messages are not supported.</p></div>
+          <div class="staff-card"><b id="staff-name">Staff member</b><small id="staff-scope">Social channel permission</small></div>
+        </div>
+        <div class="notice-strip"><strong>Provider status</strong><span id="provider-config">Checking Meta account configuration…</span></div>
+        <div class="metrics">
+          <article><span>Conversations in scope</span><strong id="metric-total">0</strong></article>
+          <article><span>Awaiting routing claim</span><strong id="metric-queued">0</strong></article>
+          <article><span>Assigned to staff</span><strong id="metric-assigned">0</strong></article>
+          <article><span>Reply window closing soon</span><strong id="metric-window">0</strong></article>
+        </div>
+        <div class="inbox-layout">
+          <aside class="conversation-panel">
+            <div class="panel-heading"><div><div class="eyebrow">CUSTOMER-INITIATED DMS</div><h2>Conversations</h2></div><button id="refresh" class="button outline" type="button">Refresh</button></div>
+            <label class="search-label">Search permitted conversations<input id="conversation-search" type="search" placeholder="Search provider, reference or department"></label>
+            <div class="filter-row"><label>Provider<select id="provider-filter"><option value="all">All social channels</option><option value="instagram">Instagram</option><option value="messenger">Facebook Messenger</option></select></label><label>Status<select id="status-filter"><option value="all">All</option><option value="assigned">Assigned to me / team</option><option value="window">Reply window open</option></select></label></div>
+            <div id="conversation-list" class="conversation-list"><div class="empty-state">Sign in to load assigned social conversations.</div></div>
+          </aside>
+          <section class="message-panel">
+            <div id="empty-detail" class="empty-detail"><div class="empty-icon">◉</div><h2>Select a conversation</h2><p>Customer messages and routing permission appear here. Unassigned requests must be claimed through Routing Control.</p></div>
+            <div id="conversation-detail" hidden>
+              <div class="thread-heading">
+                <div><div class="eyebrow" id="conversation-reference">SOCIAL CONVERSATION</div><h2 id="conversation-platform">Meta customer</h2><p id="conversation-meta" class="muted"></p></div>
+                <span id="route-badge" class="route-badge">Checking assignment…</span>
+              </div>
+              <div id="route-meta" class="route-meta"></div>
+              <div class="window-banner" id="window-banner">Checking provider reply window…</div>
+              <div id="message-history" class="message-history" aria-live="polite"></div>
+              <div class="reply-card">
+                <div class="reply-heading"><strong>Human customer response</strong><span class="muted small">Plain text · no automation</span></div>
+                <form id="reply-form">
+                  <label for="reply-text">Message<textarea id="reply-text" rows="4" maxlength="1000" placeholder="Write a factual, respectful response. Never request passwords, PINs, OTPs, recovery codes or payment-card secrets." required></textarea></label>
+                  <div class="reply-footer"><small>Replies are allowed only while the customer-initiated Meta 24-hour messaging window is open and the route is assigned to you.</small><button id="send-reply" class="button primary" type="submit">Send reply</button></div>
+                </form>
+                <div id="reply-status" class="status" role="status" aria-live="polite"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+        <div class="compliance-note"><strong>Channel rules:</strong> CALLORIA sends no marketing messages, unsolicited first messages, public comment replies, or messages outside the standard customer-initiated 24-hour window. If a send result is uncertain, check the Meta inbox before attempting any new reply.</div>
+        <div id="global-status" class="global-status status" role="status" aria-live="polite">Ready.</div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="/js/social-inbox-workbench.js"></script>
+</body>
+</html>

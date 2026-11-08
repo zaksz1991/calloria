@@ -29,6 +29,8 @@
     "supabase/functions/calloria-email/**/*.ts",
     "supabase/functions/calloria-email/**/*.d.ts",
     "supabase/functions/calloria-web-chat/**/*.ts",
-    "supabase/functions/calloria-web-chat/**/*.d.ts"
+    "supabase/functions/calloria-web-chat/**/*.d.ts",
+    "supabase/functions/calloria-social-inbox/**/*.ts",
+    "supabase/functions/calloria-social-inbox/**/*.d.ts"
   ]
 }

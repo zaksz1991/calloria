@@ -1,34 +1,48 @@
-# CALLORIA Phase 16 Verification
+# CALLORIA Phase 17 Verification Report
 
-## Passed
+## Checks completed in the exported Phase 16 + Phase 17 overlay
 
-| Check | Result |
-|---|---|
-| `npm test` across the included Phase 15 and Phase 16 tests | **61 passed, 0 failed** |
-| `tsc --noEmit -p tsconfig.edge.json` | PASS |
-| `node --check vite.config.js` | PASS |
-| `node --check js/web-chat-engine.js` | PASS |
-| `node --check js/live-chat-inbox-workbench.js` | PASS |
-| `node --check widgets/calloria-chat.js` | PASS |
-| `package.json` and `tsconfig.edge.json` JSON parsing | PASS |
-| `supabase/config.toml` TOML parsing | PASS |
-| HTML duplicate-ID checks on Live Chat, Agent Desk, Email Inbox and WhatsApp Inbox | PASS |
-| Required Phase 16 source files and Edge Function-local helper presence | PASS |
-| Contract checks for six origins, guest tokens, encryption, RLS, staff assignment, rate limits, atomic message writes and retry idempotency | PASS |
+| Check | Result | Scope |
+|---|---|---|
+| Complete included test suite | **81 passed, 0 failed** | All tests shipped in the overlay, including Phases 15–17 channel tests |
+| Phase 17 focused tests | **20 passed, 0 failed** | Social classification, redaction, webhook normalization, policy and integration contracts |
+| JavaScript syntax | **PASS** | `social-inbox-engine.js`, `social-inbox-workbench.js`, `vite.config.js` |
+| Edge Function TypeScript static check | **PASS** | `tsc --noEmit -p tsconfig.edge.json` |
+| JSON / TOML parse | **PASS** | `package.json`, `tsconfig.edge.json`, `supabase/config.toml` |
+| HTML structure / duplicate IDs | **PASS** | Social Inbox and four modified channel/staff pages; no duplicate IDs |
+| SQL namespace and privilege checks | **PASS** | Migration creates only `calloria_social_*` tables, enables RLS, and revokes browser access |
+| Concurrent-send guard | **PASS** | One unresolved outbound reply per conversation, plus the staff rate limit |
+| ZIP integrity | **PASS** | Phase 17 delivery archive integrity test passed |
 
-## Not performed
+## Build limitation
 
-- Full Vite production build. This package is an overlay and does not contain the complete game root (`index.html` and all original application modules/assets). It must be merged into the full Phase 15-integrated CALLORIA repository before running `npm run build`.
-- Full repository `npm run check`: attempted, but the overlay lacks the baseline game files and stops at missing `js/main.js`; the full-repository check must be run after merging into the complete Phase 15-integrated repository.
-- Live execution of migration `202611080016_calloria_web_chat.sql` against the shared Supabase project.
-- Live Edge Function deployment, secret validation or browser-origin/CORS test.
-- End-to-end guest-to-agent reply test from the six external product deployments.
-- Embedding the widget into the six separate product repositories or deploying any Vercel site.
+A full Vite production build was attempted but could not run in this exported overlay because the Vite CLI is not installed (`vite: not found`). The overlay does not include the complete CALLORIA game source tree. The repository-wide `npm run check` also cannot run here because base files such as `js/main.js` are supplied by the full repository, not this incremental overlay. This is not evidence that the integrated full repository build passes or fails. Re-run the production build and repository check after integrating the overlay into the complete Phase 16-integrated repository with its normal dependencies installed.
 
-## Scope and compatibility
+## Not run / not verified
 
-- Baseline: Phase 15-integrated CALLORIA source package.
-- New migration: `202611080016_calloria_web_chat.sql` only.
-- New Edge Function: `calloria-web-chat`.
-- Earlier migrations are prerequisites and must not be rerun.
-- Existing Prospector objects, authentication triggers, Groq secrets, WhatsApp credentials, Resend credentials and Agent Desk encryption key are not intended to be changed.
+- Full Vite production build against the complete repository.
+- Supabase SQL migration against the user's shared project.
+- Supabase Edge Function deployment.
+- Meta App Review / Advanced Access approval.
+- Facebook Page or Instagram Professional account token validity and permission scopes.
+- Live Meta webhook signature / delivery.
+- Live Messenger or Instagram message send / receipt.
+- End-to-end Routing Control claim, staff reply and native Meta inbox confirmation.
+- Physical browser / device testing.
+- GitHub commit or Vercel deployment.
+
+## Security scope reviewed in source
+
+- Raw Meta webhook request body is HMAC-verified through `X-Hub-Signature-256` before JSON handling.
+- Webhook verify token and Meta App Secret are separate secrets.
+- Meta account tokens remain server-side Supabase Edge Function configuration.
+- Social staff actions require Supabase Auth verification and explicit `CALLORIA_ROUTING_ACCESS` grants containing the `social` channel.
+- Conversation access is checked against the linked assigned route and permitted department / skill scope.
+- Customer messages and provider-scoped sender identifiers are encrypted with dedicated Social Inbox data keys.
+- The new database tables have RLS enabled and no direct `anon` or `authenticated` privileges.
+- Provider webhook message IDs and staff idempotency IDs are unique. A partial unique index prevents multiple unresolved outbound sends in one conversation.
+- Staff outbound replies are rate-limited to 20 per staff account per minute through the existing Phase 12 routing limiter.
+- The standard 24-hour customer-initiated reply window is enforced in the browser, Edge Function and database reservation RPC.
+- Uncertain provider sends block further replies pending native Meta inbox review.
+
+These are automated and source-level checks only. They are not a live penetration test, provider certification or deployment verification.
