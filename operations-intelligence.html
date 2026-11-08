@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101827"><title>CALLORIA · Operations Intelligence</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/calloria-mark.svg">
+  <link rel="stylesheet" href="/styles/operations-intelligence.css">
+</head>
+<body>
+  <header class="oi-topbar">
+    <a class="oi-brand" href="/" aria-label="CALLORIA home"><span class="oi-mark">C</span><span><b>CALLORIA</b><small>RUFFNECK ENTERTAINMENT · OPERATIONS INTELLIGENCE</small></span></a>
+    <nav aria-label="Staff navigation"><a class="active" href="/operations-intelligence.html">Command Centre</a><a href="/agent-desk.html">Agent Desk</a><a href="/routing-control.html">Routing</a><a href="/workforce.html">Workforce</a><a href="/performance.html">Performance</a><a href="/voice-console.html">Voice</a><a href="/sms-inbox.html">SMS</a><a href="/email-inbox.html">Email</a><a href="/whatsapp-inbox.html">WhatsApp</a><a href="/social-inbox.html">Social</a><a href="/live-chat-inbox.html">Live Chat</a><button id="oi-sign-out" class="oi-button quiet" hidden>Sign out</button></nav>
+  </header>
+  <main class="oi-shell">
+    <section id="oi-login" class="oi-login-card">
+      <div class="oi-kicker">RESTRICTED STAFF ACCESS</div><h1>Operations Intelligence</h1>
+      <p>Department-level customer-care performance, channel health, service risk and staffing coverage. Customer message content and contact identities are never displayed here.</p>
+      <form id="oi-login-form"><label>Staff email<input id="oi-email" type="email" autocomplete="username" required></label><label>Password<input id="oi-password" type="password" autocomplete="current-password" required></label><button class="oi-button primary" type="submit">Sign in to Command Centre</button></form><p id="oi-login-status" class="oi-status" role="status"></p>
+    </section>
+
+    <section id="oi-workspace" hidden>
+      <div class="oi-heading-row"><div><div class="oi-kicker">OPERATIONS CONTROL · AGGREGATE REPORTING</div><h1 id="oi-title">Command Centre</h1><p id="oi-scope" class="oi-muted">Authorised department scope</p></div><div class="oi-toolbar"><div class="oi-range" role="group" aria-label="Reporting period"><button data-days="7" class="selected">7 days</button><button data-days="30">30 days</button><button data-days="90">90 days</button></div><button id="oi-refresh" class="oi-button outline">Refresh now</button></div></div>
+      <div class="oi-statusline"><span id="oi-status" role="status">Loading aggregate report…</span><span id="oi-generated">No report loaded</span></div>
+      <div id="oi-personal-banner" class="oi-notice" hidden>Personal view: only your assigned work, your own QA / scorecard summary, and your own shift status are included. Team performance is not exposed to agent accounts.</div>
+
+      <section class="oi-section"><div class="oi-section-head"><div><div class="oi-kicker">SERVICE PERFORMANCE</div><h2>Core operating indicators</h2></div><span class="oi-caption">Work items are operational records, not unique customer counts.</span></div>
+        <div class="oi-metric-grid">
+          <article class="oi-metric"><span>Contacts received</span><strong id="m-received">—</strong><small>Created during selected period</small></article>
+          <article class="oi-metric"><span>Resolved</span><strong id="m-resolved">—</strong><small>Resolution timestamp in period</small></article>
+          <article class="oi-metric"><span>Active backlog</span><strong id="m-backlog">—</strong><small>Currently active work items</small></article>
+          <article class="oi-metric"><span>Overdue work</span><strong id="m-overdue">—</strong><small>Open items past due time</small></article>
+          <article class="oi-metric"><span>Resolution SLA</span><strong id="m-sla">—</strong><small>Resolved items with a due time</small></article>
+          <article class="oi-metric"><span>Average resolution</span><strong id="m-resolution">—</strong><small>Created to resolved time</small></article>
+        </div>
+      </section>
+
+      <section class="oi-grid two">
+        <article class="oi-panel"><div class="oi-section-head"><div><div class="oi-kicker">QUEUE RISK</div><h2>What needs attention now</h2></div><span class="oi-pill risk">Current snapshot</span></div><div class="oi-risk-grid">
+          <div><strong id="q-urgent">—</strong><span>Urgent waiting over 5 min</span></div><div><strong id="q-high">—</strong><span>High priority waiting over 30 min</span></div><div><strong id="q-overdue">—</strong><span>Overdue open items</span></div><div><strong id="q-oldest">—</strong><span>Oldest unassigned queue age</span></div><div><strong id="q-hold">—</strong><span>On hold</span></div><div><strong id="q-acw">—</strong><span>After-contact work</span></div><div><strong id="q-claimwait">—</strong><span>Average wait to claim in period</span></div>
+        </div></article>
+        <article class="oi-panel"><div class="oi-section-head"><div><div class="oi-kicker">WORKFORCE COVERAGE</div><h2>Current scheduled attendance</h2></div><a href="/workforce.html">Open Workforce ↗</a></div><div class="oi-staff-grid">
+          <div><strong id="s-shift">—</strong><span>On shift</span></div><div><strong id="s-ready">—</strong><span>Customer work</span></div><div><strong id="s-break">—</strong><span>Break / lunch / prayer</span></div><div><strong id="s-other">—</strong><span>Training / other activity</span></div>
+        </div><p class="oi-footnote">Counts use published shifts and active attendance records. They do not verify physical presence or telephone network availability.</p></article>
+      </section>
+
+      <section class="oi-grid two">
+        <article class="oi-panel"><div class="oi-section-head"><div><div class="oi-kicker">OMNICHANNEL MIX</div><h2>Work item volume by channel</h2></div></div><div id="oi-channel-chart" class="oi-bars"><p class="oi-empty">No channel data for this period.</p></div></article>
+        <article class="oi-panel"><div class="oi-section-head"><div><div class="oi-kicker">DEPARTMENT SERVICE LOAD</div><h2>Received, resolved and open</h2></div></div><div id="oi-department-table" class="oi-table-wrap"><p class="oi-empty">No department data for this period.</p></div></article>
+      </section>
+
+      <section class="oi-panel"><div class="oi-section-head"><div><div class="oi-kicker">SERVICE TREND</div><h2>Daily contacts and resolutions</h2></div><span class="oi-caption">Counts may differ within a day because resolutions can relate to earlier contacts.</span></div><div id="oi-daily-chart" class="oi-daily-chart"><p class="oi-empty">No daily data available.</p></div></section>
+
+      <section class="oi-grid two">
+        <article class="oi-panel"><div class="oi-section-head"><div><div class="oi-kicker">QUALITY & DEVELOPMENT</div><h2>QA and performance evidence</h2></div><a href="/performance.html">Performance Desk ↗</a></div><div class="oi-quality-grid"><div><strong id="k-qa">—</strong><span>QA average</span></div><div><strong id="k-pass">—</strong><span>QA pass rate</span></div><div><strong id="k-critical">—</strong><span>Critical QA failures</span></div><div><strong id="k-cards">—</strong><span>Reviewed scorecards</span></div><div><strong id="k-score">—</strong><span>Scorecard average</span></div><div><strong id="k-coaching">—</strong><span>Open coaching plans</span></div></div><p class="oi-footnote">Only recorded QA and reviewed scorecards are counted. Draft scorecards are excluded. Team open-coaching totals include plans linked to scorecards in the authorised departments; personal view includes your own plans. Quality gates are not averaged away by speed or volume.</p></article>
+        <article class="oi-panel"><div class="oi-section-head"><div><div class="oi-kicker">PROVIDER DELIVERY</div><h2>Outbound channel outcomes</h2></div></div><div id="oi-delivery-table" class="oi-table-wrap"><p class="oi-empty">No outbound provider data in this period.</p></div><p class="oi-footnote">A dash means that channel does not store a separate delivered confirmation. Email stores sent / failed / unknown; social stores sent / failed / uncertain. WhatsApp and SMS expose delivered/read statuses.</p></article>
+      </section>
+
+      <section class="oi-panel"><div class="oi-section-head"><div><div class="oi-kicker">TELEPHONE CHANNEL</div><h2>Voice operations summary</h2></div><a href="/voice-console.html">Open Voice Operations ↗</a></div><div class="oi-voice-grid"><div><strong id="v-calls">—</strong><span>Calls recorded</span></div><div><strong id="v-inbound">—</strong><span>Inbound</span></div><div><strong id="v-outbound">—</strong><span>Approved outbound callbacks</span></div><div><strong id="v-completed">—</strong><span>Completed</span></div><div><strong id="v-failed">—</strong><span>Failed / unanswered</span></div><div><strong id="v-duration">—</strong><span>Average connected duration</span></div></div></section>
+      <footer class="oi-footer"><span>CALLORIA · Every Call. Every Customer. Every Career.</span><span>Aggregate reporting · No customer content · Auto refresh every 60 seconds</span></footer>
+    </section>
+  </main>
+  <script type="module" src="/js/operations-intelligence-workbench.js"></script>
+</body></html>

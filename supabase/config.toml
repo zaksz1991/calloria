@@ -49,3 +49,6 @@ verify_jwt = false
 
 [functions.calloria-sms]
 verify_jwt = false
+
+[functions.calloria-operations-intelligence]
+verify_jwt = false

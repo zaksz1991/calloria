@@ -1,27 +1,28 @@
-# Phase 19 Verification Report
+# CALLORIA Phase 20 Verification Report
 
 ## Automated checks completed
 
 | Check | Result |
 |---|---:|
-| Combined included Node test suite | **133 passed, 0 failed** |
-| Phase 19 SMS unit + contract tests | **22 passed, 0 failed** |
-| Full included Supabase Edge Function TypeScript project (`tsc -p tsconfig.edge.json`) | **PASS** |
-| JavaScript syntax across included `js/`, `widgets/` and Vite config | **PASS** |
-| Root HTML parse and duplicate-ID scan | **PASS** |
-| JSON/TOML syntax checks | **PASS** |
-| ZIP archive integrity | **PASS** |
+| Combined Phase 19 regression and Phase 20 test suite (`npm test`) | **149 passed, 0 failed** |
+| Phase 20 focused unit and contract tests | **16 passed, 0 failed** |
+| Supabase Edge Function TypeScript project (`tsc -p tsconfig.edge.json`) | **PASS** |
+| JavaScript syntax across included `js/`, `widgets/` and Vite configuration | **21 files passed** |
+| HTML parsing and duplicate-ID checks | **8 pages passed** |
+| Package JSON and Edge TypeScript config parsing | **PASS** |
+| Supabase TOML configuration parsing | **PASS** |
+| SQL structural checks: aggregate-only selection, scoped filters and service-role-only execution | **PASS** |
 
-The combined test suite includes the Phase 14–18 regression tests plus the new Phase 19 SMS behaviour and integration contracts. The Phase 19 tests cover Nigerian number normalisation, data redaction, intent and language classification, STOP/START/HELP behaviour, delivery status mapping, DND-only payload construction, raw-body HMAC-SHA512 verification, channel permission integration, RLS/service-role boundaries, early delivery-report reconciliation, stale outbound-send recovery, DLR/send race reconciliation, and SMS segment estimates.
+The test suite covers numeric formatting, supported report periods, empty/malformed snapshot handling, SLA and queue-risk tone thresholds, channel labels, SQL privilege restrictions, absence of encrypted/customer-content columns from the aggregate migration, staff-scope derivation from the validated session, bounded report windows, and Vite multi-page integration.
 
 ## Not performed / not verified
 
-- Full Vite production build. This Phase 19 overlay does not include the complete original game repository and its main `index.html`/game source files. A full production build must run after this overlay is merged into the full Phase 18-integrated repository.
-- SQL migration execution or PostgreSQL runtime validation against the shared Supabase project.
-- Live Termii API credentials, sender-ID approval, account-specific base URL, webhook delivery, DND route activation, inbound SMS or delivery-report testing.
-- Real handset delivery, provider billing or carrier/network delivery timing.
+- Full Vite production build. This is a Phase 19 source overlay and does not contain the complete original CALLORIA game repository, including its original `index.html`, game entry modules and assets. A full build must run after the overlay is merged into that complete repository.
+- Execution of migration `202611080020_calloria_operations_intelligence.sql` against Supabase or PostgreSQL runtime validation. SQL checks were structural, not a live database migration.
+- Live Supabase Auth / Edge Function invocation against production records.
+- Verification of source data completeness, actual operational accuracy, or reporting latency in production.
 - GitHub commit or Vercel deployment.
 
-## Package integrity
+## Package boundary
 
-The ZIP contains the Phase 18 integration overlay with Phase 19 updates, migration 019, the new `calloria-sms` Edge Function, staff SMS inbox and tests. It is a source overlay, not a standalone CALLORIA repository or a deployed provider connection.
+The archive contains the Phase 19 overlay plus Phase 20 additions and integration edits. It is not a full replacement for the source repository and is not a live deployment. No live database, provider credentials, staff permissions, Prospector tables, or authentication triggers were changed.

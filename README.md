@@ -1,138 +1,77 @@
-# CALLORIA Phase 19 — Termii SMS Support
+# CALLORIA Phase 20 — Operations Intelligence Command Centre
 
-Phase 19 adds a restricted, one-to-one Nigerian SMS support channel to the Phase 18-integrated CALLORIA codebase.
+Phase 20 adds a restricted, aggregate-only command centre to the Phase 19-integrated CALLORIA project.
 
-## What this phase adds
+## What it provides
 
-- A staff-only SMS inbox at `/sms-inbox.html`.
-- Termii inbound SMS webhook processing and delivery-report updates.
-- Routing into the existing CALLORIA Contact Routing and Agent Desk queues.
-- Classification for the full RuffNeck portfolio: Learn, Prospector, Connect, Social Hub, Kano Run and Kano Keke.
-- Support routing for platform/account access, technical issues, complaints, sales enquiries, personal guidance, learning/career and safeguarding.
-- Conservative English, Hausa, Yoruba, Igbo and Nigerian Pidgin language hints; agents must confirm language with customers.
-- One-to-one support replies only, using Termii's `dnd` channel. There is no bulk send or `generic` promotional fallback.
-- Staff access through Supabase Auth plus the existing `CALLORIA_ROUTING_ACCESS` permissions map.
-- SMS sender and body encryption, keyed phone lookup, webhook signature verification, idempotency and delivery-status tracking.
-- `STOP` / `START` / `HELP` command handling and CALLORIA-local opt-out enforcement.
-- Character-encoding and segment estimate in the composer (GSM-7 or UCS-2). This is an estimate, not a billing quote.
-- Recovery of outbound records stuck in `sending`: after three minutes they become `unknown`. The inbox blocks unsafe retry until staff checks Termii delivery records.
+- Supervisor / people-admin department aggregate view; agent accounts receive a personal-only view.
+- Seven, 30 and 90 day reporting windows.
+- Work items received, resolved, active backlog, overdue workload, resolution SLA and average resolution time.
+- Current queue risks: aged urgent/high-priority work, overdue work, hold and after-contact work.
+- Work item volume by channel and department, plus daily received / resolved trend.
+- Workforce snapshot from published shifts and current attendance activities.
+- Aggregate QA reviews, QA pass rate, critical quality failures, reviewed scorecards and open coaching plans.
+- Provider message outcomes for WhatsApp, email, Meta social and SMS, using the status values available in each channel schema.
+- Telephone call totals, disposition counts and average recorded connected duration.
+- Refresh on demand and every 60 seconds while the tab is visible.
 
-## Important scope boundaries
-
-This is a source integration package, not an activated Termii account or deployed CALLORIA service. No provider API key, sender ID, account balance, paid plan, Supabase migration or Vercel deployment was created or changed here.
-
-CALLORIA SMS is not a marketing channel. Only a customer-originated support interaction may receive a one-to-one service response. The implementation is capped at one Nigerian mobile recipient per send, rejects promotional content, and uses the provider's `dnd` route only after that route is explicitly enabled by provider confirmation. It never silently falls back to `generic`.
-
-The SMS composer estimates message segments because the GSM-7 and Unicode encoding paths have different segment capacities. Actual carrier/provider segmentation and charges depend on the submitted message and provider/network processing; the UI does not calculate a monetary price.
-
-### Two different STOP mechanisms
-
-- `STOP` received by CALLORIA creates a CALLORIA-local suppression record and blocks CALLORIA outbound SMS. `START` can clear a keyword-based CALLORIA suppression, but a fresh customer-originated message must follow before the next staff reply. `START` does not grant marketing consent. A staff-imposed suppression cannot be removed by customer `START`.
-- Nigeria's network-level Do-Not-Disturb preference is controlled separately by the NCC short code `2442`. CALLORIA cannot turn off or override a subscriber's NCC DND selection. A CALLORIA `START` message does not change it.
-
-The provider's DND transactional route must be approved/activated by Termii for this specific account. Until then, outbound sending remains disabled by configuration.
+The dashboard query intentionally does not select or return customer names, contact details, message bodies, encrypted payloads, case narratives, webhook payloads, authentication tokens or raw customer identifiers. It reports work-item volumes, not unique human customers. It does not claim that a sent email was delivered: the current email message schema only records sent / failed / unknown.
 
 ## Integration baseline
 
-Merge this overlay into the **Phase 18-integrated** CALLORIA repository. It is not a standalone replacement for the entire game. It does not include the complete original game source or the root `index.html` and other Phase 1–18 application files that are expected to remain in the repository.
+This is an incremental overlay on the Phase 19-integrated CALLORIA repository. It is not a complete replacement project. Preserve the original CALLORIA game, root `index.html`, `js/main.js`, world files, assets, all earlier migrations and provider configuration. Merge this overlay's new files and integration edits into the current Phase 19-integrated repository.
 
-Files in this package replace or extend the matching files in the Phase 18-integrated project. Preserve all other project files. In particular, do not replace the main game, `index.html`, original world files, or existing game assets with this overlay.
+New files:
 
-## Database migration
+- `operations-intelligence.html`
+- `styles/operations-intelligence.css`
+- `js/operations-intelligence-engine.js`
+- `js/operations-intelligence-workbench.js`
+- `supabase/functions/calloria-operations-intelligence/`
+- `supabase/migrations/202611080020_calloria_operations_intelligence.sql`
 
-New migration:
+Updated integration files:
 
-`supabase/migrations/202611080019_calloria_sms_channel.sql`
+- `vite.config.js` adds the dashboard as a multi-page Vite input.
+- `supabase/config.toml` adds the function setting with `verify_jwt = false`; the handler validates the Supabase user JWT itself.
+- `package.json` adds syntax checks for the two new browser modules and retains existing scripts/dependencies.
+- Existing Agent Desk and provider inbox navigation gains a Command Centre link.
 
-Before applying it, confirm that CALLORIA migrations `001` through `018` are already present in the shared Supabase project's migration history and that the Phase 18 Contact Routing / Agent Desk schema exists. Apply migration `019` once only. Do not rerun migrations `001`–`018`.
+## Installation
 
-Migration 019 creates only `calloria_sms_*` tables/functions and expands the channel checks on the two existing CALLORIA operational routing tables (`calloria_ops_work_items` and `calloria_route_requests`) to allow `sms`. It does not intentionally change Prospector tables, generic profiles/organisations, existing authentication triggers, or shared access policies.
+1. Merge the Phase 20 overlay into the Phase 19-integrated repository. Do not replace the whole repo with this archive. Preserve all unlisted files.
+2. Confirm CALLORIA migrations 001–019 are already applied. Apply only `202611080020_calloria_operations_intelligence.sql` once.
+3. Deploy the new Edge Function folder `calloria-operations-intelligence`.
+4. Add the function configuration from this package to the existing `supabase/config.toml` if deploying with Supabase CLI. Preserve all existing function settings.
+5. No new Supabase secret is required. The function reuses the existing `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CALLORIA_ALLOWED_ORIGINS` and `CALLORIA_ROUTING_ACCESS` Edge Function secrets. Do not rotate, overwrite or repurpose any existing credential.
+6. Run the full repository's production build after merging, then deploy through the existing Vercel workflow.
 
-New SMS tables:
+Do not rerun migrations 001–019. Migration 020 adds query-supporting indexes and one service-role-only aggregate function. It does not alter Prospector tables, shared profiles, auth triggers, staff records, existing customer records or provider channel tables.
 
-- `calloria_sms_threads`
-- `calloria_sms_messages`
-- `calloria_sms_suppressions`
-- `calloria_sms_preferences`
-- `calloria_sms_webhook_events`
-- `calloria_sms_send_limits`
+## Access model
 
-All have RLS enabled and direct browser privileges revoked. The Edge Function accesses them with the Supabase service role after doing its own staff authentication and permission checks. Do not place the service-role key in Vercel client environment variables.
+- `agent`: personal view only. The server derives the staff ID from the validated Supabase session. Client-supplied staff IDs are ignored. An agent cannot request department aggregates or another staff member's data.
+- `supervisor`: aggregate metrics for the departments in that user's `CALLORIA_ROUTING_ACCESS` grant.
+- `people_admin`: aggregate-only workforce / service totals across the granted department scope. The response does not contain employee names, IDs or individual records.
 
-The migration also adds service-role-only maintenance functions:
+The Edge Function validates the JWT using `auth.getUser()` and checks the existing access map. The SQL function is `SECURITY DEFINER`, but execute permission is revoked from `public`, `anon` and `authenticated`, and granted only to `service_role`. It returns aggregate JSON only and has no parameters for customer content or arbitrary query fragments.
 
-- `calloria_sms_reconcile_stale_sends()` — run by the inbox before queue display. It converts any outbound send left in `sending` for more than three minutes to `unknown`; a new customer inbound is required before a subsequent reply can be reserved.
-- `calloria_sms_purge_expired()` — deletes SMS threads/messages after 180 days and minimal webhook fingerprints after 30 days. Suppression and preference records are retained to protect the opt-out. The function is available but this package does not configure a scheduler; create a supported scheduled invocation in Supabase only after reviewing the organisation's retention policy.
+## Metric definitions and limits
 
-## Edge Functions
+- **Contacts received:** Agent Desk work items created during the selected period. This is not a count of unique customers or all provider webhook events.
+- **Resolved:** work items whose `resolved_at` timestamp falls inside the selected period.
+- **Active backlog:** current work items in pending, claimed, active, on-hold, after-contact-work or escalated states.
+- **Overdue:** active work items whose `due_at` is earlier than the database current time.
+- **Resolution SLA:** resolved work items with a due timestamp that resolved at or before `due_at`, divided by all resolved work items with a due timestamp. Items without a due time are excluded from the denominator.
+- **Average resolution:** mean elapsed time from work-item creation to resolution among valid resolved records in the period.
+- **Staffing coverage:** currently published shifts with a live attendance record and no clock-out, grouped by the recorded activity. It is not physical presence or carrier availability verification.
+- **QA:** only recorded QA reviews; missing reviews are not assumed to be passes. Critical failures are reported separately.
+- **Provider outcomes:** only the status semantics available in each provider table are used. For email and social, `delivered` is returned as null (shown as a dash) because the Phase 15 / 17 schemas do not store a separate delivered state. Provider counts are outbound messages, not recipients or customers.
+- **Voice:** counts and durations are read from CALLORIA's voice call records. Recordings remain off; no recording / transcription data is accessed.
+- **Time zone:** database timestamps are generated in UTC. The browser formats the generated timestamp in the local display timezone. Daily groupings use the database session date (normally UTC).
 
-New function:
+The dashboard is an operations aid. It does not replace finance reconciliation, regulatory reporting, HR decisions, QA calibration or source-system audits. A zero or null is not proof of no activity if a channel was not fully deployed or migrated.
 
-`supabase/functions/calloria-sms/`
+## Verification
 
-Deploy `calloria-sms` after applying migration 019.
-
-This package also includes updated copies of the existing Agent Desk, Contact Routing and provider-channel Edge Function folders. Their staff-permission validators now accept `sms` in the channel grant. Deploy these updated copies together with Phase 19, otherwise an existing channel/function may reject the new `sms` permission in `CALLORIA_ROUTING_ACCESS`:
-
-- `calloria-agent-desk`
-- `calloria-contact-routing`
-- `calloria-whatsapp`
-- `calloria-email`
-- `calloria-web-chat`
-- `calloria-social-inbox`
-- `calloria-voice-telephony`
-
-Keep the other function versions and settings intact. The package's `supabase/config.toml` includes `[functions.calloria-sms] verify_jwt = false` because Termii's webhook does not carry a Supabase user JWT; the Edge Function verifies the provider signature itself. Staff actions require Supabase Auth bearer validation inside the function.
-
-## Supabase Edge Function Secrets
-
-Add the following secrets through the Supabase dashboard's Edge Function Secrets UI. Do not add private values to Vercel or commit them to the repository.
-
-| Secret | Purpose |
-|---|---|
-| `TERMII_API_KEY` | Termii account API key |
-| `TERMII_BASE_URL` | Exact account-specific HTTPS API base URL shown by Termii |
-| `TERMII_SENDER_ID` | Sender ID approved for the account (3–11 alphanumeric characters) |
-| `TERMII_WEBHOOK_SECRET` | Secret Termii uses to sign webhook payloads; confirm the value and signature header with Termii |
-| `TERMII_DND_ROUTE_ENABLED` | Set to literal `true` only after Termii confirms that DND transactional routing is enabled for the account; otherwise leave unset/false |
-| `CALLORIA_SMS_DATA_KEY` | New independent secret, at least 32 bytes, for SMS phone/body encryption |
-| `CALLORIA_SMS_LOOKUP_SECRET` | New independent secret, at least 32 bytes, for keyed phone lookup |
-
-Preserve the existing values of `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CALLORIA_ALLOWED_ORIGINS`, `CALLORIA_ROUTING_ACCESS`, and `CALLORIA_AGENT_DESK_ENCRYPTION_SECRET`. Do not rotate or reuse the Groq key or the WhatsApp, Resend, Meta or Signals provider credentials.
-
-`TERMII_BASE_URL` is account-specific. Use the exact HTTPS host from the Termii dashboard; do not guess a regional hostname. The implementation allows only HTTPS `termii.com` hosts and uses the documented `/api/sms/send` path.
-
-### Staff permissions
-
-In the existing `CALLORIA_ROUTING_ACCESS` secret, preserve every current staff record and permission. Add `sms` to the `channels` array only for employees authorised to handle SMS. Their records still require explicit department grants, supported language grants, appropriate skills, and the common `general_customer_care` skill. A `people_admin` grant cannot read customer message content.
-
-For example, add the channel to a specific existing staff record; do not replace the entire access map with a sample. The supported channel name is exactly `sms`.
-
-## Termii provider setup
-
-1. Activate the Termii account and obtain the API key and the account-specific base URL.
-2. Complete sender ID registration/approval for the sender ID you will use.
-3. Confirm with Termii that the account can use the DND transactional route for legitimate customer-support responses. Keep `TERMII_DND_ROUTE_ENABLED` false until confirmation.
-4. Configure the inbound SMS and delivery-report webhook destination as:
-
-   `https://<SUPABASE_PROJECT_REF>.supabase.co/functions/v1/calloria-sms`
-
-5. Configure Termii to send the `X-Termii-Signature` header using the exact webhook signing secret stored as `TERMII_WEBHOOK_SECRET`. Do not assume that the Termii API key is also the webhook signing secret.
-6. Confirm the actual inbound SMS and delivery report event formats against the Termii account's webhook documentation/test facility before enabling production traffic. The parser accepts the tested `incoming_sms` / `message_id` field family, but live provider payload shape and delivery are not verified by this package.
-7. Verify one inbound support message and its routing entry, one delivery report, an opted-out number, and one reply to a customer-originated message in a controlled test before general activation.
-
-## Operational behaviour
-
-- Incoming SMS is normalised to Nigerian mobile `234` format and encrypted before persistence.
-- Sensitive credentials, customer email/phone strings and account/financial-like numbers are redacted from the stored message copy and routing summary.
-- `STOP`, `STOPALL`, `UNSUBSCRIBE`, `CANCEL`, `END` and `QUIT` activate CALLORIA-local suppression.
-- `START`, `UNSTOP` and `SUBSCRIBE` clear only a keyword-based CALLORIA suppression; the next separate customer message is required before a support reply. `START` is never marketing consent.
-- `HELP` creates a General Customer Care routing request; CALLORIA does not send an automatic outbound reply.
-- Agents must claim the work item through existing Routing Control before opening/replying in the SMS Inbox.
-- Only messages in a customer-initiated support thread may be answered. Replies are one-to-one and rate-limited to 20 per staff user per minute.
-- Unknown provider outcomes are not auto-retried. Staff must check the Termii message log. A stale `sending` record is marked `unknown` after three minutes to prevent a second send while the first might have succeeded.
-- This release has no MMS, attachments, broadcasts, bulk messages, automated promotional messages, scheduling, or customer-initiated outbound campaigns.
-
-## Verification boundary
-
-The included checks validate JavaScript syntax, the Edge Function TypeScript project, HTML structure, configuration syntax, package tests and ZIP integrity. They do not execute SQL against your Supabase project, call Termii, verify sender ID/DND route activation, or deploy any source to GitHub/Vercel. The overlay also does not include the complete original game source, so a full repository production build must be run after merging it into the full Phase 18-integrated repository.
+The package tests pure formatting and snapshot-normalisation logic, checks browser module syntax, checks the Edge Function TypeScript sources, validates the SQL / page / config structure, and checks ZIP integrity. It does not execute migration 020 against the shared Supabase project, exercise real Supabase Auth, run a full Vite build (the overlay does not contain the entire game repository), query production records, or deploy to GitHub / Vercel.

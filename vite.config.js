@@ -30,6 +30,7 @@ export default defineConfig({
         socialInbox: resolve(process.cwd(), 'social-inbox.html'),
         voiceConsole: resolve(process.cwd(), 'voice-console.html'),
         smsInbox: resolve(process.cwd(), 'sms-inbox.html'),
+        operationsIntelligence: resolve(process.cwd(), 'operations-intelligence.html'),
         calloriaChatWidget: resolve(process.cwd(), 'widgets/calloria-chat.js')
       },
       output: {

@@ -35,6 +35,8 @@
     "supabase/functions/calloria-voice-telephony/**/*.ts",
     "supabase/functions/calloria-voice-telephony/**/*.d.ts",
     "supabase/functions/calloria-sms/**/*.ts",
-    "supabase/functions/calloria-sms/**/*.d.ts"
+    "supabase/functions/calloria-sms/**/*.d.ts",
+    "supabase/functions/calloria-operations-intelligence/**/*.ts",
+    "supabase/functions/calloria-operations-intelligence/**/*.d.ts"
   ]
 }
