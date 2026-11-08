@@ -1,11 +1,8 @@
-# Changelog — v2.2
+# CALLORIA v2.3
 
-- Activates the committed office GLB integration through the existing
-  `calloriaGLBWorldPlugin()` Vite slot.
-- Connects the existing staff GLB layer and office GLB layer to one renderer loop.
-- Moves the immersive starting position to the approach point of Agent Station 11.
-- Dispatches consistent custom events for workstation proximity, USE and immersive state.
-- Reworks the first-shift mission card to guide the player through the existing
-  workstation operation panel.
-- Reports staff GLB and office GLB counts separately.
-- Preserves original geometry fallbacks when an external GLB fails validation.
+- Adds a six-step, event-driven first-shift objective HUD.
+- Connects workstation access, operation selection, briefing attendance, shift start, inbound customer connection and inbound case wrap-up to visible mission progress.
+- Makes the mobile MOVE / drag-to-look / RUN / USE controls explicit.
+- Displays confirmed staff and office GLB counts from the existing runtime callback; zero GLB loads are labelled as procedural fallback rather than active GLB models.
+- Leaves the existing recruitment, customer-service, workforce, CRM, QA and case-handling business rules unchanged.
+- Adds a post-transform Vite bridge with exact-anchor guards and idempotency.

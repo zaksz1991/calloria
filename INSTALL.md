@@ -1,62 +1,41 @@
-# CALLORIA First-Shift GLB Activation v2.2
+# CALLORIA v2.3 — First Shift Gameplay Loop
 
 ## Purpose
 
-Activate the office GLB module and first-shift objective system against the
-current `main` source contract without replacing `main.js`, `production-world.js`,
-`package.json`, `vite.config.js`, or the GLB assets.
+Turn the existing 3D movement/workstation flow into a guided first-shift objective connected to the real recruitment, briefing, shift, inbound-call and case wrap-up actions already implemented in `js/main.js`.
 
-## Files in this package
+This is a focused gameplay bridge. It does not rebuild the 3D office, replace procedural geometry, replace GLB files, or change the existing business rules.
 
-Replace:
-- `build/calloria-glb-world-plugin.js`
-- `js/world-gameplay-mission.js`
+## Files
 
-Add:
-- `tests/calloria-first-shift-activation.test.mjs`
+- Replace `vite.config.js` with the complete current-main configuration in this package. It preserves all existing multi-page entries and registers one additional post-transform plugin.
+- Replace `js/world-gameplay-mission.js` with the mission HUD and event-driven progression.
+- Add `build/calloria-first-shift-gameplay-plugin.js`.
+- Add `tests/calloria-first-shift-gameplay.test.mjs`.
 
-## Existing repository dependencies
+Do not replace `js/main.js`, `js/production-world.js`, existing GLB integration plugins, `package.json`, lockfiles, Supabase files or original model assets.
 
-This upgrade expects the following files already present on `main`:
-- `js/glb-world-integration.js`
-- `js/glb-office-world-integration.js`
-- `js/glb-asset-registry.js`
-- `js/glb-asset-loader.js`
-- `js/glb-character-motion.js`
+## What players see
 
-The repository's existing `vite.config.js` already imports and registers
-`calloriaGLBWorldPlugin()`. Do not add a duplicate plugin registration.
+The 3D floor displays a six-step first-shift guide:
 
-## What changes in the game
+1. Reach a workstation using MOVE; drag the scene to look; RUN sprints.
+2. Tap USE when the workstation is in range.
+3. Choose Inbound Desk.
+4. Attend the active briefing and start the shift if the shift did not start automatically.
+5. Accept the first waiting customer.
+6. Complete after-contact work and save the case.
 
-1. The currently committed office GLB loader is invoked alongside the staff
-   GLB loader and receives the actual Three.js scene, station catalogue and
-   device tier.
-2. Office GLB failures are isolated. They do not stop the world from loading;
-   the original scene objects remain available as fallbacks.
-3. The player starts at the approach point for Agent Station 11. This station
-   is included in the existing low, balanced and high office asset plans.
-4. The existing `USE` action emits the workstation-access event used by the
-   first-shift objective overlay.
-5. The objective card explains the sequence: approach station, open the
-   workstation, choose an operation.
-6. The existing render loop updates staff and office layers. No second
-   WebGLRenderer or animation loop is created.
-7. The graphics status reports staff GLB count and office GLB object count
-   separately; it no longer describes procedural local staff as GLB assets.
+The guide advances only from actual application events. A case with an escalated or callback disposition is recorded accurately and is not labelled resolved.
 
-## Installation
+The HUD also displays truthful GLB counts from the existing asset callback. If no GLB objects are confirmed, it explicitly says that procedural fallback is active.
 
-Merge the three package files into the matching paths in the repository.
-Commit the two replacements and one test file to `main`.
+## Build order
 
-Do not replace any other files.
+The new Vite plugin uses `enforce: 'post'` so it runs after the existing GLB, customer and supervisor transforms. It only transforms `js/main.js`, checks each expected source anchor exactly once, and refuses a partial transformation if the main source has changed.
 
 ## Verification
 
-The included focused tests exercise the actual transform contract used by the
-plugin: imports, office and staff activation, station spawn, event bridges,
-lifecycle cleanup, duplicate protection and fail-closed source anchors.
+Run the repository's existing `npm test` and `npm run build` through the normal GitHub/Vercel workflow. The added test file is included automatically by the existing `node --test tests/*.test.mjs` script.
 
-The tests do not claim that Vercel deployment or browser rendering has been
-completed. Those require a production build and mobile browser check.
+No live Vercel build or device-browser rendering has been performed from this package. Confirm the deployed build before treating the feature as live.

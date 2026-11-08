@@ -6,6 +6,7 @@ import { calloriaCustomerAvatarPlugin } from './build/calloria-customer-avatar-p
 import { calloriaCustomerWorldPlugin } from './build/calloria-customer-world-plugin.js';
 import { calloriaSupervisorInterventionPlugin } from './build/calloria-supervisor-intervention-plugin.js';
 import { calloriaSupervisorCaseBridgePlugin } from './build/calloria-supervisor-case-bridge-plugin.js';
+import { calloriaFirstShiftGameplayPlugin } from './build/calloria-first-shift-gameplay-plugin.js';
 
 export default defineConfig({
   base: '/',
@@ -16,11 +17,11 @@ export default defineConfig({
     calloriaMeshoptRuntimePlugin(),
     calloriaCustomerAvatarPlugin(),
     calloriaCustomerWorldPlugin(),
-    // The supervisor world plugin runs after the customer-world pre-transform,
-    // because it consumes the customer layer's injected lifecycle anchors.
+    // Supervisor world integration consumes customer-world lifecycle anchors.
     calloriaSupervisorInterventionPlugin(),
-    // The case bridge runs on main.js after the customer-avatar pre-transform.
-    calloriaSupervisorCaseBridgePlugin()
+    calloriaSupervisorCaseBridgePlugin(),
+    // Run after existing main.js transforms so gameplay events observe the final source.
+    calloriaFirstShiftGameplayPlugin()
   ],
   build: {
     outDir: 'dist',
