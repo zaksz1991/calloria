@@ -52,3 +52,6 @@ verify_jwt = false
 
 [functions.calloria-operations-intelligence]
 verify_jwt = false
+
+[functions.calloria-knowledge-operations]
+verify_jwt = false

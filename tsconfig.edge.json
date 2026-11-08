@@ -37,6 +37,8 @@
     "supabase/functions/calloria-sms/**/*.ts",
     "supabase/functions/calloria-sms/**/*.d.ts",
     "supabase/functions/calloria-operations-intelligence/**/*.ts",
-    "supabase/functions/calloria-operations-intelligence/**/*.d.ts"
+    "supabase/functions/calloria-operations-intelligence/**/*.d.ts",
+    "supabase/functions/calloria-knowledge-operations/**/*.ts",
+    "supabase/functions/calloria-knowledge-operations/**/*.d.ts"
   ]
 }

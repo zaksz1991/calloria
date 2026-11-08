@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101827"><title>CALLORIA · Knowledge Operations</title>
+  <link rel="stylesheet" href="/styles/knowledge-operations.css">
+  <script type="module" src="/js/knowledge-operations-workbench.js"></script>
+</head>
+<body>
+  <header class="ko-topbar">
+    <a class="ko-brand" href="/">CALLORIA <span>KNOWLEDGE OPERATIONS</span></a>
+    <nav aria-label="Staff navigation">
+      <a href="/operations-intelligence.html">Command Centre</a><a href="/agent-desk.html">Agent Desk</a><a href="/routing-control.html">Routing</a><a href="/workforce.html">Workforce</a><a href="/performance.html">Performance</a><a class="active" href="/knowledge-operations.html">Knowledge</a>
+      <button id="ko-sign-out" class="ko-button quiet" hidden>Sign out</button>
+    </nav>
+  </header>
+  <main class="ko-shell">
+    <section id="ko-login" class="ko-login ko-panel">
+      <div class="ko-kicker">RESTRICTED STAFF ACCESS</div><h1>Knowledge Operations</h1>
+      <p>Manage trusted product, service and customer-care information. Drafts require independent approval before they become available to customer-facing retrieval.</p>
+      <form id="ko-login-form"><label>Staff email<input id="ko-email" type="email" autocomplete="username" required></label><label>Password<input id="ko-password" type="password" autocomplete="current-password" required></label><button class="ko-button primary" type="submit">Sign in</button></form>
+      <p id="ko-login-status" class="ko-status" role="status"></p>
+    </section>
+
+    <section id="ko-workspace" hidden>
+      <div class="ko-heading"><div><div class="ko-kicker">KNOWLEDGE GOVERNANCE · VERSIONED CONTENT</div><h1>Knowledge Operations</h1><p id="ko-scope" class="ko-muted">Authorised knowledge workspace</p></div><div class="ko-heading-actions"><button id="ko-revise-record" class="ko-button outline" hidden>New revision</button><button id="ko-new-record" class="ko-button primary">New knowledge record</button><button id="ko-refresh" class="ko-button outline">Refresh</button></div></div>
+      <div class="ko-alert"><strong>Publication control:</strong> saving or submitting a draft does not change customer answers. Only independently reviewed and explicitly published records are copied to the Phase 4 customer knowledge tables. Prices, quotas, availability and live account state must still be verified in the owning product.</div>
+      <div class="ko-layout">
+        <aside class="ko-panel ko-record-panel"><div class="ko-panel-title"><div><div class="ko-kicker">KNOWLEDGE LIBRARY</div><h2>Records</h2></div><span id="ko-record-count" class="ko-count">0</span></div>
+          <div class="ko-filters"><input id="ko-search" type="search" placeholder="Search title, slug or category" aria-label="Search knowledge records"><select id="ko-status-filter" aria-label="Filter by status"><option value="">All visible statuses</option><option value="draft">Draft</option><option value="in_review">Awaiting review</option><option value="changes_requested">Changes requested</option><option value="approved">Approved</option><option value="published">Published</option><option value="retired">Retired</option></select><select id="ko-type-filter" aria-label="Filter by record type"><option value="">All record types</option><option value="article">Articles</option><option value="platform">Platforms</option><option value="service">Services</option></select></div>
+          <div id="ko-record-list" class="ko-record-list"><p class="ko-empty">Sign in to load the knowledge library.</p></div>
+        </aside>
+        <section class="ko-panel ko-editor-panel">
+          <div class="ko-panel-title"><div><div class="ko-kicker">EDITORIAL WORKFLOW</div><h2 id="ko-editor-title">Select a record</h2></div><span id="ko-record-status" class="ko-status-pill">No record selected</span></div>
+          <form id="ko-record-form">
+            <input id="ko-record-id" type="hidden">
+            <div class="ko-form-grid">
+              <label>Record type<select id="ko-record-type" required><option value="article">Knowledge article</option><option value="platform">RuffNeck platform</option><option value="service">RuffNeck service</option></select></label>
+              <label>Record key / slug<input id="ko-record-key" maxlength="100" pattern="[a-z0-9][a-z0-9-]{1,99}" placeholder="e.g. kano-keke-account-help" required></label>
+              <label class="span-2">Title<input id="ko-title" maxlength="180" required></label>
+              <label>Category<input id="ko-category" maxlength="80" placeholder="e.g. platform_support" required></label>
+              <label class="span-2">Change summary<textarea id="ko-change-summary" maxlength="600" rows="2" placeholder="What changed, why, and what source supports it?" required></textarea></label>
+              <label class="span-2">Source URL (HTTPS)<input id="ko-source-url" type="url" placeholder="https://official-product-or-authoritative-source.example"></label>
+              <label>Source last verified<input id="ko-source-verified" type="date"></label>
+            </div>
+            <section id="ko-article-fields" class="ko-content-fields"><h3>Article content</h3><div class="ko-form-grid"><label>Audience<select id="ko-audience"><option value="customer">Customer-facing</option><option value="staff">Staff-only</option><option value="both">Customer and staff</option></select></label><label>Tags (comma separated)<input id="ko-tags" placeholder="account access, password reset"></label><label class="span-2">Article body<textarea id="ko-article-body" rows="9" maxlength="12000" placeholder="Write factual, actionable and appropriately bounded guidance."></textarea></label></div></section>
+            <section id="ko-platform-fields" class="ko-content-fields" hidden><h3>Platform catalogue entry</h3><div class="ko-form-grid"><label>Platform display name<input id="ko-platform-name" maxlength="180"></label><label>Official URL<input id="ko-platform-url" type="url" maxlength="400" placeholder="https://"></label><label class="span-2">Purpose and audience<textarea id="ko-platform-purpose" rows="3" maxlength="1600"></textarea></label><label>Features (one per line)<textarea id="ko-platform-features" rows="5"></textarea></label><label>Support topics (one per line)<textarea id="ko-platform-topics" rows="5"></textarea></label><label class="span-2">Self-service tasks (JSON array)<textarea id="ko-platform-self-service" rows="7" spellcheck="false">[]</textarea><small>Each item: {"task":"...","steps":["...","..."]}</small></label><label class="span-2">Limitations and claims that must not be made<textarea id="ko-platform-limitations" rows="3" maxlength="1800"></textarea></label><label class="ko-check"><input id="ko-platform-active" type="checkbox" checked> Platform is active</label></div></section>
+            <section id="ko-service-fields" class="ko-content-fields" hidden><h3>Service catalogue entry</h3><div class="ko-form-grid"><label>Service name<input id="ko-service-name" maxlength="180"></label><label>Service category<input id="ko-service-category" maxlength="80"></label><label class="span-2">Service description<textarea id="ko-service-description" rows="6" maxlength="5000"></textarea></label><label class="ko-check"><input id="ko-service-active" type="checkbox" checked> Service is active</label></div></section>
+            <div id="ko-record-actions" class="ko-actions"><button id="ko-save-draft" class="ko-button primary" type="submit">Save draft</button><button id="ko-submit-review" class="ko-button outline" type="button">Submit for review</button><button id="ko-approve" class="ko-button outline" type="button" hidden>Approve</button><button id="ko-request-changes" class="ko-button outline" type="button" hidden>Request changes</button><button id="ko-reject" class="ko-button danger" type="button" hidden>Reject</button><button id="ko-publish" class="ko-button success" type="button" hidden>Publish to customer knowledge</button><button id="ko-retire" class="ko-button danger" type="button" hidden>Retire published record</button></div>
+            <p id="ko-editor-status" class="ko-status" role="status"></p>
+          </form>
+        </section>
+      </div>
+      <section class="ko-panel ko-announcements"><div class="ko-panel-title"><div><div class="ko-kicker">7:30 AM / 2:00 PM BRIEFING SUPPORT</div><h2>Product and service notices</h2></div><span class="ko-muted">Internal staff notices · not customer marketing</span></div>
+        <div class="ko-announcement-grid"><form id="ko-announcement-form" class="ko-announcement-form"><input id="ko-announcement-id" type="hidden"><label>Notice title<input id="ko-announcement-title" maxlength="180" required></label><label>Notice type<select id="ko-announcement-category"><option value="product_update">Product update</option><option value="service_change">Service change</option><option value="policy_update">Policy update</option><option value="security_notice">Security notice</option><option value="known_issue">Known issue</option><option value="training_notice">Training notice</option></select></label><label>Notice content<textarea id="ko-announcement-body" rows="5" maxlength="5000" required></textarea></label><label>Related product IDs (comma separated)<input id="ko-announcement-products" placeholder="ruffneck-learn, kano-run"></label><label>Target departments (comma separated)<textarea id="ko-announcement-departments" rows="2" placeholder="Leave blank for all authorised departments"></textarea></label><div class="ko-form-grid"><label>Starts at<input id="ko-announcement-starts" type="datetime-local" required></label><label>Ends at<input id="ko-announcement-ends" type="datetime-local" required></label></div><label class="ko-check"><input id="ko-announcement-ack" type="checkbox" checked> Require staff acknowledgement</label><button id="ko-save-announcement" class="ko-button primary" type="submit">Save briefing draft</button><p id="ko-announcement-status" class="ko-status" role="status"></p></form><div><h3>Current staff notices</h3><div id="ko-announcement-list" class="ko-announcement-list"><p class="ko-empty">No current notices.</p></div></div></div>
+      </section>
+      <p class="ko-footnote">Life and wellbeing information must remain non-clinical. Do not publish diagnoses, treatment instructions or crisis-response substitutes. Keep customer contact details, passwords, OTPs, payment data and private case narratives out of the knowledge base and staff notices.</p>
+    </section>
+  </main>
+</body>
+</html>

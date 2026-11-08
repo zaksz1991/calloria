@@ -1,28 +1,34 @@
-# CALLORIA Phase 20 Verification Report
+# Phase 21 verification report
 
-## Automated checks completed
+## Passed
 
-| Check | Result |
-|---|---:|
-| Combined Phase 19 regression and Phase 20 test suite (`npm test`) | **149 passed, 0 failed** |
-| Phase 20 focused unit and contract tests | **16 passed, 0 failed** |
-| Supabase Edge Function TypeScript project (`tsc -p tsconfig.edge.json`) | **PASS** |
-| JavaScript syntax across included `js/`, `widgets/` and Vite configuration | **21 files passed** |
-| HTML parsing and duplicate-ID checks | **8 pages passed** |
-| Package JSON and Edge TypeScript config parsing | **PASS** |
-| Supabase TOML configuration parsing | **PASS** |
-| SQL structural checks: aggregate-only selection, scoped filters and service-role-only execution | **PASS** |
+- Full included Phase 20 + Phase 21 Node test suite: **168 passed, 0 failed**.
+- Phase 21 focused tests: **19 passed, 0 failed**.
+- `node --check js/knowledge-operations-engine.js`: passed.
+- `node --check js/knowledge-operations-workbench.js`: passed.
+- `tsc -p tsconfig.edge.json --pretty false`: passed, including the new `calloria-knowledge-operations` Edge Function.
+- Knowledge page HTML parsed; **67 IDs**, no duplicate IDs.
+- All 62 static DOM selectors in the new workbench resolve to an HTML element.
+- Knowledge page JavaScript and CSS local paths exist.
+- `package.json`, `tsconfig.edge.json` and `supabase/config.toml` parse successfully.
+- Phase 21 Vite input, staff navigation and new Edge Function configuration are present.
+- Migration static checks confirm isolated `calloria_km_*` tables, RLS, browser privilege revocation, service-role-only publication functions and no destructive changes to shared Prospector tables.
+- Atomic publish/retire functions synchronise the versioned editorial records with Phase 4 knowledge tables.
+- Staff-only articles are not exposed through the public Phase 4 articles table.
 
-The test suite covers numeric formatting, supported report periods, empty/malformed snapshot handling, SLA and queue-risk tone thresholds, channel labels, SQL privilege restrictions, absence of encrypted/customer-content columns from the aggregate migration, staff-scope derivation from the validated session, bounded report windows, and Vite multi-page integration.
+## Not run / not verified
 
-## Not performed / not verified
+- No PostgreSQL server or connected Supabase project was used to execute migration 021. SQL was reviewed with structural/contract tests, not a live database parser/executor.
+- Full Vite production build was not run: this overlay does not contain the full CALLORIA game repository and its root `index.html`, complete simulator source and all existing page inputs.
+- No live Supabase Auth or Edge Function request was made.
+- No live article/platform/service record was published or retired.
+- No live staff briefing was published or acknowledged.
+- No GitHub commit or Vercel deployment was performed.
+- No physical device test was performed.
 
-- Full Vite production build. This is a Phase 19 source overlay and does not contain the complete original CALLORIA game repository, including its original `index.html`, game entry modules and assets. A full build must run after the overlay is merged into that complete repository.
-- Execution of migration `202611080020_calloria_operations_intelligence.sql` against Supabase or PostgreSQL runtime validation. SQL checks were structural, not a live database migration.
-- Live Supabase Auth / Edge Function invocation against production records.
-- Verification of source data completeness, actual operational accuracy, or reporting latency in production.
-- GitHub commit or Vercel deployment.
+## Critical deployment prerequisites
 
-## Package boundary
-
-The archive contains the Phase 19 overlay plus Phase 20 additions and integration edits. It is not a full replacement for the source repository and is not a live deployment. No live database, provider credentials, staff permissions, Prospector tables, or authentication triggers were changed.
+- Phase 4 migration 005 must already exist because the publication RPC writes to `calloria_kb_articles`, `calloria_kb_platforms` and `calloria_kb_services`.
+- The corrected Phase 20 migration 020 must have completed successfully before applying migration 021.
+- Confirm migrations 001–019 are applied. Apply migration 021 once only.
+- Supabase function Secrets must contain the existing `CALLORIA_ROUTING_ACCESS`, `CALLORIA_ALLOWED_ORIGINS`, `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` values. No additional secret was introduced.

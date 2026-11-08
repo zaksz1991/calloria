@@ -1,0 +1,12 @@
+CALLORIA Phase 21 local verification
+Full included Phase 20 + Phase 21 suite: 168 passed, 0 failed
+Focused Phase 21 suite: 19 passed, 0 failed
+JavaScript syntax (knowledge engine + workbench): passed
+Edge TypeScript configuration (tsc -p tsconfig.edge.json): passed
+Knowledge page HTML: 67 IDs, 0 duplicate IDs
+Knowledge workbench selectors: 62 direct selectors, 0 missing selectors
+JSON/TOML configuration parsing: passed
+ZIP integrity: passed after packaging
+Live PostgreSQL/Supabase migration and function calls: not run
+Full Vite production build: not run (overlay lacks complete root game source)
+GitHub commit / Vercel deployment: not performed
