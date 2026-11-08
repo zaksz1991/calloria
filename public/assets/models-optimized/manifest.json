@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "optimizer": "glTF Transform 4.5.0: conservative optimize + Meshopt medium + WebP",
+  "originalsModified": false,
+  "optimizedFileCount": 0,
+  "files": {}
+}
