@@ -1,9 +1,8 @@
-# v1.4 — Customer behaviour and 3D avatar stage
+# CALLORIA Customer Avatar v1.5
 
-- Adds nine grounded customer behaviour profiles to the synthetic Customer Intelligence Lab.
-- Adds a GLB-powered customer avatar stage driven by the active persona and post-response customer reaction.
-- Requires explicit GLB Inspector approval for customer/visitor models; no unreviewed model is shown.
-- Applies model safety budgets for scale, skeleton, triangles, meshes and textures.
-- Reuses the existing cached GLB loader and Meshopt runtime path.
-- Keeps existing business logic, Supabase integration, main.js, customer-intelligence-engine.js and production-world.js source files untouched through version-checked Vite transforms.
-- Retains the existing Customer Lab workflow if no approved compatible customer model is available.
+- Reuses the existing avatar renderer and loaded customer model when Customer Intelligence Lab re-renders for another conversation turn and the selected customer asset is unchanged.
+- Rebinds the retained canvas to the newly rendered customer stage instead of repeatedly creating and disposing WebGL contexts.
+- Updates customer emotion, persona, reaction, caption and matching embedded animation clip from the latest practice state.
+- Smoothly blends skeletal body-language offsets after each agent response.
+- Keeps explicit GLB Inspector approval, runtime model budgets, Meshopt-capable shared loading and the no-3D fallback.
+- Keeps the existing Vite plugin, main.js, customer-intelligence engine, and production-world source untouched.

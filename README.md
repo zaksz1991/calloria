@@ -1,32 +1,21 @@
-# CALLORIA v1.4 — Customer Behaviour + 3D Customer Avatar
+# CALLORIA Customer Avatar v1.5
 
-This is an additive upgrade for the current `main` branch. It adds a real GLB-backed customer view to the existing synthetic Customer Intelligence Lab and expands the customer behaviour set.
+## Purpose
 
-## Only one existing file is replaced
+This patch improves the customer avatar stage added in v1.4. When the Customer Intelligence Lab redraws after each agent reply, the old implementation disposed its renderer and created a fresh WebGL context. This patch reuses the renderer, loaded model and animation mixer when the selected customer model remains the same.
 
-- `vite.config.js` — complete replacement based on the current repository version, retaining the existing GLB world plugin, Meshopt runtime plugin, all Vite multi-page entries, and adding the customer-avatar plugin.
+## User-visible result
 
-## New files
+The same approved customer avatar remains on screen between practice turns. When the customer reaction changes, the caption, compatible embedded animation and skeletal body-language target update, with a short smooth transition rather than a sudden pose snap.
 
-- `build/calloria-customer-avatar-plugin.js`
-- `js/customer-avatar-stage.js`
-- `js/customer-avatar-profile.js`
-- `styles/calloria-customer-avatar.css`
-- `tests/customer-avatar-plugin.test.mjs`
-- `tests/customer-avatar-profile.test.mjs`
-- `INSTALL.md`
-- `CHANGELOG.md`
+## Safety and compatibility
 
-## Preserved
+- Original GLB files are not modified.
+- No additional npm packages are introduced.
+- The GLB Inspector approval requirement remains.
+- Existing customer model geometry, skeleton and texture budgets remain.
+- If a different customer GLB is selected, the previous stage is disposed and the new model is loaded.
+- If no approved compatible model exists, the current safe unavailable state remains.
+- When the stage is removed from the DOM, its render loop pauses. Rebinding the same stage restarts it.
 
-No replacement of `main.js`, `production-world.js`, `customer-intelligence-engine.js`, `package.json`, lockfile, existing Supabase files, or original GLB assets.
-
-The Vite plugin modifies `main.js` and `customer-intelligence-engine.js` only at build time and only when all expected source anchors occur exactly once. If the repository source changes unexpectedly, the build fails instead of silently applying an incomplete injection.
-
-## Runtime behaviour
-
-The avatar is a visual representation of the synthetic practice customer inside Customer Intelligence Lab. It is not presented as a physical in-office customer or live caller video.
-
-Only customer/visitor models explicitly approved in the existing GLB Asset Inspector are considered. A model must pass runtime checks for human scale, skeleton, bone count, triangle count, mesh count and texture dimensions. If no approved compatible model exists, the simulation continues and shows a clear message linking to the GLB Inspector.
-
-The model stage is limited to one character and follows the existing customer reaction state after each agent response.
+See `INSTALL.md` before merging.
