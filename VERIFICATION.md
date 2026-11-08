@@ -1,38 +1,31 @@
-# CALLORIA Phase 14 — Verification Report
+# CALLORIA Phase 15 — Verification Report
 
-## Completed local checks
+## Local checks
 
 | Check | Result |
-|---|---:|
-| Focused WhatsApp engine + integration contract tests | **21 passed, 0 failed** |
-| `node --check js/whatsapp-engine.js` | PASS |
-| `node --check js/whatsapp-inbox-workbench.js` | PASS |
-| `node --check vite.config.js` | PASS |
-| Edge Function TypeScript project check (`tsc --noEmit -p tsconfig.edge.json`) | PASS |
-| WhatsApp Inbox HTML parsing | PASS — 38 unique IDs, no duplicates |
-| Agent Desk HTML parsing | PASS — 52 unique IDs, no duplicates |
-| Workbench DOM contract | PASS — all 38 referenced IDs exist |
-| `package.json` JSON parsing | PASS |
-| Supabase `config.toml` parsing | PASS |
-| WhatsApp Inbox stylesheet structure | PASS — 125 balanced CSS blocks |
-| Phase 14 Edge Function local helper import | PASS — helper resides inside the deployable function folder |
-| Focused SQL contract/security checks | PASS — tests assert encrypted columns, RLS/revokes, service-role RPC grants and retention function |
+|---|---|
+| Email and WhatsApp focused Node tests | 45 passed, 0 failed |
+| Email browser module syntax (`node --check`) | Passed |
+| WhatsApp browser module syntax (`node --check`) | Passed |
+| Vite configuration syntax (`node --check`) | Passed |
+| Supabase Edge Function TypeScript static check (`tsc --noEmit -p tsconfig.edge.json`) | Passed |
+| Email Inbox HTML ID uniqueness and browser selector contract | Passed |
+| Provider webhook raw-body signature contract | Passed |
+| Resend inbound body retrieval contract | Passed |
+| Email thread-reference persistence contract | Passed |
+| SQL namespace, RLS and service-role grant static checks | Passed |
+| Package archive integrity | To be confirmed after archive creation |
 
-The tests cover phone-number masking, 24-hour windows, conservative language/intent routing, sensitive-data redaction, inbound payload extraction, secret-request checks, Meta signature-validation ordering, configured phone-number filtering, Supabase staff grants, Agent Desk routing, opt-out controls, consent evidence references and retention boundaries.
+## Not performed
 
-## Not verified
-
-- Full production Vite build against the complete CALLORIA repository.
-- Applying migration `202611070014_calloria_whatsapp_channel.sql` to the shared Supabase project.
-- Live Supabase Edge Function deployment or database RPC execution.
-- Meta Business verification, WhatsApp sender-number onboarding or webhook subscription.
-- A live signed Meta webhook delivery, inbound customer message, outbound message or delivery-status callback.
-- Browser end-to-end testing on the deployed Vercel application.
-- Physical desktop or mobile-device testing.
-- A scheduled invocation of `calloria_wa_purge_expired()`.
-
-No GitHub commit was created and no Vercel or Supabase deployment was performed by this package operation.
+- Full Vite production build. This Phase 15 package is an overlay and does not contain the complete CALLORIA base application files (including the root simulator/game modules). Run the full project build only after merging this overlay into the Phase 14-integrated repository.
+- Live Supabase migration or SQL execution. Migration `202611080015_calloria_email_channel.sql` has not been applied to the shared project.
+- Live Resend API, receiving domain, webhook signature or outbound message test.
+- Live Edge Function deployment or Supabase permission-map test.
+- Browser end-to-end testing on deployed Vercel, physical desktop/mobile testing or email client threading test.
+- Automated scheduling of `calloria_email_purge_expired()`.
+- GitHub commit or Vercel deployment. No repository write or deployment was performed as part of packaging this overlay.
 
 ## Verification boundary
 
-The 21 passing tests are focused local tests and source-contract checks. They do not establish that Meta credentials are approved, Supabase migration history is complete, server secrets are present, or a real WhatsApp conversation can be sent or received. The full repository build must be run after this overlay is merged into the user's Phase 13-integrated repository.
+Passing local unit, syntax and static-contract checks confirms the tested source-level conditions only. It does not establish that migration 015 is applied, Resend credentials/domains are verified, staff permission scopes are configured, live email is deliverable or the full repository production build succeeds.

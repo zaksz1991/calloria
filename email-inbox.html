@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07121d">
+  <meta name="description" content="Restricted CALLORIA transactional customer email support inbox.">
+  <title>CALLORIA · Email Inbox</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/calloria-mark.svg">
+  <link rel="stylesheet" href="/styles/email-inbox.css">
+</head>
+<body>
+  <div class="email-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="CALLORIA home"><span class="brand-mark">C</span><span><b>CALLORIA</b><small>EMAIL SUPPORT OPERATIONS</small></span></a>
+      <nav aria-label="Staff navigation">
+        <a href="/agent-desk.html">Agent Desk</a><a href="/whatsapp-inbox.html">WhatsApp Inbox</a><a href="/routing-control.html">Routing Control</a><a href="/customer-care">Customer Care</a>
+        <button id="sign-out" class="button quiet" hidden>Sign out</button>
+      </nav>
+    </header>
+    <main>
+      <section id="login-panel" class="login-wrap">
+        <div class="login-card">
+          <div class="eyebrow">RESTRICTED STAFF ACCESS</div>
+          <h1>Email Inbox</h1>
+          <p class="muted">Handle customer-initiated support email. Sign in with a staff account that has explicit Email channel permission and an eligible Contact Routing work item.</p>
+          <form id="login-form" class="stack-form">
+            <label>Staff email<input id="staff-email" type="email" autocomplete="username" required maxlength="180"></label>
+            <label>Password<input id="staff-password" type="password" autocomplete="current-password" required maxlength="200"></label>
+            <button class="button primary" type="submit">Sign in</button>
+            <div id="login-status" class="status" role="status" aria-live="polite"></div>
+          </form>
+          <p class="security-note">No public registration. Credentials are verified through Supabase Auth. The server checks staff department, skill and Email channel permissions again.</p>
+        </div>
+      </section>
+
+      <section id="workspace" hidden>
+        <div class="page-heading">
+          <div><div class="eyebrow">RUFFNECK ENTERTAINMENT · CUSTOMER COMMUNICATIONS</div><h1>Email Support Inbox</h1><p class="muted">Inbound emails create Contact Routing work. Agents claim the linked request before reading or replying. Replies are human-authorised and transactional.</p></div>
+          <div class="staff-card"><b id="staff-name">Staff member</b><small id="staff-scope">Email permission</small></div>
+        </div>
+        <div class="notice-strip"><strong>Provider status</strong><span id="provider-config">Checking Resend configuration…</span></div>
+        <div class="metrics">
+          <article><span>Threads in scope</span><strong id="metric-total">0</strong></article>
+          <article><span>Awaiting routing claim</span><strong id="metric-queued">0</strong></article>
+          <article><span>Assigned threads in scope</span><strong id="metric-mine">0</strong></article>
+          <article><span>Needs follow-up</span><strong id="metric-followup">0</strong></article>
+        </div>
+        <div class="inbox-layout">
+          <aside class="thread-panel">
+            <div class="panel-heading"><div><div class="eyebrow">CUSTOMER MESSAGES</div><h2>Email threads</h2></div><button id="refresh" class="button outline" type="button">Refresh</button></div>
+            <label class="search-label">Search permitted threads<input id="thread-search" type="search" placeholder="Search route, subject, sender or preview"></label>
+            <div id="thread-list" class="thread-list"><div class="empty-state">Sign in to load email threads in your scope.</div></div>
+          </aside>
+          <section class="message-panel">
+            <div id="empty-detail" class="empty-detail"><div class="empty-icon">✉</div><h2>Select an email thread</h2><p>Customer messages, attachments metadata and the Contact Routing assignment appear here.</p></div>
+            <div id="thread-detail" hidden>
+              <div class="thread-heading">
+                <div><div class="eyebrow" id="route-reference">ROUTE REFERENCE</div><h2 id="thread-subject">Customer enquiry</h2><p id="thread-meta" class="muted"></p></div>
+                <span id="route-badge" class="route-badge">Checking assignment…</span>
+              </div>
+              <div id="route-meta" class="route-meta"></div>
+              <div id="message-history" class="message-history" aria-live="polite"></div>
+              <div class="reply-card">
+                <div class="reply-heading"><strong>Customer service reply</strong><span class="muted small">Plain text · no bulk messaging</span></div>
+                <form id="reply-form">
+                  <label for="reply-subject">Subject<input id="reply-subject" type="text" maxlength="180" required></label>
+                  <label for="reply-text">Response<textarea id="reply-text" rows="5" maxlength="20000" placeholder="Write a factual, professional response. Never request passwords, PINs, OTPs, CVVs or API secrets." required></textarea></label>
+                  <div class="reply-footer"><small>Replies are sent only for this customer-initiated support thread, after routing assignment. No marketing campaigns or automated follow-ups are enabled.</small><button id="send-reply" class="button primary" type="submit">Send email reply</button></div>
+                </form>
+                <div id="reply-status" class="status" role="status" aria-live="polite"></div>
+              </div>
+              <div class="attachment-note"><strong>Attachments</strong><p>CALLORIA stores encrypted attachment metadata only in this release. It does not download, open or scan customer files. Do not open unexpected attachments. Ask customers to use an approved secure upload method when files are required.</p></div>
+            </div>
+          </section>
+        </div>
+        <div id="global-status" class="global-status status" role="status" aria-live="polite">Ready.</div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="/js/email-inbox-workbench.js"></script>
+</body>
+</html>
