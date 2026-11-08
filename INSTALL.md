@@ -1,41 +1,45 @@
-# CALLORIA v1.9 — Supervisor Intervention
+# CALLORIA Supervisor Activation & Build Safety v1.9.1
 
 ## Purpose
 
-Adds an approved supervisor GLB to the existing production Three.js world. When the Customer Intelligence event bridge emits an escalated customer interaction, one supervisor is dispatched from the existing supervisor office zone to reception. Further escalations are queued. The supervisor can resolve the complaint or return the interaction to the original agent through an accessible in-game control panel.
-
-This package does not replace `main.js`, `production-world.js`, `customer-world-integration.js`, `customer-reception-journey.js`, `package.json`, Supabase files, or original GLB models.
+The current `main` branch contains the supervisor intervention module and both Vite plugins, but `vite.config.js` does not register them. This overlay registers the supervisor world plugin and the supervisor case bridge. It also corrects the case bridge's generated dialogue string so the generated `main.js` contains an escaped `\\n` sequence rather than a literal line break inside a single-quoted string.
 
 ## Files
 
-- Replace the root `vite.config.js` with the complete version in this package.
-- Add `build/calloria-supervisor-intervention-plugin.js`.
-- Add `build/calloria-supervisor-case-bridge-plugin.js`.
-- Add `js/supervisor-intervention.js`.
-- Add `js/supervisor-intervention-core.js`.
-- Add `styles/calloria-supervisor-intervention.css`.
-- Add `tests/supervisor-intervention.test.mjs`.
+Replace these complete files:
+- `vite.config.js`
+- `build/calloria-supervisor-case-bridge-plugin.js`
 
-Keep all existing Vite plugins and build inputs. The supplied config preserves the current main-branch config and registers the new plugin last with `enforce: 'post'`, so it runs after the existing customer-world transform.
+Add:
+- `tests/supervisor-activation.test.mjs`
 
-## Required model approval
+Keep the existing files unchanged:
+- `js/main.js`
+- `js/production-world.js`
+- `js/supervisor-intervention.js`
+- `js/supervisor-intervention-core.js`
+- `build/calloria-supervisor-intervention-plugin.js`
+- `build/calloria-customer-world-plugin.js`
+- `build/calloria-customer-avatar-plugin.js`
+- `package.json` and lockfile
+- all GLB assets and Supabase files
 
-In CALLORIA, open `/asset-inspector.html` and approve `Office Female` in the Supervisors category. The runtime only loads the approved supervisor model. It checks model dimensions, rig, bones, triangle budget and texture dimensions before adding it to the production scene. The `bad-supervisor` asset is a fallback only when it is explicitly approved and `office-female-supervisor` is not approved.
+## Install
 
-If no eligible model is approved or the model has no compatible walking animation/leg bones, the game remains operational and shows a clear supervisor-model availability message. It does not substitute an unrelated character.
+Merge the archive into the repository root. Replace the two listed files with the complete replacements. Add the test under `tests/`. Do not replace `package.json` or the lockfile.
 
-## In-game behaviour
+## Run checks
 
-- `calloria:customer-reaction` with `status: 'escalated'` dispatches the supervisor.
-- One supervisor handles one escalation at a time; additional cases queue without duplication.
-- When the supervisor arrives, the in-game panel offers `Record supervisor review` or `Return case to agent`.
-- `Record supervisor review` saves a supervisor disposition to the active synthetic Customer Intelligence Lab session and operation timeline, then returns the supervisor to the office.
-- `Return case to agent` records that the case was handed back and returns the supervisor to the office.
-- The customer session remains `escalated`; mandatory QA review is not silently closed or downgraded. The user must still finalise the escalated practice case through CALLORIA's existing QA flow.
-- A customer completed in the existing engine while the supervisor is en route also sends the supervisor back.
+The repository test command is `npm test`. The new focused test can also be run by the existing test glob. Then run the normal Vercel build.
 
-## Tests
+## Expected behaviour
 
-The package includes Node's built-in test suite at `tests/supervisor-intervention.test.mjs`. It covers queueing, de-duplication, phase transitions, completion, disposal and both Vite transformation contracts. The main application source is not edited; a guarded Vite post-transform adds a small event bridge to the existing application state.
+- Customer-world integration runs before supervisor intervention integration.
+- The supervisor model loads only when a supervisor GLB has been approved in the Asset Inspector.
+- A customer escalation queues the supervisor intervention.
+- The supervisor case bridge records the review in the active Customer Intelligence Lab session and keeps mandatory QA review open.
+- Existing original GLBs remain untouched.
 
-Full Vercel build and actual browser rendering must still be verified in the deployed project. This package has not been deployed to the repository.
+## Verification boundary
+
+The included focused tests validate plugin registration, preservation of the current multi-page build entries, bridge idempotence, anchor guards and JavaScript syntax of generated bridge output. They do not replace a full `npm test`, Vite production build, browser test or live deployment check against the repository's complete dependency tree.

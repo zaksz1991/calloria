@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 import { calloriaGLBWorldPlugin } from './build/calloria-glb-world-plugin.js';
-import { calloriaOptimizedGLBRuntimePlugin } from './build/calloria-optimized-glb-runtime-plugin.js';
+import { calloriaMeshoptRuntimePlugin } from './build/calloria-meshopt-runtime-plugin.js';
+import { calloriaCustomerAvatarPlugin } from './build/calloria-customer-avatar-plugin.js';
 import { calloriaCustomerWorldPlugin } from './build/calloria-customer-world-plugin.js';
 import { calloriaSupervisorInterventionPlugin } from './build/calloria-supervisor-intervention-plugin.js';
 import { calloriaSupervisorCaseBridgePlugin } from './build/calloria-supervisor-case-bridge-plugin.js';
@@ -12,9 +13,13 @@ export default defineConfig({
   appType: 'spa',
   plugins: [
     calloriaGLBWorldPlugin(),
-    calloriaOptimizedGLBRuntimePlugin(),
+    calloriaMeshoptRuntimePlugin(),
+    calloriaCustomerAvatarPlugin(),
     calloriaCustomerWorldPlugin(),
+    // The supervisor world plugin runs after the customer-world pre-transform,
+    // because it consumes the customer layer's injected lifecycle anchors.
     calloriaSupervisorInterventionPlugin(),
+    // The case bridge runs on main.js after the customer-avatar pre-transform.
     calloriaSupervisorCaseBridgePlugin()
   ],
   build: {
