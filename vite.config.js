@@ -3,8 +3,8 @@ import { resolve } from 'node:path';
 
 export default defineConfig({
   base: '/',
-  // The GLB catalogue lives in public/assets/models. Vite must copy public/
-  // into dist/ so /assets/models/*.glb resolves after Vercel deployment.
+  // CALLORIA's GLB files are stored under public/assets/models.
+  // Vite must copy public/ into dist/ for the deployed URLs to work.
   publicDir: 'public',
   appType: 'spa',
   build: {
@@ -39,7 +39,9 @@ export default defineConfig({
       },
       output: {
         entryFileNames(chunk) {
-          return chunk.name === 'calloriaChatWidget' ? 'widgets/calloria-chat.js' : 'assets/[name]-[hash].js';
+          return chunk.name === 'calloriaChatWidget'
+            ? 'widgets/calloria-chat.js'
+            : 'assets/[name]-[hash].js';
         },
         manualChunks(id) {
           if (id.includes('/node_modules/three/')) return 'three-engine';
