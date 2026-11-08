@@ -1,44 +1,37 @@
-# CALLORIA Meshopt runtime compatibility fix
+# CALLORIA Optimized GLB Deployment — v2
 
-## Why this patch is needed
+This update closes the gap between producing optimized workflow artifacts and actually using them in the Vercel application.
 
-The asset optimisation workflow creates GLBs using `EXT_meshopt_compression`.
-The production GLB loaders currently do not register Three.js `MeshoptDecoder`,
-and the production staff integration explicitly rejects that extension. Such
-optimised models therefore cannot be used by the current integration layer.
+## What this changes
 
-## Files
+1. Adds `MeshoptDecoder` to both existing GLTFLoader paths through a version-checked Vite build plugin.
+2. Allows `EXT_meshopt_compression` models; continues to reject required Draco compression because the application does not configure DRACOLoader.
+3. Adds manifest-based loading: when a promoted optimized model is deployed, CALLORIA loads it first. If the manifest is absent, the optimized model is missing, or decoding fails, it loads the original GLB.
+4. Updates the manual optimization workflow to place only genuinely optimized copies under `public/assets/models-optimized/`, write a deterministic manifest, and publish that folder to the selected branch. Original models under `public/assets/models/` are never modified.
+5. Upgrades GitHub Actions to current Node 24-compatible major releases to eliminate the Node 20 deprecation warning from the prior run.
 
-- Replace the repository root `vite.config.js` with this complete version.
-- Add `build/calloria-meshopt-runtime-plugin.js`.
-- Add `tests/calloria-meshopt-runtime-plugin.test.mjs`.
+## Files to add
 
-Keep the existing `build/calloria-glb-world-plugin.js`, all files under `js/`,
-`package.json`, lockfiles, original GLB files, and Supabase files unchanged.
+- `build/calloria-optimized-glb-runtime-plugin.js`
+- `js/glb-optimized-asset-runtime.js`
+- `tools/promote-glb-optimized-assets.mjs`
+- `tests/calloria-optimized-glb-runtime.test.mjs`
+- `tests/glb-promotion.test.mjs`
 
-## What the patch changes
+## Files to replace completely
 
-At build time, it adds Three.js `MeshoptDecoder` registration to both:
+- `vite.config.js`
+- `.github/workflows/calloria-glb-asset-optimization.yml`
 
-- `js/glb-asset-loader.js` (the inspector/shared loader)
-- `js/glb-world-integration.js` (the live workplace loader)
+Keep `package.json`, lockfiles, `build/calloria-glb-world-plugin.js`, all existing `js/` modules, `js/main.js`, `js/production-world.js`, original GLB files, and Supabase files unchanged.
 
-It also changes the integration guard so Meshopt-compressed models are allowed,
-while Draco-compressed files remain rejected because no DRACOLoader is configured.
+## After adding the files
 
-The transformation is version-checked. If source anchors change, the Vite build
-fails clearly instead of silently applying only part of the compatibility fix.
+1. Commit the files to branch `main`. The updated workflow starts automatically because the commit changes one of its watched source paths; no separate Run workflow click is required. You can also run it manually from GitHub Actions.
+2. The workflow audits the original GLBs, creates conservative optimized candidates, rejects candidates that do not meet the existing structural/savings checks, and packages the report artifact.
+3. It then commits only the accepted optimized files and manifest to `public/assets/models-optimized/`. This requires the repository's Actions `GITHUB_TOKEN` to have contents write permission. If repository Actions settings or branch protection disallows that push, the run will report a push error and retain the uploaded artifact; no original files are changed.
+4. The new GitHub commit should trigger the repository's existing Vercel Git deployment. After deployment, CALLORIA will prefer optimized models listed in the manifest and fall back to original files on any optimized-load/decode failure.
 
 ## Verification
 
-Run the repository's existing test command (`npm test`) and production build
-through the normal GitHub/Vercel pipeline. The added tests verify the transform.
-They do not claim that every GLB has been visually or animation-tested.
-
-## Important limit
-
-This patch enables the application to decode Meshopt-compressed GLBs. It does
-not copy the workflow artifact into the public model directory or switch the
-model registry to optimised paths. The optimised models remain in the GitHub
-Actions artifact until they are deliberately promoted into deployment assets.
-Original GLB files remain untouched.
+The included tests cover the exact source transforms, Meshopt decoder registration, manifest-first loading, original fallback, safe promotion paths, and preservation of originals. They do not replace the actual GitHub Actions run, Vercel build, or browser render check.

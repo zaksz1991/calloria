@@ -1,10 +1,9 @@
-CALLORIA GLB ASSET AUDIT + OPTIMIZATION KIT
+CALLORIA Optimized GLB Deployment v2
 
-Contents:
-- tools/glb-audit.mjs: dependency-free GLB container and scene-complexity audit
-- tools/glb-optimize.mjs: conservative optimization, preserves originals, rejects unsafe/ineffective outputs
-- .github/workflows/calloria-glb-asset-optimization.yml: manual GUI-triggered workflow
-- tests/glb-audit-contract.test.mjs: parser contract tests
-- GLB-OPTIMIZATION-WORKFLOW.md: installation and GitHub Actions instructions
+Purpose:
+- Decode Meshopt-compressed assets in both Three.js GLTFLoader paths.
+- Prefer promoted optimized models at runtime using a deployment manifest.
+- Fall back to original GLBs whenever optimized assets are unavailable or fail to decode.
+- Make the existing GitHub optimization workflow publish accepted copies to public/assets/models-optimized without overwriting original models.
 
-This is an analysis pipeline only. It does not wire GLB models into the production renderer.
+Read INSTALL.md before applying.
