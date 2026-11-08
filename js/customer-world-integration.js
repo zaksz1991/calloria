@@ -1,20 +1,20 @@
 /**
  * CALLORIA customer visitors for the production 3D workplace.
  * Reuses the production world's existing Three.js scene and render loop.
- * Only customer/visitor GLBs explicitly approved in the Asset Inspector are used.
+ * Approved customer GLBs now follow a reception queue, service, escalation
+ * and departure journey driven by Customer Intelligence events.
  */
 import * as THREE from 'three';
 import { CalloriaGLBAssetLoader, inspectGLTFAsset } from './glb-asset-loader.js';
 import { chooseApprovedCustomerAssets, validateCustomerRigMetrics, getCustomerMotionProfile } from './customer-avatar-profile.js';
+import { CustomerReceptionJourney, CUSTOMER_JOURNEY_STATES } from './customer-reception-journey.js';
 
 const APPROVAL_KEY = 'calloria.glb-inspector.v1';
 const REACTION_EVENT = 'calloria:customer-reaction';
+const COMMAND_EVENT = 'calloria:customer-world-command';
+const STATE_EVENT = 'calloria:customer-world-state';
+const SUPERVISOR_EVENT = 'calloria:customer-supervisor-requested';
 const loader = new CalloriaGLBAssetLoader();
-
-const POSITIONS = Object.freeze([
-  { x: -15.8, z: 13.72, yaw: 0 },
-  { x: -14.2, z: 13.72, yaw: 0 }
-]);
 
 function approvedIds() {
   try {
@@ -26,7 +26,7 @@ function approvedIds() {
 }
 
 function makeRig(root) {
-  const bones = { head: null, neck: null, spine: null, leftArm: null, rightArm: null };
+  const bones = { head: null, neck: null, spine: null, leftArm: null, rightArm: null, leftLeg: null, rightLeg: null };
   const normalize = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const side = (name) => name.includes('left') || name.startsWith('l') || name.endsWith('l')
     ? 'left'
@@ -42,15 +42,25 @@ function makeRig(root) {
       if (which === 'left' && !bones.leftArm) bones.leftArm = object;
       if (which === 'right' && !bones.rightArm) bones.rightArm = object;
     }
+    if (/(upleg|upperleg|thigh)/.test(name)) {
+      const which = side(name);
+      if (which === 'left' && !bones.leftLeg) bones.leftLeg = object;
+      if (which === 'right' && !bones.rightLeg) bones.rightLeg = object;
+    }
   });
   const save = (bone) => bone ? { bone, x: bone.rotation.x, y: bone.rotation.y, z: bone.rotation.z } : null;
   return {
     head: save(bones.head), neck: save(bones.neck), spine: save(bones.spine),
-    leftArm: save(bones.leftArm), rightArm: save(bones.rightArm)
+    leftArm: save(bones.leftArm), rightArm: save(bones.rightArm),
+    leftLeg: save(bones.leftLeg), rightLeg: save(bones.rightLeg)
   };
 }
 
-function matchingClip(clips, emotion = 'calm') {
+function matchingClip(clips, emotion = 'calm', moving = false) {
+  if (moving) {
+    const walk = clips.find((clip) => /walk|walking|locomotion|run/i.test(String(clip.name || '')));
+    if (walk) return walk;
+  }
   const patterns = {
     angry: /angry|frustrat|complain|argue/i,
     hostile: /angry|frustrat|complain|argue/i,
@@ -77,18 +87,21 @@ function dimensionsOf(root) {
   return { box, size: { x: size.x, y: size.y, z: size.z } };
 }
 
-function applyProfile(rig, profile, elapsed, phase) {
+function applyProfile(rig, profile, elapsed, phase, moving = false) {
   const breath = Math.sin(elapsed * 1.45 + phase) * 0.006;
   const attention = Math.sin(elapsed * 0.72 + phase + 0.6);
+  const gait = moving ? Math.sin(elapsed * 8.2 + phase) : 0;
   const apply = (entry, dx = 0, dy = 0, dz = 0) => {
     if (!entry?.bone) return;
     entry.bone.rotation.set(entry.x + dx, entry.y + dy, entry.z + dz);
   };
   apply(rig.head, profile.headForward + Math.sin(elapsed * 1.1 + phase) * 0.009, attention * 0.022, 0);
   apply(rig.neck, 0, attention * 0.009, 0);
-  apply(rig.spine, profile.spine + breath, 0, breath * 0.35);
-  apply(rig.leftArm, 0, 0, profile.leftArm + breath * 0.8);
-  apply(rig.rightArm, 0, 0, profile.rightArm - breath * 0.8);
+  apply(rig.spine, profile.spine + breath + (moving ? Math.abs(gait) * 0.012 : 0), 0, breath * 0.35);
+  apply(rig.leftArm, moving ? gait * 0.16 : 0, 0, profile.leftArm + breath * 0.8);
+  apply(rig.rightArm, moving ? -gait * 0.16 : 0, 0, profile.rightArm - breath * 0.8);
+  apply(rig.leftLeg, moving ? -gait * 0.34 : 0, 0, 0);
+  apply(rig.rightLeg, moving ? gait * 0.34 : 0, 0, 0);
 }
 
 function getCustomerCount(tier) {
@@ -99,16 +112,18 @@ function getCustomerCount(tier) {
 
 export async function attachCalloriaWorldCustomers({ scene, tier = 'balanced' } = {}) {
   if (!scene?.add || !scene?.remove) throw new TypeError('CALLORIA customer visitors require the existing production Three.js scene.');
-
   const approved = approvedIds();
   const candidates = chooseApprovedCustomerAssets(approved, `reception-${Date.now()}`);
   const maxCustomers = getCustomerCount(tier);
   const customerModels = [];
   const visitors = [];
   const rejected = [];
+  const bufferedReactions = [];
   let disposed = false;
   let elapsed = 0;
   let reactionListener = null;
+  let commandListener = null;
+  let journey = null;
   let currentReaction = { emotion: 'calm', reaction: 'steady' };
 
   if (!candidates.length) {
@@ -121,32 +136,61 @@ export async function attachCalloriaWorldCustomers({ scene, tier = 'balanced' } 
     return { status, update() {}, dispose() {} };
   }
 
-  function setReaction(detail = {}) {
+  function publishState(detail) {
+    window.dispatchEvent(new CustomEvent(STATE_EVENT, { detail }));
+  }
+
+  function playVisitorAnimation(visitor) {
+    if (!visitor.mixer) return;
+    const entry = customerModels.find((item) => item.assetId === visitor.assetId);
+    const moving = visitor.state === CUSTOMER_JOURNEY_STATES.APPROACHING || visitor.state === CUSTOMER_JOURNEY_STATES.DEPARTING;
+    const clip = matchingClip(entry?.loaded.animations || [], visitor.emotion, moving);
+    if (!clip || visitor.action?.getClip?.() === clip) return;
+    const nextAction = visitor.mixer.clipAction(clip);
+    nextAction.reset().play();
+    if (visitor.action) nextAction.crossFadeFrom(visitor.action, 0.3, false);
+    visitor.action = nextAction;
+    visitor.animationName = clip.name || 'Unnamed customer clip';
+  }
+
+  function updateVisitorReaction(visitor, detail) {
+    const status = String(detail.status || 'active').toLowerCase();
     let emotion = String(detail.emotion || 'calm').toLowerCase();
     let reaction = String(detail.reaction || 'steady').toLowerCase();
-    if (detail.status === 'escalated') {
+    if (status === 'escalated') {
       emotion = 'angry';
       reaction = 'deteriorating';
-    } else if (detail.status === 'completed' && reaction === 'improving') {
+    } else if (status === 'completed' && reaction === 'improving') {
       emotion = 'happy';
     }
-    currentReaction = { emotion, reaction };
-    for (const visitor of visitors) {
-      visitor.emotion = emotion;
-      visitor.reaction = reaction;
-      visitor.profile = getCustomerMotionProfile(emotion, reaction);
-      const nextClip = matchingClip(customerModels.find((item) => item.assetId === visitor.assetId)?.loaded.animations || [], emotion);
-      if (!visitor.mixer || !nextClip || visitor.action?.getClip?.() === nextClip) continue;
-      const nextAction = visitor.mixer.clipAction(nextClip);
-      nextAction.reset().play();
-      if (visitor.action) nextAction.crossFadeFrom(visitor.action, 0.28, false);
-      visitor.action = nextAction;
-      visitor.animationName = nextClip.name || 'Unnamed customer clip';
+    visitor.emotion = emotion;
+    visitor.reaction = reaction;
+    visitor.patience = detail.patience ?? visitor.patience;
+    visitor.profile = getCustomerMotionProfile(emotion, reaction);
+    playVisitorAnimation(visitor);
+  }
+
+  function setReaction(detail = {}) {
+    if (disposed) return;
+    currentReaction = {
+      emotion: String(detail.emotion || 'calm').toLowerCase(),
+      reaction: String(detail.reaction || 'steady').toLowerCase()
+    };
+    if (journey) {
+      journey.handleReaction(detail);
+      const visitor = journey.snapshot.find((item) => item.scenarioId === detail.scenarioId);
+      const liveVisitor = visitors.find((item) => item.scenarioId === detail.scenarioId);
+      if (liveVisitor) updateVisitorReaction(liveVisitor, detail);
+    } else {
+      bufferedReactions.push(detail);
+      if (bufferedReactions.length > 24) bufferedReactions.shift();
     }
   }
 
   reactionListener = (event) => setReaction(event?.detail || {});
+  commandListener = (event) => journey?.handleCommand(event?.detail || {});
   window.addEventListener(REACTION_EVENT, reactionListener);
+  window.addEventListener(COMMAND_EVENT, commandListener);
 
   for (const assetId of candidates.slice(0, maxCustomers)) {
     try {
@@ -174,6 +218,7 @@ export async function attachCalloriaWorldCustomers({ scene, tier = 'balanced' } 
 
   if (!customerModels.length) {
     window.removeEventListener(REACTION_EVENT, reactionListener);
+    window.removeEventListener(COMMAND_EVENT, commandListener);
     loader.disposeAll();
     return {
       status: { loaded: 0, rejected, reason: 'No approved customer models passed runtime validation.', tier },
@@ -182,11 +227,11 @@ export async function attachCalloriaWorldCustomers({ scene, tier = 'balanced' } 
     };
   }
 
-  const visibleCount = Math.min(maxCustomers, customerModels.length, POSITIONS.length);
+  const visibleCount = Math.min(maxCustomers, customerModels.length, 2);
   for (let index = 0; index < visibleCount; index += 1) {
     const entry = customerModels[index];
     const source = loader.clone(entry.assetId);
-    const { box, size } = dimensionsOf(source);
+    const { size } = dimensionsOf(source);
     const originalHeight = Math.max(0.001, size.y);
     source.scale.multiplyScalar(1.66 / originalHeight);
     source.updateMatrixWorld(true);
@@ -198,31 +243,46 @@ export async function attachCalloriaWorldCustomers({ scene, tier = 'balanced' } 
 
     const wrapper = new THREE.Group();
     wrapper.name = `calloria-reception-customer-${entry.assetId}-${index + 1}`;
-    wrapper.position.set(POSITIONS[index].x, 0, POSITIONS[index].z);
-    wrapper.rotation.y = POSITIONS[index].yaw;
     wrapper.add(source);
     scene.add(wrapper);
 
     const mixer = entry.loaded.animations.length ? new THREE.AnimationMixer(source) : null;
-    const rig = makeRig(source);
-    const initialClip = matchingClip(entry.loaded.animations, currentReaction.emotion);
-    const action = initialClip && mixer ? mixer.clipAction(initialClip) : null;
-    action?.reset().play();
     const visitor = {
       assetId: entry.assetId,
       wrapper,
       source,
       mixer,
-      action,
-      rig,
+      action: null,
+      rig: makeRig(source),
       emotion: currentReaction.emotion,
       reaction: currentReaction.reaction,
       profile: getCustomerMotionProfile(currentReaction.emotion, currentReaction.reaction),
       phase: index * 1.9,
-      animationName: initialClip?.name || 'CALLORIA bone-aware idle'
+      animationName: 'CALLORIA bone-aware waiting idle',
+      patience: null,
+      turn: 0,
+      scenarioId: null,
+      state: CUSTOMER_JOURNEY_STATES.WAITING
     };
     visitors.push(visitor);
   }
+
+  journey = new CustomerReceptionJourney(visitors, {
+    onStateChange: (detail, visitor) => {
+      if (visitor) playVisitorAnimation(visitor);
+      publishState(detail);
+    },
+    onEscalation: (detail) => {
+      window.dispatchEvent(new CustomEvent(SUPERVISOR_EVENT, { detail }));
+    }
+  });
+
+  for (const detail of bufferedReactions) {
+    journey.handleReaction(detail);
+    const visitor = visitors.find((item) => item.scenarioId === detail.scenarioId);
+    if (visitor) updateVisitorReaction(visitor, detail);
+  }
+  bufferedReactions.length = 0;
 
   const status = {
     loaded: visitors.length,
@@ -230,6 +290,7 @@ export async function attachCalloriaWorldCustomers({ scene, tier = 'balanced' } 
     animationsInUse: visitors.map((visitor) => ({ assetId: visitor.assetId, clip: visitor.animationName })),
     rejected,
     tier,
+    journey: 'queue-approach-service-supervisor-escalation-departure',
     mode: 'approved-customer-glbs-in-production-reception'
   };
   window.dispatchEvent(new CustomEvent('calloria:customer-world-ready', { detail: status }));
@@ -239,16 +300,21 @@ export async function attachCalloriaWorldCustomers({ scene, tier = 'balanced' } 
     update(delta) {
       if (disposed) return;
       const step = Math.max(0, Math.min(Number(delta) || 0, 0.05));
+      if (!step) return;
       elapsed += step;
+      journey?.update(step);
       for (const visitor of visitors) {
         visitor.mixer?.update(step);
-        applyProfile(visitor.rig, visitor.profile, elapsed, visitor.phase);
+        const moving = visitor.state === CUSTOMER_JOURNEY_STATES.APPROACHING || visitor.state === CUSTOMER_JOURNEY_STATES.DEPARTING;
+        applyProfile(visitor.rig, visitor.profile, elapsed, visitor.phase, moving);
       }
     },
     dispose() {
       if (disposed) return;
       disposed = true;
       if (reactionListener) window.removeEventListener(REACTION_EVENT, reactionListener);
+      if (commandListener) window.removeEventListener(COMMAND_EVENT, commandListener);
+      journey?.dispose();
       for (const visitor of visitors) {
         visitor.mixer?.stopAllAction();
         scene.remove(visitor.wrapper);

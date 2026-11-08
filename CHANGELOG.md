@@ -1,8 +1,9 @@
-# v1.6
+# CALLORIA v1.8 Change Log
 
-- Adds approved Robbert/Ribbert customer GLBs to the actual production-world reception.
-- Reuses the world scene and render loop; no second renderer is created.
-- Adds tier-aware visitor count limits.
-- Uses existing GLB asset loader, Meshopt optimized fallback, rig validation and customer motion profile.
-- Bridges synthetic customer persona and evaluated reaction events to the world visitors.
-- Preserves existing procedural staff, UI, scenarios and source GLBs.
+- Replaced static reception-only customer placement with queue, approach, service, supervisor-wait, and departure states.
+- Linked journey states to the existing `calloria:customer-reaction` event contract.
+- Added FIFO handling when a second scenario starts while no customer slot is free.
+- Added a supervisor escalation event and command contract without inventing a supervisor model or UI.
+- Added procedural arm/leg gait when customer GLBs do not contain a walk clip.
+- Retained approved-GLB validation, existing Three.js scene/render loop, existing reaction profiles, and procedural fallback.
+- Added focused pure-controller regression tests.
