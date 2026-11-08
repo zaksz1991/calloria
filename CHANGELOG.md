@@ -1,8 +1,10 @@
-# Changelog
+# CALLORIA GLB-first workplace correction v2.1
 
-## v1.9.1
-- Registered the supervisor intervention world plugin in Vite.
-- Registered the supervisor case-recording bridge in Vite.
-- Kept all current multi-page inputs and public asset handling.
-- Rebuilt supervisor case-bridge code generation with safe string escaping.
-- Added focused build integration and transformed-source syntax tests.
+- Starts mobile gameplay at the exact approach point for GLB-backed Agent Station 11, including on every later floor entry.
+- Adds an in-world objective card that guides the player to USE and responds to the existing nearest-station and station-access callbacks.
+- Replaces selected front-row primitive desks, both monitor positions, and the reception counter with actual repository GLBs.
+- Adds desk/computer/headset/reception asset limits by device tier; preserves instanced fallback furniture for unselected stations.
+- Registers Meshopt decoding in the new office loader and reports individual load/rejection errors.
+- Allows proportion-checked, unit-normalized static human GLBs at standing support posts only; seated agents still need a proper seated animation.
+- Replaces the false local-staff success label with confirmed GLB counts and explicit loading/fallback/failure status.
+- Preserves all original GLB files and existing application modules.
