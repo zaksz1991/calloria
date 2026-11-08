@@ -1,16 +1,21 @@
 /**
- * CALLORIA approved GLB staff integration.
- * Only assets explicitly approved in the inspector are considered. The first
- * rollout replaces seated/standing staff only when a matching named animation
- * clip exists; all other characters retain the existing local implementation.
+ * CALLORIA production GLB staff integration.
+ * Uses the real approved/primary staff GLBs where runtime checks pass, while
+ * preserving the existing procedural staff as a safe fallback.
+ *
+ * Build plugins in vite.config.js register MeshoptDecoder and inject this
+ * integration into production-world.js. Keep the exact loader/guard anchors
+ * below because those transforms validate the expected source version.
  */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { GLB_ASSET_REGISTRY } from './glb-asset-registry.js';
 import { disposeGLTFResources } from './glb-asset-loader.js';
+import { createProceduralIdlePose, updateProceduralIdlePose } from './glb-character-motion.js';
 
 const INSPECTOR_STORAGE_KEY = 'calloria.glb-inspector.v1';
+const PRIMARY_CANDIDATES = ['male-agent', 'female-agent'];
 const CANDIDATE_IDS = [
   'male-agent',
   'female-agent',
@@ -25,9 +30,12 @@ const SEATED_CLIP = /sit|sitting|seated|typing|type|computer|desk|work/i;
 function readApprovedIds() {
   try {
     const data = JSON.parse(localStorage.getItem(INSPECTOR_STORAGE_KEY) || '{}');
-    return new Set(Array.isArray(data.approvedAssetIds) ? data.approvedAssetIds : []);
+    const explicit = Array.isArray(data.approvedAssetIds) ? data.approvedAssetIds : [];
+    // The two primary agents are the initial production candidates. They are
+    // still subjected to geometry, scale, skeleton and texture checks below.
+    return new Set(explicit.length ? explicit : PRIMARY_CANDIDATES);
   } catch {
-    return new Set();
+    return new Set(PRIMARY_CANDIDATES);
   }
 }
 
@@ -37,9 +45,15 @@ function inspectRuntimeModel(gltf) {
   root.updateMatrixWorld(true);
   const bounds = new THREE.Box3().setFromObject(root);
   const size = bounds.getSize(new THREE.Vector3());
-  const metrics = { meshes: 0, skinnedMeshes: 0, triangles: 0, materials: new Set(), textures: new Set(), bones: new Set() };
+  const metrics = {
+    meshes: 0,
+    skinnedMeshes: 0,
+    triangles: 0,
+    materials: new Set(),
+    textures: new Set(),
+    bones: new Set()
+  };
   const textureSlots = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'alphaMap', 'aoMap'];
-
   root.traverse((object) => {
     if (!(object.isMesh || object.isSkinnedMesh || object.isInstancedMesh)) return;
     metrics.meshes += 1;
@@ -56,12 +70,10 @@ function inspectRuntimeModel(gltf) {
       for (const slot of textureSlots) if (material[slot]?.isTexture) metrics.textures.add(material[slot]);
     }
   });
-
   const textureEdge = [...metrics.textures].reduce((max, texture) => {
     const image = texture.source?.data || texture.image;
     return Math.max(max, Number(image?.width || 0), Number(image?.height || 0));
   }, 0);
-
   return {
     bounds,
     size: { x: size.x, y: size.y, z: size.z },
@@ -78,12 +90,12 @@ function inspectRuntimeModel(gltf) {
 
 function chooseClip(clips, seated) {
   const pattern = seated ? SEATED_CLIP : IDLE_CLIP;
-  return (clips || []).find((clip) => pattern.test(String(clip.name || '')))
-    || null;
+  return (clips || []).find((clip) => pattern.test(String(clip.name || ''))) || null;
 }
 
 function disposeSourceModels(models) {
-  for (const loaded of models.values()) disposeGLTFResources(loaded);
+  // Each entry stores { gltf, asset, metrics }; dispose the actual GLTF object.
+  for (const loaded of models.values()) disposeGLTFResources(loaded.gltf);
   models.clear();
 }
 
@@ -116,7 +128,7 @@ export async function integrateCalloriaGLBStaff({ THREE: suppliedThree, scene, s
         fallback: staff.length,
         mode: 'merged-articulated-local-staff',
         approvedCandidates: candidates.length,
-        reason: candidates.length ? 'No compatible staff positions were available.' : 'No character models have been approved in the GLB inspector.'
+        reason: candidates.length ? 'No compatible stationary staff positions were available.' : 'No approved or primary GLB candidates were found.'
       },
       update() {},
       dispose() {}
@@ -135,7 +147,6 @@ export async function integrateCalloriaGLBStaff({ THREE: suppliedThree, scene, s
       const texturesValid = metrics.maxTextureEdge <= 4096;
       const requiredExtensions = gltf.parser?.json?.extensionsRequired || [];
       const extensionsValid = !requiredExtensions.some((extension) => ['KHR_draco_mesh_compression', 'EXT_meshopt_compression'].includes(extension));
-
       if (!humanScale || !rigValid || !geometryValid || !texturesValid || !extensionsValid) {
         const reasons = [];
         if (!humanScale) reasons.push('dimensions outside human scale range');
@@ -172,6 +183,8 @@ export async function integrateCalloriaGLBStaff({ THREE: suppliedThree, scene, s
     if (replacements.length >= maxReplacements) break;
     let selected = null;
     let clip = null;
+    let useProceduralIdle = false;
+
     for (let offset = 0; offset < usable.length; offset += 1) {
       const candidate = usable[(replacements.length + offset) % usable.length];
       const candidateClip = chooseClip(candidate.gltf.animations, Boolean(person.seated));
@@ -180,8 +193,18 @@ export async function integrateCalloriaGLBStaff({ THREE: suppliedThree, scene, s
         clip = candidateClip;
         break;
       }
+      // A standing supervisor/support character may use a subtle bone-aware
+      // idle loop. A seated employee is never shown without a seated clip.
+      if (!person.seated) {
+        const idleAvailable = Boolean(createProceduralIdlePose(candidate.gltf.scene));
+        if (idleAvailable) {
+          selected = candidate;
+          useProceduralIdle = true;
+          break;
+        }
+      }
     }
-    if (!selected || !clip) continue;
+    if (!selected) continue;
 
     const sourceRoot = selected.gltf.scene;
     const clonedRoot = sourceRoot.getObjectByProperty('isSkinnedMesh', true)
@@ -202,19 +225,40 @@ export async function integrateCalloriaGLBStaff({ THREE: suppliedThree, scene, s
     const wrapper = new T.Group();
     wrapper.name = `calloria-glb-staff-${selected.asset.id}-${replacements.length + 1}`;
     wrapper.position.copy(person.root.position);
-    wrapper.rotation.y = person.root.rotation.y;
+    wrapper.rotation.copy(person.root.rotation);
     wrapper.add(clonedRoot);
     scene.add(wrapper);
 
-    const mixer = new T.AnimationMixer(clonedRoot);
-    mixer.clipAction(clip).reset().play();
-    mixers.push(mixer);
+    let mixer = null;
+    if (clip) {
+      mixer = new T.AnimationMixer(clonedRoot);
+      mixer.clipAction(clip).reset().play();
+      mixers.push(mixer);
+    }
+    const idleProfile = useProceduralIdle ? createProceduralIdlePose(clonedRoot) : null;
+    if (!clip && !idleProfile) {
+      scene.remove(wrapper);
+      continue;
+    }
 
     person.root.visible = false;
     if (person.shadow) person.shadow.visible = false;
-    replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip.name });
+    replacements.push({
+      wrapper,
+      mixer,
+      person,
+      idleProfile,
+      phase: Number(person.phase) || 0,
+      assetId: selected.asset.id,
+      clipName: clip?.name || 'CALLORIA procedural skeletal idle'
+    });
   }
 
+  if (!replacements.length) {
+    disposeSourceModels(loadedModels);
+  }
+
+  let elapsed = 0;
   return {
     status: {
       loaded: replacements.length,
@@ -222,15 +266,25 @@ export async function integrateCalloriaGLBStaff({ THREE: suppliedThree, scene, s
       mode: replacements.length ? 'approved-glb-staff-with-local-fallback' : 'merged-articulated-local-staff',
       approvedCandidates: candidates.length,
       compatibleModels: loadedModels.size,
+      assetsInUse: [...new Set(replacements.map((item) => item.assetId))],
+      animationsInUse: replacements.map((item) => ({ assetId: item.assetId, clip: item.clipName })),
       rejected
     },
     update(delta) {
       const step = Math.max(0, Math.min(Number(delta) || 0, 0.05));
-      for (const mixer of mixers) mixer.update(step);
+      elapsed += step;
+      for (const entry of replacements) {
+        // Keep the real GLB in sync with small presentation transforms made by
+        // the existing local staff simulation (for example seated breathing).
+        entry.wrapper.position.copy(entry.person.root.position);
+        entry.wrapper.rotation.copy(entry.person.root.rotation);
+        if (entry.mixer) entry.mixer.update(step);
+        if (entry.idleProfile) updateProceduralIdlePose(entry.idleProfile, elapsed, entry.phase);
+      }
     },
     dispose() {
       for (const entry of replacements) {
-        entry.mixer.stopAllAction();
+        entry.mixer?.stopAllAction();
         scene.remove(entry.wrapper);
         entry.person.root.visible = true;
         if (entry.person.shadow) entry.person.shadow.visible = true;
