@@ -1,17 +1,18 @@
-# Verification — CALLORIA GLB-first workplace correction v2.1
+# Verification — CALLORIA v2.2
 
-Executed against the included overlay files:
+Local checks performed on the upgrade package:
 
-- Node test suite: 5/5 passing.
-- `node --check` for the build plugin, office integration module, mission module and test file: passing.
-- Generated `main.js` status callback syntax: passing.
+- Node syntax check: `build/calloria-glb-world-plugin.js` — passed.
+- Node syntax check: `js/world-gameplay-mission.js` — passed.
+- Node syntax check: `tests/calloria-first-shift-activation.test.mjs` — passed.
+- Focused Node tests: 7 passed, 0 failed.
+- Source contract: anchors matched against the currently inspected `main` branch `js/production-world.js` source as of 2026-11-08.
+- ZIP archive: created and checked after packaging.
 
-Not executed in this workspace:
+Not performed:
+- Full Vercel production build.
+- Live deployment.
+- Actual GLB browser render test on the user's handset.
+- FPS / GPU-memory benchmark on physical devices.
 
-- Full repository `npm test`.
-- Full Vite production build.
-- Vercel deployment.
-- Live browser rendering with the user's actual GLB binaries.
-- Measured FPS on the user's phone.
-
-The live asset loader retains the existing primitive fallback whenever a GLB cannot be fetched, decoded, or validated. Runtime asset counts and error details are surfaced rather than claiming an unverified model is loaded.
+Those checks must be performed against the resulting deployment. The package does not claim those outcomes.
