@@ -1,0 +1,45 @@
+name: CALLORIA GLB asset audit and optimization
+
+on:
+  workflow_dispatch:
+    inputs:
+      optimize_assets:
+        description: 'Create conservative optimized copies as well as the source audit'
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  audit-and-optimize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out CALLORIA
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.12.0'
+
+      - name: Audit source GLB containers and scene complexity
+        run: node tools/glb-audit.mjs --input public/assets/models --output artifacts/glb-source-audit.json
+
+      - name: Install pinned glTF Transform CLI
+        if: ${{ inputs.optimize_assets }}
+        run: npm install --global @gltf-transform/cli@4.5.0
+
+      - name: Create conservative optimized copies
+        if: ${{ inputs.optimize_assets }}
+        run: node tools/glb-optimize.mjs --input public/assets/models --output artifacts/optimized/models --report artifacts/glb-optimization-report.json --cli gltf-transform
+
+      - name: Package reports and optimized copies
+        uses: actions/upload-artifact@v4
+        with:
+          name: calloria-glb-audit-and-optimized-models
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 14
