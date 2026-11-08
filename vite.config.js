@@ -1,16 +1,17 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 import { calloriaGLBWorldPlugin } from './build/calloria-glb-world-plugin.js';
-import { calloriaOptimizedGLBRuntimePlugin } from './build/calloria-optimized-glb-runtime-plugin.js';
+import { calloriaMeshoptRuntimePlugin } from './build/calloria-meshopt-runtime-plugin.js';
+import { calloriaCustomerAvatarPlugin } from './build/calloria-customer-avatar-plugin.js';
 
 export default defineConfig({
   base: '/',
-  // All committed source models and promoted optimized copies are public assets.
   publicDir: 'public',
   appType: 'spa',
   plugins: [
     calloriaGLBWorldPlugin(),
-    calloriaOptimizedGLBRuntimePlugin()
+    calloriaMeshoptRuntimePlugin(),
+    calloriaCustomerAvatarPlugin()
   ],
   build: {
     outDir: 'dist',

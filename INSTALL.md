@@ -1,29 +1,36 @@
-# CALLORIA GLB staff motion upgrade v1.3
+# CALLORIA Customer Behaviour & 3D Avatar Stage v1.4
 
 ## Purpose
+Adds a 3D visual representation of the synthetic customer inside the existing Customer Intelligence Lab. It does not place a remote caller physically inside the office. It is a training visual for voice and digital simulations.
 
-This update completes the runtime stage already prepared by the existing Vite build plugins:
-- `calloriaGLBWorldPlugin()` injects the GLB integration into the production world.
-- `calloriaMeshoptRuntimePlugin()` registers Meshopt decoding at both GLTFLoader construction sites and removes the old Meshopt rejection at build time.
+## Files
+- `vite.config.js` — complete replacement based on the current repository configuration; adds one version-checked Vite plugin.
+- `build/calloria-customer-avatar-plugin.js` — injects the stage into the existing Customer Intelligence Lab and expands customer behaviour profiles without editing `main.js` or `customer-intelligence-engine.js`.
+- `js/customer-avatar-stage.js` — loads an explicitly approved customer GLB, validates its rig and geometry, and animates mood/body-language cues.
+- `js/customer-avatar-profile.js` — deterministic behaviour-to-pose rules and runtime model budgets.
+- `styles/calloria-customer-avatar.css` — responsive stage styling.
+- `tests/*.test.mjs` — focused integration and behaviour tests.
 
-This package replaces the GLB staff integration module and adds a small bone-aware idle helper for standing staff. It does not replace `main.js`, `production-world.js`, `vite.config.js`, `package.json`, Supabase files, or source GLB assets.
+## Installation
+Merge the ZIP contents into the repository, preserving folders. Replace only the root `vite.config.js`. Add the other files. Do not replace `main.js`, `customer-intelligence-engine.js`, `production-world.js`, `package.json`, the lockfile, Supabase files or original GLBs.
 
-## Install
+## Customer model approval
+The stage does not assume that `robbert-visitor.glb` or `ribbert-customer.glb` is visually suitable. Open `/asset-inspector.html`, inspect the two models visually, and approve only a suitable, rigged, human-looking model. The stage reads the existing `calloria.glb-inspector.v1` approved asset list and uses only those customer/visitor assets.
 
-Copy the included `js/glb-world-integration.js` over the existing file, add `js/glb-character-motion.js`, and add `tests/glb-character-motion.test.mjs`.
+If neither model is approved, the stage displays a clear approval message. It does not silently show an unreviewed model or generate a fake 3D person.
 
-## Runtime behaviour
+## Behaviour profiles added
+Happy and appreciative, playful and chatty, impatient and demanding, anxious and worried, skeptical and questioning, sarcastic but conversational, distressed and overwhelmed, hostile and verbally abusive, and talkative/easily distracted. The existing confused profile remains the plain-language/step-by-step support case. No derogatory disability label is used.
 
-- The two primary models (`male-agent`, `female-agent`) are tried automatically when the inspector has no explicit approvals. All candidates still pass strict dimension, skeleton, bone, triangle, mesh and texture checks.
-- If the inspector contains explicit approved IDs, those selections take precedence.
-- Seated positions are replaced only when a seated/typing animation clip is present. Otherwise the original seated staff remain visible.
-- Standing non-walking support positions can use a low-amplitude skeletal idle motion when the model has a usable rig but no embedded idle clip.
-- All other positions retain the existing local staff fallback.
-- Existing Meshopt build-time registration remains in place. The exact loader and extension-guard anchors are intentionally preserved for the current Vite transform plugin.
-- Source GLB resources are disposed correctly after their instances are removed.
+Agent responses already change customer patience and reaction in the existing engine. The avatar maps the resulting improving/steady/deteriorating reaction and persona emotion into restrained skeletal body-language changes. Embedded model clips are used when suitable clips are present. A seated employee/agent animation is not altered.
+
+## Safety/performance
+- A customer model must be explicitly approved in the inspector.
+- Runtime acceptance requires human-scale dimensions, a usable skeleton (15–180 bones), no more than 120,000 triangles, no more than 100 meshes and textures no larger than 4096px.
+- One avatar is rendered at a time, in the Customer Intelligence Lab only.
+- The source GLB cache is reused across Lab turns; original models are not modified.
+- If WebGL, model loading or validation fails, the practice interaction remains usable and a clear fallback message is shown.
+- Reduced-motion preference is respected.
 
 ## Verification
-
-Run the repository's existing `npm test` and `npm run build` checks after installation. This package's standalone motion-helper tests can also be run with Node's built-in test runner.
-
-Actual visual suitability, pose quality and device FPS still require browser testing against the deployed GLB files. No claim of full production verification is made here.
+Run the repository's existing `npm test` and `npm run build`. This package includes focused Node tests; a full application build and visual browser review must still be performed in the repository environment.

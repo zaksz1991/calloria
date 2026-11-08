@@ -1,0 +1,60 @@
+.calloria-customer-stage {
+  position: relative;
+  min-height: 238px;
+  height: 258px;
+  margin: 14px 0;
+  overflow: hidden;
+  border: 1px solid rgba(123, 169, 185, .28);
+  border-radius: 14px;
+  background: radial-gradient(ellipse at 50% 25%, #233c4b 0%, #111d2b 68%, #0c1722 100%);
+  isolation: isolate;
+}
+.calloria-customer-stage-canvas {
+  display: block;
+  width: 100%;
+  height: calc(100% - 34px);
+  cursor: grab;
+  touch-action: pan-y;
+}
+.calloria-customer-stage-canvas:active { cursor: grabbing; }
+.calloria-customer-stage-caption {
+  position: absolute;
+  z-index: 2;
+  inset: auto 0 0;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 12px;
+  border-top: 1px solid rgba(151, 187, 198, .18);
+  background: rgba(8, 18, 28, .88);
+  color: #e8f3f5;
+  font: 600 10px/1.3 system-ui, sans-serif;
+}
+.calloria-customer-stage-caption span { color: #8eb9c5; letter-spacing: .08em; }
+.calloria-customer-stage-caption b { text-align: right; }
+.calloria-customer-stage-loading,
+.calloria-customer-stage-message {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 22px;
+  color: #d7e6eb;
+  text-align: center;
+  font: 12px/1.5 system-ui, sans-serif;
+}
+.calloria-customer-stage-message strong { color: #f3f7f8; font-size: 13px; }
+.calloria-customer-stage-message span { max-width: 470px; color: #aac1c9; }
+.calloria-customer-stage-message a { color: #7dd8d1; font-weight: 700; text-decoration: none; }
+.calloria-customer-stage-message a:hover { text-decoration: underline; }
+@media (max-width: 720px) {
+  .calloria-customer-stage { height: 224px; min-height: 212px; }
+  .calloria-customer-stage-caption { font-size: 9px; padding-inline: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .calloria-customer-stage-canvas { cursor: default; }
+}

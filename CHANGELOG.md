@@ -1,9 +1,9 @@
-# v1.3 — GLB staff motion integration
+# v1.4 — Customer behaviour and 3D avatar stage
 
-- Makes the two primary male/female staff GLBs the default checked candidates when no explicit inspector approvals have been saved.
-- Retains explicit inspector approvals as the override when present.
-- Permits a rig-aware procedural idle loop for standing support staff whose GLB has a skeleton but no embedded idle clip.
-- Keeps seated agents on the existing procedural fallback unless the GLB contains a seated/typing clip.
-- Syncs replacement wrapper transforms with the existing staff root each animation update.
-- Corrects source-model cleanup to dispose the stored `gltf` object rather than the wrapper record.
-- Preserves the exact build-transform anchors used by the repository's Meshopt runtime plugin.
+- Adds nine grounded customer behaviour profiles to the synthetic Customer Intelligence Lab.
+- Adds a GLB-powered customer avatar stage driven by the active persona and post-response customer reaction.
+- Requires explicit GLB Inspector approval for customer/visitor models; no unreviewed model is shown.
+- Applies model safety budgets for scale, skeleton, triangles, meshes and textures.
+- Reuses the existing cached GLB loader and Meshopt runtime path.
+- Keeps existing business logic, Supabase integration, main.js, customer-intelligence-engine.js and production-world.js source files untouched through version-checked Vite transforms.
+- Retains the existing Customer Lab workflow if no approved compatible customer model is available.
