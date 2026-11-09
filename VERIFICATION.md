@@ -1,10 +1,12 @@
 # Verification
 
-The package includes five Node contract tests covering integration, existing frame-loop use, disposal, fail-closed source checks and idempotence.
+The activation patch has been statically checked against the current public `main` source for:
 
-Not claimed as verified by these package tests:
-- full CALLORIA/Vite production build;
-- actual loading of either binary agent GLB on a deployed site;
-- visual facing direction, skeleton quality or animation quality on a mobile device.
+- Existing Vite plugin list and build entries.
+- Third-person player plugin import and registration.
+- Existing `enforce: 'post'` ordering contract.
+- GLB world plugin's combined asset-ready callback and immersive/disposal hooks.
+- Production-world player update anchor.
+- Meshopt decoder registration in the player avatar loader.
 
-Those require the resulting Vercel deployment and a browser run.
+Run the repository's normal `npm test` and Vercel build after applying the patch. No live deployment or mobile render is claimed by this package.
