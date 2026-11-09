@@ -1,33 +1,40 @@
-# CALLORIA v2.6 — Production Regression Gate
+# CALLORIA v3.2 — CC0 Reception Lobby Greenery
 
-This package adds one GitHub Actions workflow. It does not modify application source, gameplay, Supabase, Vite configuration, dependencies, or GLB assets.
+This is an incremental overlay for the CALLORIA repository after v3.1 (the v3.0 CC0 reception lobby and v3.1 ergonomic workstation-chair integration). It is not a complete CALLORIA repository snapshot.
 
-## What it checks on every push to `main` and every pull request
+## What changes
 
-1. Installs the repository's current npm dependencies.
-2. Runs the existing `npm run check` syntax checks.
-3. Runs the full `npm test` suite.
-4. Runs the actual Vite production build.
-5. Verifies that `dist/` contains the inspector, the primary agent GLBs, office GLBs, and at least 16 source GLB files.
+- Adds one real, static CC0 bird-of-paradise clump GLB to the authored reception-lobby planter nodes.
+- Uses only planter nodes whose names identify them as planters and whose measured dimensions fit a small lobby planter. It does not scatter plants or invent coordinates.
+- Places up to four copies. The plant is 612 triangles, so the maximum added budget is 2,448 triangles.
+- Performs the placement before the existing reception GLB static-geometry batching stage, so the foliage uses the lobby's existing batching path.
+- Adds `GREENERY: LOADING`, `GREENERY: CC0 GLB` or `GREENERY: FALLBACK` to the existing asset-status line and dispatches `calloria:glb-greenery-ready`.
+- Leaves the current lobby scene and its original planters in place when the asset cannot load, validation fails, the lobby has no named planter anchors, or the world is disposed during loading.
 
-The workflow uses Node.js 24, which satisfies the repository's declared Node.js engine range (`>=22.12.0`). It uses the current major versions of the official checkout and setup-node actions.
+## Files
 
-## Install
+| File | Repository destination | Action |
+|---|---|---|
+| `js/cc0-lobby-greenery-integration.js` | same path | Add |
+| `build/calloria-cc0-lobby-greenery-plugin.mjs` | same path | Add |
+| `tests/calloria-cc0-lobby-greenery.test.mjs` | same path | Add |
+| `vite.config.js` | same path | Merge the v3.2 plugin import and registration into the current config |
 
-Merge the `.github` folder into the repository root. The only file added is:
+The included `vite.config.js` carries forward the v3.1 baseline. Preserve any later changes in the actual repository when merging it; do not overwrite newer plugin registrations or build inputs.
 
-```text
-.github/workflows/calloria-production-gate.yml
-```
+## Boundaries
 
-No existing file should be replaced.
+- No Supabase migration, Edge Function, secret, auth, payroll, KPI or promotion change.
+- No changes to the player controller, staff GLB runtime, workstation operations, shift simulation or existing chair integration.
+- No additional npm package or GLB decoder is required.
+- The plant GLB loads lazily from the source CDN. The browser needs access to `cdn.3dassets.dev`.
+- Existing planters remain visible if a matching named planter anchor cannot be found. This overlay does not fabricate substitute planters or foliage.
 
-## Expected behaviour
+## Install through GitHub's web interface
 
-After the commit reaches GitHub, open **Actions → CALLORIA production regression gate**. It runs automatically. A green result means the repository's tests passed, Vite built the production output, and the required GLB/inspector files were copied into `dist/`.
+1. Open the CALLORIA repository on the `main` branch.
+2. Add the three new files at the exact repository paths listed above, preserving all existing files.
+3. Merge the `calloriaCC0LobbyGreeneryPlugin` import and its plugin registration from the supplied `vite.config.js` into the current `vite.config.js`. It must run after `calloriaErgonomicOfficeChairsPlugin()`.
+4. Commit the changes. The repository's existing Vercel Git integration will start its normal deployment build.
 
-A green GitHub check does not, by itself, prevent Vercel from starting a deployment at the same time. To make it a hard merge gate, configure the repository's `main` branch protection to require the `Tests, Vite build and GLB delivery` check.
-
-## Scope and limitations
-
-This is a build and regression gate, not a new game feature. It does not prove that a GLB renders correctly on a physical phone or that the full game has acceptable frame rate. Those still require browser/device testing.
+Do not replace the full repository with this overlay ZIP.

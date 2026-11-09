@@ -1,23 +1,18 @@
-# Verification record
+# Verification — CALLORIA v3.2
 
-## Passed in this package workspace
+## Completed checks
 
-- JavaScript syntax check for the v3.1 Vite plugin.
-- JavaScript syntax check for the browser chair integration module.
-- JavaScript syntax check for the Node regression test.
-- Focused Node test suite: **9 tests passed**.
-- Transform output syntax validation using a synthetic v3.0 production-world fixture.
-- Idempotence and fail-closed behavior when the v3.0 marker or source anchors are absent/changed.
-- Vite plugin order check: all included earlier plugin registrations remain present and v3.1 follows the v3.0 lobby stage.
+- 12/12 focused Node regression tests passed.
+- JavaScript syntax checks passed for the new browser module, Vite plugin, Vite config and regression tests.
+- The lobby transform was run against the complete v3.0 lobby integration source and applied successfully with no anchor warnings.
+- Synthetic v3.1 production-world fixtures verified the loading, loaded and fallback status updates.
+- Fail-closed behaviour, idempotence, disposal paths, source metadata, triangle limits and Vite plugin order were tested.
+- ZIP archive integrity was checked after packaging.
 
-## Not run
+## Not verified in this workspace
 
-- The complete CALLORIA repository was not available in this overlay workspace.
-- The full application production build was not run.
-- No deployed website or live browser render was tested.
-- The remote GLB was not fetched from an actual user browser/device in this verification run.
-- Visual alignment of the 460 mm chair seat with each animated staff model must be confirmed in the actual scene. The integration keeps existing chairs as the failure fallback but does not alter character rig transforms.
+- The complete CALLORIA repository was not available as a checkout, so its full production build and complete pre-existing test suite were not run.
+- The browser did not load the two external GLBs here. Exact planter node names, visible placement, plant scale and seat/foliage overlap still require validation in the deployed 3D reception view.
+- Because placement is anchor-based, a source GLB that does not expose matching named planter nodes will show `GREENERY: FALLBACK` and retain the original lobby unchanged.
 
-## Test command
-
-`node --test tests/calloria-ergonomic-office-chairs.test.mjs`
+The test results above are focused overlay checks; they are not a claim of successful live rendering or a full production deployment.

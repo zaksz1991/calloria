@@ -12,6 +12,7 @@ import { calloriaThirdPersonPlayerPlugin } from './build/calloria-third-person-p
 import { calloriaWorkstationExperiencePlugin } from './build/calloria-workstation-experience-plugin.mjs';
 import { calloriaCC0OfficeLobbyPlugin } from './build/calloria-cc0-office-lobby-plugin.mjs';
 import { calloriaErgonomicOfficeChairsPlugin } from './build/calloria-ergonomic-office-chairs-plugin.mjs';
+import { calloriaCC0LobbyGreeneryPlugin } from './build/calloria-cc0-lobby-greenery-plugin.mjs';
 
 export default defineConfig({
   base: '/',
@@ -35,7 +36,9 @@ export default defineConfig({
     // Add the real CC0 reception/lobby only after the GLB-first world transform.
     calloriaCC0OfficeLobbyPlugin(),
     // Real CC0 ergonomic task chairs upgrade the selected GLB workstation rows.
-    calloriaErgonomicOfficeChairsPlugin()
+    calloriaErgonomicOfficeChairsPlugin(),
+    // Fill authored reception planters with a lightweight CC0 greenery GLB.
+    calloriaCC0LobbyGreeneryPlugin()
   ],
   build: {
     outDir: 'dist',
