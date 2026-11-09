@@ -1,39 +1,36 @@
-# Installation — CALLORIA v3.2
+# Installation — CALLORIA v3.3
 
 ## Required baseline
 
-The active CALLORIA `main` branch must already include:
-- v3.0 `js/cc0-office-lobby-integration.js` and its production-world plugin integration;
-- v3.1 `js/cc0-office-chair-integration.js` and `calloriaErgonomicOfficeChairsPlugin()`;
-- the existing `three` dependency and `js/glb-asset-loader.js` disposal helper.
+The active `main` branch must already include the v3.2 greenery integration, the v3.2 plugin in Vite, Three.js, and `js/glb-asset-loader.js` with `disposeGLTFResources`.
 
-## Add these files
+## Add
 
-- `js/cc0-lobby-greenery-integration.js`
-- `build/calloria-cc0-lobby-greenery-plugin.mjs`
-- `tests/calloria-cc0-lobby-greenery.test.mjs`
+- `js/cc0-glazed-department-partitions.js`
+- `build/calloria-glazed-department-partitions-plugin.mjs`
+- `tests/calloria-glazed-department-partitions.test.mjs`
 
-## Update Vite registration
+## Merge the Vite registration
 
-Merge the following import into the current `vite.config.js`:
+Add:
 
 ```js
-import { calloriaCC0LobbyGreeneryPlugin } from './build/calloria-cc0-lobby-greenery-plugin.mjs';
+import { calloriaGlazedDepartmentPartitionsPlugin } from './build/calloria-glazed-department-partitions-plugin.mjs';
 ```
 
-Register it immediately after the existing chair plugin:
+Register after greenery:
 
 ```js
-calloriaErgonomicOfficeChairsPlugin(),
-calloriaCC0LobbyGreeneryPlugin()
+calloriaCC0LobbyGreeneryPlugin(),
+calloriaGlazedDepartmentPartitionsPlugin()
 ```
 
-Keep all other plugins, HTML build inputs, aliases, build settings and later project-specific additions. The supplied `vite.config.js` is a v3.1-derived reference, not permission to discard changes made after v3.1.
+The supplied `vite.config.js` is the v3.2 baseline plus this new plugin. Keep newer local settings, HTML inputs and plugin registrations when merging.
 
-## Runtime behaviour
+## Runtime and fallback behaviour
 
-The greenery module loads the plant GLB only after the reception lobby GLB passes its existing geometry validation. It searches the lobby scene for named planter nodes, checks their bounding boxes, and only then places plants. If no suitable anchor exists, the external asset fails, or its geometry fails validation, the lobby still loads without added greenery. The overlay does not modify the underlying authored planter meshes.
+The integration verifies the three existing named panes (`qa-glass-front`, `supervisor-left-glass`, `supervisor-right-glass`) against their expected dimensions before requesting the asset. It validates the loaded model against the published 1.2 × 2.6 × 0.08 m envelope and geometry limits.
 
-The plugin patches the lobby integration and the already-v3.1-transformed production-world module using exact source anchors. If the source has drifted, it warns and skips the affected transform rather than applying a partial text replacement.
+Only after the selected tier's complete set of module clones has been prepared does the code add them to the scene and hide the corresponding original panes. On any fetch, validation, placement or lifecycle failure, the original panes remain or are restored.
 
-No Supabase dashboard, SQL editor, Edge Function deployment, environment variable, account map or secret change is part of this phase.
+Low tier uses six QA modules only (3,384 triangles). Balanced/high use all 16 modules (9,024 triangles). The model is visual only; it does not modify collision logic or block any doorway.

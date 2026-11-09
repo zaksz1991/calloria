@@ -13,6 +13,7 @@ import { calloriaWorkstationExperiencePlugin } from './build/calloria-workstatio
 import { calloriaCC0OfficeLobbyPlugin } from './build/calloria-cc0-office-lobby-plugin.mjs';
 import { calloriaErgonomicOfficeChairsPlugin } from './build/calloria-ergonomic-office-chairs-plugin.mjs';
 import { calloriaCC0LobbyGreeneryPlugin } from './build/calloria-cc0-lobby-greenery-plugin.mjs';
+import { calloriaGlazedDepartmentPartitionsPlugin } from './build/calloria-glazed-department-partitions-plugin.mjs';
 
 export default defineConfig({
   base: '/',
@@ -38,7 +39,9 @@ export default defineConfig({
     // Real CC0 ergonomic task chairs upgrade the selected GLB workstation rows.
     calloriaErgonomicOfficeChairsPlugin(),
     // Fill authored reception planters with a lightweight CC0 greenery GLB.
-    calloriaCC0LobbyGreeneryPlugin()
+    calloriaCC0LobbyGreeneryPlugin(),
+    // Upgrade the existing QA/supervisor room panes with validated CC0 glass modules.
+    calloriaGlazedDepartmentPartitionsPlugin()
   ],
   build: {
     outDir: 'dist',

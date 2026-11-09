@@ -1,22 +1,15 @@
-# Asset source and licence
+# Asset source and licence record — CALLORIA v3.3
 
-## Bird of paradise clump, 1.7 m
-
-- Asset page: https://3dassets.dev/assets/botanical-glasshouse-and-palm-house-botanical-glasshou-c9003ec1
-- GLB: https://cdn.3dassets.dev/assets/38580/v1/model.glb
+- Asset: Glazed partition module, 1.2 m (Downtown Office Interiors)
+- Publisher: 3DAssets.dev
+- Asset ID: `17051`
+- Runtime GLB: `https://cdn.3dassets.dev/assets/17051/v1/model.glb`
+- Asset page: `https://3dassets.dev/assets/downtown-office-interiors-glazed-partition-module-0a8e7f14`
+- Pack manifest: `https://3dassets.dev/api/v1/packs/downtown-office-interiors`
+- Pack page: `https://3dassets.dev/packs/downtown-office-interiors`
 - Licence: CC0 1.0 Universal
-- Dimensions: 1.517 × 1.751 × 1.485 metres (X × Y × Z)
-- Reported geometry: 612 triangles, 1,267 vertices, 4 materials
-- Animation: none; the asset is static geometry
-- File size: 27.4 KB
-
-The asset page identifies the model as static, +Y up, resting at y=0, and released under CC0 1.0 Universal. The runtime validates loaded geometry instead of assuming the downloaded model always matches its published metadata.
-
-## Existing reception starter scene
-
-The v3.0 lobby is the `Office Lobby and Building Facilities` starter scene:
-- Pack: https://3dassets.dev/packs/office-lobby-and-facilities
-- Starter GLB: https://cdn.3dassets.dev/assets/26326/v1/model.glb
-- Licence: CC0 1.0 Universal
-
-The published starter-scene manifest describes planters as part of the scene. This overlay deliberately requires the loaded GLB to expose suitable named planter nodes before adding plants.
+- Published dimensions (X × Y × Z): 1.2 × 2.6 × 0.08 metres
+- Published geometry: 564 triangles, 1,692 vertices, 4 materials, 0 animation clips
+- Orientation: +Y up, user side toward +Z, floor at y=0
+- Format: GLB; standard Three.js GLTFLoader; no additional decoders
+- Asset pack disclosure: the publisher states that AI was used in the creation of the pack assets.
