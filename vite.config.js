@@ -11,6 +11,7 @@ import { calloriaFirstShiftGameplayPlugin } from './build/calloria-first-shift-g
 import { calloriaThirdPersonPlayerPlugin } from './build/calloria-third-person-player-plugin.mjs';
 import { calloriaWorkstationExperiencePlugin } from './build/calloria-workstation-experience-plugin.mjs';
 import { calloriaCC0OfficeLobbyPlugin } from './build/calloria-cc0-office-lobby-plugin.mjs';
+import { calloriaErgonomicOfficeChairsPlugin } from './build/calloria-ergonomic-office-chairs-plugin.mjs';
 
 export default defineConfig({
   base: '/',
@@ -32,7 +33,9 @@ export default defineConfig({
     // Existing operations remain open in the active 3D workplace.
     calloriaWorkstationExperiencePlugin(),
     // Add the real CC0 reception/lobby only after the GLB-first world transform.
-    calloriaCC0OfficeLobbyPlugin()
+    calloriaCC0OfficeLobbyPlugin(),
+    // Real CC0 ergonomic task chairs upgrade the selected GLB workstation rows.
+    calloriaErgonomicOfficeChairsPlugin()
   ],
   build: {
     outDir: 'dist',

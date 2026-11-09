@@ -1,13 +1,14 @@
-# Real lobby asset source
+# Asset source and licence
 
-- Pack: Office Lobby and Building Facilities
-- Publisher: 3DAssets.dev
-- Starter scene asset ID: `26326`
-- Runtime GLB: `https://cdn.3dassets.dev/assets/26326/v1/model.glb`
-- Asset page: `https://3dassets.dev/assets/office-lobby-and-building-facilities-office-lobby-a6a9c028-starter-scene`
-- Pack page: `https://3dassets.dev/packs/office-lobby-and-facilities`
-- Licence: CC0 1.0 Universal; no attribution required
-- Published metadata: 32,204 triangles; 68,648 vertices; 99 meshes; 7 materials; 0 textures; 1,303,620 bytes; dimensions 12.707 × 3.672 × 8.895 m; static; no animation clips; no Draco/Meshopt/KTX2; `KHR_mesh_quantization` extension.
-- The pack metadata identifies the assets as AI-generated. The licence remains CC0 1.0 Universal.
+**Asset:** Office task chair (Police Station and Detective Office)  
+**Publisher:** 3DAssets.dev  
+**Asset page:** https://3dassets.dev/assets/police-station-and-detective-office-office-chair-task-fea6fec9  
+**Runtime GLB:** https://cdn.3dassets.dev/assets/29956/v1/model.glb  
+**Licence:** CC0 1.0 Universal — public-domain dedication  
+**Licence text:** https://creativecommons.org/publicdomain/zero/1.0/
 
-The implementation uses only the 1.3 MB starter-scene GLB, not all 111 pack assets. The full pack contains 111 models; its separate-manifest pieces can be used later to build additional office zones individually.
+The publisher lists the asset as a static metre-based GLB, +Y up, with its user-facing side toward +Z and its base resting at y=0. Published metrics: 0.657 × 1.083 × 0.693 metres, 2,408 triangles, 5,415 vertices, five materials and approximately 103.1 KB. The listed seat height is 460 mm.
+
+The integration records the source URL and CC0 licence in the runtime status payload. No attribution is required under CC0 1.0. The asset is fetched from the publisher CDN at runtime rather than copied into this package.
+
+The source asset is not rigged and has no collision or navigation data. It is a static visual furnishing only; agent seating animation and gameplay behavior remain owned by the existing CALLORIA workplace runtime.

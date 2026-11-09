@@ -1,47 +1,52 @@
-# CALLORIA v3.0 — Real 3D Reception Lobby
+# CALLORIA v3.1 — Ergonomic Workstation Chairs
 
-## What this adds
+This is an incremental overlay for the CALLORIA v3.0 real reception/lobby baseline. It replaces only the primitive chair components at the same GLB workstation station ranges already selected by device tier. Other office zones, customer areas, workstations, staff, gameplay and simulation systems remain unchanged.
 
-This stage places a complete, real GLB lobby scene into the front-left reception zone of the existing CALLORIA Three.js world. It replaces the primitive reception counter, check-in screen, access posts, waiting seats/readers and the earlier individual reception-desk GLB only after the new lobby model loads and passes runtime checks. If it fails, the existing reception remains visible.
+## Package contents
 
-The scene includes a curved reception desk, panelled back wall, visitor seating, speedgates, lift core, sign-in kiosk and lobby props. Published asset metadata reports approximately 1.30 MB, 32,204 triangles, 99 source meshes, 7 materials and no textures. It is static geometry with no rig or animation clips. Compatible meshes are grouped by material/attribute layout to reduce draw calls; if a safe merge is not possible, the original authored scene is retained.
+| Package file | Repository path | Action |
+|---|---|---|
+| `build/calloria-ergonomic-office-chairs-plugin.mjs` | same path | Add |
+| `js/cc0-office-chair-integration.js` | same path | Add |
+| `tests/calloria-ergonomic-office-chairs.test.mjs` | same path | Add |
+| `vite.config.js` | same path | Replace with included v3.1 merged version |
 
-The model is scaled to 80% and placed at the front-left reception footprint to avoid the nearest workstation row and perimeter columns. It does not replace the rest of the office architecture.
+## Installation
 
-## Install
+1. Extract this ZIP into the CALLORIA repository root.
+2. Add the supplied `build/`, `js/` and `tests/` files at the listed paths.
+3. Replace the root `vite.config.js` with the included file. It retains the v3.0 plugin chain and appends v3.1 after the lobby transformation.
+4. Run the focused test with the repository's installed Node.js: `node --test tests/calloria-ergonomic-office-chairs.test.mjs`.
+5. Run the repository's normal production build, then deploy the resulting build through the existing deployment workflow.
 
-Merge the ZIP into the root of `zaksz1991/calloria`.
+If your current `vite.config.js` contains changes made after the v3.0 baseline, preserve those changes and merge only the v3.1 import and plugin registration. The chair plugin must run after `calloriaCC0OfficeLobbyPlugin()`.
 
-**Replace this file completely:**
-- `vite.config.js`
+## Expected coverage
 
-**Add these files:**
-- `build/calloria-cc0-office-lobby-plugin.mjs`
-- `js/cc0-office-lobby-integration.js`
-- `tests/calloria-cc0-office-lobby.test.mjs`
+The replacement follows the existing 12-station device-tier ranges:
 
-Do not replace `package.json`, `main.js`, `production-world.js`, `glb-office-world-integration.js`, Supabase files or any existing GLB models. The replacement Vite config is copied from the current `main` branch and adds the new plugin after the existing GLB-first and workstation transforms.
+| Device tier | Workstation IDs receiving real GLB chairs |
+|---|---|
+| Low | 10–11 (2 chairs) |
+| Balanced | 9–12 (4 chairs) |
+| High | 5–12 (8 chairs) |
 
-The lobby loads asynchronously after the existing world begins initializing. It does not hold the player at a loading screen while the extra asset downloads. The status label initially shows `LOBBY: LOADING`, then changes to `LOBBY: CC0 GLB` after a successful load or `LOBBY: FALLBACK` if the existing reception must remain. The browser also emits `calloria:glb-lobby-ready` with the final status. If the world is disposed while the download is in progress, the late model is discarded.
+The rest of each tier retains the current chair presentation. The module uses the fixed station coordinates and existing chair anchor (`z + 1.36`) from the production workplace; the model's authored front is rotated toward the workstation.
 
-## Asset delivery and licence
+## Runtime safety
 
-The lobby GLB is served from the publisher's permanent CORS-enabled CDN:
+- Model loading is asynchronous and does not block the first scene render.
+- GLB dimensions, mesh/material counts, triangle count, floor origin and texture size are validated before any legacy chair instances are hidden.
+- Repeated chair geometry is merged by compatible material/vertex layout to reduce draw calls.
+- The combined placed-chair budget is capped at 32,000 triangles.
+- A failed request, invalid model, changed source anchor or unsupported asset structure leaves the original chairs in place.
+- Disposing the workplace removes replacement geometry and restores the original instanced chair transforms.
+- No new Supabase migration, Edge Function, secret, environment variable, npm package, external AI service, microphone capture or customer data access is introduced.
 
-`https://cdn.3dassets.dev/assets/26326/v1/model.glb`
+## Preserve existing project files
 
-Source pack: `https://3dassets.dev/packs/office-lobby-and-facilities`
+Do not replace `package.json`, `index.html`, `main.js`, `game.js`, `production-world.js`, `glb-office-world-integration.js`, existing GLB assets, Supabase functions, migrations, or any other phase modules with older snapshots. This ZIP is an overlay, not a full CALLORIA repository snapshot.
 
-Licence: CC0 1.0 Universal. The source page states that commercial use, modification and redistribution are permitted without attribution. The model is authored in metres with +Y up and requires no Draco, Meshopt or KTX2 decoder. The source metadata lists `KHR_mesh_quantization`, which Three.js GLTFLoader supports.
+## Network requirement
 
-This release loads the model from the CDN at runtime; it does not copy the binary into your GitHub repository. The first successful load transfers approximately 1.3 MB, subject to browser/CDN caching. A working internet connection is required for the new lobby; the game still retains the existing reception if the CDN cannot be reached.
-
-## What remains unchanged
-
-- The 12 agent workstations and existing collision/interaction system.
-- Existing GLB office desk/computer/headset integration.
-- Staff, customer and supervisor GLB systems.
-- Recruitment, briefings, customer handling, CRM, QA and workforce screens.
-- Existing player controls, renderer and render loop.
-
-This stage upgrades the reception/lobby zone only. Other office zones still contain existing procedural architecture and furniture until compatible real assets are integrated.
+The chair is downloaded from the source's CORS-enabled CDN at runtime. A successful build does not prove that the live browser can fetch the asset. If the CDN is blocked or unavailable, CALLORIA keeps its original chairs and reports `CHAIRS: FALLBACK`.

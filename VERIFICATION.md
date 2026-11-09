@@ -1,7 +1,23 @@
-# v3.0 verification
+# Verification record
 
-The included eight Node tests cover the Vite post-transform, exact lifecycle injections, non-blocking asynchronous loading, idempotence, safe skip behaviour, CC0 asset metadata and runtime geometry budgets, and preservation of the existing Vite plugin chain.
+## Passed in this package workspace
 
-All JavaScript source and test files pass `node --check`; all seven focused tests pass in the package workspace. A full Vercel production build and real-device visual/FPS test require deployment against the user's repository and CDN/network environment; they are not claimed as completed here.
+- JavaScript syntax check for the v3.1 Vite plugin.
+- JavaScript syntax check for the browser chair integration module.
+- JavaScript syntax check for the Node regression test.
+- Focused Node test suite: **9 tests passed**.
+- Transform output syntax validation using a synthetic v3.0 production-world fixture.
+- Idempotence and fail-closed behavior when the v3.0 marker or source anchors are absent/changed.
+- Vite plugin order check: all included earlier plugin registrations remain present and v3.1 follows the v3.0 lobby stage.
 
-The source pack's published metadata reports 32,204 triangles, 99 meshes, 7 materials, 0 textures and a 1.30 MB GLB. The runtime enforces a 42,000-triangle, 125-mesh, 12-material budget and keeps the previous reception visible if the asset fails to load or validate.
+## Not run
+
+- The complete CALLORIA repository was not available in this overlay workspace.
+- The full application production build was not run.
+- No deployed website or live browser render was tested.
+- The remote GLB was not fetched from an actual user browser/device in this verification run.
+- Visual alignment of the 460 mm chair seat with each animated staff model must be confirmed in the actual scene. The integration keeps existing chairs as the failure fallback but does not alter character rig transforms.
+
+## Test command
+
+`node --test tests/calloria-ergonomic-office-chairs.test.mjs`

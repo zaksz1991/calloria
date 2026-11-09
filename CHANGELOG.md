@@ -1,12 +1,22 @@
-# CALLORIA v3.0
+# CALLORIA v3.1 — Ergonomic Workstation Chairs
 
-- Adds a real CC0 GLB reception/lobby scene from 3DAssets.dev.
-- Replaces primitive reception counter, check-in, queue and waiting-area objects only after the new GLB passes runtime checks.
-- Hides the previous single reception-desk GLB when the full lobby scene is active, preventing duplicate counters.
-- Positions the starter scene at 80% scale within the reception footprint.
-- Batches compatible static geometry by material and attribute layout; reports the actual resulting draw-call count.
-- Loads asynchronously so the existing office can start while the lobby downloads.
-- Discards the model safely if the world closes before loading finishes.
-- Reports `LOBBY: LOADING`, then `LOBBY: CC0 GLB` or `LOBBY: FALLBACK`; emits `calloria:glb-lobby-ready`.
-- Preserves the existing reception geometry on network, validation or source-transform failure.
-- Reuses the existing Three.js scene and frame loop; no second renderer or animation loop is created.
+## Added
+
+- CC0 office task-chair GLB integration for the established 12-station CALLORIA workplace.
+- Device-tier coverage aligned with existing GLB desk rows: 2 chairs on low, 4 on balanced, 8 on high.
+- Geometry inspection and validation for dimensions, floor origin, triangles, mesh/material counts and textures.
+- Compatible mesh batching by material and attribute signature.
+- Lifecycle-aware removal and restoration of the previous chair instances.
+- Explicit `CHAIRS: LOADING`, `CHAIRS: CC0 GLB` and `CHAIRS: FALLBACK` reporting and a `calloria:glb-chairs-ready` event.
+- Focused regression tests for the v3.0 transform anchor, source safety, plugin order and status contract.
+
+## Preserved
+
+- v3.0 reception/lobby and all earlier Vite plugins.
+- Existing gameplay, staff GLBs, desk/monitor/headset coverage and office layout.
+- Existing chair geometry as the runtime fallback.
+- Existing application, Supabase and authentication boundaries.
+
+## Not claimed
+
+This overlay's tests do not substitute for a full repository production build, live CDN fetch, browser scene render or device-tier visual review.
