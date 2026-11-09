@@ -1,12 +1,16 @@
 /**
  * CALLORIA first-shift gameplay event bridge.
  *
- * This post-transform connects the existing recruitment, briefing, shift,
- * inbound-call and wrap-up flows to the in-world tutorial. It does not change
- * business rules or mutate the application's state directly.
+ * Connects existing recruitment, briefing, shift, inbound-call and wrap-up
+ * flows to the in-world tutorial. It does not change business rules or mutate
+ * application state directly.
+ *
+ * GLB telemetry is attached to the actual onAssetsReady callback in main.js.
+ * The previous v2.3 implementation looked for furniture-loading internals in
+ * main.js, although those internals live in the production-world transform.
  */
 const MAIN_TARGET = '/js/main.js';
-const MARKER = '__CALLORIA_FIRST_SHIFT_GAMEPLAY_EVENTS_V23__';
+const MARKER = '__CALLORIA_FIRST_SHIFT_GAMEPLAY_EVENTS_V231__';
 
 const RULES = [
   {
@@ -45,9 +49,12 @@ const RULES = [
     replacement: "function open3dStationPanel(station){\n  window.dispatchEvent(new CustomEvent('calloria:game-station-panel-opened',{detail:{hired:Boolean(state.hired),stationId:station?.id||null,label:station?.label||''}}));\n  const panel=$('#stationPanel');"
   },
   {
-    name: 'GLB asset status telemetry',
-    anchor: "        if(failureCount)console.warn('CALLORIA GLB asset loading details:',result.furnitureErrors);",
-    replacement: "        if(failureCount)console.warn('CALLORIA GLB asset loading details:',result.furnitureErrors);\n        window.dispatchEvent(new CustomEvent('calloria:glb-assets-ready',{detail:{staff:staffCount,office:officeCount,failures:failureCount,loading:Boolean(result.furnitureLoading),tier:result.tier||'unknown'}}));"
+    name: 'GLB asset status callback',
+    // This is the real callback in main.js. The previous anchor incorrectly
+    // referenced result.furnitureErrors inside main.js; those details belong
+    // to the production-world/GLB integration layer instead.
+    anchor: "      onAssetsReady:result=>{\n        const label=result.loaded?`${result.loaded} 3D STAFF ASSETS READY`:'OPTIMISED LOCAL STAFF MODELS ACTIVE';\n        const status=$('#assetStatus');if(status)status.textContent=label;\n      },",
+    replacement: "      onAssetsReady:result=>{\n        const staffCount=Math.max(0,Number(result?.staffLoaded??result?.loaded??0));\n        const officeCount=Math.max(0,Number(result?.officePlaced??0));\n        const failureCount=(Array.isArray(result?.officeErrors)?result.officeErrors.length:0)+(Array.isArray(result?.rejected)?result.rejected.length:0);\n        const tier=String(result?.tier||'unknown');\n        const status=$('#assetStatus');\n        if(status)status.textContent=`GLB STAFF: ${staffCount} · OFFICE GLB OBJECTS: ${officeCount}`+(failureCount?` · REVIEW: ${failureCount}`:'')+` · ${tier.toUpperCase()}`;\n        window.dispatchEvent(new CustomEvent('calloria:glb-assets-ready',{detail:{staff:staffCount,office:officeCount,failures:failureCount,loading:false,tier}}));\n      },"
   }
 ];
 
@@ -70,7 +77,7 @@ function transformMain(context, source) {
 
 export function calloriaFirstShiftGameplayPlugin() {
   return {
-    name: 'calloria-first-shift-gameplay-v2-3',
+    name: 'calloria-first-shift-gameplay-v2-3-1',
     enforce: 'post',
     transform(source, id) {
       const normalizedId = String(id || '').split('?')[0].replaceAll('\\', '/');

@@ -1,41 +1,39 @@
-# CALLORIA v2.3 — First Shift Gameplay Loop
+# CALLORIA First-Shift Build Fix v2.3.1
 
-## Purpose
+## Build failure addressed
 
-Turn the existing 3D movement/workstation flow into a guided first-shift objective connected to the real recruitment, briefing, shift, inbound-call and case wrap-up actions already implemented in `js/main.js`.
+The v2.3 Vite plugin searched `js/main.js` for this string:
 
-This is a focused gameplay bridge. It does not rebuild the 3D office, replace procedural geometry, replace GLB files, or change the existing business rules.
+`if(failureCount)console.warn('CALLORIA GLB asset loading details:',result.furnitureErrors);`
 
-## Files
+That line is not present in `main.js`. Furniture and office GLB status are assembled inside the `production-world.js` integration. `main.js` exposes the real `onAssetsReady:result=>{...}` callback instead.
 
-- Replace `vite.config.js` with the complete current-main configuration in this package. It preserves all existing multi-page entries and registers one additional post-transform plugin.
-- Replace `js/world-gameplay-mission.js` with the mission HUD and event-driven progression.
-- Add `build/calloria-first-shift-gameplay-plugin.js`.
-- Add `tests/calloria-first-shift-gameplay.test.mjs`.
+The missing telemetry anchor caused Vite to stop with:
 
-Do not replace `js/main.js`, `js/production-world.js`, existing GLB integration plugins, `package.json`, lockfiles, Supabase files or original model assets.
+`expected exactly one GLB asset status telemetry anchor (0 found)`
 
-## What players see
+## Installation
 
-The 3D floor displays a six-step first-shift guide:
+In the CALLORIA repository, replace only:
 
-1. Reach a workstation using MOVE; drag the scene to look; RUN sprints.
-2. Tap USE when the workstation is in range.
-3. Choose Inbound Desk.
-4. Attend the active briefing and start the shift if the shift did not start automatically.
-5. Accept the first waiting customer.
-6. Complete after-contact work and save the case.
+`build/calloria-first-shift-gameplay-plugin.js`
 
-The guide advances only from actual application events. A case with an escalated or callback disposition is recorded accurately and is not labelled resolved.
+Add the updated regression test:
 
-The HUD also displays truthful GLB counts from the existing asset callback. If no GLB objects are confirmed, it explicitly says that procedural fallback is active.
+`tests/calloria-first-shift-gameplay.test.mjs`
 
-## Build order
+Do not replace `vite.config.js`, `main.js`, `production-world.js`, `package.json`, lockfiles, or any GLB assets. The existing Vite plugin registration is already correct.
 
-The new Vite plugin uses `enforce: 'post'` so it runs after the existing GLB, customer and supervisor transforms. It only transforms `js/main.js`, checks each expected source anchor exactly once, and refuses a partial transformation if the main source has changed.
+## What the fix changes
+
+- Keeps the existing recruitment, briefing, shift, customer-call, case-save and workstation event bridges.
+- Moves GLB telemetry injection to the real `onAssetsReady` callback in `main.js`.
+- Reads the actual combined fields supplied by the GLB-first production-world integration: `staffLoaded`, `officePlaced`, `officeErrors`, `rejected`, and `tier`.
+- Emits `calloria:glb-assets-ready` for the existing first-shift mission HUD.
+- Reports zero GLB objects honestly; it no longer labels local procedural staff as loaded 3D staff.
+- Preserves strict checks for all eight source anchors and refuses partial transformation.
+- Does not alter application business logic or mutate `main.js` on disk. The change is applied by Vite at build time.
 
 ## Verification
 
-Run the repository's existing `npm test` and `npm run build` through the normal GitHub/Vercel workflow. The added test file is included automatically by the existing `node --test tests/*.test.mjs` script.
-
-No live Vercel build or device-browser rendering has been performed from this package. Confirm the deployed build before treating the feature as live.
+The included tests cover mission progression, GLB status, telemetry callback transformation, plugin idempotence, and plugin registration. Run the repository's existing `npm test` and `npm run build` after merging.

@@ -1,5 +1,6 @@
-# Verification record — CALLORIA v2.3 package
+# Verification — CALLORIA First-Shift Build Fix v2.3.1
 
-The package includes focused Node tests for mission progression, actual case outcome handling, truthful GLB counts, Vite event injection, exact-anchor protection and idempotency.
-
-A full production build and live mobile-browser test must still be run against the assembled repository. No claim of successful Vercel deployment or actual live GLB rendering is made by this package.
+- Plugin JavaScript syntax: checked.
+- First-shift bridge unit/contract tests: checked locally.
+- Main.js telemetry callback contract: updated to match the current `main.js` source at commit `960880b`.
+- Full project `npm run build`: not run in the user's Vercel environment; production deployment remains the confirmation step.
