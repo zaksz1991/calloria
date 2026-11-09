@@ -8,6 +8,7 @@ import { calloriaSupervisorInterventionPlugin } from './build/calloria-superviso
 import { calloriaSupervisorCaseBridgePlugin } from './build/calloria-supervisor-case-bridge-plugin.js';
 import { calloriaFirstShiftGameplayPlugin } from './build/calloria-first-shift-gameplay-plugin.js';
 import { calloriaThirdPersonPlayerPlugin } from './build/calloria-third-person-player-plugin.mjs';
+import { calloriaWorkstationExperiencePlugin } from './build/calloria-workstation-experience-plugin.mjs';
 
 export default defineConfig({
   base: '/',
@@ -21,11 +22,12 @@ export default defineConfig({
     // Supervisor world integration consumes customer-world lifecycle anchors.
     calloriaSupervisorInterventionPlugin(),
     calloriaSupervisorCaseBridgePlugin(),
-    // Run after existing main.js transforms so gameplay events observe the final source.
+    // Existing gameplay bridge emits shift, call, case and station events.
     calloriaFirstShiftGameplayPlugin(),
-    // Must run after the GLB-first workplace transform has injected the combined
-    // asset-ready callback, mission lifecycle and world-immersive event.
-    calloriaThirdPersonPlayerPlugin()
+    // Third-person character consumes the existing production-world frame loop.
+    calloriaThirdPersonPlayerPlugin(),
+    // This final post-transform keeps current operational screens in-world.
+    calloriaWorkstationExperiencePlugin()
   ],
   build: {
     outDir: 'dist',
