@@ -1,12 +1,6 @@
-# Verification
+# Verification — v2.4.2
 
-The activation patch has been statically checked against the current public `main` source for:
-
-- Existing Vite plugin list and build entries.
-- Third-person player plugin import and registration.
-- Existing `enforce: 'post'` ordering contract.
-- GLB world plugin's combined asset-ready callback and immersive/disposal hooks.
-- Production-world player update anchor.
-- Meshopt decoder registration in the player avatar loader.
-
-Run the repository's normal `npm test` and Vercel build after applying the patch. No live deployment or mobile render is claimed by this package.
+- Focused tests: 5 tests, expected to pass when run inside the current repository.
+- Tests exercise the real `production-world.js` source through the GLB-first workplace transform and then the third-person transform.
+- No Vercel production build or physical-phone rendering was run in this environment.
+- Existing GLB assets are not modified.

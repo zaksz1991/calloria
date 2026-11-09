@@ -14,7 +14,6 @@ export default defineConfig({
   publicDir: 'public',
   appType: 'spa',
   plugins: [
-    // The GLB world plugin must run before the third-person post-transform.
     calloriaGLBWorldPlugin(),
     calloriaMeshoptRuntimePlugin(),
     calloriaCustomerAvatarPlugin(),
@@ -22,9 +21,10 @@ export default defineConfig({
     // Supervisor world integration consumes customer-world lifecycle anchors.
     calloriaSupervisorInterventionPlugin(),
     calloriaSupervisorCaseBridgePlugin(),
-    // First-shift bridge transforms main.js; third-person plugin transforms
-    // the already GLB-adapted production-world.js in the post phase.
+    // Run after existing main.js transforms so gameplay events observe the final source.
     calloriaFirstShiftGameplayPlugin(),
+    // Must run after the GLB-first workplace transform has injected the combined
+    // asset-ready callback, mission lifecycle and world-immersive event.
     calloriaThirdPersonPlayerPlugin()
   ],
   build: {

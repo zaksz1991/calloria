@@ -1,29 +1,31 @@
-# CALLORIA v2.4.1 — Third-Person Player Activation
+# CALLORIA v2.4.2 — Third-Person Player Activation
 
-## Why this update exists
+## Purpose
 
-The current `main` branch contains `js/world-player-avatar.js` and `build/calloria-third-person-player-plugin.mjs`, but `vite.config.js` does not import or register `calloriaThirdPersonPlayerPlugin()`. As a result, the third-person GLB player transform is not included in the Vite build.
+The current `main` branch contains `build/calloria-third-person-player-plugin.mjs` and `js/world-player-avatar.js`, but the published `vite.config.js` does not import or register that plugin. The avatar code therefore remains inactive in the production build.
 
-This is a narrow activation patch. It registers the existing plugin after the other configured plugins. The plugin itself uses `enforce: 'post'`, so it receives the production-world module after the existing `enforce: 'pre'` GLB world transform has added the combined GLB-ready callback, mission disposal hook, and immersive event.
+This patch registers the existing plugin after the GLB-first workplace plugin and preserves the existing application entry points and all other plugins.
 
 ## Install
 
 1. Extract this ZIP.
-2. Copy the included `vite.config.js` to the repository root, replacing the existing file.
-3. Copy `tests/third-person-player-activation.test.mjs` into the existing `tests/` directory.
-4. Commit both files to `main`.
+2. Copy `vite.config.js` to the repository root, replacing the existing file.
+3. Copy `tests/third-person-player-activation.test.mjs` into the existing `tests/` folder.
+4. Do not replace `main.js`, `production-world.js`, `package.json`, `glb-world-integration.js`, `world-player-avatar.js`, or any GLB asset.
+5. Commit the two files to `main` and deploy.
 
-Do not replace `package.json`, `js/main.js`, `js/production-world.js`, `js/world-player-avatar.js`, `build/calloria-third-person-player-plugin.mjs`, or any GLB models.
+The patch assumes the repository already contains:
+- `build/calloria-third-person-player-plugin.mjs`
+- `js/world-player-avatar.js`
+- `build/calloria-glb-world-plugin.js`
+- the current 3D GLB asset registry and loader.
 
-## What this activates
+## What changes in the game
 
-- The existing male/female GLB player-avatar loader.
-- Avatar updates from the existing player movement loop.
-- A third-person follow camera while the 3D workplace is immersive.
-- Avatar visibility changes on enter/exit.
-- Avatar disposal with the existing world lifecycle.
-- Existing Meshopt decoding through the current player loader.
+When the 3D workplace is entered, the existing player controller remains in control. After GLB staff and office assets are initialised, CALLORIA loads one compatible player model (male agent first, female agent fallback), makes it visible in immersive mode, updates it from the existing player position/yaw on the existing animation loop, follows it with the third-person camera, and disposes it with the world.
 
-## Verification boundary
+If the selected GLB cannot load or fails runtime checks, the existing controller and workplace remain available. It does not create another WebGL renderer or another render loop.
 
-The included contract tests verify the source registration and expected source hooks. They do not prove that a specific binary GLB passes runtime inspection on a phone. A full Vercel build and browser check remain necessary after commit.
+## Verification
+
+Run the existing test suite with `npm test`, then deploy. The included focused test verifies the actual two-plugin transform order against the repository's real `production-world.js` source. A production browser check is still required to confirm model appearance, orientation, camera distance, and mobile controls on the deployed build.
