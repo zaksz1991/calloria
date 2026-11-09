@@ -1,8 +1,8 @@
-# CALLORIA v2.7 — Static Standing GLB Staff Compatibility
+# v2.9 changelog
 
-- Removes the unconditional skeleton requirement for all staff GLB candidates.
-- Allows dimensionally valid, geometry-safe static GLB models to replace standing staff.
-- Keeps embedded animation and compatible skeletal idle as preferred options.
-- Keeps seated staff protected: a seated/typing clip or compatible seated pose is still required.
-- Adds truthful status counts for static GLBs and skeletal-idle replacements.
-- Leaves original model files, `main.js`, `production-world.js`, customer systems, supervisor systems and Supabase untouched.
+- Expanded low-tier workstation GLB coverage to the two front-centre workstations and added one headset.
+- Expanded balanced-tier workstation GLB coverage to all four front-row stations.
+- Expanded high-tier workstation GLB coverage to eight front and middle-row stations.
+- Kept the existing actual model validation, one-time source loading, shared clone resources, fallbacks and cleanup logic.
+- Reused the already-registered Vite plugin; no Vite config or application entry-point changes.
+- Added regression tests for tier coverage, station bounds, idempotence and transform scope.

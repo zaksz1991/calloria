@@ -1,14 +1,12 @@
 /**
  * CALLORIA GLB-first workplace activation + first-station onboarding.
  *
- * This plugin connects the already-committed office GLB layer and mission card
- * to the existing production-world lifecycle. It does not rewrite main.js,
- * production-world.js, package.json, or the Vite entry map.
- *
- * Source contract: CALLORIA main branch production-world.js, checked 2026-11-08.
+ * v2.9 extends the already-registered office GLB plan across more stations
+ * without changing production-world.js, the Vite entry map, or the asset files.
+ * The original v2.2 production-world transform remains intact.
  */
 const TARGET = '/js/production-world.js';
-
+const OFFICE_TARGET = '/js/glb-office-world-integration.js';
 const READY_ANCHOR =
   "  callbacks.onAssetsReady?.({ loaded: 0, fallback: staff.length, mode: 'merged-articulated-local-staff', tier });";
 const UPDATE_ANCHOR =
@@ -23,7 +21,6 @@ const IMMERSIVE_ANCHOR =
   '    callbacks.onImmersiveChange?.(immersive);';
 const SPAWN_ANCHOR =
   '      player.x = 0; player.z = 15.0; player.yaw = 0; player.pitch = -0.04;';
-
 const IMPORTS = [
   "import { integrateCalloriaGLBStaff } from './glb-world-integration.js';",
   "import { integrateCalloriaGLBOfficeAssets } from './glb-office-world-integration.js';",
@@ -31,11 +28,13 @@ const IMPORTS = [
 ].join('\n');
 
 const MARKER = '__CALLORIA_GLB_FIRST_WORKPLACE_V22__';
+const OFFICE_MARKER = '__CALLORIA_GLB_WORKSTATION_COVERAGE_V29__';
+const OFFICE_PLAN_ANCHOR = /const preferred = safeTier === 'low'\s*\?\s*\[[^\]]*\]\s*:\s*safeTier === 'high'\s*\?\s*\[[^\]]*\]\s*:\s*\[[^\]]*\];/g;
+const HEADSET_PLAN_ANCHOR = /headsetStationIndexes:\s*safeTier === 'low'\s*\?\s*\[[^\]]*\]\s*:\s*\[\.\.\.deskStationIndexes\]/g;
 
 function count(source, needle) {
   return source.split(needle).length - 1;
 }
-
 function requireExactlyOnce(context, source, anchor, label) {
   const occurrences = count(source, anchor);
   if (occurrences !== 1) {
@@ -44,20 +43,38 @@ function requireExactlyOnce(context, source, anchor, label) {
     );
   }
 }
+function transformOfficeCoverage(context, source) {
+  if (source.includes(OFFICE_MARKER)) return null;
+  const normalized = String(source).replace(/\r\n?/g, '\n');
+  const planMatches = normalized.match(OFFICE_PLAN_ANCHOR) || [];
+  const headsetMatches = normalized.match(HEADSET_PLAN_ANCHOR) || [];
+  if (planMatches.length !== 1 || headsetMatches.length !== 1) {
+    context.error(
+      `CALLORIA GLB workstation coverage v2.9 expected one device-tier plan and one headset plan (found ${planMatches.length} and ${headsetMatches.length}). Refusing a partial transform.`
+    );
+  }
+  const preferred = "const preferred = safeTier === 'low' ? [9, 10] : safeTier === 'high' ? [4, 5, 6, 7, 8, 9, 10, 11] : [8, 9, 10, 11];";
+  const headsetPlan = "headsetStationIndexes: safeTier === 'low' ? [10] : [...deskStationIndexes]";
+  let code = normalized.replace(OFFICE_PLAN_ANCHOR, preferred);
+  code = code.replace(HEADSET_PLAN_ANCHOR, headsetPlan);
+  code = `const ${OFFICE_MARKER} = true;\n${code}`;
+  return { code, map: null };
+}
 
 /**
- * Vite plugin. Registered through the existing calloriaGLBWorldPlugin() slot.
+ * Vite plugin. Already registered through calloriaGLBWorldPlugin() in vite.config.js.
  */
 export function calloriaGLBWorldPlugin() {
   return {
     name: 'calloria-glb-first-workplace-v2-2',
     enforce: 'pre',
-
     transform(source, id) {
       const normalizedId = String(id || '').split('?')[0].replaceAll('\\', '/');
+      if (normalizedId.endsWith(OFFICE_TARGET)) {
+        return transformOfficeCoverage(this, source);
+      }
       if (!normalizedId.endsWith(TARGET)) return null;
       if (source.includes(MARKER)) return null;
-
       const anchors = [
         [READY_ANCHOR, 'GLB-ready callback'],
         [UPDATE_ANCHOR, 'render-loop update'],
@@ -70,7 +87,6 @@ export function calloriaGLBWorldPlugin() {
       for (const [anchor, label] of anchors) {
         requireExactlyOnce(this, source, anchor, label);
       }
-
       let code = `${IMPORTS}\nconst ${MARKER} = true;\n${source}`;
 
       // Load staff and office GLBs independently. A missing/rejected GLB must
@@ -80,7 +96,6 @@ export function calloriaGLBWorldPlugin() {
         `  let glbWorldLayer = null;
   let glbOfficeLayer = null;
   let worldMissionLayer = null;
-
   try {
     glbWorldLayer = await integrateCalloriaGLBStaff({ THREE, scene, staff, tier });
   } catch (error) {
@@ -92,13 +107,11 @@ export function calloriaGLBWorldPlugin() {
   } catch (error) {
     console.warn('CALLORIA office GLB layer unavailable; retaining original office objects.', error);
   }
-
   try {
     worldMissionLayer = createCalloriaWorldMission({ host });
   } catch (error) {
     console.warn('CALLORIA first-shift mission overlay unavailable.', error);
   }
-
   const staffAssetStatus = glbWorldLayer?.status || { loaded: 0, fallback: staff.length };
   const officeAssetStatus = glbOfficeLayer?.status || { placed: 0, assets: [], errors: [] };
   const combinedAssetStatus = {
@@ -109,11 +122,9 @@ export function calloriaGLBWorldPlugin() {
     officeErrors: Array.isArray(officeAssetStatus.errors) ? officeAssetStatus.errors : [],
     tier
   };
-
   callbacks.onAssetsReady?.(combinedAssetStatus);
-
-  // Correct the older main.js label, which described zero loaded GLB staff as
-  // "optimised local staff models". Report staff and office assets separately.
+  // Keep GLB telemetry honest: report actual model placements separately from
+  // the procedural fallback objects that remain elsewhere on the office floor.
   const assetStatusNode = document.getElementById('assetStatus');
   if (assetStatusNode) {
     const staffCount = combinedAssetStatus.staffLoaded;
@@ -126,7 +137,6 @@ export function calloriaGLBWorldPlugin() {
       + \`  ·  \${String(tier).toUpperCase()}\`;
   }`
       );
-
       // Feed the two GLB layers from the existing frame loop. No second renderer
       // and no additional requestAnimationFrame loop are created.
       code = code.replace(
@@ -136,7 +146,6 @@ export function calloriaGLBWorldPlugin() {
       glbOfficeLayer?.update?.(delta);
       animate.lastStaffAt = timestamp;`
       );
-
       code = code.replace(
         DISPOSE_ANCHOR,
         `      disposed = true; stopLoop();
@@ -145,10 +154,7 @@ export function calloriaGLBWorldPlugin() {
       worldMissionLayer?.dispose?.();
       visibilityObserver?.disconnect(); resizeObserver?.disconnect();`
       );
-
-      // Start at station 11. The existing office asset plan includes station 11
-      // for low, balanced and high tiers, so the first view is a real GLB desk
-      // rather than an empty aisle. Its approach point remains outside collision.
+      // Start at station 11, which is included in every device-tier asset plan.
       code = code.replace(
         SPAWN_ANCHOR,
         `      const assignedStartStation = stations.find((station) => station.id === 11) || stations[0];
@@ -162,7 +168,6 @@ export function calloriaGLBWorldPlugin() {
       player.yaw = 0;
       player.pitch = -0.04;`
       );
-
       code = code.replace(
         NEAREST_ANCHOR,
         `      const nearestStationDetail = nearestStation
@@ -171,14 +176,12 @@ export function calloriaGLBWorldPlugin() {
       window.dispatchEvent(new CustomEvent('calloria:world-nearest-station', { detail: nearestStationDetail }));
       callbacks.onNearestStation?.(nearestStationDetail);`
       );
-
       code = code.replace(
         USE_ANCHOR,
         `    const accessedStation = { id: nearestStation.id, label: nearestStation.label, department: nearestStation.department };
     window.dispatchEvent(new CustomEvent('calloria:world-station-accessed', { detail: accessedStation }));
     callbacks.onStation?.(accessedStation);`
       );
-
       code = code.replace(
         IMMERSIVE_ANCHOR,
         `    callbacks.onImmersiveChange?.(immersive);
