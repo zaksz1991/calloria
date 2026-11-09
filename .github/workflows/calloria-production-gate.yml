@@ -1,0 +1,74 @@
+name: CALLORIA production regression gate
+
+'on':
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: calloria-production-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Tests, Vite build and GLB delivery
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Check core JavaScript syntax
+        run: npm run check
+
+      - name: Run regression tests
+        run: npm test
+
+      - name: Build production application
+        run: npm run build
+
+      - name: Verify deployed GLB and inspector assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          required_files=(
+            "dist/index.html"
+            "dist/asset-inspector.html"
+            "dist/assets/models/characters/agents/male-agent.glb"
+            "dist/assets/models/characters/agents/female-agent.glb"
+            "dist/assets/models/office/desks/office_desk.glb"
+            "dist/assets/models/office/equipment/office_computer.glb"
+            "dist/assets/models/office/reception/reception-desk.glb"
+          )
+
+          for file in "${required_files[@]}"; do
+            if [[ ! -s "$file" ]]; then
+              echo "::error file=$file::Required production output is missing or empty."
+              exit 1
+            fi
+            printf 'PASS %s (%s bytes)\n' "$file" "$(wc -c < "$file" | tr -d ' ')"
+          done
+
+          glb_count=$(find dist/assets/models -type f -name '*.glb' | wc -l | tr -d ' ')
+          if [[ "$glb_count" -lt 16 ]]; then
+            echo "::error::Expected at least 16 source GLB models in dist/assets/models; found $glb_count."
+            exit 1
+          fi
+          echo "PASS GLB catalogue copied to production output ($glb_count files)."
