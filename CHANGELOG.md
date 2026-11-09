@@ -1,7 +1,8 @@
-# CALLORIA v2.5.1
+# CALLORIA v2.7 — Static Standing GLB Staff Compatibility
 
-- Activates the existing third-person GLB player plugin in Vite.
-- Activates the existing v2.5 in-world workstation experience plugin in Vite.
-- Preserves all existing plugin registrations and multi-page build entries.
-- Adds a registration-order regression test.
-- Does not replace application business logic, core world source, dependencies, database files, or original GLB assets.
+- Removes the unconditional skeleton requirement for all staff GLB candidates.
+- Allows dimensionally valid, geometry-safe static GLB models to replace standing staff.
+- Keeps embedded animation and compatible skeletal idle as preferred options.
+- Keeps seated staff protected: a seated/typing clip or compatible seated pose is still required.
+- Adds truthful status counts for static GLBs and skeletal-idle replacements.
+- Leaves original model files, `main.js`, `production-world.js`, customer systems, supervisor systems and Supabase untouched.

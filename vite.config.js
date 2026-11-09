@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 import { calloriaGLBWorldPlugin } from './build/calloria-glb-world-plugin.js';
 import { calloriaMeshoptRuntimePlugin } from './build/calloria-meshopt-runtime-plugin.js';
+import { calloriaStaticGLBStaffPlugin } from './build/calloria-static-glb-staff-plugin.mjs';
 import { calloriaCustomerAvatarPlugin } from './build/calloria-customer-avatar-plugin.js';
 import { calloriaCustomerWorldPlugin } from './build/calloria-customer-world-plugin.js';
 import { calloriaSupervisorInterventionPlugin } from './build/calloria-supervisor-intervention-plugin.js';
@@ -9,7 +10,6 @@ import { calloriaSupervisorCaseBridgePlugin } from './build/calloria-supervisor-
 import { calloriaFirstShiftGameplayPlugin } from './build/calloria-first-shift-gameplay-plugin.js';
 import { calloriaThirdPersonPlayerPlugin } from './build/calloria-third-person-player-plugin.mjs';
 import { calloriaWorkstationExperiencePlugin } from './build/calloria-workstation-experience-plugin.mjs';
-
 export default defineConfig({
   base: '/',
   publicDir: 'public',
@@ -17,16 +17,17 @@ export default defineConfig({
   plugins: [
     calloriaGLBWorldPlugin(),
     calloriaMeshoptRuntimePlugin(),
+    calloriaStaticGLBStaffPlugin(),
     calloriaCustomerAvatarPlugin(),
     calloriaCustomerWorldPlugin(),
-    // Supervisor integration consumes customer-world lifecycle anchors.
+    // Supervisor world integration consumes customer-world lifecycle anchors.
     calloriaSupervisorInterventionPlugin(),
     calloriaSupervisorCaseBridgePlugin(),
-    // Emit gameplay events before the in-world console subscribes to them.
+    // Existing gameplay bridge emits shift, call, case and station events.
     calloriaFirstShiftGameplayPlugin(),
-    // Both run after GLB-world transforms. The third-person layer targets the
-    // transformed production world; the console layer consumes first-shift events.
+    // Third-person character consumes the existing production-world frame loop.
     calloriaThirdPersonPlayerPlugin(),
+    // This final post-transform keeps current operational screens in-world.
     calloriaWorkstationExperiencePlugin()
   ],
   build: {
