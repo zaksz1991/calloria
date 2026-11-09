@@ -6,7 +6,7 @@ import { calloriaCustomerAvatarPlugin } from './build/calloria-customer-avatar-p
 import { calloriaCustomerWorldPlugin } from './build/calloria-customer-world-plugin.js';
 import { calloriaSupervisorInterventionPlugin } from './build/calloria-supervisor-intervention-plugin.js';
 import { calloriaSupervisorCaseBridgePlugin } from './build/calloria-supervisor-case-bridge-plugin.js';
-import { calloriaFirstShiftGameplayPlugin } from './build/calloria-first-shift-gameplay-plugin.js';
+import { calloriaThirdPersonPlayerPlugin } from './build/calloria-third-person-player-plugin.mjs';
 
 export default defineConfig({
   base: '/',
@@ -17,11 +17,13 @@ export default defineConfig({
     calloriaMeshoptRuntimePlugin(),
     calloriaCustomerAvatarPlugin(),
     calloriaCustomerWorldPlugin(),
-    // Supervisor world integration consumes customer-world lifecycle anchors.
+    // The supervisor world plugin runs after the customer-world pre-transform,
+    // because it consumes the customer layer's injected lifecycle anchors.
     calloriaSupervisorInterventionPlugin(),
+    // The case bridge transforms main.js after the customer-avatar transform.
     calloriaSupervisorCaseBridgePlugin(),
-    // Run after existing main.js transforms so gameplay events observe the final source.
-    calloriaFirstShiftGameplayPlugin()
+    // Post-transform: use the world assembled by the existing GLB/visitor/supervisor adapters.
+    calloriaThirdPersonPlayerPlugin()
   ],
   build: {
     outDir: 'dist',

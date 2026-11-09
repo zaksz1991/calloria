@@ -1,39 +1,28 @@
-# CALLORIA First-Shift Build Fix v2.3.1
+# CALLORIA v2.4 — Third-person GLB Player Character
 
-## Build failure addressed
+## Purpose
 
-The v2.3 Vite plugin searched `js/main.js` for this string:
+This upgrade gives the player a visible agent character using the existing `male-agent.glb` and `female-agent.glb` assets. The camera follows behind the character while the existing joystick, drag-to-look, sprint and USE controls remain in place. It does not replace `production-world.js` or `main.js`.
 
-`if(failureCount)console.warn('CALLORIA GLB asset loading details:',result.furnitureErrors);`
+The avatar loader accepts a valid static mesh or skinned GLB. It uses embedded idle/walk/run clips when present. Models without clips remain real GLB geometry and receive only a restrained whole-object movement cue; no fake skeleton is generated. If neither character loads or passes checks, the existing first-person controller remains active.
 
-That line is not present in `main.js`. Furniture and office GLB status are assembled inside the `production-world.js` integration. `main.js` exposes the real `onAssetsReady:result=>{...}` callback instead.
+## Files
 
-The missing telemetry anchor caused Vite to stop with:
+- Add `js/world-player-avatar.js`
+- Add `build/calloria-third-person-player-plugin.js`
+- Add `tests/third-person-player.test.mjs`
+- Replace root `vite.config.js` with the complete file supplied in this package.
 
-`expected exactly one GLB asset status telemetry anchor (0 found)`
+Do not replace `main.js`, `production-world.js`, `package.json`, `package-lock.json`, Supabase files or any original GLB assets.
 
-## Installation
+## Expected visible result
 
-In the CALLORIA repository, replace only:
+When the user enters the 3D floor, the camera should follow behind a visible agent GLB. The left joystick continues to move the character; dragging the right/central scene changes facing direction; sprint remains available; USE still activates when a workstation is in range. If a GLB cannot be loaded, status is reported and the previous camera/controller is retained.
 
-`build/calloria-first-shift-gameplay-plugin.js`
+## Tests
 
-Add the updated regression test:
+Run the included Node test file with the repository's existing test runner. This package does not add dependencies or change the package manifest.
 
-`tests/calloria-first-shift-gameplay.test.mjs`
+## Verification boundary
 
-Do not replace `vite.config.js`, `main.js`, `production-world.js`, `package.json`, lockfiles, or any GLB assets. The existing Vite plugin registration is already correct.
-
-## What the fix changes
-
-- Keeps the existing recruitment, briefing, shift, customer-call, case-save and workstation event bridges.
-- Moves GLB telemetry injection to the real `onAssetsReady` callback in `main.js`.
-- Reads the actual combined fields supplied by the GLB-first production-world integration: `staffLoaded`, `officePlaced`, `officeErrors`, `rejected`, and `tier`.
-- Emits `calloria:glb-assets-ready` for the existing first-shift mission HUD.
-- Reports zero GLB objects honestly; it no longer labels local procedural staff as loaded 3D staff.
-- Preserves strict checks for all eight source anchors and refuses partial transformation.
-- Does not alter application business logic or mutate `main.js` on disk. The change is applied by Vite at build time.
-
-## Verification
-
-The included tests cover mission progression, GLB status, telemetry callback transformation, plugin idempotence, and plugin registration. Run the repository's existing `npm test` and `npm run build` after merging.
+The package's contract tests and JavaScript syntax can be checked independently. A full Vercel build and actual mobile rendering still require deployment against the current repository. The model's actual in-game orientation and available animation clips must be confirmed in the browser; the avatar loader reports those facts through `calloria:player-avatar-ready` and the `assetStatus` line.
