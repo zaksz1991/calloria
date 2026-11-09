@@ -19,14 +19,14 @@ export default defineConfig({
     calloriaMeshoptRuntimePlugin(),
     calloriaCustomerAvatarPlugin(),
     calloriaCustomerWorldPlugin(),
-    // Supervisor world integration consumes customer-world lifecycle anchors.
+    // Supervisor integration consumes customer-world lifecycle anchors.
     calloriaSupervisorInterventionPlugin(),
     calloriaSupervisorCaseBridgePlugin(),
-    // Existing gameplay bridge emits shift, call, case and station events.
+    // Emit gameplay events before the in-world console subscribes to them.
     calloriaFirstShiftGameplayPlugin(),
-    // Third-person character consumes the existing production-world frame loop.
+    // Both run after GLB-world transforms. The third-person layer targets the
+    // transformed production world; the console layer consumes first-shift events.
     calloriaThirdPersonPlayerPlugin(),
-    // This final post-transform keeps current operational screens in-world.
     calloriaWorkstationExperiencePlugin()
   ],
   build: {
