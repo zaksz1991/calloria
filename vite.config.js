@@ -10,6 +10,8 @@ import { calloriaSupervisorCaseBridgePlugin } from './build/calloria-supervisor-
 import { calloriaFirstShiftGameplayPlugin } from './build/calloria-first-shift-gameplay-plugin.js';
 import { calloriaThirdPersonPlayerPlugin } from './build/calloria-third-person-player-plugin.mjs';
 import { calloriaWorkstationExperiencePlugin } from './build/calloria-workstation-experience-plugin.mjs';
+import { calloriaCC0OfficeLobbyPlugin } from './build/calloria-cc0-office-lobby-plugin.mjs';
+
 export default defineConfig({
   base: '/',
   publicDir: 'public',
@@ -27,8 +29,10 @@ export default defineConfig({
     calloriaFirstShiftGameplayPlugin(),
     // Third-person character consumes the existing production-world frame loop.
     calloriaThirdPersonPlayerPlugin(),
-    // This final post-transform keeps current operational screens in-world.
-    calloriaWorkstationExperiencePlugin()
+    // Existing operations remain open in the active 3D workplace.
+    calloriaWorkstationExperiencePlugin(),
+    // Add the real CC0 reception/lobby only after the GLB-first world transform.
+    calloriaCC0OfficeLobbyPlugin()
   ],
   build: {
     outDir: 'dist',
