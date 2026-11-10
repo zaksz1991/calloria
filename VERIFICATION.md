@@ -1,16 +1,18 @@
-# CALLORIA v4.1.0 — Verification
+# Verification — CALLORIA v4.2.0
 
-## Checks executed in the patch workspace
+Automated checks executed in the isolated package workspace:
 
-- Focused OJT shadowing regression tests: **8 passed, 0 failed**.
-- `node --check build/calloria-ojt-runtime.js`: **passed**.
-- ZIP integrity: checked after packaging.
+- `node --test tests/calloria-v42-supervised-contact-practice.test.mjs` — **12 passed, 0 failed**.
+- `node --check build/calloria-ojt-runtime.js` — **passed**.
+- ZIP integrity — checked after packaging.
 
-## Not verified
+Not verified in this package workspace:
 
-- Full repository `npm test`.
-- Full Vite production build or Vercel deployment.
-- Browser-based employee onboarding in the live site.
-- Physical Android/iOS layout.
+- Full CALLORIA repository `npm test`.
+- Full Vite production build.
+- Vercel deployment.
+- Browser end-to-end interaction against the live application.
+- Persisted progress across an actual deployed browser refresh.
+- Any real telephone, external CRM, AI model or production customer interaction.
 
-A passing focused test suite is not proof of a passing full build or deployment.
+The customer, company and records are synthetic. The trainer rubric is a deterministic practice assessment; it is not an official employment decision or production QA score.
