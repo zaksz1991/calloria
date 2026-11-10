@@ -14,6 +14,7 @@ import { calloriaCC0OfficeLobbyPlugin } from './build/calloria-cc0-office-lobby-
 import { calloriaErgonomicOfficeChairsPlugin } from './build/calloria-ergonomic-office-chairs-plugin.mjs';
 import { calloriaCC0LobbyGreeneryPlugin } from './build/calloria-cc0-lobby-greenery-plugin.mjs';
 import { calloriaGlazedDepartmentPartitionsPlugin } from './build/calloria-glazed-department-partitions-plugin.mjs';
+import { calloriaInWorldOperationsV34Plugin } from './build/calloria-in-world-operations-v3-4-plugin.mjs';
 
 export default defineConfig({
   base: '/',
@@ -41,7 +42,9 @@ export default defineConfig({
     // Fill authored reception planters with a lightweight CC0 greenery GLB.
     calloriaCC0LobbyGreeneryPlugin(),
     // Upgrade the existing QA/supervisor room panes with validated CC0 glass modules.
-    calloriaGlazedDepartmentPartitionsPlugin()
+    calloriaGlazedDepartmentPartitionsPlugin(),
+    // Repair Draco-compressed GLB support and provide a direct route into real agent work.
+    calloriaInWorldOperationsV34Plugin()
   ],
   build: {
     outDir: 'dist',

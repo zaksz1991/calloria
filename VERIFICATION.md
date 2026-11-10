@@ -1,18 +1,19 @@
-# CALLORIA v3.3 verification
+# v3.4 verification record
 
-Package-workspace verification:
+## Checks performed in this artifact workspace
 
-- Focused Node tests: 9/9 passed.
-- `node --check` on all JavaScript modules, Vite config and tests: passed.
-- ZIP integrity: passed.
-- Source-transform tests cover v3.2 baseline gating, exact source anchors, idempotence, unrelated-file isolation, async load lifecycle, disposal, status exposure and Vite plugin order.
-- Static source tests cover the published CC0 asset URL, geometry budget, tier limits, exact anchor names and restoration fallback.
+- Node.js syntax check for `build/calloria-in-world-operations-v3-4-plugin.mjs`.
+- Node unit tests for staff Draco transform, player pose guard, transform anchor failure, inbound routing, mobile tutorial sizing and HTML idempotency.
+- Manual comparison of the supplied `vite.config.js` against the current public `main` branch configuration fetched on 10 November 2026. The original plugin list, build inputs, chunking and server/preview settings are retained; the v3.4 plugin is appended.
 
-Not performed here:
+## Not performed
 
-- Full CALLORIA repository `npm test` or production `npm run build`.
-- Live CDN fetch inside the user's deployed browser.
-- Visual inspection of panel centring, scene lighting, alpha sorting or actual fit in the running game.
-- Device-tier FPS testing on a physical phone.
+- No checkout of the complete current GitHub main branch was available in this workspace.
+- No `npm install`, full `npm test` against the repository, or Vite production build was run against the actual project.
+- No commit was pushed to GitHub and no Vercel deployment was initiated.
+- No hosted GLB file was downloaded and decoded in a live browser.
+- No Android/iOS visual, touch-control, frame-rate or memory test was performed.
 
-The package does not claim that the deployed 3D scene has been visually verified. The exact model dimensions and published triangle/material counts are from the asset publisher's record.
+## Release gate
+
+Do not consider v3.4 verified or deployed until the full repository tests and Vercel production build pass, the runtime reports GLB staff loading correctly (or a specific actionable failure), and the Android gameplay flow is tested from shift briefing through an accepted inbound contact, CRM/case update, after-contact disposition and saved performance result.
