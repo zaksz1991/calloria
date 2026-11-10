@@ -74,33 +74,36 @@ test('player avatar module is replaced with an invisible first-person-only adapt
   assert.doesNotMatch(v37.FIRST_PERSON_AVATAR, /GLTFLoader|MeshoptDecoder|scene\.add/);
 });
 
-test('main application transform defaults new applicants to general customer experience and adds employee OJT gates', () => {
+test('main transform coexists with first-shift and in-world workstation transforms', () => {
   const source = [
     "  selectedTrack: 'banking',",
     "  department: 'Banking Operations',",
     'function renderOverview() {',
     'function renderView() {',
-    "function acceptOffer(){state.stage='employee';state.hired=true;state.shiftActive=false;state.level=1;state.experience=0;state.agentStatus='offline';state.currentView='overview';saveState();toast('Employment accepted. Welcome to the operations floor.','success');renderView();}",
+    "function acceptOffer(){state.stage='employee';state.hired=true;window.dispatchEvent(new CustomEvent('calloria:game-employment-accepted'));state.shiftActive=false;state.level=1;state.experience=0;}",
     "function startShift(){\n  if(!state.hired){toast('Complete recruitment and accept the employment offer before starting a shift.','warning');return;}\n  if (state.shiftActive) { toast('Your shift is already active.'); return; }",
     'function simulationDateNow(){const date=new Date();date.setDate(date.getDate()+Math.max(0,(Number(state.day)||1)-1));const seconds=simulationSecondsNow();date.setHours(Math.floor(seconds/3600),Math.floor((seconds%3600)/60),seconds%60,0);return date;}',
     "if(simulatedMinute>=17*60){toast('The scheduled shift has ended for today. Start the next simulated workday.','warning');return;}\n  state.day=state.day||1;",
     "  state.currentView='overview';\n  pushOperationEvent('shift','SHIFT-'+state.day,'Shift started; inbound routing opened.','active');",
-    "function open3dWorkView(view){\n  close3dStationPanel();\n  if((view==='inbound'||view==='outbound'||view==='digital')&&!state.shiftActive)startShift();\n}",
-    "        const label=result.loaded?`${result.loaded} 3D STAFF ASSETS READY`:'OPTIMISED LOCAL STAFF MODELS ACTIVE';\n        const status=$('#assetStatus');if(status)status.textContent=label;"
+    "function open3dWorkView(view){\n  close3dStationPanel();\n  state.currentView=view;\n  saveState();\n  window.dispatchEvent(new CustomEvent('calloria:game-operation-selected'));\n  document.body.classList.add('calloria-game-operation');\n  renderView();\n}",
+    "onAssetsReady:result=>{\n        const staffCount=Math.max(0,Number(result?.staffLoaded??result?.loaded??0));\n        const officeCount=Math.max(0,Number(result?.officePlaced??0));\n        const failureCount=(Array.isArray(result?.officeErrors)?result.officeErrors.length:0)+(Array.isArray(result?.rejected)?result.rejected.length:0);\n        const tier=String(result?.tier||'unknown');\n        const status=$('#assetStatus');\n        if(status)status.textContent=`GLB STAFF: ${staffCount} · OFFICE GLB OBJECTS: ${officeCount}`;\n        window.dispatchEvent(new CustomEvent('calloria:glb-assets-ready',{detail:{staff:staffCount,office:officeCount,failures:failureCount,loading:false,tier}}));\n      },"
   ].join('\n');
   const output = transform(v37.transformMain, source);
   assert.match(output, /selectedTrack: 'service'/);
   assert.match(output, /department: 'Customer Experience'/);
-  assert.match(output, /state\.onboarding=calloriaCreateOJTProfile\(\)/);
+  assert.match(output, /state\.onboarding=calloriaCreateOJTProfile\(\);window\.dispatchEvent/);
   assert.match(output, /Product & service knowledge/);
   assert.match(output, /Agent shadowing/);
   assert.match(output, /Supervised practice/);
   assert.match(output, /GLB STAFF:.*OFFICE GLB OBJECTS/);
-  assert.match(output, /asset loading diagnostics/);
+  assert.match(output, /calloria:glb-assets-ready/);
   assert.match(output, /Attend the 07:30 morning or 14:00 afternoon operations briefing/);
   assert.match(output, /Complete product and service knowledge first/);
   assert.match(output, /calloriaOJTRequired\(\)/);
   assert.match(output, /Trainer sign-off & allocate my workstation/);
+  assert.match(output, /const minute=simulationMinuteNow\(\)/);
+  assert.match(output, /hasBriefingAttendanceForToday\(\)/);
+  assert.doesNotMatch(output, /expected one employment offer acceptance anchor/);
 });
 
 test('on-the-job training sequences product/service knowledge, CRM logging, five live shadow stages, then supervised practice', () => {

@@ -1,6 +1,6 @@
 /**
- * CALLORIA v3.7 — cross-industry on-the-job onboarding + first-person player
- * + real GLB/Draco activation. Built against repository main commit 96649f9.
+ * CALLORIA v3.7.1 — post-bridge onboarding/GLB anchor repair + first-person player
+ * + real GLB/Draco activation. Built against repository main commit 12772ea and its active first-shift/workstation Vite transform chain.
  *
  * This replaces the brittle v3.5 plugin. It does not patch candidate-load loop
  * endings. It registers the real Three.js Draco and Meshopt decoders, adds
@@ -155,8 +155,8 @@ const OJT_CODE = readFileSync(new URL('./calloria-ojt-runtime.js', import.meta.u
 const SIMULATION_DATE_ANCHOR = 'function simulationDateNow(){const date=new Date();date.setDate(date.getDate()+Math.max(0,(Number(state.day)||1)-1));const seconds=simulationSecondsNow();date.setHours(Math.floor(seconds/3600),Math.floor((seconds%3600)/60),seconds%60,0);return date;}';
 const START_SHIFT_TIME_ANCHOR = "if(simulatedMinute>=17*60){toast('The scheduled shift has ended for today. Start the next simulated workday.','warning');return;}\n  state.day=state.day||1;";
 const START_SHIFT_VIEW_ANCHOR = "  state.currentView='overview';\n  pushOperationEvent('shift','SHIFT-'+state.day,'Shift started; inbound routing opened.','active');";
+const OFFER_ACCEPT_PREFIX = "function acceptOffer(){state.stage='employee';state.hired=true;";
 const OPEN_WORK_VIEW_ANCHOR = "if((view==='inbound'||view==='outbound'||view==='digital')&&!state.shiftActive)startShift();";
-const MAIN_ASSET_STATUS_ANCHOR = "        const label=result.loaded?`${result.loaded} 3D STAFF ASSETS READY`:'OPTIMISED LOCAL STAFF MODELS ACTIVE';\n        const status=$('#assetStatus');if(status)status.textContent=label;";
 
 function transformMain(context, source) {
   if (source.includes(MARKERS.main)) return null;
@@ -164,14 +164,13 @@ function transformMain(context, source) {
   const required = [
     ['function renderOverview() {','renderOverview declaration'],
     ['function renderView() {','renderView declaration'],
-    ["function acceptOffer(){state.stage='employee';state.hired=true;state.shiftActive=false;state.level=1;state.experience=0;state.agentStatus='offline';state.currentView='overview';saveState();toast('Employment accepted. Welcome to the operations floor.','success');renderView();}",'employment offer acceptance'],
+    [OFFER_ACCEPT_PREFIX,'employment offer acceptance prefix'],
     ['function startShift(){\n  if(!state.hired){toast(\'Complete recruitment and accept the employment offer before starting a shift.\',\'warning\');return;}','shift-start function'],
     ['function open3dWorkView(view){','3D workstation routing'],
     [SIMULATION_DATE_ANCHOR,'simulated date helper'],
     [START_SHIFT_TIME_ANCHOR,'scheduled shift time guard'],
     [START_SHIFT_VIEW_ANCHOR,'shift completion route'],
-    [OPEN_WORK_VIEW_ANCHOR,'3D work-view shift route'],
-    [MAIN_ASSET_STATUS_ANCHOR,'GLB runtime asset diagnostics']
+
   ];
   for (const [anchor,label] of required) if (!one(context, code, anchor, label)) return null;
 
@@ -181,10 +180,9 @@ function transformMain(context, source) {
   code = code.replace("  department: 'Banking Operations',", "  department: 'Customer Experience',");
   code = code.replace('function renderOverview() {', `function renderOverview() {\n  calloriaEnsureOJTProfile();\n  if (calloriaOJTRequired()) return calloriaRenderOJT();`);
   code = code.replace('function renderView() {', `function renderView() {\n  calloriaEnsureOJTProfile();\n  if (calloriaOJTRequired() && state.currentView !== 'overview') state.currentView = 'overview';`);
-  code = code.replace(
-    "function acceptOffer(){state.stage='employee';state.hired=true;state.shiftActive=false;state.level=1;state.experience=0;state.agentStatus='offline';state.currentView='overview';saveState();toast('Employment accepted. Welcome to the operations floor.','success');renderView();}",
-    "function acceptOffer(){state.stage='employee';state.hired=true;state.onboarding=calloriaCreateOJTProfile();state.shiftActive=false;state.level=1;state.experience=0;state.agentStatus='offline';state.currentView='overview';saveState();toast('Employment accepted. Your on-the-job product, systems and shadowing programme starts now.','success');renderView();}"
-  );
+  // The earlier first-shift plugin inserts a gameplay event inside acceptOffer.
+  // Anchor only the stable opening prefix and preserve every upstream event.
+  code = code.replace(OFFER_ACCEPT_PREFIX, `${OFFER_ACCEPT_PREFIX}state.onboarding=calloriaCreateOJTProfile();`);
   // Put onboarding functions before the first renderOverview invocation site.
   const overviewAnchor = 'function renderOverview() {';
   code = code.replace(overviewAnchor, `${OJT_CODE}\n${overviewAnchor}`);
@@ -194,20 +192,41 @@ function transformMain(context, source) {
   code = code.replace(startGuard, `${startGuard}\n  calloriaEnsureOJTProfile();\n  if(calloriaOJTRequired()){toast('Complete on-the-job knowledge, systems, shadowing and supervised practice before receiving a desk.','warning');state.currentView='overview';renderView();return;}`);
   code = code.replace(START_SHIFT_TIME_ANCHOR, `if(simulatedMinute>=17*60){toast('The scheduled shift has ended for today. Start the next simulated workday.','warning');return;}\n  if(!hasBriefingAttendanceForToday()){toast('Attend the 07:30 morning or 14:00 afternoon operations briefing before starting your shift.','warning');state.currentView='workforce';saveState();renderView();return;}\n  state.day=state.day||1;`);
   code = code.replace(START_SHIFT_VIEW_ANCHOR, START_SHIFT_VIEW_ANCHOR.replace("state.currentView='overview'", "state.currentView='inbound'"));
-  code = code.replace(OPEN_WORK_VIEW_ANCHOR, `if((view==='inbound'||view==='outbound'||view==='digital')&&!state.shiftActive){\n    calloriaEnsureOJTProfile();\n    if(calloriaOJTRequired()){view='overview';toast('Complete employee onboarding before opening a live operations desk.','warning');}\n    else {\n      const minute=simulationMinuteNow();\n      if(minute<8*60||!hasBriefingAttendanceForToday()){view='workforce';toast(minute<8*60?'The shift opens at 08:00. Attend the scheduled operations briefing.':'Attend today’s operations briefing before opening customer queues.','warning');}\n      else {startShift();if(!state.shiftActive)view='workforce';}\n    }\n  }`);
-  // The player may still explore the office during onboarding, but workstation
-  // actions cannot unlock production operations before trainer sign-off.
+  // All workstation operations pass through this guard. Earlier v2.3/v2.5
+  // plugins can move the original startShift() tail into an event bridge, so
+  // the gate attaches to the stable open3dWorkView function boundary.
   const workOpenStart = 'function open3dWorkView(view){';
-  code = code.replace(workOpenStart, `${workOpenStart}\n  calloriaEnsureOJTProfile();\n  if(calloriaOJTRequired() && view !== 'recruitment'){toast('You are still in on-the-job onboarding. Complete the four training modules before using an operating desk.','warning');state.currentView='overview';saveState();exit3dFloor();renderView();return;}`);
+  const workOpenGuard = `${workOpenStart}
+  calloriaEnsureOJTProfile();
+  if(calloriaOJTRequired() && view !== 'recruitment'){toast('You are still in on-the-job onboarding. Complete the four training modules before using an operating desk.','warning');state.currentView='overview';saveState();exit3dFloor();renderView();return;}
+  if((view==='inbound'||view==='outbound'||view==='digital')&&!state.shiftActive){
+    const minute=simulationMinuteNow();
+    if(minute<8*60||!hasBriefingAttendanceForToday()){
+      state.currentView='workforce';
+      saveState();
+      toast(minute<8*60?'The shift opens at 08:00. Attend the scheduled operations briefing.':'Attend today’s operations briefing before opening customer queues.','warning');
+      renderView();
+      return;
+    }
+    startShift();
+    if(!state.shiftActive){state.currentView='workforce';saveState();renderView();return;}
+  }`;
+  code = code.replace(workOpenStart, workOpenGuard);
+  // Remove the legacy inline startShift call if an upstream version retained it.
+  const legacyWorkStartCount = count(code, OPEN_WORK_VIEW_ANCHOR);
+  if (legacyWorkStartCount === 1) code = code.replace(OPEN_WORK_VIEW_ANCHOR, '/* shift start handled by the v3.7.1 function-entry guard */');
+  else if (legacyWorkStartCount > 1) context.error('CALLORIA v3.7.1 found multiple legacy 3D shift-start anchors.');
   // Retain the established 07:30 and 14:00 briefings as prerequisites.
   const dateHelper = `${SIMULATION_DATE_ANCHOR}\nfunction hasBriefingAttendanceForToday(){\n  const simulatedDate=simulationDateNow();\n  const morningDate=new Date(simulatedDate);morningDate.setHours(7,45,0,0);\n  const afternoonDate=new Date(simulatedDate);afternoonDate.setHours(14,15,0,0);\n  const briefingIds=[briefingFor(morningDate),briefingFor(afternoonDate)].filter(Boolean).map(item=>item.id);\n  return (state.briefingAttendance||[]).some(item=>briefingIds.includes(item.briefingId));\n}`;
   code = code.replace(SIMULATION_DATE_ANCHOR, dateHelper);
-  code = code.replace(MAIN_ASSET_STATUS_ANCHOR, `        const staffCount=Number(result.staffLoaded ?? result.loaded)||0;\n        const officeCount=Number(result.officePlaced)||0;\n        const staffFailures=Array.isArray(result.rejected)?result.rejected:[];\n        const officeFailures=Array.isArray(result.officeErrors)?result.officeErrors:[];\n        const status=$('#assetStatus');\n        if(status){status.textContent=\`GLB STAFF: \${staffCount} · OFFICE GLB OBJECTS: \${officeCount}\`+(staffFailures.length+officeFailures.length?\` · REVIEW: \${staffFailures.length+officeFailures.length}\`:'');status.title=[...staffFailures,...officeFailures].map(item=>\`\${item.id||item.assetId||'asset'}: \${(item.reasons||[]).join('; ')||item.message||item.reason||'rejected'}\`).join(' | ')||'GLB asset loading diagnostics';}`);
+  // Preserve the upstream first-shift GLB-ready callback. It already reports
+  // staff/office counts and emits calloria:glb-assets-ready. Do not re-transform
+  // that callback using the obsolete pre-bridge text anchor.
   return { code: `/* ${MARKERS.main} */\n${code}`, map: null };
 }
 
 const HUD_STYLE = `
-/* CALLORIA v3.7: prevent tutorial cards and player meshes from obscuring the floor. */
+/* CALLORIA v3.7.1: prevent tutorial cards and player meshes from obscuring the floor. */
 .calloria-world-mission-v23.calloria-tutorial-card-compact{width:min(220px,calc(100vw - 16px))!important;max-width:min(220px,calc(100vw - 16px))!important;max-height:112px!important;overflow:auto!important;box-sizing:border-box!important;padding:7px!important}
 .calloria-world-mission-v23.calloria-tutorial-card-compact h3{font-size:11px!important;line-height:1.2!important;margin:4px 0!important}
 .calloria-world-mission-v23.calloria-tutorial-card-compact p{font-size:8px!important;line-height:1.25!important;margin:3px 0!important}
@@ -313,7 +332,7 @@ export function calloriaOJTGLBActivationPlugin() {
 }
 
 export const __calloriaV37Test = Object.freeze({
-  MARKERS, TARGETS, DRACO_FILES, GLB_REQUIRED_ASSETS, SIMULATION_DATE_ANCHOR,
+  MARKERS, TARGETS, DRACO_FILES, GLB_REQUIRED_ASSETS, OFFER_ACCEPT_PREFIX, SIMULATION_DATE_ANCHOR,
   START_SHIFT_TIME_ANCHOR, START_SHIFT_VIEW_ANCHOR, OPEN_WORK_VIEW_ANCHOR,
   transformStaff, transformOffice, transformAssetLoader, transformWorld, transformMain,
   transformHtml, FIRST_PERSON_AVATAR, OJT_CODE

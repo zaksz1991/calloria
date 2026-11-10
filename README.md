@@ -1,53 +1,34 @@
-# CALLORIA v3.7.0 — Cross-industry On-the-Job Onboarding & GLB Activation
+# CALLORIA v3.7.1 — OJT/GLB Build Anchor Repair
 
-This is a targeted build-plugin and runtime upgrade prepared against `zaksz1991/calloria` commit `96649f9` on `main`.
+## Failure addressed
 
-## Product direction retained
+Vercel build on GitHub `main` commit `12772ea` failed in `calloria-ojt-glb-activation-v3-7` because the plugin expected the complete original one-line `acceptOffer()` function. The earlier first-shift bridge inserts `calloria:game-employment-accepted` inside that function, so the original exact string no longer exists.
 
-CALLORIA remains a commercial-grade, multi-industry contact-centre career and operations simulator. Recruitment and assessment are the entry gate. The main game is employment, on-the-job development, customer work, operational performance and career progression. It is not a bank-only call-centre game and is not being converted into a training-only product.
+The v3.7 plugin also relied on pre-bridge GLB-status text and an inline 3D shift-start location that are owned or changed by earlier Vite plugins. Those are not stable integration points.
 
-## What this patch changes
+## What v3.7.1 changes
 
-### Employee onboarding after hiring
+- Uses the stable `acceptOffer()` opening prefix and inserts onboarding state without overwriting the first-shift gameplay event or the rest of the employment acceptance logic.
+- Preserves the first-shift GLB-ready callback and its staff/office counts and `calloria:glb-assets-ready` event instead of trying to rewrite an outdated callback body.
+- Enforces OJT at the stable `open3dWorkView()` function entry.
+- Routes inbound/outbound/digital desk selection through the existing shift and briefing rules. It removes a legacy inline `startShift()` call only when that call remains in the transformed source, preventing duplicate shift starts.
+- Keeps the existing OJT curriculum, cross-industry choice, first-person player mode, Draco/Meshopt activation, low-tier office/staff GLB plan and compact HUD unchanged.
 
-The OJT programme begins only after a candidate accepts an employment offer. It sequences:
+## Installation
 
-1. Organisation/product/service knowledge for the selected industry.
-2. CRM and interaction-logging practice.
-3. A five-stage shadowing session following an experienced agent from queue offer and call acceptance through greeting, investigation, case action and wrap-up.
-4. Supervised simulated customer practice.
-5. Trainer sign-off before the employee receives an operating desk and can start live simulated KPI-bearing work.
+Target: repository `zaksz1991/calloria`, branch `main`, baseline commit `12772ea`.
 
-A new applicant defaults to **General Customer Experience**. Banking remains one selectable specialist track among technical support, sales/retention and the other industry packs. OJT also has an explicit industry selector for banking, telecoms, retail, utilities, logistics, travel, insurance, non-clinical healthcare administration, technology/SaaS support and public-service information.
+Replace only these files from the ZIP:
 
-The training examples are simulations and are labelled as such; they are not represented as live calls or scored operational contacts. Existing profiles with recorded work/shift history are grandfathered rather than forced through new-hire onboarding.
+1. `build/calloria-ojt-glb-activation-plugin.mjs`
+2. `tests/calloria-v37-onboarding-glb.test.mjs`
 
-### 3D worker and GLB activation
+Keep the already-installed `build/calloria-ojt-runtime.js` from v3.7 unchanged. Do not replace `vite.config.js`, `package.json`, `js/main.js`, `index.html`, the prior gameplay plugins, existing 3D integration files or model assets.
 
-- Replaces the oversized third-person player-avatar module with a first-person-only adapter. First-person movement/camera controls remain owned by the existing 3D world. This stops the unverified player body from filling the camera view.
-- Adds Three.js `DRACOLoader` beside the existing Meshopt decoder to the staff, office and shared asset-catalogue GLTF loader paths.
-- Corrects staff required-extension validation so a model is not rejected merely because it uses Draco when the decoder is now configured.
-- Adds two stationary staff targets on low-tier devices, where the current world had no stationary candidates for the staff GLB integration. Standing staff may use the existing static-GLB compatibility path; seated staff still require a valid seated animation/pose path.
-- Enables selected workstation, computer, headset and reception GLBs on low-tier devices, while keeping the existing higher-tier layout choices.
-- Copies the installed Three.js Draco decoder runtime into `dist/draco/` during Vite production builds and serves it during development.
-- Reports staff/office GLB placement counts and rejection details through the existing asset-status display.
-- Emits build warnings for required model files missing from `public/assets/models`; it never fabricates replacement character or furniture binaries.
+Use GitHub Desktop or the GitHub website to commit the two replacements to `main`. Suggested commit message: `CALLORIA v3.7.1 — repair OJT integration anchors`.
 
-### Mobile HUD
+## Verification boundary
 
-The existing oversized mission/tutorial card is constrained to a compact mobile-friendly panel. A small direct workplace-desk action remains available while exploring the 3D floor; desk access and operational shift rules remain gated by OJT sign-off and briefing attendance.
+The package test file contains nine focused tests. It exercises the updated main transform against a representative source shape after first-shift/workstation integration, including the injected employment event, existing GLB-ready telemetry callback and in-world workstation route.
 
-## Files in this patch
-
-- `vite.config.js` — full config replacement based on commit `96649f9`; all existing page inputs and preceding plugins are retained. The brittle v3.5 transform registration is replaced by v3.7.
-- `build/calloria-ojt-glb-activation-plugin.mjs` — new Vite integration and decoder-copy plugin.
-- `build/calloria-ojt-runtime.js` — new OJT workflow and employee gating runtime.
-- `tests/calloria-v37-onboarding-glb.test.mjs` — focused regression tests.
-
-## Asset note
-
-The six principal GLB files referenced by this integration are already present as binary paths in the inspected `96649f9` repository snapshot. This patch does **not** contain duplicate copies of those large binaries. The build checks those exact first-party paths and the browser asset-status display reports runtime failures. A successful build alone does not prove that a model passed runtime validation or rendered correctly; confirm `GLB STAFF` and `OFFICE GLB OBJECTS` counts in the actual browser.
-
-## Installation and verification limits
-
-See `INSTALL-GITHUB.md` and `VERIFICATION.md`. This patch has not been pushed to GitHub or deployed to Vercel. The complete repository test suite, production build, and device-level visual checks have not been run in this patch-preparation environment.
+This patch was syntax-checked and its nine focused tests passed in the patch workspace. It does not contain the full application repository. A full `npm test`, Vite production build, GitHub push, Vercel deployment, browser asset load and physical Android test have not been performed. A passing patch test is not evidence of a passing production build.
