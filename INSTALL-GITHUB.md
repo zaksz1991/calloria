@@ -1,39 +1,42 @@
-# Install CALLORIA v3.6.0 through GitHub Desktop
+# Install CALLORIA v3.7.0 using GitHub Desktop
 
-## Baseline
+## Baseline requirement
 
-Target repository: `zaksz1991/calloria`  
-Branch: `main`  
-The current main branch must already contain the v3.5.1 file `build/calloria-first-working-shift-v3-5-plugin.mjs` and its import in `vite.config.js`.
+This patch targets `zaksz1991/calloria` branch `main`, commit `96649f9` (the commit in the Vercel failure log supplied on 10 November 2026).
 
-## Replace/add files
+Do not overlay it on a later, different repository state without comparing the changed `vite.config.js` and the six source-transform anchors. The patch intentionally removes the failed v3.5 plugin registration and replaces it with v3.7.
 
-1. Extract this ZIP in File Explorer.
-2. Open the existing CALLORIA repository using GitHub Desktop and choose **Repository → Show in Explorer**.
-3. Copy the contents of the extracted `CALLORIA_v3_6_Live_Inbound_Operations` folder into the repository root.
-4. Replace `vite.config.js` completely with the supplied version.
-5. Add `build/calloria-live-inbound-conversation-v3-6-plugin.mjs`.
-6. Add `js/operational-conversation-engine.js`.
-7. Add both supplied test files under `tests/`.
-8. Add/replace the release documentation files.
-9. Do not replace `js/main.js`, `index.html`, `package.json`, `public/`, existing 3D models, migrations or Supabase environment settings.
-10. Confirm GitHub Desktop shows the expected changes, commit to `main`, and push.
+## Copy the files
 
-Suggested commit summary: `CALLORIA v3.6.0 — live inbound customer operations`
+1. Download and extract `CALLORIA_v3_7_Onboarding_GLBAwakening_Patch.zip`.
+2. Open the existing `calloria` repository in GitHub Desktop.
+3. Choose **Repository → Show in Explorer**.
+4. Copy the patch's `vite.config.js` into the repository root and replace that one file.
+5. Copy the patch's `build` folder into the repository root, merging folders. Add the two new files:
+   - `build/calloria-ojt-glb-activation-plugin.mjs`
+   - `build/calloria-ojt-runtime.js`
+6. Copy the patch's `tests/calloria-v37-onboarding-glb.test.mjs` into the existing `tests` folder (create it only if the repository has no tests folder).
+7. Do not copy the documentation into application directories; keep the release notes as reference material.
 
-## After push
+## Files deliberately not replaced
 
-1. Open the Vercel deployment for the new commit.
-2. Confirm `npm install` and `npm run build` complete successfully.
-3. Open the deployed app and use an already hired test profile.
-4. Attend the applicable simulated operations briefing and start a shift.
-5. Enter the inbound queue and accept a contact.
-6. Confirm the inbound screen shows a customer/agent transcript and free-text reply form, not multiple-choice call-step cards.
-7. Send a natural response. Confirm the customer replies with a persona-dependent branch.
-8. Test customer speech playback where browser speech synthesis is available.
-9. Complete a safe interaction and verify after-contact work, notes, disposition, QA, CSAT, CRM transcript and case history.
-10. Test a prohibited credential request and confirm mandatory escalation.
-11. Test hold/resume, supervisor request and specialist transfer.
-12. Re-test the same flow on a physical mobile device.
+Do not replace `package.json`, `index.html`, `js/main.js`, `js/production-world.js`, `js/glb-world-integration.js`, `js/glb-office-world-integration.js`, `js/glb-asset-loader.js`, `js/world-player-avatar.js`, the GLB registry, existing model binaries, Supabase migrations or environment variables. The Vite plugin transforms the existing runtime sources at build time, preserving them in the repository.
 
-Do not claim this milestone deployed until the Vercel build and browser acceptance checks pass.
+Do not install the earlier v3.4, v3.5, v3.5.1 or v3.6 patches separately over this package. v3.7 replaces the broken v3.5 plugin registration on the stated baseline.
+
+## Review and push
+
+1. In GitHub Desktop, inspect the complete changed-file list. It should contain the root `vite.config.js`, the two new `build` files and the new focused test.
+2. Commit with: `CALLORIA v3.7 — cross-industry OJT and GLB activation`.
+3. Push to `main` and let the connected Vercel deployment run.
+
+## Vercel acceptance checks
+
+- The previous v3.5 `staff candidate-load loop end anchor` error must be absent.
+- The v3.7 plugin must not report any missing required source anchor.
+- The build output must include `draco/draco_decoder.js`, `draco/draco_decoder.wasm` and `draco/draco_wasm_wrapper.js`.
+- Any `required GLB file is missing` warning must be investigated against the first-party `public/assets/models` tree; do not replace a missing binary with primitive geometry.
+- In a browser, enter the 3D floor and confirm the full-screen player body is gone. Confirm the status display reports actual staff and office GLB placements, not just that the loader module exists.
+- Test recruitment → employment offer → OJT → sign-off → briefing → desk → first customer interaction on desktop and an actual Android device.
+
+A green Vercel build is necessary but not sufficient. Browser rendering, model fit, touch controls and the complete player journey still require manual verification.

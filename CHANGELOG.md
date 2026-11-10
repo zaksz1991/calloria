@@ -1,27 +1,11 @@
-# Changelog — v3.6.0
+# CALLORIA v3.7.0 changelog
 
-## Live inbound customer operations
-
-- Replaced the inbound call's multiple-choice decision cards with a free-text customer conversation workspace.
-- Added deterministic synthetic customer personas and multi-turn response branches.
-- Added per-turn service-quality evaluation and critical compliance escalation.
-- Persisted dialogue, scorecards, branch status and transcript into the CRM case record.
-- Connected operational conversation outcomes to the existing wrap-up QA/disposition and supervisor review flow.
-- Added browser speech playback for the latest customer statement.
-- Added responsive transcript and reply-composer styling for desktop and mobile.
-
-## Preserved
-
-- Recruitment and employment-offer entry gate.
-- Briefing and shift rules from v3.5.1.
-- Existing inbound queue, queue priority, hold/resume, supervisor request, transfer and return-to-queue operations.
-- After-contact work, CRM case creation, QA totals, CSAT, salary/bonus/experience and career progression updates.
-- Existing email, live chat, outbound, workforce and organisation modules.
-
-## Explicitly not claimed
-
-- No real bank or customer data.
-- No live telephony or SIP integration.
-- No microphone-driven live conversation in this release.
-- No external CRM, core banking or customer account connection.
-- No production build or Vercel deployment verification.
+- Added post-employment on-the-job onboarding for product/service knowledge, CRM logging, experienced-agent shadowing, supervised practice and trainer sign-off.
+- Changed the new-applicant default from Banking Operations to General Customer Experience; preserved the banking specialist track and added cross-industry onboarding packs.
+- Restricted own-desk/live-shift access until OJT sign-off and the existing 07:30/14:00 briefing attendance requirement.
+- Removed the oversized third-person player mesh from the active first-person view while preserving the existing world controller.
+- Added Draco decoding alongside Meshopt in staff, office and shared catalogue GLTF loader paths.
+- Allowed staff GLB files using supported Draco/Meshopt compression through the required-extension gate.
+- Added low-tier standing staff candidates and selected low-tier office GLB objects so phone profiles can use first-party models rather than only local fallback geometry.
+- Added first-party Draco decoder output, required-GLB file warnings, runtime GLB placement diagnostics and compact mobile workplace HUD.
+- Replaced the failing v3.5 build transform registration without relying on the brittle staff-loop-ending anchor.

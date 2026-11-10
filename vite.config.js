@@ -14,8 +14,7 @@ import { calloriaCC0OfficeLobbyPlugin } from './build/calloria-cc0-office-lobby-
 import { calloriaErgonomicOfficeChairsPlugin } from './build/calloria-ergonomic-office-chairs-plugin.mjs';
 import { calloriaCC0LobbyGreeneryPlugin } from './build/calloria-cc0-lobby-greenery-plugin.mjs';
 import { calloriaGlazedDepartmentPartitionsPlugin } from './build/calloria-glazed-department-partitions-plugin.mjs';
-import { calloriaFirstWorkingShiftV35Plugin } from './build/calloria-first-working-shift-v3-5-plugin.mjs';
-import { calloriaLiveInboundConversationV36Plugin } from './build/calloria-live-inbound-conversation-v3-6-plugin.mjs';
+import { calloriaOJTGLBActivationPlugin } from './build/calloria-ojt-glb-activation-plugin.mjs';
 
 export default defineConfig({
   base: '/',
@@ -27,27 +26,18 @@ export default defineConfig({
     calloriaStaticGLBStaffPlugin(),
     calloriaCustomerAvatarPlugin(),
     calloriaCustomerWorldPlugin(),
-    // Supervisor world integration consumes customer-world lifecycle anchors.
     calloriaSupervisorInterventionPlugin(),
     calloriaSupervisorCaseBridgePlugin(),
-    // Existing gameplay bridge emits shift, call, case and station events.
     calloriaFirstShiftGameplayPlugin(),
-    // Third-person character consumes the existing production-world frame loop.
     calloriaThirdPersonPlayerPlugin(),
-    // Existing operations remain open in the active 3D workplace.
     calloriaWorkstationExperiencePlugin(),
-    // Add the real CC0 reception/lobby only after the GLB-first world transform.
     calloriaCC0OfficeLobbyPlugin(),
-    // Real CC0 ergonomic task chairs upgrade the selected GLB workstation rows.
     calloriaErgonomicOfficeChairsPlugin(),
-    // Fill authored reception planters with a lightweight CC0 greenery GLB.
     calloriaCC0LobbyGreeneryPlugin(),
-    // Upgrade the existing QA/supervisor room panes with validated CC0 glass modules.
     calloriaGlazedDepartmentPartitionsPlugin(),
-    // First-shift access, player pose checks and staff decoders.
-    calloriaFirstWorkingShiftV35Plugin(),
-    // Replace inbound decision cards with an actual customer conversation and operational wrap-up.
-    calloriaLiveInboundConversationV36Plugin()
+    // Replaces the brittle v3.5 source transform. Must remain last so it can
+    // attach Draco after the existing Meshopt and static-staff transforms.
+    calloriaOJTGLBActivationPlugin()
   ],
   build: {
     outDir: 'dist',

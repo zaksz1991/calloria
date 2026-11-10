@@ -1,24 +1,27 @@
-# v3.6.0 Verification Record
+# CALLORIA v3.7.0 verification record
 
-## Checks performed in the preparation workspace
+## Checks run in the patch workspace
 
-- `node --check` on the new conversation engine: passed.
-- `node --check` on the new Vite plugin: passed.
-- `node --check` on the replacement Vite config: passed.
-- Applied the current v3.5.1 main.js transform followed by the v3.6 transform to the available v1.4.0 application source fixture: passed.
-- `node --check` on the transformed application fixture: passed.
-- Focused Node tests: **14 passed, 0 failed**.
-- ZIP integrity: checked after packaging.
+- `node --test tests/calloria-v37-onboarding-glb.test.mjs`: **9 passed, 0 failed**.
+- `node --check build/calloria-ojt-glb-activation-plugin.mjs`: passed.
+- `node --check build/calloria-ojt-runtime.js`: passed.
+- `node --check vite.config.js`: passed.
 
-## Verification boundary
+The focused tests cover decoder registration, the low-tier office asset plan, shared customer/office loader decoding, low-tier stationary staff candidates, first-person-only avatar adapter, cross-industry post-hire onboarding, sequential training gates, compact HUD injection and decoder file list.
 
-The available local source fixture is the archived v1.4.0 application source plus the current v3.5.1 transform. Public `main` source inspection confirmed the required current inbound renderer, call-start, submission, CRM case and Vite plugin anchors; the full current repository was not available as a local checkout.
+## Repository-source checks
 
-Not performed:
+The plugin has been prepared against public repository source at commit `96649f9`. The existing GLB registry references first-party paths under `/assets/models/`; the six primary agent/office/headset/reception paths were checked against the raw GitHub repository and returned binary-content responses. The patch adds a build-time existence check for these exact files.
+
+## Not run / not claimed
+
 - Full repository `npm test`.
-- Full Vite production build against the complete latest `main` checkout.
-- Vercel build/deployment.
-- Real-browser interaction, physical Android/iOS or GPU profiling.
-- Microphone-driven conversation, external telephony or live CRM/core-banking integration.
+- Full Vite production build.
+- A new Vercel deployment.
+- Visual inspection of the downloaded GLB binaries, their geometry, rig quality, animation clips or license records.
+- Live browser load of every GLB path or confirmation that runtime geometry passes the existing budgets.
+- Desktop/Android/iOS visual QA, mobile FPS profiling or touch-control verification.
+- End-to-end test of recruitment, all OJT screens, sign-off, briefing, workstation access and customer operations on the deployed site.
+- GitHub commit/push or any production deployment.
 
-The ZIP is a source patch, not evidence of a successful deployment.
+The patch is prepared, not deployed. A 9/9 focused plugin test result does not establish that the full repository compiles or that the assets render correctly in Vercel/browser.
