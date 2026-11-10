@@ -1,32 +1,25 @@
-# CALLORIA v4.0 — GitHub Desktop installation
+# CALLORIA v4.1.0 — GitHub Desktop installation
 
 ## Files
 
-| ZIP path | Repository destination | Action |
+| ZIP file | Repository destination | Action |
 |---|---|---|
-| `public/glb-asset-lab.html` | `public/glb-asset-lab.html` | Add |
-| `tests/calloria-v40-glb-asset-lab.test.mjs` | `tests/calloria-v40-glb-asset-lab.test.mjs` | Add |
+| `build/calloria-ojt-runtime.js` | same path | Complete replacement |
+| `tests/calloria-v41-interactive-ojt-shadowing.test.mjs` | same path | Add |
 
-No existing file is replaced. In particular, do not replace `vite.config.js`, `package.json`, `index.html`, `main.js`, GLB registry files or model binaries.
-
-## Install with GitHub Desktop
+## Install without a terminal
 
 1. Extract the ZIP in Windows File Explorer.
 2. Open `zaksz1991/calloria` in GitHub Desktop.
-3. Choose **Repository → Show in Explorer**.
-4. Copy `public/glb-asset-lab.html` into the repository's existing `public` folder.
-5. Copy `tests/calloria-v40-glb-asset-lab.test.mjs` into the existing `tests` folder.
-6. Review the changed-file list. It should contain only those two added files.
-7. Commit as `CALLORIA v4.0.0 — add GLB visual acceptance lab` and push to `main`.
-8. After Vercel deployment, open `https://calloria.vercel.app/glb-asset-lab.html`.
+3. Select **Repository → Show in Explorer**.
+4. Copy the included `build/calloria-ojt-runtime.js` over the existing file at that exact path.
+5. Copy the new test file into the existing `tests` folder.
+6. In GitHub Desktop, confirm the changed-file list contains only those two files.
+7. Commit as `CALLORIA v4.1.0 — interactive OJT shadowing` and push to `main`.
+8. Inspect the Vercel production build before testing the flow in the deployed game.
 
-## Runtime requirements
+## Acceptance test
 
-- The deployed app must contain its public `/assets/models/` GLB files.
-- The v3.9 staff bundle manifest must exist for staff-model preview.
-- The browser must be able to reach jsDelivr for pinned Three.js 0.170.0 modules.
-- The application deployment must serve `/draco/` decoder assets for Draco-compressed models.
+Use a fresh guest employment profile or a hired profile that has not completed onboarding. Complete knowledge and CRM logging first. In shadowing, confirm the queue offer must be accepted, the greeting must be observed, CRM fields must be completed, the approved knowledge article must be marked reviewed, and the final disposition must match the selected route. Trainer sign-off must remain unavailable until supervised practice also passes.
 
-## Verification boundary
-
-This package has no Vite plugin and cannot create a plugin-anchor failure. Tests and JavaScript syntax are checked locally. A live browser/WebGL inspection and the site's next Vercel build remain external acceptance checks.
+Existing profiles with `onboarding.progress.shadowing === true` remain complete; the upgrade does not reset already completed OJT modules.

@@ -1,23 +1,16 @@
-# CALLORIA v4.0 — Verification report
+# CALLORIA v4.1.0 — Verification
 
-## Completed in the patch workspace
+## Checks executed in the patch workspace
 
-- Focused static contract tests: 7 passed, 0 failed.
-- Inline JavaScript module syntax: checked separately with Node.
+- Focused OJT shadowing regression tests: **8 passed, 0 failed**.
+- `node --check build/calloria-ojt-runtime.js`: **passed**.
 - ZIP integrity: checked after packaging.
-- No package dependencies added.
-- No existing runtime/configuration files replaced.
 
 ## Not verified
 
 - Full repository `npm test`.
-- Full Vite production build on the current main branch.
-- Vercel deployment.
-- jsDelivr module availability on the user's device/network.
-- Live manifest fetch, GLB fetch or actual WebGL browser rendering.
-- Whether v3.9 has been installed and deployed.
-- Whether the models appear correctly in the main 3D office scene.
+- Full Vite production build or Vercel deployment.
+- Browser-based employee onboarding in the live site.
+- Physical Android/iOS layout.
 
-## Acceptance rule
-
-Do not report the GLB integration complete until the deployed page shows successful browser renders for actual staff models and the corresponding models are also visible in their intended positions in the main game. The manifest alone is not sufficient evidence.
+A passing focused test suite is not proof of a passing full build or deployment.

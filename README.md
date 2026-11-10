@@ -1,50 +1,26 @@
-# CALLORIA v4.0 — GLB Visual Acceptance Lab
+# CALLORIA v4.1.0 — Interactive OJT Shadowing
 
-## Purpose
+This upgrade deepens the employee onboarding journey. Recruitment remains the entry gate; after accepting employment, a new hire completes product/service knowledge, CRM logging practice, a guided agent-shadowing interaction and supervised practice before trainer sign-off and workstation allocation.
 
-This is a standalone, read-only browser verification page for the real GLB files delivered by CALLORIA. It does not invent success based on a registry entry or build manifest. Each model receives a browser-render-pass only after `GLTFLoader` successfully loads the deployed file into a Three.js scene.
+## What changes
 
-It was prepared after the v3.9 CC0 staff bundle patch. It deliberately detects when that bundle is missing rather than silently displaying local placeholders.
+The previous shadowing panel was primarily a five-stage read-and-click sequence. v4.1 replaces it with a continuous simulated contact that requires the trainee to advance through actual training actions:
 
-## What it checks
+1. Observe an offered inbound contact and accept/pick it from the queue.
+2. Observe the experienced agent's approved greeting, preferred-name check and listening.
+3. Complete a factual CRM training record with contact reason, action and next step.
+4. Review the approved procedure and select a supported resolution, case or specialist-referral path.
+5. Complete after-contact work with a disposition that must match the selected path and a factual wrap-up note.
 
-- v3.9 staff manifest availability and its validated/failed counts.
-- Actual browser loading of each staff model listed as available by the manifest.
-- Existing catalogue office GLBs: workstation desk, computer, headset and reception desk.
-- GLB mesh count, skinned-mesh count, joint count, estimated triangles, materials, textures and embedded animation clips.
-- Idle/Walk clips through the animation selector when those clips exist.
-- Draco and Meshopt decoding using the application's pinned Three.js 0.170.0 modules.
+The selected industry pack controls the example scenario. General customer experience remains the default; banking is optional, alongside telecommunications, retail, utilities, logistics, travel, insurance, non-clinical healthcare administration, technology and public-service information.
 
-## Install
+## Data and scoring boundary
 
-Copy this one page into the matching public folder:
+All customer names and references in this module are synthetic training data. Training observations are saved under the onboarding profile only. They do not create production customer cases, increment calls handled, affect QA/CSAT/AHT, alter salary or count as official performance. Trainer sign-off remains required before desk allocation.
 
-`public/glb-asset-lab.html`
+## Files
 
-Add the included test file to:
+- Replace `build/calloria-ojt-runtime.js` with the complete file in this ZIP.
+- Add `tests/calloria-v41-interactive-ojt-shadowing.test.mjs`.
 
-`tests/calloria-v40-glb-asset-lab.test.mjs`
-
-No change to `vite.config.js`, `package.json`, `package-lock.json`, `main.js`, `index.html`, Supabase, or the 3D runtime is required. Vite copies public files into the production output automatically.
-
-## Open after deployment
-
-`https://calloria.vercel.app/glb-asset-lab.html`
-
-The page uses jsDelivr to load the same pinned Three.js version as the application. The actual `.glb` files are fetched from CALLORIA's own deployment.
-
-## Interpretation
-
-- `STAFF GLBs VALIDATED AT BUILD` means the v3.9 build plugin reported structurally valid files.
-- `MODELS RENDERED IN THIS LAB` counts only files that completed the GLTFLoader callback and were added to the preview scene.
-- A missing manifest means the v3.9 bundler has not run successfully in that deployment, or the manifest was not published.
-- An office asset 404 means the exact registry file is absent from the deployment. The page does not replace it with geometry.
-- A loaded model is not automatically approved for production character use. Review dimensions, pose, proportions, textures, rig and animations before approving it in the GLB Inspector.
-
-## Limits
-
-The page does not alter staff placements in the live office and does not certify that staff replacements appear in the main game scene. It isolates asset availability and browser decoding from the rest of the world integration. Visual fit in the actual contact-centre scene remains a separate acceptance test.
-
-## Verification boundary
-
-The focused tests and syntax checks verify the static diagnostic page and its runtime contracts. They do not perform a real browser/WebGL session, download deployed GLBs, or verify the live Vercel build.
+Do not replace `build/calloria-ojt-glb-activation-plugin.mjs`, `vite.config.js`, `package.json`, `main.js`, `index.html`, GLB asset files or the workforce/operations engines. The existing v3.8.2 Vite plugin reads this OJT runtime file during its build, so no plugin anchor or Vite configuration change is needed.
