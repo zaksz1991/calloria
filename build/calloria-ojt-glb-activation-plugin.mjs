@@ -1,5 +1,5 @@
 /**
- * CALLORIA v3.8.0 — GLB runtime visibility + first-person player
+ * CALLORIA v3.8.1 — GLB runtime visibility + first-person player
  * + real GLB/Draco activation. Built against the current repository main.js and its active v2.9 GLB-first + v3.7.2 OJT/workstation Vite transform chain.
  *
  * This replaces the brittle v3.5 plugin. It does not patch candidate-load loop
@@ -43,7 +43,7 @@ function count(source, needle) { return source.split(needle).length - 1; }
 function one(context, source, needle, label, { strict = true } = {}) {
   const found = count(source, needle);
   if (found !== 1) {
-    const message = `CALLORIA v3.8.0 expected one ${label} anchor; found ${found}.`;
+    const message = `CALLORIA v3.8.1 expected one ${label} anchor; found ${found}.`;
     if (strict && context?.error) context.error(message);
     return false;
   }
@@ -51,67 +51,131 @@ function one(context, source, needle, label, { strict = true } = {}) {
 }
 function normalise(source) { return String(source).replace(/\r\n?/g, '\n'); }
 
+function ensureImport(context, code, statement, anchor, label) {
+  if (code.includes(statement)) return code;
+  if (!one(context, code, anchor, `${label} import anchor`)) return null;
+  return code.replace(anchor, `${anchor}\n${statement}`);
+}
+
+function rewriteLoaderSetup(context, source, {
+  label,
+  declarationPattern,
+  receiver = 'loader',
+  manager = false
+}) {
+  let code = normalise(source);
+  const gltfImport = "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';";
+  const meshoptImport = "import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';";
+  const dracoImport = "import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';";
+  code = ensureImport(context, code, meshoptImport, gltfImport, `${label} MeshoptDecoder`);
+  if (code === null) return null;
+  code = ensureImport(context, code, dracoImport, gltfImport, `${label} DRACOLoader`);
+  if (code === null) return null;
+  const matches = [...code.matchAll(declarationPattern)];
+  if (matches.length !== 1) {
+    context.error(`CALLORIA v3.8.1 expected one ${label} GLTFLoader construction; found ${matches.length}.`);
+    return null;
+  }
+  if (!code.includes(`${receiver}.setMeshoptDecoder(MeshoptDecoder)`)) {
+    const match = matches[0];
+    const indent = match[1] || '';
+    const original = match[0].trim();
+    const constructor = original
+      .replace(/^const\s+\w+\s*=\s*/, '')
+      .replace(/^this\.loader\s*=\s*/, '')
+      .replace(/\.setMeshoptDecoder\(MeshoptDecoder\)/g, '')
+      .replace(/;$/, '');
+    const declaration = receiver === 'this.loader'
+      ? `${indent}this.loader = ${constructor};`
+      : `${indent}const ${receiver} = ${constructor};`;
+    const setup = `${indent}${receiver}.setMeshoptDecoder(MeshoptDecoder);`;
+    code = code.replace(match[0], `${declaration}\n${setup}`);
+  }
+  if (!code.includes(`${receiver}.setDRACOLoader(`)) {
+    const match = [...code.matchAll(declarationPattern)][0];
+    const indent = match?.[1] || '';
+    const setup = `${indent}const dracoLoader = new DRACOLoader();\n${indent}dracoLoader.setDecoderPath('/draco/');\n${indent}${receiver}.setDRACOLoader(dracoLoader);`;
+    const meshoptLine = new RegExp(`^([\\t ]*)${receiver.replaceAll('.', '\\.') }\\.setMeshoptDecoder\\(MeshoptDecoder\\);[\\t ]*$`, 'm');
+    if (meshoptLine.test(code)) code = code.replace(meshoptLine, `$&\n${setup}`);
+    else {
+      const declarationLine = receiver === 'this.loader'
+        ? /^([\t ]*)this\.loader\s*=\s*[^;]+;[\t ]*$/m
+        : new RegExp(`^([\\t ]*)const ${receiver.replaceAll('.', '\\.') }\\s*=\\s*[^;]+;[\\t ]*$`, 'm');
+      if (!declarationLine.test(code)) {
+        context.error(`CALLORIA v3.8.1 could not locate ${label} loader setup for Draco registration.`);
+        return null;
+      }
+      code = code.replace(declarationLine, `$&\n${setup}`);
+    }
+  }
+  return code;
+}
+
 function transformStaff(context, source) {
   if (source.includes(MARKERS.staff)) return null;
-  let code = normalise(source);
-  const importAnchor = "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';";
-  const loaderAnchor = '  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);';
-  const extensionAnchor = "      const extensionsValid = !requiredExtensions.includes('KHR_draco_mesh_compression');";
-  if (!one(context, code, importAnchor, 'staff GLTFLoader import') ||
-      !one(context, code, loaderAnchor, 'staff Meshopt loader setup') ||
-      !one(context, code, extensionAnchor, 'staff Draco extension guard')) return null;
-  code = code.replace(importAnchor, `${importAnchor}\nimport { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';\nconst ${MARKERS.staff} = true;`);
-  code = code.replace(loaderAnchor, `${loaderAnchor}\n  const dracoLoader = new DRACOLoader();\n  dracoLoader.setDecoderPath('/draco/');\n  loader.setDRACOLoader(dracoLoader);`);
-  // A required compression extension is now valid because both decoders are
-  // attached to this GLTFLoader. No candidate-loop or loop-end text is touched.
-  code = code.replace(extensionAnchor, "      const supportedRequiredExtensions = new Set(['KHR_draco_mesh_compression', 'EXT_meshopt_compression']);\n      const extensionsValid = requiredExtensions.every((extension) => supportedRequiredExtensions.has(extension)); // Meshopt + Draco decoders are registered.");
-  return { code, map: null };
+  let code = rewriteLoaderSetup(context, source, {
+    label: 'staff',
+    declarationPattern: /^([\t ]*)const loader = new GLTFLoader\([^;\n]*\);[\t ]*$/gm,
+    receiver: 'loader'
+  });
+  if (code === null) return null;
+  const extensionPattern = /^([\t ]*)const extensionsValid = .*;[\t ]*$/gm;
+  const extensionMatches = [...code.matchAll(extensionPattern)];
+  if (extensionMatches.length === 1) {
+    const indent = extensionMatches[0][1];
+    code = code.replace(extensionPattern,
+      `${indent}const supportedRequiredExtensions = new Set(['KHR_draco_mesh_compression', 'EXT_meshopt_compression']);\n${indent}const extensionsValid = requiredExtensions.every((extension) => supportedRequiredExtensions.has(extension));`);
+  } else if (!code.includes('supportedRequiredExtensions')) {
+    context.error(`CALLORIA v3.8.1 expected one staff required-extension validation; found ${extensionMatches.length}.`);
+    return null;
+  }
+  return { code: `/* ${MARKERS.staff} */\n${code}`, map: null };
 }
 
 function transformOffice(context, source) {
   if (source.includes(MARKERS.office)) return null;
   let code = normalise(source);
-  const importAnchor = "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';";
-  const setupAnchor = '  loader.setMeshoptDecoder(MeshoptDecoder);';
-
-  // The v2.9 GLB-first plugin runs with enforce:"pre" and intentionally
-  // expands the workstation plan before this v3.7 plugin runs with enforce:
-  // "post". Therefore the original literal [10]/[8,9,10,11]/[9,10] is not
-  // present in the transformed source. Validate the shape, not stale values.
   const preferredPlanPattern = /const preferred = safeTier === 'low'\s*\?\s*\[[^\]]*\]\s*:\s*safeTier === 'high'\s*\?\s*\[[^\]]*\]\s*:\s*\[[^\]]*\];/g;
   const headsetPlanPattern = /headsetStationIndexes:\s*safeTier === 'low'\s*\?\s*\[[^\]]*\]\s*:\s*\[\.\.\.deskStationIndexes\],?/g;
+  const receptionPlanPattern = /includeReceptionDesk:\s*[^,\n]+,/g;
   const preferredMatches = code.match(preferredPlanPattern) || [];
   const headsetMatches = code.match(headsetPlanPattern) || [];
-  const receptionPlanPattern = /includeReceptionDesk:\s*[^,\n]+,/g;
   const receptionMatches = code.match(receptionPlanPattern) || [];
-
-  if (!one(context, code, importAnchor, 'office GLTFLoader import') ||
-      !one(context, code, setupAnchor, 'office Meshopt decoder setup')) return null;
   if (preferredMatches.length !== 1 || headsetMatches.length !== 1 || receptionMatches.length !== 1) {
-    context.error(`CALLORIA v3.8.0 expected one upstream workstation, headset and reception plan (found ${preferredMatches.length}, ${headsetMatches.length}, ${receptionMatches.length}). Refusing a partial transform.`);
+    context.error(`CALLORIA v3.8.1 expected one office workstation/headset/reception plan (found ${preferredMatches.length}, ${headsetMatches.length}, ${receptionMatches.length}).`);
     return null;
   }
-
-  code = code.replace(importAnchor, `${importAnchor}\nimport { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';\nconst ${MARKERS.office} = true;`);
-  code = code.replace(setupAnchor, `${setupAnchor}\n  const dracoLoader = new DRACOLoader();\n  dracoLoader.setDecoderPath('/draco/');\n  loader.setDRACOLoader(dracoLoader);`);
-
-  // Preserve the upstream v2.9 coverage policy exactly. It deliberately enables
-  // real GLB desks/computers on the low tier while limiting headsets there to
-  // one selected station and keeping the reception GLB disabled on low tier.
-  // This plugin's responsibility is decoder registration, not plan rewriting.
-  return { code, map: null };
+  const gltfImport = "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';";
+  const dracoImport = "import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';";
+  code = ensureImport(context, code, dracoImport, gltfImport, 'office DRACOLoader');
+  if (code === null) return null;
+  if (!code.includes('loader.setDRACOLoader(')) {
+    const meshoptLine = /^([\t ]*)loader\.setMeshoptDecoder\(MeshoptDecoder\);[\t ]*$/m;
+    if (meshoptLine.test(code)) {
+      code = code.replace(meshoptLine,
+        `$&\n  const dracoLoader = new DRACOLoader();\\n  dracoLoader.setDecoderPath('/draco/');\\n  loader.setDRACOLoader(dracoLoader);`);
+    } else {
+      const declarationLine = /^([\t ]*)const loader = new GLTFLoader\(\);[\t ]*$/m;
+      if (!declarationLine.test(code)) {
+        context.error('CALLORIA v3.8.1 could not locate office GLTFLoader setup for Draco registration.');
+        return null;
+      }
+      code = code.replace(declarationLine,
+        `$&\n  loader.setMeshoptDecoder(MeshoptDecoder);\\n  const dracoLoader = new DRACOLoader();\\n  dracoLoader.setDecoderPath('/draco/');\\n  loader.setDRACOLoader(dracoLoader);`);
+    }
+  }
+  return { code: `/* ${MARKERS.office} */\n${code}`, map: null };
 }
 
 function transformAssetLoader(context, source) {
   if (source.includes(MARKERS.assetLoader)) return null;
-  let code = normalise(source);
-  const importAnchor = "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';";
-  const meshoptAnchor = '    this.loader.setMeshoptDecoder(MeshoptDecoder);';
-  if (!one(context, code, importAnchor, 'shared asset-loader GLTFLoader import') ||
-      !one(context, code, meshoptAnchor, 'shared asset-loader Meshopt setup')) return null;
-  code = code.replace(importAnchor, `${importAnchor}\nimport { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';\nconst ${MARKERS.assetLoader} = true;`);
-  code = code.replace(meshoptAnchor, `${meshoptAnchor}\n    this.dracoLoader = new DRACOLoader();\n    this.dracoLoader.setDecoderPath('/draco/');\n    this.loader.setDRACOLoader(this.dracoLoader);`);
-  return { code, map: null };
+  const code = rewriteLoaderSetup(context, source, {
+    label: 'shared asset',
+    declarationPattern: /^([\t ]*)this\.loader = new GLTFLoader\([^;\n]*\);[\t ]*$/gm,
+    receiver: 'this.loader'
+  });
+  if (code === null) return null;
+  return { code: `/* ${MARKERS.assetLoader} */\n${code}`, map: null };
 }
 
 function transformWorld(context, source) {
@@ -226,7 +290,7 @@ function transformMain(context, source) {
   // Remove the legacy inline startShift call if an upstream version retained it.
   const legacyWorkStartCount = count(code, OPEN_WORK_VIEW_ANCHOR);
   if (legacyWorkStartCount === 1) code = code.replace(OPEN_WORK_VIEW_ANCHOR, '/* shift start handled by the v3.7.2 function-entry guard */');
-  else if (legacyWorkStartCount > 1) context.error('CALLORIA v3.8.0 found multiple legacy 3D shift-start anchors.');
+  else if (legacyWorkStartCount > 1) context.error('CALLORIA v3.8.1 found multiple legacy 3D shift-start anchors.');
   // Retain the established 07:30 and 14:00 briefings as prerequisites.
   const dateHelper = `${SIMULATION_DATE_ANCHOR}\nfunction hasBriefingAttendanceForToday(){\n  const simulatedDate=simulationDateNow();\n  const morningDate=new Date(simulatedDate);morningDate.setHours(7,45,0,0);\n  const afternoonDate=new Date(simulatedDate);afternoonDate.setHours(14,15,0,0);\n  const briefingIds=[briefingFor(morningDate),briefingFor(afternoonDate)].filter(Boolean).map(item=>item.id);\n  return (state.briefingAttendance||[]).some(item=>briefingIds.includes(item.briefingId));\n}`;
   code = code.replace(SIMULATION_DATE_ANCHOR, dateHelper);
@@ -340,7 +404,7 @@ function readDracoFile(fileName) {
   const root = dracoDirectory();
   const path = resolve(root, fileName);
   if (!DRACO_FILES.includes(basename(path)) || !path.startsWith(root) || !existsSync(path)) {
-    throw new Error(`CALLORIA v3.8.0 cannot find Three.js Draco decoder asset: ${path}`);
+    throw new Error(`CALLORIA v3.8.1 cannot find Three.js Draco decoder asset: ${path}`);
   }
   return readFileSync(path);
 }
@@ -348,7 +412,7 @@ function readDracoFile(fileName) {
 export function calloriaOJTGLBActivationPlugin() {
   let decoderRoot = null;
   return {
-    name: 'calloria-glb-runtime-visibility-v3-8',
+    name: 'calloria-glb-runtime-visibility-v3-8-1',
     enforce: 'post',
     configResolved() { decoderRoot = dracoDirectory(); },
     buildStart() {
@@ -356,11 +420,11 @@ export function calloriaOJTGLBActivationPlugin() {
       for (const relativePath of GLB_REQUIRED_ASSETS) {
         const assetPath = resolve(assetRoot, relativePath);
         if (!assetPath.startsWith(assetRoot) || !existsSync(assetPath)) {
-          this.warn(`CALLORIA v3.8.0 required GLB file is missing from public/assets/models: ${relativePath}. It will not be replaced by a procedural placeholder.`);
+          this.warn(`CALLORIA v3.8.1 required GLB file is missing from public/assets/models: ${relativePath}. It will not be replaced by a procedural placeholder.`);
           continue;
         }
         const bytes = readFileSync(assetPath).byteLength;
-        if (bytes < 1024) this.warn(`CALLORIA v3.8.0 GLB file is unexpectedly small (${bytes} bytes): ${relativePath}`);
+        if (bytes < 1024) this.warn(`CALLORIA v3.8.1 GLB file is unexpectedly small (${bytes} bytes): ${relativePath}`);
       }
     },
     configureServer(server) {
@@ -408,6 +472,6 @@ export function calloriaOJTGLBActivationPlugin() {
 export const __calloriaV37Test = Object.freeze({
   MARKERS, TARGETS, DRACO_FILES, GLB_REQUIRED_ASSETS, OFFER_ACCEPT_PREFIX, SIMULATION_DATE_ANCHOR,
   START_SHIFT_TIME_ANCHOR, START_SHIFT_VIEW_ANCHOR, OPEN_WORK_VIEW_ANCHOR,
-  transformStaff, transformOffice, transformAssetLoader, transformWorld, transformMain,
+  transformStaff, transformOffice, transformAssetLoader, transformWorld, transformMain, rewriteLoaderSetup, ensureImport,
   transformHtml, FIRST_PERSON_AVATAR, OJT_CODE, MARKERS
 });

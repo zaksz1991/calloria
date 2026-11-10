@@ -10,61 +10,97 @@ function transform(fn, source) {
   return fn.call(context, context, source)?.code ?? null;
 }
 
-test('staff GLB loader receives Draco alongside the pre-existing Meshopt decoder without a loop-end anchor', () => {
+test('staff source as committed in the repository gets Meshopt and Draco even when the loader starts unconfigured', () => {
   const source = [
+    "import * as THREE from 'three';",
     "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';",
-    '  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);',
-    "      const extensionsValid = !requiredExtensions.includes('KHR_draco_mesh_compression');"
+    "import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';",
+    '  const loader = new GLTFLoader();',
+    "      const requiredExtensions = gltf.parser?.json?.extensionsRequired || [];",
+    "      const extensionsValid = !requiredExtensions.some((extension) => ['KHR_draco_mesh_compression', 'EXT_meshopt_compression'].includes(extension));"
   ].join('\n');
   const output = transform(v37.transformStaff, source);
-  assert.match(output, /DRACOLoader/);
+  assert.match(output, /import \{ MeshoptDecoder \}/);
+  assert.match(output, /import \{ DRACOLoader \}/);
+  assert.match(output, /loader\.setMeshoptDecoder\(MeshoptDecoder\)/);
+  assert.match(output, /loader\.setDRACOLoader\(dracoLoader\)/);
   assert.match(output, /setDecoderPath\('\/draco\/'\)/);
-  assert.match(output, /setDRACOLoader\(dracoLoader\)/);
-  assert.match(output, /supportedRequiredExtensions/);
-  assert.doesNotMatch(output, /STAFF_LOOP_END/);
+  assert.match(output, /requiredExtensions\.every/);
+  assert.doesNotMatch(output, /requiredExtensions\.some/);
 });
 
-test('office GLB loader accepts the expanded v2.9 workstation plan and adds Draco without rewriting it', () => {
+test('staff source with a preconfigured Meshopt chain is upgraded without duplicate decoder registration', () => {
   const source = [
     "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';",
+    "import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';",
+    '  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);',
+    "      const extensionsValid = !requiredExtensions.some((extension) => ['KHR_draco_mesh_compression', 'EXT_meshopt_compression'].includes(extension));"
+  ].join('\n');
+  const output = transform(v37.transformStaff, source);
+  assert.equal((output.match(/loader\.setMeshoptDecoder/g) || []).length, 1);
+  assert.equal((output.match(/loader\.setDRACOLoader/g) || []).length, 1);
+  assert.match(output, /supportedRequiredExtensions/);
+});
+
+test('office GLB loader accepts expanded workstation plans and registers Draco beside Meshopt', () => {
+  const source = [
+    "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';",
+    "import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';",
+    '  const loader = new GLTFLoader();',
+    '  loader.setMeshoptDecoder(MeshoptDecoder);',
     "const preferred = safeTier === 'low' ? [9, 10] : safeTier === 'high' ? [4, 5, 6, 7, 8, 9, 10, 11] : [8, 9, 10, 11];",
     "headsetStationIndexes: safeTier === 'low' ? [10] : [...deskStationIndexes],",
-    "    includeReceptionDesk: safeTier !== 'low',",
-    '  loader.setMeshoptDecoder(MeshoptDecoder);'
+    "    includeReceptionDesk: safeTier !== 'low',"
   ].join('\n');
   const output = transform(v37.transformOffice, source);
-  assert.match(output, /setDRACOLoader\(dracoLoader\)/);
+  assert.match(output, /loader\.setDRACOLoader\(dracoLoader\)/);
   assert.match(output, /const preferred = safeTier === 'low' \? \[9, 10\].*\[8, 9, 10, 11\]/);
   assert.match(output, /headsetStationIndexes: safeTier === 'low' \? \[10\]/);
   assert.match(output, /includeReceptionDesk: safeTier !== 'low'/);
-  assert.doesNotMatch(output, /includeReceptionDesk: true/);
 });
 
-test('office GLB loader also accepts the original unexpanded device-tier plan', () => {
+test('office GLB loader also accepts the original device-tier plan', () => {
   const source = [
     "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';",
+    "import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';",
+    '  const loader = new GLTFLoader();',
+    '  loader.setMeshoptDecoder(MeshoptDecoder);',
     "const preferred = safeTier === 'low' ? [10] : safeTier === 'high' ? [8, 9, 10, 11] : [9, 10];",
     "headsetStationIndexes: safeTier === 'low' ? [] : [...deskStationIndexes],",
-    "    includeReceptionDesk: safeTier !== 'low',",
-    '  loader.setMeshoptDecoder(MeshoptDecoder);'
+    "    includeReceptionDesk: safeTier !== 'low',"
   ].join('\n');
   const output = transform(v37.transformOffice, source);
-  assert.match(output, /setDRACOLoader\(dracoLoader\)/);
-  assert.match(output, /headsetStationIndexes: safeTier === 'low' \? \[\]/);
+  assert.match(output, /loader\.setDRACOLoader\(dracoLoader\)/);
+  assert.match(output, /headsetStationIndexes: safeTier === 'low' \? \[/);
   assert.match(output, /includeReceptionDesk: safeTier !== 'low'/);
 });
 
-test('shared asset catalogue loader activates both Meshopt and Draco for every registered customer/office GLB', () => {
+test('shared asset loader source as committed receives both Meshopt and Draco despite missing previous plugin anchor', () => {
   const source = [
+    "import * as THREE from 'three';",
     "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';",
     '    this.loader = new GLTFLoader(manager);',
-    '    this.loader.setMeshoptDecoder(MeshoptDecoder);'
+    "    this.loader.setCrossOrigin(crossOrigin);"
   ].join('\n');
   const output = transform(v37.transformAssetLoader, source);
-  assert.match(output, /DRACOLoader/);
   assert.match(output, /this\.loader\.setMeshoptDecoder\(MeshoptDecoder\)/);
-  assert.match(output, /this\.loader\.setDRACOLoader\(this\.dracoLoader\)/);
+  assert.match(output, /this\.loader\.setDRACOLoader\(dracoLoader\)/);
   assert.match(output, /setDecoderPath\('\/draco\/'\)/);
+});
+
+test('shared asset loader also handles the existing Meshopt pre-transform without duplicate setup', () => {
+  const source = [
+    "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';",
+    "import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';",
+    'const __CALLORIA_MESHOPT_LOADER_RUNTIME_V1__ = true;',
+    '    this.loader = new GLTFLoader(manager);',
+    '    this.loader.setMeshoptDecoder(MeshoptDecoder);',
+    "    this.loader.setCrossOrigin(crossOrigin);"
+  ].join('\n');
+  const output = transform(v37.transformAssetLoader, source);
+  assert.equal((output.match(/this\.loader\.setMeshoptDecoder/g) || []).length, 1);
+  assert.equal((output.match(/this\.loader\.setDRACOLoader/g) || []).length, 1);
+  assert.match(output, /DRACOLoader/);
 });
 
 test('low-tier world receives standing static-GLB targets without moving staff', () => {

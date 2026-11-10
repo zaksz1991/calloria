@@ -1,23 +1,14 @@
-# CALLORIA v3.8.0 verification report
+# CALLORIA v3.8.1 verification
 
-## Checks completed in the patch workspace
+The focused patch suite currently contains 12 passing tests. The patch tests are designed around the current committed source shape, including the unconfigured staff loader, the office Meshopt-only loader and the shared loader constructor without a decoder setup.
 
-- `node --check build/calloria-ojt-glb-activation-plugin.mjs`: passed.
-- `node --check tests/calloria-v37-onboarding-glb.test.mjs`: passed.
-- `node --test tests/calloria-v37-onboarding-glb.test.mjs`: 10 passed, 0 failed.
-- ZIP integrity: checked after packaging.
+Checks to run in the merged repository:
 
-The focused suite covers Draco + Meshopt setup, original and expanded office device-tier plans, shared asset loader setup, low-tier staff targets, first-person avatar replacement, current main.js callback rewriting from the legacy zero-load label, OJT/briefing gates, and one-time HUD injection.
+- `npm test` — full repository suite (not run here because the complete repository checkout was not available).
+- `npm run build` — full Vite production build (not run here).
+- Inspect built `dist/draco/` for all three decoder assets.
+- Open the deployed 3D floor and inspect the `3D ASSET STATUS` panel.
+- Verify non-zero `staffLoaded` and `officePlaced` counts before reporting actual GLB use.
+- Confirm no oversize player mesh appears and inspect any rejected-model reasons.
 
-## Not verified
-
-- Full repository `npm test`.
-- Full Vite production build.
-- Vercel deployment.
-- Browser console/runtime behaviour.
-- Any GLB file's actual visual appearance, skeleton, animation, material quality, scale, or placement on the floor.
-- Physical Android/iOS rendering and performance.
-
-## Release interpretation
-
-This patch fixes the false-success message and adds runtime evidence. It does not supply missing GLB binaries and cannot claim that any GLB model is now in use until the runtime panel reports successful placement counts greater than zero.
+Patch-workspace checks are reported in the accompanying session log; they do not establish full Vercel build success, live rendering or phone performance.

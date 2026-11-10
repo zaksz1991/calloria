@@ -1,28 +1,29 @@
-# CALLORIA v3.8.0 — GLB Runtime Visibility
+# CALLORIA v3.8.1 — Runtime Decoder Anchor Repair
 
-A small, non-destructive overlay for the current v3.7.2 repository state.
+This is a complete replacement for `build/calloria-ojt-glb-activation-plugin.mjs` and the associated focused regression file. It carries forward the v3.8.0 runtime audit/HUD and repairs decoder wiring against the actual source modules in the current repository.
 
-### What changes in game
+## Why this patch exists
 
-When entering the 3D floor, the user can open a compact `3D ASSET STATUS` panel. It reports actual GLB placements separately from local fallback geometry. A zero count is explicitly shown as `NO GLB MODELS PLACED — THE VISIBLE FALLBACKS ARE NOT GLB ASSETS.` Rejected staff models and office load failures are listed with their reported reasons.
+The v3.8.0 transform expected a staff loader already written as `new GLTFLoader().setMeshoptDecoder(MeshoptDecoder)` and a specific extension-guard expression. The current checked-in `js/glb-world-integration.js` instead constructs `new GLTFLoader()` and rejects Draco/Meshopt in `extensionsValid`. The shared `js/glb-asset-loader.js` also constructs its loader without the prior Meshopt setup line. Those differences can make the v3.8 build transform fail before the world starts.
 
-This makes it possible to distinguish:
-- a model listed in the registry;
-- a binary that exists in the repository;
-- a GLB that successfully loaded;
-- an asset that was actually placed in the scene;
-- a local fallback object.
+## What v3.8.1 changes
 
-These are different states. Registry entries and decoder registration alone do not prove that a model was rendered.
+- Adds the Meshopt and Draco imports when missing.
+- Configures both decoders on the actual staff `GLTFLoader`.
+- Replaces the old blanket compression rejection with a supported-extension allowlist for Draco and Meshopt.
+- Configures both decoders on the office GLTFLoader while retaining the upstream workstation coverage plan.
+- Configures both decoders on the shared catalogue GLTFLoader used by other registered asset paths.
+- Keeps the existing OJT, first-person player protection, low-tier standing staff targets and actual placement HUD.
 
-### What this release does not do
+The plugin bundles the Three.js Draco decoder files into `/draco/` during Vite build. The runtime does not depend on Google-hosted decoder files.
 
-It does not add or replace any `.glb` binary. If the runtime panel reports zero characters, the missing step is still the actual approved character asset or the reason the candidate was rejected. If it reports zero office placements, inspect the specific missing path, decoding, CORS, bounds or placement error before changing the geometry.
+## Installation
 
-### Preserved product scope
+Replace these two complete files in the existing CALLORIA repository:
 
-Recruitment remains the employment entry gate. Product/service knowledge, CRM/logging practice, agent shadowing, supervised practice and trainer sign-off remain prerequisites before an independent desk is allocated. The main game remains multi-industry customer operations and career progression, not a bank-only training quiz.
+1. `build/calloria-ojt-glb-activation-plugin.mjs`
+2. `tests/calloria-v37-onboarding-glb.test.mjs`
 
-### Verification boundary
+Do not replace `vite.config.js`, `package.json`, `main.js`, `index.html`, `production-world.js`, model binaries, or the existing OJT runtime. The replacement plugin remains registered by the current `vite.config.js`.
 
-See `VERIFICATION.md`. Unit/syntax checks do not establish a passing full Vite build, deployed runtime, or successful GLB rendering.
+After installation, run the existing repository test command and Vercel production build. A successful build proves compilation only. Actual GLB use is confirmed only when the in-game `3D ASSET STATUS` panel reports non-zero staff/office placements and does not list model load failures.
