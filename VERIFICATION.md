@@ -1,11 +1,28 @@
-# Verification — CALLORIA v3.8.2
+# CALLORIA v3.9.0 — Verification report
 
-- Focused regression suite: run and record the result before installation.
-- Plugin JavaScript syntax: run and record the result.
-- Transformed office module syntax: checked with Node's module parser in a dedicated test.
+## Checks completed in the patch workspace
+
+- `node --check build/calloria-cc0-staff-glb-bundle-plugin.mjs`: passed.
+- `node --check vite.config.js`: passed.
+- `node --check tests/calloria-v39-cc0-staff-glb.test.mjs`: passed.
+- Focused regression suite: **9 passed, 0 failed**.
+- Synthetic GLB v2 parser tests: passed for rig, joints, Idle/Walk clips, triangle budget, truncated length, external URI rejection.
+- Mocked buildStart integration: passed; five local target paths and provenance manifest written.
+- Partial upstream failure: passed; only validated IDs are selected and failures are listed in the manifest.
+- Complete upstream network failure: passed; build hook remains non-fatal and does not alter the original candidate list.
+- Existing valid local model preservation: passed.
 - ZIP integrity: checked after packaging.
-- Full repository `npm test`: not run; the complete current GitHub checkout is not present in this workspace.
-- Full Vite production build: not run; the complete checkout and its installed dependencies are not present here.
-- Vercel deployment and live GLB rendering: not verified.
 
-This patch fixes the exact malformed-source injection shown in the supplied build log. It does not prove that the subsequent full application build or remote asset downloads will succeed.
+## Not verified
+
+- Actual Gobkit binary downloads from the Vercel build machine.
+- Real model appearance, proportions, skin deformation or animation in the Three.js browser renderer.
+- Full repository `npm test`.
+- Full Vite production build.
+- GitHub commit or Vercel deployment.
+- Android/iOS device frame rate and memory.
+- Actual office desk/computer/headset GLB binaries. This release only bundles staff characters.
+
+## Acceptance boundary
+
+Passing these focused tests verifies the downloader, structural validator, manifest and candidate activation against synthetic GLB fixtures. It does not certify the external binary contents or live browser rendering. The deployed manifest plus actual nonzero `GLB STAFF` replacement status and visual review are required before claiming the staff GLB milestone complete.

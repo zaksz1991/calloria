@@ -1,14 +1,9 @@
-# CALLORIA v3.8.2 — Office GLB Runtime Syntax Repair
+# CALLORIA v3.9.0 — Change log
 
-## Root cause
-
-The v3.8.1 office-loader transform used a JavaScript replacement-string template containing escaped `\\n` sequences. `String.prototype.replace` interpreted `$&` as the matched line but emitted the escaped newline text literally, inserting `\\n` into `glb-office-world-integration.js`. Rollup then failed parsing the transformed module with `Expected unicode escape`.
-
-## Repair
-
-- Replaced replacement-string injection with a callback that builds inserted source lines and joins them with actual newline characters.
-- Applied the same safe approach when the office loader requires both Meshopt and Draco setup.
-- Removed the duplicate `MARKERS` property from the plugin's test API export, eliminating the build-time duplicate-key warning.
-- Preserved the workstation plan and existing GLB integration behaviour.
-
-No application runtime, HTML, package manifest, Vite configuration, database, or GLB binary is changed.
+- Adds build-time acquisition of five rigged CC0 1.0 staff GLBs from two published Gobkit character packs.
+- Maps the models to the existing registry IDs and paths; no runtime registry path rewrite is needed.
+- Validates GLB v2 structure, skeleton, JOINTS_0/WEIGHTS_0, non-empty Idle/Walk clips, primitive/triangle budgets and embedded resource references before activation.
+- Adds build-time SHA-256 provenance manifest and explicit partial/unavailable reporting.
+- Reorders the existing default candidate list to only the staff models which were downloaded or already locally validated.
+- Preserves the v3.8.2 Draco/Meshopt runtime plugin, first-person player mode, OJT and seated-agent fallback behaviour.
+- Does not claim office furniture GLB activation, live rendering, full production build or deployment success.

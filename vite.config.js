@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { calloriaGLBWorldPlugin } from './build/calloria-glb-world-plugin.js';
 import { calloriaMeshoptRuntimePlugin } from './build/calloria-meshopt-runtime-plugin.js';
 import { calloriaStaticGLBStaffPlugin } from './build/calloria-static-glb-staff-plugin.mjs';
+import { calloriaCC0StaffGLBBundlePlugin } from './build/calloria-cc0-staff-glb-bundle-plugin.mjs';
 import { calloriaCustomerAvatarPlugin } from './build/calloria-customer-avatar-plugin.js';
 import { calloriaCustomerWorldPlugin } from './build/calloria-customer-world-plugin.js';
 import { calloriaSupervisorInterventionPlugin } from './build/calloria-supervisor-intervention-plugin.js';
@@ -15,7 +16,6 @@ import { calloriaErgonomicOfficeChairsPlugin } from './build/calloria-ergonomic-
 import { calloriaCC0LobbyGreeneryPlugin } from './build/calloria-cc0-lobby-greenery-plugin.mjs';
 import { calloriaGlazedDepartmentPartitionsPlugin } from './build/calloria-glazed-department-partitions-plugin.mjs';
 import { calloriaOJTGLBActivationPlugin } from './build/calloria-ojt-glb-activation-plugin.mjs';
-
 export default defineConfig({
   base: '/',
   publicDir: 'public',
@@ -24,6 +24,10 @@ export default defineConfig({
     calloriaGLBWorldPlugin(),
     calloriaMeshoptRuntimePlugin(),
     calloriaStaticGLBStaffPlugin(),
+    // Keep this after the static staff transform and before the OJT plugin.
+    // It downloads validated CC0 GLBs during buildStart, then the OJT plugin
+    // checks the same public asset paths and wires the runtime decoders.
+    calloriaCC0StaffGLBBundlePlugin(),
     calloriaCustomerAvatarPlugin(),
     calloriaCustomerWorldPlugin(),
     calloriaSupervisorInterventionPlugin(),
@@ -35,8 +39,7 @@ export default defineConfig({
     calloriaErgonomicOfficeChairsPlugin(),
     calloriaCC0LobbyGreeneryPlugin(),
     calloriaGlazedDepartmentPartitionsPlugin(),
-    // Replaces the brittle v3.5 source transform. Must remain last so it can
-    // attach Draco after the existing Meshopt and static-staff transforms.
+    // Keep last: adds Draco after the existing Meshopt and static-staff transforms.
     calloriaOJTGLBActivationPlugin()
   ],
   build: {
