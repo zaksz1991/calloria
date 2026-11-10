@@ -4,7 +4,7 @@ function calloriaCreateOJTProfile() {
     status: 'in_progress',
     startedAt: new Date().toISOString(),
     completedAt: null,
-    industryPack: ({ banking: 'banking', technical: 'technology', service: 'general-customer-experience', sales: 'general-customer-experience' })[state?.selectedTrack] || 'general-customer-experience',
+    industryPack: 'general-customer-experience',
     progress: { knowledge: false, logging: false, shadowing: false, supervised: false },
     shadowingStep: 0,
     shadowingSession: null,
@@ -14,7 +14,28 @@ function calloriaCreateOJTProfile() {
 }
 function calloriaEnsureOJTProfile() {
   if (!state?.hired) return;
-  if (state.onboarding && state.onboarding.status === 'certified') return;
+  if (state.onboarding && state.onboarding.status === 'certified') {
+    if (!state.onboarding.workstationAllocation && !state.onboarding.grandfathered) {
+      const hasPriorWork = Number(state.callsHandled || 0) > 0 || Number(state.outboundCalls || 0) > 0 ||
+        (Array.isArray(state.shiftHistory) && state.shiftHistory.length > 0) ||
+        (Boolean(state.shiftActive) && Boolean(state.shiftRecord));
+      if (hasPriorWork) {
+        state.onboarding.grandfathered = true;
+      } else {
+        // A v4.2 trainee may have completed the old one-click sign-off but not yet received a desk.
+        // Preserve the completed learning evidence and move them to allocation, not back to training.
+        state.onboarding.status = 'trainer_approved';
+        state.onboarding.trainerReview = {
+          ...(state.onboarding.trainerReview || {}), status: 'approved',
+          reviewer: state.onboarding.trainer?.name || 'Miriam Okafor (simulated trainer)',
+          approvedAt: state.onboarding.trainer?.at || state.onboarding.completedAt || new Date().toISOString(),
+          migration: 'v4.2-certified-no-workstation'
+        };
+      }
+      saveState();
+    }
+    if (state.onboarding.status === 'certified') return;
+  }
   if (!state.onboarding) {
     const hasPriorWork = Number(state.callsHandled || 0) > 0 || Number(state.outboundCalls || 0) > 0 ||
       (Array.isArray(state.shiftHistory) && state.shiftHistory.length > 0) ||
@@ -46,6 +67,109 @@ function calloriaOJTIndustryLabel(value) {
 }
 function calloriaOJTTrackLabel() {
   return ({service:'General customer experience & service', banking:'Banking & financial services', technical:'Technical support & helpdesk', sales:'Sales, retention & customer engagement'})[state.selectedTrack] || 'General customer experience & service';
+}
+
+// v4.3: training sign-off, accountable workstation allocation and first-shift eligibility.
+const CALLORIA_OJT_DEPARTMENTS = Object.freeze([
+  { id: 'cx', name: 'Customer Experience', skill: 'customer-care' },
+  { id: 'inbound', name: 'Inbound Voice', skill: 'voice-customer-care' },
+  { id: 'outbound', name: 'Outbound Voice', skill: 'outbound-customer-care' },
+  { id: 'email', name: 'Email Support', skill: 'written-customer-care' },
+  { id: 'chat', name: 'Live Chat', skill: 'digital-customer-care' },
+  { id: 'social', name: 'Social Customer Care', skill: 'social-customer-care' },
+  { id: 'it', name: 'IT Service Desk', skill: 'technical-customer-care' },
+  { id: 'qa', name: 'Quality Assurance', skill: 'customer-care-quality' },
+  { id: 'fraud', name: 'Fraud & Security', skill: 'customer-protection' },
+  { id: 'backoffice', name: 'Back Office & Case Operations', skill: 'case-customer-care' }
+]);
+const CALLORIA_OJT_WORKSTATIONS = Object.freeze(Array.from({ length: 12 }, (_, index) => {
+  const pod = String.fromCharCode(65 + Math.floor(index / 4));
+  const seat = (index % 4) + 1;
+  return { id: `FLOOR-${pod}-${String(seat).padStart(2, '0')}`, pod: `Agent Pod ${pod}`, seat: `Desk ${String(seat).padStart(2, '0')}` };
+}));
+function calloriaOJTTrainingReadiness(onboarding) {
+  const progress = onboarding?.progress || {};
+  const evidence = onboarding?.evidence || {};
+  const shadowing = onboarding?.shadowingSession || {};
+  const supervised = onboarding?.supervisedSession || {};
+  const checks = [
+    { id: 'knowledge', label: 'Product and service knowledge', passed: progress.knowledge === true && !!evidence.knowledge },
+    { id: 'logging', label: 'CRM and interaction logging', passed: progress.logging === true && !!evidence.logging },
+    { id: 'shadowing', label: 'Experienced-agent shadowing', passed: progress.shadowing === true && shadowing.step === 'complete' && !!evidence.shadowing },
+    { id: 'supervised', label: 'Supervised customer practice', passed: progress.supervised === true && supervised.stage === 'complete' && !!evidence.supervised }
+  ];
+  return { ready: checks.every(item => item.passed), checks };
+}
+function calloriaTrainerReviewTransition(current, event) {
+  const onboarding = { ...current, trainerReview: current?.trainerReview ? { ...current.trainerReview } : null };
+  const readiness = calloriaOJTTrainingReadiness(onboarding);
+  const fail = message => ({ ok: false, message, onboarding: current });
+  if (!event || typeof event !== 'object') return fail('A trainer-review action is required.');
+  if (event.type === 'request-review') {
+    if (onboarding.status === 'trainer_review_pending' || onboarding.status === 'trainer_approved' || onboarding.status === 'certified') return fail('A trainer review has already been requested or completed.');
+    if (!readiness.ready) return fail(`Trainer review is locked. Outstanding evidence: ${readiness.checks.filter(item => !item.passed).map(item => item.label).join(', ')}.`);
+    onboarding.status = 'trainer_review_pending';
+    onboarding.trainerReview = { status: 'pending', requestedAt: new Date().toISOString(), checks: readiness.checks.map(item => ({ ...item })), reviewer: 'Miriam Okafor (simulated trainer)' };
+    return { ok: true, message: 'Training evidence submitted to the simulated trainer for competency review.', onboarding };
+  }
+  if (event.type === 'approve-review') {
+    if (onboarding.status !== 'trainer_review_pending' || onboarding.trainerReview?.status !== 'pending') return fail('There is no pending trainer review to approve.');
+    const attestations = ['evidenceReviewed', 'customerCareReady', 'safeConductConfirmed', 'systemUseConfirmed'];
+    if (!attestations.every(key => event[key] === true)) return fail('The trainer must verify all four competency and conduct checks before approving the employee.');
+    if (!readiness.ready) return fail('Training evidence changed or is incomplete. Return the employee to the relevant module.');
+    const approvedAt = new Date().toISOString();
+    onboarding.status = 'trainer_approved';
+    onboarding.trainerReview = { ...onboarding.trainerReview, status: 'approved', approvedAt, attestations: Object.fromEntries(attestations.map(key => [key, true])), reviewer: 'Miriam Okafor (simulated trainer)' };
+    onboarding.trainer = { name: 'Miriam Okafor (simulated trainer)', decision: 'approved', at: approvedAt, basis: 'verified-onboarding-evidence' };
+    return { ok: true, message: 'Trainer sign-off approved. Select the employee department and an available workstation to complete allocation.', onboarding };
+  }
+  return fail('That trainer-review action is not available.');
+}
+function calloriaWorkstationAllocationTransition(current, event) {
+  const fail = message => ({ ok: false, message, onboarding: current });
+  if (!event || typeof event !== 'object' || event.type !== 'allocate-workstation') return fail('A workstation allocation request is required.');
+  if (current?.status !== 'trainer_approved' || current?.trainerReview?.status !== 'approved') return fail('Workstation allocation is locked until trainer sign-off is approved.');
+  if (!calloriaOJTTrainingReadiness(current).ready) return fail('Workstation allocation is blocked because one or more onboarding evidence modules are incomplete.');
+  const department = CALLORIA_OJT_DEPARTMENTS.find(item => item.id === String(event.departmentId || ''));
+  const workstation = CALLORIA_OJT_WORKSTATIONS.find(item => item.id === String(event.workstationId || ''));
+  if (!department || !workstation) return fail('Select a valid department and one of the available agent workstations.');
+  const assignedAt = new Date().toISOString();
+  const onboarding = { ...current, status: 'certified', completedAt: assignedAt, workstationAllocation: {
+    workstationId: workstation.id, pod: workstation.pod, seat: workstation.seat,
+    departmentId: department.id, departmentName: department.name, primarySkill: department.skill,
+    customerCareRotation: true, foundationRequirement: 'customer-care-for-every-employee',
+    enabledChannels: ['voice', 'email', 'live-chat'], assignedAt, status: 'allocated'
+  } };
+  onboarding.trainerReview = { ...onboarding.trainerReview, allocationApprovedAt: assignedAt };
+  return { ok: true, message: `${department.name} assignment confirmed. ${workstation.pod}, ${workstation.seat} is allocated. Attend your scheduled operations briefing before starting your first shift.`, onboarding };
+}
+function calloriaOJTShiftGate(onboarding, briefingAttended) {
+  if (!onboarding) return { ok: false, reason: 'onboarding', message: 'Complete employee onboarding and receive trainer sign-off before starting independent work.' };
+  if (onboarding.grandfathered === true) return { ok: true, legacy: true, message: 'Existing employee profile retained.' };
+  if (onboarding.status !== 'certified') return { ok: false, reason: 'training', message: 'Complete product knowledge, CRM logging, agent shadowing, supervised practice and trainer sign-off first.' };
+  if (onboarding.workstationAllocation?.status !== 'allocated' || !onboarding.workstationAllocation?.workstationId) return { ok: false, reason: 'allocation', message: 'Your trainer sign-off is complete, but a workstation has not been allocated yet.' };
+  if (briefingAttended !== true) return { ok: false, reason: 'briefing', message: 'Attend and acknowledge the scheduled 07:30 or 14:00 operations briefing before starting your shift.' };
+  return { ok: true, legacy: false, workstation: onboarding.workstationAllocation.workstationId };
+}
+function calloriaRenderTrainerAllocationPanel(onboarding, completedModules) {
+  const status = onboarding?.status || 'in_progress';
+  const allocation = onboarding?.workstationAllocation;
+  if (allocation?.status === 'allocated') {
+    return `<section class="panel" style="margin-top:14px;border-top:3px solid #0c9d8b"><span class="subtle-label">WORKSTATION ALLOCATED</span><h3>${escapeHTML(allocation.workstationId)}</h3><p>${escapeHTML(allocation.departmentName)} · ${escapeHTML(allocation.pod)} · ${escapeHTML(allocation.seat)}</p><p class="muted-note">Your employee induction is complete. Customer-care fundamentals remain mandatory across every department. Attend the scheduled operations briefing before starting your first independent shift.</p></section>`;
+  }
+  if (status === 'trainer_review_pending') {
+    const rows = (onboarding.trainerReview?.checks || []).map(item => `<li>${item.passed ? '✓' : '○'} ${escapeHTML(item.label)}</li>`).join('');
+    return `<section class="panel" style="margin-top:14px;border-top:3px solid #c78a22"><div class="panel-head"><div><span class="subtle-label">SIMULATED TRAINER REVIEW</span><h3>Competency evidence submitted</h3><p>Miriam Okafor · Onboarding trainer</p></div><span class="pill amber">REVIEW PENDING</span></div><ul class="muted-note">${rows}</ul><form data-calloria-trainer-review-form class="form-stack"><label class="form-field"><input type="checkbox" name="evidenceReviewed" required> I have reviewed the completed product, CRM, shadowing and supervised-practice evidence.</label><label class="form-field"><input type="checkbox" name="customerCareReady" required> The employee demonstrates the customer-care behaviours required for their assigned unit.</label><label class="form-field"><input type="checkbox" name="safeConductConfirmed" required> The employee follows privacy, security, consent and escalation boundaries.</label><label class="form-field"><input type="checkbox" name="systemUseConfirmed" required> The employee can use the simulated workstation, CRM and knowledge resources.</label><button class="btn primary" type="submit">Approve trainer sign-off →</button></form><p class="muted-note">This is an explicitly simulated trainer assessment. It is separate from recruitment and production QA.</p></section>`;
+  }
+  if (status === 'trainer_approved') {
+    const departmentOptions = CALLORIA_OJT_DEPARTMENTS.map(item => `<option value="${item.id}" ${item.id === 'cx' ? 'selected' : ''}>${escapeHTML(item.name)}</option>`).join('');
+    const workstationOptions = CALLORIA_OJT_WORKSTATIONS.map(item => `<option value="${item.id}">${escapeHTML(item.pod)} · ${escapeHTML(item.seat)}</option>`).join('');
+    return `<section class="panel" style="margin-top:14px;border-top:3px solid #0c9d8b"><div class="panel-head"><div><span class="subtle-label">TRAINER APPROVAL COMPLETE</span><h3>Allocate your first workstation</h3><p>Select your operating unit and assigned agent desk.</p></div><span class="pill green">APPROVED</span></div><form data-calloria-workstation-allocation-form class="form-stack"><label class="form-field">Operating department<select name="departmentId" required>${departmentOptions}</select></label><label class="form-field">Available workstation<select name="workstationId" required>${workstationOptions}</select></label><div class="panel" style="padding:10px;background:var(--surface-soft,#f5f7f8)"><strong>Universal customer-care responsibility</strong><p class="muted-note">Every employee completes customer-care foundation training and participates in customer-service work, regardless of specialist department. Your selected unit adds specialist responsibilities; it does not remove customer-care duties.</p></div><button class="btn primary" type="submit">Confirm workstation allocation →</button></form></section>`;
+  }
+  if (completedModules === 4) {
+    return `<section class="panel" style="margin-top:14px;border-top:3px solid #0c9d8b"><div class="panel-head"><div><span class="subtle-label">TRAINER SIGN-OFF</span><h3>Request competency review</h3><p>Training is complete. A simulated trainer must review the evidence before workstation allocation.</p></div><span class="pill green">READY FOR REVIEW</span></div><p>Completed modules: product/service knowledge, systems logging, agent shadowing and supervised customer practice.</p><button type="button" class="btn primary" data-calloria-ojt-action="request-trainer-review">Submit evidence for trainer review →</button></section>`;
+  }
+  return `<section class="panel" style="margin-top:14px;border-top:3px solid #c78a22"><div class="panel-head"><div><span class="subtle-label">TRAINER SIGN-OFF</span><h3>Complete onboarding first</h3><p>Independent workstation access remains locked until all four modules are completed and the trainer approves your competency.</p></div><span class="pill amber">${completedModules} / 4 COMPLETE</span></div><p class="muted-note">Follow the sequence: product/service knowledge → CRM logging → experienced-agent shadowing → supervised customer practice.</p></section>`;
 }
 
 function calloriaEnsureOJTShadowingSession(onboarding) {
@@ -399,9 +523,7 @@ function calloriaRenderOJT() {
         ${calloriaSupervisedPracticePanel(o)}
       </section>
     </div>
-    <section class="panel" style="margin-top:14px;border-top:3px solid #0c9d8b"><div class="panel-head"><div><span class="subtle-label">TRAINER SIGN-OFF</span><h3>Desk allocation readiness</h3><p>Own-desk access remains locked until all four onboarding modules are complete and the trainer signs you off.</p></div><span class="pill ${done===4?'green':'amber'}">${done===4?'READY FOR SIGN-OFF':'TRAINING IN PROGRESS'}</span></div>
-      ${done===4?'<p>All required learning, logging, shadowing and supervised practice evidence has been recorded.</p><button type="button" class="btn primary" data-calloria-ojt-action="signoff">Trainer sign-off & allocate my workstation →</button>':'<p class="muted-note">Complete the modules in sequence: product/service knowledge → systems logging → agent shadowing → supervised practice. Your progress is saved to this browser employment profile.</p>'}
-    </section>
+    ${calloriaRenderTrainerAllocationPanel(o, done)}
     <p class="muted-note" style="margin-top:10px">On-the-job onboarding is part of employment, not a second recruitment exam. Your live shift, queue allocation, customer KPIs and performance scoring begin only after trainer sign-off and the scheduled workforce briefing.</p>`;
 }
 function calloriaSaveOJTStep(key, evidence) {
@@ -539,6 +661,98 @@ document.addEventListener('click', event => {
   renderView();
   toast(result.message,'success');
 }, true);
+document.addEventListener('click', event => {
+  const button = event.target?.closest?.('[data-calloria-ojt-action="request-trainer-review"]');
+  if (!button || !calloriaOJTRequired()) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  const result = calloriaTrainerReviewTransition(state.onboarding, { type: 'request-review' });
+  if (!result.ok) { toast(result.message, 'warning'); return; }
+  state.onboarding = result.onboarding;
+  saveState();
+  renderView();
+  toast(result.message, 'success');
+}, true);
+document.addEventListener('submit', event => {
+  const form = event.target?.closest?.('[data-calloria-trainer-review-form]');
+  if (!form || !calloriaOJTRequired()) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  const data = new FormData(form);
+  const result = calloriaTrainerReviewTransition(state.onboarding, {
+    type: 'approve-review',
+    evidenceReviewed: data.get('evidenceReviewed') === 'on',
+    customerCareReady: data.get('customerCareReady') === 'on',
+    safeConductConfirmed: data.get('safeConductConfirmed') === 'on',
+    systemUseConfirmed: data.get('systemUseConfirmed') === 'on'
+  });
+  if (!result.ok) { toast(result.message, 'warning'); return; }
+  state.onboarding = result.onboarding;
+  saveState();
+  renderView();
+  toast(result.message, 'success');
+}, true);
+document.addEventListener('submit', event => {
+  const form = event.target?.closest?.('[data-calloria-workstation-allocation-form]');
+  if (!form || !calloriaOJTRequired()) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  const data = new FormData(form);
+  const result = calloriaWorkstationAllocationTransition(state.onboarding, {
+    type: 'allocate-workstation', departmentId: data.get('departmentId'), workstationId: data.get('workstationId')
+  });
+  if (!result.ok) { toast(result.message, 'warning'); return; }
+  state.onboarding = result.onboarding;
+  const deptMap = { cx: 'cx', inbound: 'inbound', outbound: 'outbound', email: 'email', chat: 'chat', social: 'social', it: 'it', qa: 'qa', fraud: 'fraud', backoffice: 'backoffice' };
+  state.workforceDepartment = deptMap[result.onboarding.workstationAllocation.departmentId] || 'cx';
+  state.department = result.onboarding.workstationAllocation.departmentName;
+  state.currentView = 'overview';
+  saveState();
+  renderView();
+  const root = document.getElementById('viewRoot');
+  if (root) {
+    const a = result.onboarding.workstationAllocation;
+    const banner = document.createElement('section');
+    banner.className = 'panel';
+    banner.style.cssText = 'margin-bottom:14px;border-left:4px solid #0c9d8b';
+    banner.innerHTML = `<span class="subtle-label">FIRST WORKSTATION ASSIGNED</span><h3>${escapeHTML(a.workstationId)}</h3><p>${escapeHTML(a.departmentName)} · ${escapeHTML(a.pod)} · ${escapeHTML(a.seat)}</p><p class="muted-note">Attend the scheduled 07:30 or 14:00 operations briefing before starting your first independent shift.</p>`;
+    root.prepend(banner);
+  }
+  toast(result.message, 'success');
+}, true);
+function calloriaCurrentBriefingAttended() {
+  if (typeof simulationDateNow !== 'function' || typeof simulationMinuteNow !== 'function') return false;
+  const date = simulationDateNow();
+  const slot = simulationMinuteNow() >= 14 * 60 ? 'afternoon' : 'morning';
+  const briefingId = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}-${slot}`;
+  const employeeId = `EMP-${state.nameInitials}`;
+  return Array.isArray(state.briefingAttendance) && state.briefingAttendance.some(item => item.briefingId === briefingId && item.employeeId === employeeId && item.status === 'attended');
+}
+document.addEventListener('click', event => {
+  const button = event.target?.closest?.('[data-action="start-shift"]');
+  if (!button || !state?.hired) return;
+  calloriaEnsureOJTProfile();
+  const gate = calloriaOJTShiftGate(state.onboarding, calloriaCurrentBriefingAttended());
+  if (!gate.ok) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    toast(gate.message, 'warning');
+    return;
+  }
+  setTimeout(() => {
+    if (!state.shiftActive || !state.onboarding || state.onboarding.grandfathered || state.onboarding.firstWorkingShift) return;
+    const startedAt = new Date().toISOString();
+    state.onboarding.firstWorkingShift = {
+      status: 'started', startedAt, day: Number(state.day) || 1,
+      workstationId: state.onboarding.workstationAllocation?.workstationId || null,
+      queueSkill: state.onboarding.workstationAllocation?.primarySkill || 'customer-care',
+      source: 'first-independent-working-shift'
+    };
+    if (typeof pushOperationEvent === 'function') pushOperationEvent('workforce', state.onboarding.firstWorkingShift.workstationId || 'WORKSTATION', 'First independent working shift started after onboarding, trainer approval, workstation allocation and briefing attendance.', 'active');
+    saveState();
+  }, 0);
+}, true);
+
 document.addEventListener('click', event => {
   const button=event.target?.closest?.('[data-calloria-ojt-action="signoff"]');
   if (!button || !calloriaOJTRequired()) return;
