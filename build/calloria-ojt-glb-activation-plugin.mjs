@@ -1,6 +1,6 @@
 /**
- * CALLORIA v3.7.1 — post-bridge onboarding/GLB anchor repair + first-person player
- * + real GLB/Draco activation. Built against repository main commit 12772ea and its active first-shift/workstation Vite transform chain.
+ * CALLORIA v3.7.2 — upstream workstation-plan compatibility + first-person player
+ * + real GLB/Draco activation. Built against repository main commit aa25c54 and its active v2.9 GLB-first + first-shift/workstation Vite transform chain.
  *
  * This replaces the brittle v3.5 plugin. It does not patch candidate-load loop
  * endings. It registers the real Three.js Draco and Meshopt decoders, adds
@@ -43,7 +43,7 @@ function count(source, needle) { return source.split(needle).length - 1; }
 function one(context, source, needle, label, { strict = true } = {}) {
   const found = count(source, needle);
   if (found !== 1) {
-    const message = `CALLORIA v3.7 expected one ${label} anchor; found ${found}.`;
+    const message = `CALLORIA v3.7.2 expected one ${label} anchor; found ${found}.`;
     if (strict && context?.error) context.error(message);
     return false;
   }
@@ -73,21 +73,32 @@ function transformOffice(context, source) {
   let code = normalise(source);
   const importAnchor = "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';";
   const setupAnchor = '  loader.setMeshoptDecoder(MeshoptDecoder);';
-  const preferredPlan = "const preferred = safeTier === 'low' ? [10] : safeTier === 'high' ? [8, 9, 10, 11] : [9, 10];";
-  const headsetPlan = "headsetStationIndexes: safeTier === 'low' ? [] : [...deskStationIndexes],";
-  const receptionPlan = "    includeReceptionDesk: safeTier !== 'low',";
+
+  // The v2.9 GLB-first plugin runs with enforce:"pre" and intentionally
+  // expands the workstation plan before this v3.7 plugin runs with enforce:
+  // "post". Therefore the original literal [10]/[8,9,10,11]/[9,10] is not
+  // present in the transformed source. Validate the shape, not stale values.
+  const preferredPlanPattern = /const preferred = safeTier === 'low'\s*\?\s*\[[^\]]*\]\s*:\s*safeTier === 'high'\s*\?\s*\[[^\]]*\]\s*:\s*\[[^\]]*\];/g;
+  const headsetPlanPattern = /headsetStationIndexes:\s*safeTier === 'low'\s*\?\s*\[[^\]]*\]\s*:\s*\[\.\.\.deskStationIndexes\],?/g;
+  const preferredMatches = code.match(preferredPlanPattern) || [];
+  const headsetMatches = code.match(headsetPlanPattern) || [];
+  const receptionPlanPattern = /includeReceptionDesk:\s*[^,\n]+,/g;
+  const receptionMatches = code.match(receptionPlanPattern) || [];
+
   if (!one(context, code, importAnchor, 'office GLTFLoader import') ||
-      !one(context, code, setupAnchor, 'office Meshopt decoder setup') ||
-      !one(context, code, preferredPlan, 'device-tier workstation asset plan') ||
-      !one(context, code, headsetPlan, 'low-tier headset asset plan') ||
-      !one(context, code, receptionPlan, 'reception GLB asset plan')) return null;
+      !one(context, code, setupAnchor, 'office Meshopt decoder setup')) return null;
+  if (preferredMatches.length !== 1 || headsetMatches.length !== 1 || receptionMatches.length !== 1) {
+    context.error(`CALLORIA v3.7.2 expected one upstream workstation, headset and reception plan (found ${preferredMatches.length}, ${headsetMatches.length}, ${receptionMatches.length}). Refusing a partial transform.`);
+    return null;
+  }
+
   code = code.replace(importAnchor, `${importAnchor}\nimport { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';\nconst ${MARKERS.office} = true;`);
   code = code.replace(setupAnchor, `${setupAnchor}\n  const dracoLoader = new DRACOLoader();\n  dracoLoader.setDecoderPath('/draco/');\n  loader.setDRACOLoader(dracoLoader);`);
-  // The current 96649f9 plan already selects one low-tier desk and the
-  // original balanced/high subsets. Keep that validated index plan unchanged.
-  code = code.replace(preferredPlan, preferredPlan);
-  code = code.replace(headsetPlan, "headsetStationIndexes: safeTier === 'low' ? [10] : [...deskStationIndexes],");
-  code = code.replace(receptionPlan, '    includeReceptionDesk: true,');
+
+  // Preserve the upstream v2.9 coverage policy exactly. It deliberately enables
+  // real GLB desks/computers on the low tier while limiting headsets there to
+  // one selected station and keeping the reception GLB disabled on low tier.
+  // This plugin's responsibility is decoder registration, not plan rewriting.
   return { code, map: null };
 }
 
@@ -214,8 +225,8 @@ function transformMain(context, source) {
   code = code.replace(workOpenStart, workOpenGuard);
   // Remove the legacy inline startShift call if an upstream version retained it.
   const legacyWorkStartCount = count(code, OPEN_WORK_VIEW_ANCHOR);
-  if (legacyWorkStartCount === 1) code = code.replace(OPEN_WORK_VIEW_ANCHOR, '/* shift start handled by the v3.7.1 function-entry guard */');
-  else if (legacyWorkStartCount > 1) context.error('CALLORIA v3.7.1 found multiple legacy 3D shift-start anchors.');
+  if (legacyWorkStartCount === 1) code = code.replace(OPEN_WORK_VIEW_ANCHOR, '/* shift start handled by the v3.7.2 function-entry guard */');
+  else if (legacyWorkStartCount > 1) context.error('CALLORIA v3.7.2 found multiple legacy 3D shift-start anchors.');
   // Retain the established 07:30 and 14:00 briefings as prerequisites.
   const dateHelper = `${SIMULATION_DATE_ANCHOR}\nfunction hasBriefingAttendanceForToday(){\n  const simulatedDate=simulationDateNow();\n  const morningDate=new Date(simulatedDate);morningDate.setHours(7,45,0,0);\n  const afternoonDate=new Date(simulatedDate);afternoonDate.setHours(14,15,0,0);\n  const briefingIds=[briefingFor(morningDate),briefingFor(afternoonDate)].filter(Boolean).map(item=>item.id);\n  return (state.briefingAttendance||[]).some(item=>briefingIds.includes(item.briefingId));\n}`;
   code = code.replace(SIMULATION_DATE_ANCHOR, dateHelper);
@@ -226,7 +237,7 @@ function transformMain(context, source) {
 }
 
 const HUD_STYLE = `
-/* CALLORIA v3.7.1: prevent tutorial cards and player meshes from obscuring the floor. */
+/* CALLORIA v3.7.2: prevent tutorial cards and player meshes from obscuring the floor. */
 .calloria-world-mission-v23.calloria-tutorial-card-compact{width:min(220px,calc(100vw - 16px))!important;max-width:min(220px,calc(100vw - 16px))!important;max-height:112px!important;overflow:auto!important;box-sizing:border-box!important;padding:7px!important}
 .calloria-world-mission-v23.calloria-tutorial-card-compact h3{font-size:11px!important;line-height:1.2!important;margin:4px 0!important}
 .calloria-world-mission-v23.calloria-tutorial-card-compact p{font-size:8px!important;line-height:1.25!important;margin:3px 0!important}
@@ -266,7 +277,7 @@ function readDracoFile(fileName) {
   const root = dracoDirectory();
   const path = resolve(root, fileName);
   if (!DRACO_FILES.includes(basename(path)) || !path.startsWith(root) || !existsSync(path)) {
-    throw new Error(`CALLORIA v3.7 cannot find Three.js Draco decoder asset: ${path}`);
+    throw new Error(`CALLORIA v3.7.2 cannot find Three.js Draco decoder asset: ${path}`);
   }
   return readFileSync(path);
 }
@@ -282,11 +293,11 @@ export function calloriaOJTGLBActivationPlugin() {
       for (const relativePath of GLB_REQUIRED_ASSETS) {
         const assetPath = resolve(assetRoot, relativePath);
         if (!assetPath.startsWith(assetRoot) || !existsSync(assetPath)) {
-          this.warn(`CALLORIA v3.7 required GLB file is missing from public/assets/models: ${relativePath}. It will not be replaced by a procedural placeholder.`);
+          this.warn(`CALLORIA v3.7.2 required GLB file is missing from public/assets/models: ${relativePath}. It will not be replaced by a procedural placeholder.`);
           continue;
         }
         const bytes = readFileSync(assetPath).byteLength;
-        if (bytes < 1024) this.warn(`CALLORIA v3.7 GLB file is unexpectedly small (${bytes} bytes): ${relativePath}`);
+        if (bytes < 1024) this.warn(`CALLORIA v3.7.2 GLB file is unexpectedly small (${bytes} bytes): ${relativePath}`);
       }
     },
     configureServer(server) {

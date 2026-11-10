@@ -1,11 +1,29 @@
-# Build failure analysis — commit 12772ea
+# CALLORIA v3.7.2 — Build failure analysis
 
-Observed failure:
+## Verified failure
 
-`[plugin calloria-ojt-glb-activation-v3-7] js/main.js: CALLORIA v3.7 expected one employment offer acceptance anchor; found 0.`
+Vercel built commit `aa25c54` and failed in `build/calloria-ojt-glb-activation-plugin.mjs` while transforming `js/glb-office-world-integration.js`:
 
-Cause: the v3.7 plugin searched for the entire pre-bridge `acceptOffer()` line. The earlier first-shift integration inserts a `window.dispatchEvent(new CustomEvent('calloria:game-employment-accepted', ...))` statement inside that function. The exact full-line anchor therefore disappears even though the offer-acceptance function is still present and valid.
+`expected one device-tier workstation asset plan anchor; found 0`
 
-Related fragility: v3.7 also searched for the old asset-status callback text. The first-shift bridge owns and changes that callback to publish GLB staff/office telemetry. It also can modify the workstation action tail. The repair therefore removes those brittle dependencies and uses stable function boundaries.
+## Root cause
 
-No application business logic is rewritten wholesale. OJT state is inserted immediately after the stable `state.hired=true;` prefix; the prior gameplay event and remaining function body remain intact.
+The build registers `calloriaGLBWorldPlugin()` before the OJT plugin. The GLB-first plugin uses `enforce: "pre"` and rewrites the original office workstation plan from the smaller plan to an expanded v2.9 coverage plan:
+
+- Low tier: desks/computers at stations 9 and 10.
+- Balanced tier: desks/computers at stations 8–11.
+- High tier: desks/computers at stations 4–11.
+- Headsets: station 10 on low tier; selected workstation stations on balanced/high tiers.
+
+The later OJT plugin uses `enforce: "post"` but still requires the original literal `[10] / [8,9,10,11] / [9,10]` and empty low-tier headset strings. The earlier plugin has already replaced those strings, so the later transform aborts the build. This is a plugin-order compatibility defect, not a missing package.
+
+## Repair
+
+`transformOffice()` now checks that the upstream plan has the expected structural shape, while accepting both the original plan and the expanded v2.9 plan. It only adds Three.js `DRACOLoader` to the office GLTFLoader. It no longer rewrites or overwrites the upstream station-selection policy. Low-tier reception remains omitted by design to protect mobile performance; desk/computer GLBs and one headset still have low-tier placements.
+
+Only these repository files are replaced:
+
+- `build/calloria-ojt-glb-activation-plugin.mjs`
+- `tests/calloria-v37-onboarding-glb.test.mjs`
+
+No Vite configuration, package file, application source, GLB asset or OJT runtime file is changed.

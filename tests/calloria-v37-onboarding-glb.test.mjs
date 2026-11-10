@@ -24,7 +24,23 @@ test('staff GLB loader receives Draco alongside the pre-existing Meshopt decoder
   assert.doesNotMatch(output, /STAFF_LOOP_END/);
 });
 
-test('office GLB loader receives Draco and a first-party low-tier workstation plus reception assets', () => {
+test('office GLB loader accepts the expanded v2.9 workstation plan and adds Draco without rewriting it', () => {
+  const source = [
+    "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';",
+    "const preferred = safeTier === 'low' ? [9, 10] : safeTier === 'high' ? [4, 5, 6, 7, 8, 9, 10, 11] : [8, 9, 10, 11];",
+    "headsetStationIndexes: safeTier === 'low' ? [10] : [...deskStationIndexes],",
+    "    includeReceptionDesk: safeTier !== 'low',",
+    '  loader.setMeshoptDecoder(MeshoptDecoder);'
+  ].join('\n');
+  const output = transform(v37.transformOffice, source);
+  assert.match(output, /setDRACOLoader\(dracoLoader\)/);
+  assert.match(output, /const preferred = safeTier === 'low' \? \[9, 10\].*\[8, 9, 10, 11\]/);
+  assert.match(output, /headsetStationIndexes: safeTier === 'low' \? \[10\]/);
+  assert.match(output, /includeReceptionDesk: safeTier !== 'low'/);
+  assert.doesNotMatch(output, /includeReceptionDesk: true/);
+});
+
+test('office GLB loader also accepts the original unexpanded device-tier plan', () => {
   const source = [
     "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';",
     "const preferred = safeTier === 'low' ? [10] : safeTier === 'high' ? [8, 9, 10, 11] : [9, 10];",
@@ -34,9 +50,8 @@ test('office GLB loader receives Draco and a first-party low-tier workstation pl
   ].join('\n');
   const output = transform(v37.transformOffice, source);
   assert.match(output, /setDRACOLoader\(dracoLoader\)/);
-  assert.match(output, /const preferred = safeTier === 'low' \? \[10\]/);
-  assert.match(output, /headsetStationIndexes: safeTier === 'low' \? \[10\]/);
-  assert.match(output, /includeReceptionDesk: true/);
+  assert.match(output, /headsetStationIndexes: safeTier === 'low' \? \[\]/);
+  assert.match(output, /includeReceptionDesk: safeTier !== 'low'/);
 });
 
 test('shared asset catalogue loader activates both Meshopt and Draco for every registered customer/office GLB', () => {
