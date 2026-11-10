@@ -1,8 +1,8 @@
 /**
- * CALLORIA v3.5 — first working shift, mobile first-person view and real GLB decoders.
+ * CALLORIA v3.5.1 — production-build anchor hotfix for first working shift and GLB decoders.
  *
  * Built against the public zaksz1991/calloria main branch inspected 10 Nov 2026
- * (v3.3 base). This runs after the existing Meshopt and static-staff Vite transforms.
+ * (v3.3 base). This runs after the existing Meshopt and static-staff Vite transforms. The staff decoder cleanup uses a stable post-loop guard rather than a brittle multi-line catch-block match.
  * It replaces the unmerged v3.4 draft; install this patch alone, not v3.4 plus v3.5.
  */
 import { createRequire } from 'node:module';
@@ -34,16 +34,16 @@ const STAFF_GLTF_IMPORT = "import { GLTFLoader } from 'three/addons/loaders/GLTF
 const STAFF_LOADER_ANCHOR = '  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);';
 const STAFF_EXTENSION_GUARD = "      const extensionsValid = !requiredExtensions.includes('KHR_draco_mesh_compression');";
 const STAFF_LOOP_START = '  for (const asset of candidates.slice(0, maxCandidates)) {';
-const STAFF_LOOP_END = "    } catch (error) {\n      rejected.push({ id: asset.id, reasons: [String(error?.message || error)] });\n    }\n  }\n  if (!loadedModels.size) {";
+const STAFF_LOAD_COMPLETE = '  if (!loadedModels.size) {';
 const AVATAR_LOOP_END = '  if (!selected || !gltf) {';
 
 const AVATAR_LOADER_ANCHOR = '  const loader = new GLTFLoader();\n  loader.setMeshoptDecoder(MeshoptDecoder);';
 const AVATAR_METRICS_ANCHOR = '      const candidateMetrics = inspectScene(candidate.scene);';
 const PAGEHIDE_ANCHOR = "window.addEventListener('pagehide',()=>{ void flushCloudEmploymentSave(); });";
 const SIMULATION_DATE_ANCHOR = 'function simulationDateNow(){const date=new Date();date.setDate(date.getDate()+Math.max(0,(Number(state.day)||1)-1));const seconds=simulationSecondsNow();date.setHours(Math.floor(seconds/3600),Math.floor((seconds%3600)/60),seconds%60,0);return date;}';
-const START_SHIFT_TIME_ANCHOR = "if(simulatedMinute>=17*60){toast('The scheduled shift has ended for today. Start the next simulated workday.','warning');return;}\n  state.day=state.day||1;";
+const START_SHIFT_TIME_ANCHOR = "  if(simulatedMinute>=17*60){toast('The scheduled shift has ended for today. Start the next simulated workday.','warning');return;}\n  state.day=state.day||1;";
 const START_SHIFT_VIEW_ANCHOR = "  state.currentView='overview';\n  pushOperationEvent('shift','SHIFT-'+state.day,'Shift started; inbound routing opened.','active');";
-const OPEN_WORK_VIEW_ANCHOR = "if((view==='inbound'||view==='outbound'||view==='digital')&&!state.shiftActive)startShift();";
+const OPEN_WORK_VIEW_ANCHOR = "  if((view==='inbound'||view==='outbound'||view==='digital')&&!state.shiftActive)startShift();";
 const MAIN_ASSET_STATUS_ANCHOR = "        const status=$('#assetStatus');\n        if(status)status.textContent=`GLB STAFF: ${staffCount} · OFFICE GLB OBJECTS: ${officeCount}`+(failureCount?` · REVIEW: ${failureCount}`:'')+` · ${tier.toUpperCase()}`;";
 
 function count(source, needle) {
@@ -53,7 +53,7 @@ function count(source, needle) {
 function requireOnce(context, source, needle, label) {
   const found = count(source, needle);
   if (found !== 1) {
-    const message = `CALLORIA v3.5 expected exactly one ${label} anchor; found ${found}. Refusing a partial transform.`;
+    const message = `CALLORIA v3.5.1 expected exactly one ${label} anchor; found ${found}. Refusing a partial transform.`;
     if (context && typeof context.error === 'function') context.error(message);
     throw new Error(message);
   }
@@ -71,7 +71,10 @@ function transformStaff(context, source) {
   requireOnce(context, code, STAFF_LOADER_ANCHOR, 'actual staff GLTFLoader construction');
   requireOnce(context, code, STAFF_EXTENSION_GUARD, 'staff compression extension guard');
   requireOnce(context, code, STAFF_LOOP_START, 'staff candidate-load loop start');
-  requireOnce(context, code, STAFF_LOOP_END, 'staff candidate-load loop end');
+  // Anchor decoder cleanup to the unique post-loop completion guard. The full
+  // catch/loop block is intentionally not matched: preceding compatibility
+  // transforms may change that block's formatting without changing its semantics.
+  requireOnce(context, code, STAFF_LOAD_COMPLETE, 'staff candidate-load completion guard');
 
   code = insertImport(code, STAFF_GLTF_IMPORT,
     "import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';");
@@ -79,7 +82,7 @@ function transformStaff(context, source) {
   code = code.replace(STAFF_LOOP_START, `  const dracoLoader = new DRACOLoader();\n  dracoLoader.setDecoderPath('/draco/');\n  loader.setDRACOLoader(dracoLoader);\n${STAFF_LOOP_START}`);
   code = code.replace(STAFF_EXTENSION_GUARD,
     '      // Meshopt and Draco decoders are registered on this loader.\n      const extensionsValid = true;');
-  code = code.replace(STAFF_LOOP_END, STAFF_LOOP_END.replace('  if (!loadedModels.size) {', '  dracoLoader.dispose();\n  if (!loadedModels.size) {'));
+  code = code.replace(STAFF_LOAD_COMPLETE, `  dracoLoader.dispose();\n${STAFF_LOAD_COMPLETE}`);
   return { code, map: null };
 }
 
@@ -114,10 +117,10 @@ function transformMain(context, source) {
   const briefingHelper = `${SIMULATION_DATE_ANCHOR}\nfunction hasBriefingAttendanceForToday(){\n  const simulatedDate=simulationDateNow();\n  const morningDate=new Date(simulatedDate);morningDate.setHours(7,45,0,0);\n  const afternoonDate=new Date(simulatedDate);afternoonDate.setHours(14,15,0,0);\n  const briefingIds=[briefingFor(morningDate),briefingFor(afternoonDate)].filter(Boolean).map(item=>item.id);\n  return (state.briefingAttendance||[]).some(item=>briefingIds.includes(item.briefingId));\n}`;
   code = code.replace(SIMULATION_DATE_ANCHOR, briefingHelper);
 
-  code = code.replace(START_SHIFT_TIME_ANCHOR, `if(simulatedMinute>=17*60){toast('The scheduled shift has ended for today. Start the next simulated workday.','warning');return;}\n  if(!hasBriefingAttendanceForToday()){toast('Attend today’s 07:30 morning or 14:00 afternoon operations briefing before starting your shift.','warning');state.currentView='workforce';saveState();renderView();return;}\n  state.day=state.day||1;`);
+  code = code.replace(START_SHIFT_TIME_ANCHOR, `  if(simulatedMinute>=17*60){toast('The scheduled shift has ended for today. Start the next simulated workday.','warning');return;}\n  if(!hasBriefingAttendanceForToday()){toast('Attend today’s 07:30 morning or 14:00 afternoon operations briefing before starting your shift.','warning');state.currentView='workforce';saveState();renderView();return;}\n  state.day=state.day||1;`);
   code = code.replace(START_SHIFT_VIEW_ANCHOR, START_SHIFT_VIEW_ANCHOR.replace("state.currentView='overview'", "state.currentView='inbound'"));
 
-  code = code.replace(OPEN_WORK_VIEW_ANCHOR, `if((view==='inbound'||view==='outbound'||view==='digital')&&!state.shiftActive){\n    const minute=simulationMinuteNow();\n    if(minute<8*60||!hasBriefingAttendanceForToday()){\n      view='workforce';\n      toast(minute<8*60?'The shift opens at 08:00. Review the workforce desk and attend the scheduled briefing.':'Attend today’s operations briefing before opening customer queues.','warning');\n    }else{\n      startShift();\n      if(!state.shiftActive)view='workforce';\n    }\n  }`);
+  code = code.replace(OPEN_WORK_VIEW_ANCHOR, `  if((view==='inbound'||view==='outbound'||view==='digital')&&!state.shiftActive){\n    const minute=simulationMinuteNow();\n    if(minute<8*60||!hasBriefingAttendanceForToday()){\n      view='workforce';\n      toast(minute<8*60?'The shift opens at 08:00. Review the workforce desk and attend the scheduled briefing.':'Attend today’s operations briefing before opening customer queues.','warning');\n    }else{\n      startShift();\n      if(!state.shiftActive)view='workforce';\n    }\n  }`);
 
   const guidedListener = `\nwindow.addEventListener('calloria:guided-open-inbound',()=>{\n  if(!state.hired){open3dWorkView('recruitment');return;}\n  open3dWorkView('inbound');\n});\n`;
   code = code.replace(PAGEHIDE_ANCHOR, `${guidedListener}${PAGEHIDE_ANCHOR}`);
@@ -239,7 +242,7 @@ export function calloriaFirstWorkingShiftV35Plugin() {
 
 export const __calloriaV35Test = Object.freeze({
   TARGETS, MARKERS, DRACO_FILES,
-  STAFF_GLTF_IMPORT, STAFF_LOADER_ANCHOR, STAFF_EXTENSION_GUARD, STAFF_LOOP_START, STAFF_LOOP_END,
+  STAFF_GLTF_IMPORT, STAFF_LOADER_ANCHOR, STAFF_EXTENSION_GUARD, STAFF_LOOP_START, STAFF_LOAD_COMPLETE,
   AVATAR_LOADER_ANCHOR, AVATAR_METRICS_ANCHOR, AVATAR_LOOP_END, MAIN_ASSET_STATUS_ANCHOR,
   PAGEHIDE_ANCHOR, SIMULATION_DATE_ANCHOR, START_SHIFT_TIME_ANCHOR,
   START_SHIFT_VIEW_ANCHOR, OPEN_WORK_VIEW_ANCHOR,

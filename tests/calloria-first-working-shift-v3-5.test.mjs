@@ -27,7 +27,11 @@ function staffFixture() {
     t.STAFF_EXTENSION_GUARD,
     '      if (!extensionsValid) continue;',
     '      loadedModels.set(asset.id, gltf);',
-    t.STAFF_LOOP_END,
+    '    } catch (error) {',
+    '      rejected.push({ id: asset.id, reasons: [String(error?.message || error)] });',
+    '    }',
+    '  }',
+    t.STAFF_LOAD_COMPLETE,
     '    return { status: { loaded: 0 }, rejected };',
     '  }',
     '  return { status: { loaded: loadedModels.size }, rejected };',
@@ -74,22 +78,24 @@ function mainFixture() {
     '  if (state.shiftActive) { toast(\'Your shift is already active.\'); return; }',
     '  const simulatedMinute=simulationMinuteNow();',
     "  if(simulatedMinute<8*60){toast('The scheduled shift begins at 08:00. Attend the morning briefing before starting.','warning');return;}",
-    t.START_SHIFT_TIME_ANCHOR,
+    "  if(simulatedMinute>=17*60){toast('The scheduled shift has ended for today. Start the next simulated workday.','warning');return;}",
+    '  state.day=state.day||1;',
     '  state.shiftElapsedMinutes=simulatedMinute-(8*60);',
     '  state.shiftRecord=createShiftRecord({day:state.day,startedAt:Date.now()});',
     '  state.shiftActive=true;',
-    t.START_SHIFT_VIEW_ANCHOR,
+    "  state.currentView='overview';",
+    "  pushOperationEvent('shift','SHIFT-'+state.day,'Shift started; inbound routing opened.','active');",
     "  window.dispatchEvent(new CustomEvent('calloria:game-shift-started',{detail:{day:state.day}}));",
     '}',
     'function open3dWorkView(view){',
-    t.OPEN_WORK_VIEW_ANCHOR,
+    "  if((view==='inbound'||view==='outbound'||view==='digital')&&!state.shiftActive)startShift();",
     '  state.currentView=view;',
     '  saveState();',
     "  window.dispatchEvent(new CustomEvent('calloria:game-operation-selected',{detail:{view,shiftActive:Boolean(state.shiftActive),agentStatus:state.agentStatus}}));",
     '  exit3dFloor();',
     '  renderView();',
     '}',
-    t.PAGEHIDE_ANCHOR,
+    "window.addEventListener('pagehide',()=>{ void flushCloudEmploymentSave(); });",
     // These lines are produced by the existing v2.3.1 first-shift bridge.
     "const staffCount=Math.max(0,Number(result?.staffLoaded??result?.loaded??0));",
     "const officeCount=Math.max(0,Number(result?.officePlaced??0));",
@@ -112,11 +118,22 @@ test('staff loader adds Draco after the existing Meshopt transform and before co
   assert.match(result, /const dracoLoader = new DRACOLoader\(\);\s+dracoLoader\.setDecoderPath\('\/draco\/'\);\s+loader\.setDRACOLoader\(dracoLoader\);/);
   assert.match(result, /const extensionsValid = true;/);
   assert.match(result, /dracoLoader\.dispose\(\);\s+if \(!loadedModels\.size\)/);
+  assert.equal((result.match(/dracoLoader\.dispose\(\)/g) || []).length, 1);
   assert.doesNotThrow(() => new Function(stripModuleSyntax(result)));
 });
 
 test('staff loader fails closed if the real post-Meshopt source anchors drift', () => {
   assert.throws(() => t.transformStaff(failFast, 'export const changed = true;'), /staff GLTFLoader import anchor; found 0/);
+});
+
+test('staff decoder cleanup tolerates catch-block formatting changes while preserving the unique completion guard', () => {
+  const source = staffFixture()
+    .replace('    } catch (error) {', '      } catch (error) {')
+    .replace('      rejected.push({ id: asset.id, reasons: [String(error?.message || error)] });', '        rejected.push({ id: asset.id, reasons: [String(error?.message || error)] });')
+    .replace('    }\n  }\n  if (!loadedModels.size) {', '      }\n    }\n  if (!loadedModels.size) {');
+  const result = t.transformStaff(failFast, source).code;
+  assert.match(result, /dracoLoader\.dispose\(\);\s+if \(!loadedModels\.size\)/);
+  assert.doesNotThrow(() => new Function(stripModuleSyntax(result)));
 });
 
 test('touch devices bypass the unanimated third-person avatar and retain first-person control', () => {
@@ -146,6 +163,18 @@ test('shift readiness requires same-day briefing attendance and sends blocked ag
   assert.match(result, /Attend today’s 07:30 morning or 14:00 afternoon operations briefing/);
   assert.match(result, /view='workforce'/);
   assert.match(result, /state.currentView='inbound'/);
+  assert.doesNotThrow(() => new Function(result));
+});
+
+test('v3.5.1 anchors match the actual main.js indentation at commit 96649f9', () => {
+  assert.ok(t.START_SHIFT_TIME_ANCHOR.startsWith('  if('));
+  assert.ok(t.OPEN_WORK_VIEW_ANCHOR.startsWith('  if('));
+  const source = mainFixture();
+  assert.equal(source.split(t.START_SHIFT_TIME_ANCHOR).length - 1, 1);
+  assert.equal(source.split(t.OPEN_WORK_VIEW_ANCHOR).length - 1, 1);
+  const result = t.transformMain(failFast, source).code;
+  assert.match(result, /  if\(simulatedMinute>=17\*60\)/);
+  assert.match(result, /  if\(\(view==='inbound'\|\|view==='outbound'\|\|view==='digital'\)\&\&!state\.shiftActive\)\{/);
   assert.doesNotThrow(() => new Function(result));
 });
 
