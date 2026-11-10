@@ -1,18 +1,39 @@
-# Install CALLORIA v3.5.1 through GitHub Desktop
+# Install CALLORIA v3.6.0 through GitHub Desktop
 
-Target: `zaksz1991/calloria`, branch `main`, current build-failure commit `96649f9`.
+## Baseline
 
-1. Extract this ZIP using File Explorer.
-2. Open the existing CALLORIA repository in GitHub Desktop.
-3. Select **Repository → Show in Explorer**.
-4. Open the extracted `CALLORIA_v3_5_1_Production_Build_Repair` folder.
-5. Copy its `build` and `tests` folders into the repository root. Allow Windows to replace the two matching files.
-6. In GitHub Desktop, review the changes. The intended changes are exactly:
-   - `build/calloria-first-working-shift-v3-5-plugin.mjs` — complete replacement.
-   - `tests/calloria-first-working-shift-v3-5.test.mjs` — complete replacement with 12 focused regression tests.
-7. Commit with: `CALLORIA v3.5.1 — stabilize production build transforms`.
-8. Push to `main` and inspect the new Vercel deployment log.
+Target repository: `zaksz1991/calloria`  
+Branch: `main`  
+The current main branch must already contain the v3.5.1 file `build/calloria-first-working-shift-v3-5-plugin.mjs` and its import in `vite.config.js`.
 
-Do not copy an outer wrapper directory into the repository. Do not delete `.git`, alter environment variables, run database SQL or replace `vite.config.js` for this repair.
+## Replace/add files
 
-The hotfix does not make a successful deployment claim. Vercel must run the full production build after this commit.
+1. Extract this ZIP in File Explorer.
+2. Open the existing CALLORIA repository using GitHub Desktop and choose **Repository → Show in Explorer**.
+3. Copy the contents of the extracted `CALLORIA_v3_6_Live_Inbound_Operations` folder into the repository root.
+4. Replace `vite.config.js` completely with the supplied version.
+5. Add `build/calloria-live-inbound-conversation-v3-6-plugin.mjs`.
+6. Add `js/operational-conversation-engine.js`.
+7. Add both supplied test files under `tests/`.
+8. Add/replace the release documentation files.
+9. Do not replace `js/main.js`, `index.html`, `package.json`, `public/`, existing 3D models, migrations or Supabase environment settings.
+10. Confirm GitHub Desktop shows the expected changes, commit to `main`, and push.
+
+Suggested commit summary: `CALLORIA v3.6.0 — live inbound customer operations`
+
+## After push
+
+1. Open the Vercel deployment for the new commit.
+2. Confirm `npm install` and `npm run build` complete successfully.
+3. Open the deployed app and use an already hired test profile.
+4. Attend the applicable simulated operations briefing and start a shift.
+5. Enter the inbound queue and accept a contact.
+6. Confirm the inbound screen shows a customer/agent transcript and free-text reply form, not multiple-choice call-step cards.
+7. Send a natural response. Confirm the customer replies with a persona-dependent branch.
+8. Test customer speech playback where browser speech synthesis is available.
+9. Complete a safe interaction and verify after-contact work, notes, disposition, QA, CSAT, CRM transcript and case history.
+10. Test a prohibited credential request and confirm mandatory escalation.
+11. Test hold/resume, supervisor request and specialist transfer.
+12. Re-test the same flow on a physical mobile device.
+
+Do not claim this milestone deployed until the Vercel build and browser acceptance checks pass.

@@ -15,6 +15,7 @@ import { calloriaErgonomicOfficeChairsPlugin } from './build/calloria-ergonomic-
 import { calloriaCC0LobbyGreeneryPlugin } from './build/calloria-cc0-lobby-greenery-plugin.mjs';
 import { calloriaGlazedDepartmentPartitionsPlugin } from './build/calloria-glazed-department-partitions-plugin.mjs';
 import { calloriaFirstWorkingShiftV35Plugin } from './build/calloria-first-working-shift-v3-5-plugin.mjs';
+import { calloriaLiveInboundConversationV36Plugin } from './build/calloria-live-inbound-conversation-v3-6-plugin.mjs';
 
 export default defineConfig({
   base: '/',
@@ -43,8 +44,10 @@ export default defineConfig({
     calloriaCC0LobbyGreeneryPlugin(),
     // Upgrade the existing QA/supervisor room panes with validated CC0 glass modules.
     calloriaGlazedDepartmentPartitionsPlugin(),
-    // Deliver a usable first-person mobile view, real staff decoders and the guided first-shift entry path.
-    calloriaFirstWorkingShiftV35Plugin()
+    // First-shift access, player pose checks and staff decoders.
+    calloriaFirstWorkingShiftV35Plugin(),
+    // Replace inbound decision cards with an actual customer conversation and operational wrap-up.
+    calloriaLiveInboundConversationV36Plugin()
   ],
   build: {
     outDir: 'dist',

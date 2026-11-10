@@ -1,34 +1,33 @@
-# CALLORIA v3.5.1 — Production Build Anchor Repair
+# CALLORIA v3.6.0 — Live Inbound Customer Operations
 
-This is a focused hotfix for the Vercel production build failure reported on 10 November 2026 at commit `96649f9`.
+This release advances the main game from a multiple-choice inbound call flow to an operational, multi-turn customer conversation during an active employee shift.
 
-## Root cause
+## What changes
 
-The v3.5 Vite plugin attempted to match an entire multi-line `try/catch` and loop-closing block in `js/glb-world-integration.js`. That formatting-sensitive anchor was not present in the source as seen by the last build transform, so the plugin intentionally stopped the build rather than applying a partial edit.
+- The inbound contact screen becomes a customer/agent conversation transcript with a free-text agent response composer.
+- Synthetic customer personas vary patience and response behaviour.
+- Customer replies branch according to the agent's acknowledgement, ownership, information gathering and explanation of a safe next step.
+- A transparent deterministic interaction score evaluates service behaviours and critical compliance failures. It does not call an external AI provider.
+- PIN/password/OTP solicitation, full card-data solicitation, unsupported guarantees and dismissive treatment trigger mandatory escalation.
+- Customer voice playback uses the browser's speech synthesis when available.
+- Existing hold, resume, supervisor request, specialist transfer, queue return, after-contact work and case disposition controls remain available.
+- The conversation transcript and turn scorecards are saved into the inbound CRM case record.
+- Specialist follow-up becomes the default disposition when the interaction ends without a sufficient safe next step.
 
-The plugin also omitted the two leading spaces used by the current `js/main.js` shift-start and open-work-view statements. Once the staff transform was passed, those mismatched anchors would have caused the same kind of build failure later in the same plugin.
+## Product boundary
 
-## Repair
+Recruitment and aptitude/practical assessments remain the entry gate. This release changes the main employee gameplay after hiring; it does not convert recruitment into the main game.
 
-- Staff Draco cleanup now anchors to the unique `if (!loadedModels.size)` completion guard, not the whole catch/loop text.
-- The shift-start and work-view anchors now match the current `main.js` indentation from commit `96649f9`.
-- The replacement preserves the existing v3.5 staff decoder, touch first-person, briefing-gated shift and direct inbound work-desk behaviour.
-- The transform remains fail-fast if its actual source contract drifts elsewhere.
+The customer data is synthetic. The conversation engine is deterministic and is not a live LLM, real telephone connection, external CRM or bank core system. Customer voice playback uses local browser speech synthesis. Microphone-driven live dialogue is a later voice milestone.
 
 ## Files
 
-Replace these two files only:
+- `vite.config.js` — complete replacement preserving the current production multi-page inputs and plugin order, with the v3.6 integration registered after v3.5.1.
+- `build/calloria-live-inbound-conversation-v3-6-plugin.mjs` — source-checked Vite integration plugin.
+- `js/operational-conversation-engine.js` — new deterministic operational dialogue and scoring engine.
+- `tests/operational-conversation-engine.test.mjs` — engine tests.
+- `tests/live-inbound-v36-integration.test.mjs` — source-contract and Vite transform tests. It expects the existing v3.5.1 plugin and current application files in the target repository.
 
-- `build/calloria-first-working-shift-v3-5-plugin.mjs`
-- `tests/calloria-first-working-shift-v3-5.test.mjs`
+## Installation
 
-Do not replace `vite.config.js`, `package.json`, application files, GLB files or database migrations with this hotfix. The current `vite.config.js` already registers the v3.5 plugin.
-
-## Verification
-
-- Plugin JavaScript syntax: passed.
-- Focused v3.5.1 regression suite: 12 passed, 0 failed.
-- ZIP integrity: checked.
-- Full repository `npm test`: not run in this isolated patch workspace.
-- Full Vite production build: not run against the full repository in this workspace.
-- Vercel deployment: not performed or claimed.
+Follow `INSTALL-GITHUB.md`. Install over the current `main` branch that already contains `calloria-first-working-shift-v3-5-plugin.mjs` (v3.5.1). Do not combine with older v3.4 or v3.5 ZIPs.
