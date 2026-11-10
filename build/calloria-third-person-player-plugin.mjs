@@ -1,7 +1,8 @@
 /**
  * CALLORIA third-person GLB player integration.
- * Runs after the GLB-world transform so the real GLB-ready and lifecycle
- * anchors are available. Reuses the existing renderer and frame loop.
+ * Touch devices intentionally remain first-person so workstations stay visible.
+ * Desktop uses a third-person GLB only when the source avatar passes its rig and
+ * named-animation checks in world-player-avatar.js.
  */
 const TARGET = '/js/production-world.js';
 const IMPORT = "import { createCalloriaPlayerAvatar } from './world-player-avatar.js';";
@@ -10,7 +11,6 @@ const READY = '  callbacks.onAssetsReady?.(combinedAssetStatus);';
 const UPDATE = '    updatePlayer(delta);';
 const DISPOSE = '      worldMissionLayer?.dispose?.();';
 const IMMERSIVE = "    window.dispatchEvent(new CustomEvent('calloria:world-immersive', { detail: { active: immersive } }));";
-
 function count(source, needle) { return source.split(needle).length - 1; }
 function requireOnce(context, source, needle, label) {
   const occurrences = count(source, needle);
@@ -18,7 +18,6 @@ function requireOnce(context, source, needle, label) {
     context.error(`CALLORIA third-person/workstation integration expected exactly one ${label} anchor (${occurrences} found). Refusing a partial transform.`);
   }
 }
-
 function transformWorld(context, source) {
   if (source.includes(MARKER)) return null;
   const normalized = String(source).replace(/\r\n?/g, '\n');
@@ -28,7 +27,6 @@ function transformWorld(context, source) {
     [DISPOSE, 'GLB world disposal'],
     [IMMERSIVE, 'immersive-state event']
   ]) requireOnce(context, normalized, anchor, label);
-
   let code = `${IMPORT}\nconst ${MARKER} = true;\n${normalized}`;
   code = code.replace(READY, `${READY}
   let playerAvatarLayer = null;
@@ -74,15 +72,18 @@ function transformWorld(context, source) {
     playerAvatarLayer = await createCalloriaPlayerAvatar({ scene, tier, onStatus: (status) => {
       const node = document.getElementById('assetStatus');
       if (node) {
-        const motion = status?.ready ? [status.hasIdle ? 'idle' : null, status.hasWalk ? 'walk' : null, status.hasRun ? 'run' : null, status.hasWork ? 'work' : null, status.hasTalk ? 'talk' : null].filter(Boolean).join('/') : '';
-        node.textContent += status?.ready ? '  ·  PLAYER GLB: ' + status.assetName + (motion ? ' · ' + motion : ' · no embedded clips') : '  ·  PLAYER GLB: unavailable';
+        if (status?.firstPersonOnly) {
+          node.textContent += '  ·  PLAYER VIEW: FIRST-PERSON TOUCH';
+        } else {
+          const motion = status?.ready ? [status.hasIdle ? 'idle' : null, status.hasWalk ? 'walk' : null, status.hasRun ? 'run' : null, status.hasWork ? 'work' : null, status.hasTalk ? 'talk' : null].filter(Boolean).join('/') : '';
+          node.textContent += status?.ready ? '  ·  PLAYER GLB: ' + status.assetName + (motion ? ' · ' + motion : ' · no embedded clips') : '  ·  PLAYER GLB: unavailable';
+        }
       }
     }});
     playerAvatarLayer?.setVisible?.(immersive);
   } catch (error) {
     console.warn('CALLORIA player GLB unavailable; retaining the original controller.', error);
   }`);
-
   code = code.replace(UPDATE, `    const operationMode = calloriaWorkstationBusy || document.body.classList.contains('calloria-game-operation');
     if (operationMode) calloriaClearMovement();
     else updatePlayer(delta);
@@ -95,7 +96,6 @@ function transformWorld(context, source) {
       camera.rotation.order = 'YXZ';
       camera.rotation.set(player.pitch - 0.12, player.yaw, 0);
     }`);
-
   code = code.replace(DISPOSE, `${DISPOSE}
       window.removeEventListener('calloria:game-operation-selected', calloriaOnOperationSelected);
       window.removeEventListener('calloria:game-call-connected', calloriaOnCallConnected);
@@ -107,7 +107,6 @@ function transformWorld(context, source) {
     playerAvatarLayer?.setVisible?.(immersive);`);
   return { code, map: null };
 }
-
 export function calloriaThirdPersonPlayerPlugin() {
   return {
     name: 'calloria-third-person-player-v2-5-workstation-aware',
@@ -119,7 +118,6 @@ export function calloriaThirdPersonPlayerPlugin() {
     }
   };
 }
-
 export const __thirdPersonPlayerPluginTest = Object.freeze({
   TARGET, MARKER, READY, UPDATE, DISPOSE, IMMERSIVE, transformWorld
 });

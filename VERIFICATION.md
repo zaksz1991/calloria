@@ -1,19 +1,31 @@
-# v3.4 verification record
+# CALLORIA v3.5 verification record
 
-## Checks performed in this artifact workspace
+## Completed in the patch workspace
 
-- Node.js syntax check for `build/calloria-in-world-operations-v3-4-plugin.mjs`.
-- Node unit tests for staff Draco transform, player pose guard, transform anchor failure, inbound routing, mobile tutorial sizing and HTML idempotency.
-- Manual comparison of the supplied `vite.config.js` against the current public `main` branch configuration fetched on 10 November 2026. The original plugin list, build inputs, chunking and server/preview settings are retained; the v3.4 plugin is appended.
+| Check | Result | Boundary |
+|---|---|---|
+| v3.5 plugin syntax check | Pass | Node syntax validation only. |
+| third-person plugin syntax check | Pass | Node syntax validation only. |
+| Vite configuration syntax check | Pass | Does not load or execute Vite. |
+| regression test syntax check | Pass | Node syntax validation only. |
+| focused v3.5 regression tests | **10 passed, 0 failed** | Tests exercise source transforms against fixtures reflecting the inspected current source anchors. |
+| transformed staff fixture parse | Pass | Checks generated JS syntax for the staff transform. |
+| transformed avatar fixture parse | Pass | Checks generated JS syntax for the avatar transform. |
+| transformed main fixture parse | Pass | Checks generated JS syntax for the main transform. |
+| ZIP integrity | Pass | Archive can be opened and tested. |
 
-## Not performed
+## Not run / not verified
 
-- No checkout of the complete current GitHub main branch was available in this workspace.
-- No `npm install`, full `npm test` against the repository, or Vite production build was run against the actual project.
-- No commit was pushed to GitHub and no Vercel deployment was initiated.
-- No hosted GLB file was downloaded and decoded in a live browser.
-- No Android/iOS visual, touch-control, frame-rate or memory test was performed.
+- The complete repository `npm test` suite.
+- `npm run build` or the full Vite production bundle. This patch workspace does not include the complete CALLORIA repository or its installed `three`/Vite dependencies.
+- Decoder assets resolved from the deployed dependency installation.
+- Browser-side GLB loads, CORS, animation playback or visual fidelity.
+- The complete gameplay sequence on `calloria.vercel.app`.
+- Android/iOS physical-device testing, frame rate, touch usability or responsive layout.
+- GitHub commit, Vercel deployment, live database or production data changes.
 
-## Release gate
+## Important interpretation
 
-Do not consider v3.4 verified or deployed until the full repository tests and Vercel production build pass, the runtime reports GLB staff loading correctly (or a specific actionable failure), and the Android gameplay flow is tested from shift briefing through an accepted inbound contact, CRM/case update, after-contact disposition and saved performance result.
+The 10 passing tests demonstrate that the patch transforms the source fixtures and that the emitted JavaScript parses. They do not establish that the current production assets will load, that staff geometry will look professional, or that a complete agent shift works end to end.
+
+The screenshots' `0 STAFF` and `2 LOAD ERRORS` problem can have causes beyond decoder compatibility, including unavailable files, CORS, unsupported extensions, invalid GLB data or asset metadata. v3.5 adds more actionable rejection information but does not fabricate a successful asset load.

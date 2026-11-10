@@ -1,34 +1,44 @@
-# CALLORIA v3.4 — In-world operations and GLB runtime repair
+# CALLORIA v3.5 — First Working Shift
 
-**Patch type:** additive Vite plugin + exact `vite.config.js` replacement for the current `main` branch configuration checked on 10 November 2026.
+**Patch type:** repository overlay patch  
+**Target repository:** `zaksz1991/calloria`  
+**Target branch:** `main`  
+**Target deployment:** `https://calloria.vercel.app`  
+**Baseline inspected:** public `main` source on 10 November 2026, including the v3.3 Vite plugin chain.
 
-This patch is designed to address the failures visible in the user's Android gameplay screenshots without replacing CALLORIA's recruitment, contact operations, CRM, case, QA, performance or career engines.
+## Purpose
 
-## What it changes
+This patch addresses the most visible problems in the supplied Android gameplay screenshots and makes the first-shift route lead into actual contact-centre work.
 
-1. **Draco-compressed staff GLBs:** registers Three.js `DRACOLoader` on the staff GLTF runtime and bundles Three.js's own decoder files under `/draco/`. Existing Meshopt decoding remains enabled. The current runtime explicitly rejected `KHR_draco_mesh_compression`; this patch makes that format decodable instead of rejecting it.
-2. **Player pose safety:** the third-person avatar is accepted only when it is a skinned character with at least 12 bones and both recognisable idle and walk clips. An unanimated/default-pose GLB is rejected so the existing first-person controller stays usable instead of displaying a static T-pose avatar.
-3. **Work-first access:** adds a compact `OPEN INBOUND DESK` control to the immersive HUD. It routes into CALLORIA's existing inbound view and respects the existing recruitment and shift-entry checks. It does not replace the inbound queue, call handling, CRM, case notes, disposition, QA or performance code.
-4. **Mobile tutorial sizing:** constrains the large “Access your workstation” card so it does not occupy most of the phone screen. The card remains scrollable.
+It does not replace CALLORIA with a training quiz. Recruitment remains the employment entry gate; the core game remains shift work, inbound/outbound customer operations, simulated enterprise applications, supervisor/QA outcomes and career progression.
 
-## Important boundaries
+## Included files
 
-- This is **not** a replacement for the entire CALLORIA repository and it does not contain new human GLB assets. It fixes decoder registration and rejects invalid player poses; it cannot turn a poor source model into a high-quality human model.
-- The GLB office assets still need to be verified in the deployed browser. If the current model URLs are broken, blocked by CORS, or point to low-quality geometry, those assets need separate replacement with licensed first-party models.
-- The inbound entry is a shortcut to the existing real simulated work view. It does not bypass employment, the 08:00 shift start, morning briefing or agent availability rules.
-- It does not add real PSTN telephony or production customer data. Existing voice/digital features remain simulated and must not be represented as connected to a real bank or customer.
-- `vite.config.js` is reconstructed from the current public `main` branch file and only adds this plugin import and registration. Check it against the live branch before replacing it if another commit has landed since the snapshot.
+| Repository path | Change |
+|---|---|
+| `vite.config.js` | Complete replacement preserving the existing HTML entry points and current plugin order, with the v3.5 plugin appended after existing source transforms. |
+| `build/calloria-first-working-shift-v3-5-plugin.mjs` | New plugin for Draco + Meshopt staff model decoding, player-model pose checks, first-person touch mode, shift/briefing gate, direct route into inbound work and compact mobile mission guidance. |
+| `build/calloria-third-person-player-plugin.mjs` | Complete replacement that reports intentional first-person touch mode and retains the existing desktop avatar integration. |
+| `tests/calloria-first-working-shift-v3-5.test.mjs` | Ten focused regression tests for the new transforms and expected current-source anchors. |
 
-## Apply through GitHub's website (no terminal required)
+## Main behaviour changes
 
-1. Download and extract this ZIP.
-2. Open `https://github.com/zaksz1991/calloria` and make sure the branch selector shows `main`.
-3. Upload `build/calloria-in-world-operations-v3-4-plugin.mjs` into the repository's `build` folder using **Add file → Upload files**. Keep the folder path `build/`.
-4. Upload `tests/calloria-in-world-operations-v3-4.test.mjs` into the repository's `tests` folder. Keep the folder path `tests/`.
-5. Open the existing root `vite.config.js` in GitHub, select Edit, and replace its complete contents with the `vite.config.js` supplied in this ZIP. This preserves the current plugin chain and adds the v3.4 plugin last.
-6. Commit the three changed files to `main`.
-7. Inspect the resulting Vercel deployment log. Treat the change as deployed only when Vercel reports a successful production build.
+1. Adds the Three.js Draco decoder to the existing staff GLTF loader, while retaining the already-installed Meshopt decoder. The production build copies the three decoder runtime files into `dist/draco/` and serves them from `/draco/` during development.
+2. Stops displaying the third-person player GLB on touch devices. Mobile remains in the existing first-person controller view so the avatar does not obscure the workstations or show the rejected pose.
+3. On desktop, rejects the player GLB unless it has a skinned mesh, a usable bone count, and named idle and walking clips. Rejected candidates are reported in the asset status tooltip.
+4. Requires an attendance record for the current simulated day before a shift can start. It recognises the current day's 07:30 morning or 14:00 afternoon briefing.
+5. Routes a successful shift start directly to inbound operations rather than the generic overview screen.
+6. Adds an `OPEN WORK DESK` action in the immersive 3D HUD. It reuses CALLORIA's existing recruitment gate, Workforce view and inbound operation flow; it does not create a parallel fake call simulator.
+7. Compresses the oversized first-shift tutorial card on mobile and hides its redundant controls paragraph.
 
-## Verification included
+## What this patch does not claim
 
-The included Node test file checks the source transforms, direct inbound route, mobile tutorial sizing, idempotency and fail-closed behaviour. It is not proof that the full CALLORIA production build, hosted GLB files, browser rendering or a physical phone have passed. Those checks must be performed by the repository's CI/Vercel build and on the actual device after deployment.
+- It does not contain new high-detail human GLB models or replace all low-poly office props.
+- It does not guarantee that currently referenced remote staff assets are reachable, licensed for commercial distribution, or compatible. Draco decoding only removes one possible loading incompatibility.
+- It does not create a new voice provider, real telephone service, speech AI, multiplayer or live CRM integration.
+- It does not make the existing simulated inbound queue or CRM a real banking system.
+- It does not claim a successful full application build, GitHub commit, Vercel deployment, live browser session or Android device test.
+
+Install this patch **instead of the earlier v3.4 draft**. Do not layer v3.4 first; v3.5 is built against the current post-Meshopt and post-static-staff source transformations and includes the complete updated Vite configuration.
+
+See `INSTALL-GITHUB.md` and `VERIFICATION.md` before applying it.

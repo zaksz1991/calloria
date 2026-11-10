@@ -14,7 +14,7 @@ import { calloriaCC0OfficeLobbyPlugin } from './build/calloria-cc0-office-lobby-
 import { calloriaErgonomicOfficeChairsPlugin } from './build/calloria-ergonomic-office-chairs-plugin.mjs';
 import { calloriaCC0LobbyGreeneryPlugin } from './build/calloria-cc0-lobby-greenery-plugin.mjs';
 import { calloriaGlazedDepartmentPartitionsPlugin } from './build/calloria-glazed-department-partitions-plugin.mjs';
-import { calloriaInWorldOperationsV34Plugin } from './build/calloria-in-world-operations-v3-4-plugin.mjs';
+import { calloriaFirstWorkingShiftV35Plugin } from './build/calloria-first-working-shift-v3-5-plugin.mjs';
 
 export default defineConfig({
   base: '/',
@@ -43,8 +43,8 @@ export default defineConfig({
     calloriaCC0LobbyGreeneryPlugin(),
     // Upgrade the existing QA/supervisor room panes with validated CC0 glass modules.
     calloriaGlazedDepartmentPartitionsPlugin(),
-    // Repair Draco-compressed GLB support and provide a direct route into real agent work.
-    calloriaInWorldOperationsV34Plugin()
+    // Deliver a usable first-person mobile view, real staff decoders and the guided first-shift entry path.
+    calloriaFirstWorkingShiftV35Plugin()
   ],
   build: {
     outDir: 'dist',
