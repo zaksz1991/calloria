@@ -1,28 +1,23 @@
-# CALLORIA v3.9.0 — Verification report
+# CALLORIA v4.0 — Verification report
 
-## Checks completed in the patch workspace
+## Completed in the patch workspace
 
-- `node --check build/calloria-cc0-staff-glb-bundle-plugin.mjs`: passed.
-- `node --check vite.config.js`: passed.
-- `node --check tests/calloria-v39-cc0-staff-glb.test.mjs`: passed.
-- Focused regression suite: **9 passed, 0 failed**.
-- Synthetic GLB v2 parser tests: passed for rig, joints, Idle/Walk clips, triangle budget, truncated length, external URI rejection.
-- Mocked buildStart integration: passed; five local target paths and provenance manifest written.
-- Partial upstream failure: passed; only validated IDs are selected and failures are listed in the manifest.
-- Complete upstream network failure: passed; build hook remains non-fatal and does not alter the original candidate list.
-- Existing valid local model preservation: passed.
+- Focused static contract tests: 7 passed, 0 failed.
+- Inline JavaScript module syntax: checked separately with Node.
 - ZIP integrity: checked after packaging.
+- No package dependencies added.
+- No existing runtime/configuration files replaced.
 
 ## Not verified
 
-- Actual Gobkit binary downloads from the Vercel build machine.
-- Real model appearance, proportions, skin deformation or animation in the Three.js browser renderer.
 - Full repository `npm test`.
-- Full Vite production build.
-- GitHub commit or Vercel deployment.
-- Android/iOS device frame rate and memory.
-- Actual office desk/computer/headset GLB binaries. This release only bundles staff characters.
+- Full Vite production build on the current main branch.
+- Vercel deployment.
+- jsDelivr module availability on the user's device/network.
+- Live manifest fetch, GLB fetch or actual WebGL browser rendering.
+- Whether v3.9 has been installed and deployed.
+- Whether the models appear correctly in the main 3D office scene.
 
-## Acceptance boundary
+## Acceptance rule
 
-Passing these focused tests verifies the downloader, structural validator, manifest and candidate activation against synthetic GLB fixtures. It does not certify the external binary contents or live browser rendering. The deployed manifest plus actual nonzero `GLB STAFF` replacement status and visual review are required before claiming the staff GLB milestone complete.
+Do not report the GLB integration complete until the deployed page shows successful browser renders for actual staff models and the corresponding models are also visible in their intended positions in the main game. The manifest alone is not sufficient evidence.
