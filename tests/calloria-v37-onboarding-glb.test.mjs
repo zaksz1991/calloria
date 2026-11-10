@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import {
   __calloriaV37Test as v37,
   calloriaOJTGLBActivationPlugin
@@ -73,6 +74,40 @@ test('office GLB loader also accepts the original device-tier plan', () => {
   assert.match(output, /loader\.setDRACOLoader\(dracoLoader\)/);
   assert.match(output, /headsetStationIndexes: safeTier === 'low' \? \[/);
   assert.match(output, /includeReceptionDesk: safeTier !== 'low'/);
+});
+
+
+test('office Draco injection emits real newlines and remains valid JavaScript', () => {
+  const source = [
+    "import * as THREE from 'three';",
+    "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';",
+    "import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';",
+    'const LIMITS = Object.freeze({});',
+    "export function getOfficeAssetPlan(tier = 'balanced', stationCount = 12) {",
+    "  const safeTier = ['low', 'balanced', 'high'].includes(tier) ? tier : 'balanced';",
+    "  const preferred = safeTier === 'low' ? [9, 10] : safeTier === 'high' ? [4, 5, 6, 7, 8, 9, 10, 11] : [8, 9, 10, 11];",
+    '  const deskStationIndexes = preferred.filter((index) => index < stationCount);',
+    '  return { deskStationIndexes, computerStationIndexes: [...deskStationIndexes],',
+    "    headsetStationIndexes: safeTier === 'low' ? [10] : [...deskStationIndexes],",
+    "    includeReceptionDesk: safeTier !== 'low', tier: safeTier };",
+    '}',
+    'export async function integrate() {',
+    '  const loader = new GLTFLoader();',
+    '  loader.setMeshoptDecoder(MeshoptDecoder);',
+    '  const placed = [];',
+    '  const errors = [];',
+    '  let disposed = false;',
+    '  return { placed, errors, disposed };',
+    '}'
+  ].join('\n');
+  const output = transform(v37.transformOffice, source);
+  assert.match(output, /loader\.setDRACOLoader\(dracoLoader\)/);
+  assert.doesNotMatch(output, /\\\\n\s*(?:const|dracoLoader|loader\.)/);
+  const checked = spawnSync(process.execPath, ['--check', '--input-type=module'], {
+    input: output,
+    encoding: 'utf8'
+  });
+  assert.equal(checked.status, 0, checked.stderr || checked.stdout || 'Node parser rejected transformed office module');
 });
 
 test('shared asset loader source as committed receives both Meshopt and Draco despite missing previous plugin anchor', () => {

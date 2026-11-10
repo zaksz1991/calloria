@@ -1,14 +1,11 @@
-# CALLORIA v3.8.1 verification
+# Verification — CALLORIA v3.8.2
 
-The focused patch suite currently contains 12 passing tests. The patch tests are designed around the current committed source shape, including the unconfigured staff loader, the office Meshopt-only loader and the shared loader constructor without a decoder setup.
+- Focused regression suite: run and record the result before installation.
+- Plugin JavaScript syntax: run and record the result.
+- Transformed office module syntax: checked with Node's module parser in a dedicated test.
+- ZIP integrity: checked after packaging.
+- Full repository `npm test`: not run; the complete current GitHub checkout is not present in this workspace.
+- Full Vite production build: not run; the complete checkout and its installed dependencies are not present here.
+- Vercel deployment and live GLB rendering: not verified.
 
-Checks to run in the merged repository:
-
-- `npm test` — full repository suite (not run here because the complete repository checkout was not available).
-- `npm run build` — full Vite production build (not run here).
-- Inspect built `dist/draco/` for all three decoder assets.
-- Open the deployed 3D floor and inspect the `3D ASSET STATUS` panel.
-- Verify non-zero `staffLoaded` and `officePlaced` counts before reporting actual GLB use.
-- Confirm no oversize player mesh appears and inspect any rejected-model reasons.
-
-Patch-workspace checks are reported in the accompanying session log; they do not establish full Vercel build success, live rendering or phone performance.
+This patch fixes the exact malformed-source injection shown in the supplied build log. It does not prove that the subsequent full application build or remote asset downloads will succeed.

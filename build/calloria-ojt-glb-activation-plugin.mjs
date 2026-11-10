@@ -1,5 +1,5 @@
 /**
- * CALLORIA v3.8.1 — GLB runtime visibility + first-person player
+ * CALLORIA v3.8.2 — GLB runtime visibility + first-person player
  * + real GLB/Draco activation. Built against the current repository main.js and its active v2.9 GLB-first + v3.7.2 OJT/workstation Vite transform chain.
  *
  * This replaces the brittle v3.5 plugin. It does not patch candidate-load loop
@@ -43,7 +43,7 @@ function count(source, needle) { return source.split(needle).length - 1; }
 function one(context, source, needle, label, { strict = true } = {}) {
   const found = count(source, needle);
   if (found !== 1) {
-    const message = `CALLORIA v3.8.1 expected one ${label} anchor; found ${found}.`;
+    const message = `CALLORIA v3.8.2 expected one ${label} anchor; found ${found}.`;
     if (strict && context?.error) context.error(message);
     return false;
   }
@@ -73,7 +73,7 @@ function rewriteLoaderSetup(context, source, {
   if (code === null) return null;
   const matches = [...code.matchAll(declarationPattern)];
   if (matches.length !== 1) {
-    context.error(`CALLORIA v3.8.1 expected one ${label} GLTFLoader construction; found ${matches.length}.`);
+    context.error(`CALLORIA v3.8.2 expected one ${label} GLTFLoader construction; found ${matches.length}.`);
     return null;
   }
   if (!code.includes(`${receiver}.setMeshoptDecoder(MeshoptDecoder)`)) {
@@ -102,7 +102,7 @@ function rewriteLoaderSetup(context, source, {
         ? /^([\t ]*)this\.loader\s*=\s*[^;]+;[\t ]*$/m
         : new RegExp(`^([\\t ]*)const ${receiver.replaceAll('.', '\\.') }\\s*=\\s*[^;]+;[\\t ]*$`, 'm');
       if (!declarationLine.test(code)) {
-        context.error(`CALLORIA v3.8.1 could not locate ${label} loader setup for Draco registration.`);
+        context.error(`CALLORIA v3.8.2 could not locate ${label} loader setup for Draco registration.`);
         return null;
       }
       code = code.replace(declarationLine, `$&\n${setup}`);
@@ -126,7 +126,7 @@ function transformStaff(context, source) {
     code = code.replace(extensionPattern,
       `${indent}const supportedRequiredExtensions = new Set(['KHR_draco_mesh_compression', 'EXT_meshopt_compression']);\n${indent}const extensionsValid = requiredExtensions.every((extension) => supportedRequiredExtensions.has(extension));`);
   } else if (!code.includes('supportedRequiredExtensions')) {
-    context.error(`CALLORIA v3.8.1 expected one staff required-extension validation; found ${extensionMatches.length}.`);
+    context.error(`CALLORIA v3.8.2 expected one staff required-extension validation; found ${extensionMatches.length}.`);
     return null;
   }
   return { code: `/* ${MARKERS.staff} */\n${code}`, map: null };
@@ -142,7 +142,7 @@ function transformOffice(context, source) {
   const headsetMatches = code.match(headsetPlanPattern) || [];
   const receptionMatches = code.match(receptionPlanPattern) || [];
   if (preferredMatches.length !== 1 || headsetMatches.length !== 1 || receptionMatches.length !== 1) {
-    context.error(`CALLORIA v3.8.1 expected one office workstation/headset/reception plan (found ${preferredMatches.length}, ${headsetMatches.length}, ${receptionMatches.length}).`);
+    context.error(`CALLORIA v3.8.2 expected one office workstation/headset/reception plan (found ${preferredMatches.length}, ${headsetMatches.length}, ${receptionMatches.length}).`);
     return null;
   }
   const gltfImport = "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';";
@@ -152,16 +152,29 @@ function transformOffice(context, source) {
   if (!code.includes('loader.setDRACOLoader(')) {
     const meshoptLine = /^([\t ]*)loader\.setMeshoptDecoder\(MeshoptDecoder\);[\t ]*$/m;
     if (meshoptLine.test(code)) {
-      code = code.replace(meshoptLine,
-        `$&\n  const dracoLoader = new DRACOLoader();\\n  dracoLoader.setDecoderPath('/draco/');\\n  loader.setDRACOLoader(dracoLoader);`);
+      // Use a callback replacement rather than a replacement-string template.
+      // A literal \n in a replacement string is emitted into the transformed JS,
+      // where Rollup interprets it as an invalid Unicode escape. Building the
+      // inserted lines as an array guarantees real source newlines.
+      code = code.replace(meshoptLine, (match, indent) => [
+        match,
+        `${indent}const dracoLoader = new DRACOLoader();`,
+        `${indent}dracoLoader.setDecoderPath('/draco/');`,
+        `${indent}loader.setDRACOLoader(dracoLoader);`
+      ].join('\n'));
     } else {
       const declarationLine = /^([\t ]*)const loader = new GLTFLoader\(\);[\t ]*$/m;
       if (!declarationLine.test(code)) {
-        context.error('CALLORIA v3.8.1 could not locate office GLTFLoader setup for Draco registration.');
+        context.error('CALLORIA v3.8.2 could not locate office GLTFLoader setup for Draco registration.');
         return null;
       }
-      code = code.replace(declarationLine,
-        `$&\n  loader.setMeshoptDecoder(MeshoptDecoder);\\n  const dracoLoader = new DRACOLoader();\\n  dracoLoader.setDecoderPath('/draco/');\\n  loader.setDRACOLoader(dracoLoader);`);
+      code = code.replace(declarationLine, (match, indent) => [
+        match,
+        `${indent}loader.setMeshoptDecoder(MeshoptDecoder);`,
+        `${indent}const dracoLoader = new DRACOLoader();`,
+        `${indent}dracoLoader.setDecoderPath('/draco/');`,
+        `${indent}loader.setDRACOLoader(dracoLoader);`
+      ].join('\n'));
     }
   }
   return { code: `/* ${MARKERS.office} */\n${code}`, map: null };
@@ -290,7 +303,7 @@ function transformMain(context, source) {
   // Remove the legacy inline startShift call if an upstream version retained it.
   const legacyWorkStartCount = count(code, OPEN_WORK_VIEW_ANCHOR);
   if (legacyWorkStartCount === 1) code = code.replace(OPEN_WORK_VIEW_ANCHOR, '/* shift start handled by the v3.7.2 function-entry guard */');
-  else if (legacyWorkStartCount > 1) context.error('CALLORIA v3.8.1 found multiple legacy 3D shift-start anchors.');
+  else if (legacyWorkStartCount > 1) context.error('CALLORIA v3.8.2 found multiple legacy 3D shift-start anchors.');
   // Retain the established 07:30 and 14:00 briefings as prerequisites.
   const dateHelper = `${SIMULATION_DATE_ANCHOR}\nfunction hasBriefingAttendanceForToday(){\n  const simulatedDate=simulationDateNow();\n  const morningDate=new Date(simulatedDate);morningDate.setHours(7,45,0,0);\n  const afternoonDate=new Date(simulatedDate);afternoonDate.setHours(14,15,0,0);\n  const briefingIds=[briefingFor(morningDate),briefingFor(afternoonDate)].filter(Boolean).map(item=>item.id);\n  return (state.briefingAttendance||[]).some(item=>briefingIds.includes(item.briefingId));\n}`;
   code = code.replace(SIMULATION_DATE_ANCHOR, dateHelper);
@@ -318,7 +331,7 @@ function transformMain(context, source) {
 }
 
 const HUD_STYLE = `
-/* CALLORIA v3.8: truthful GLB status without obscuring first-person gameplay. */
+/* CALLORIA v3.8.2: truthful GLB status without obscuring first-person gameplay. */
 .calloria-world-mission-v23.calloria-tutorial-card-compact{width:min(220px,calc(100vw - 16px))!important;max-width:min(220px,calc(100vw - 16px))!important;max-height:112px!important;overflow:auto!important;box-sizing:border-box!important;padding:7px!important}
 .calloria-world-mission-v23.calloria-tutorial-card-compact h3{font-size:11px!important;line-height:1.2!important;margin:4px 0!important}
 .calloria-world-mission-v23.calloria-tutorial-card-compact p{font-size:8px!important;line-height:1.25!important;margin:3px 0!important}
@@ -404,7 +417,7 @@ function readDracoFile(fileName) {
   const root = dracoDirectory();
   const path = resolve(root, fileName);
   if (!DRACO_FILES.includes(basename(path)) || !path.startsWith(root) || !existsSync(path)) {
-    throw new Error(`CALLORIA v3.8.1 cannot find Three.js Draco decoder asset: ${path}`);
+    throw new Error(`CALLORIA v3.8.2 cannot find Three.js Draco decoder asset: ${path}`);
   }
   return readFileSync(path);
 }
@@ -412,7 +425,7 @@ function readDracoFile(fileName) {
 export function calloriaOJTGLBActivationPlugin() {
   let decoderRoot = null;
   return {
-    name: 'calloria-glb-runtime-visibility-v3-8-1',
+    name: 'calloria-glb-runtime-visibility-v3-8-2',
     enforce: 'post',
     configResolved() { decoderRoot = dracoDirectory(); },
     buildStart() {
@@ -420,11 +433,11 @@ export function calloriaOJTGLBActivationPlugin() {
       for (const relativePath of GLB_REQUIRED_ASSETS) {
         const assetPath = resolve(assetRoot, relativePath);
         if (!assetPath.startsWith(assetRoot) || !existsSync(assetPath)) {
-          this.warn(`CALLORIA v3.8.1 required GLB file is missing from public/assets/models: ${relativePath}. It will not be replaced by a procedural placeholder.`);
+          this.warn(`CALLORIA v3.8.2 required GLB file is missing from public/assets/models: ${relativePath}. It will not be replaced by a procedural placeholder.`);
           continue;
         }
         const bytes = readFileSync(assetPath).byteLength;
-        if (bytes < 1024) this.warn(`CALLORIA v3.8.1 GLB file is unexpectedly small (${bytes} bytes): ${relativePath}`);
+        if (bytes < 1024) this.warn(`CALLORIA v3.8.2 GLB file is unexpectedly small (${bytes} bytes): ${relativePath}`);
       }
     },
     configureServer(server) {
@@ -473,5 +486,5 @@ export const __calloriaV37Test = Object.freeze({
   MARKERS, TARGETS, DRACO_FILES, GLB_REQUIRED_ASSETS, OFFER_ACCEPT_PREFIX, SIMULATION_DATE_ANCHOR,
   START_SHIFT_TIME_ANCHOR, START_SHIFT_VIEW_ANCHOR, OPEN_WORK_VIEW_ANCHOR,
   transformStaff, transformOffice, transformAssetLoader, transformWorld, transformMain, rewriteLoaderSetup, ensureImport,
-  transformHtml, FIRST_PERSON_AVATAR, OJT_CODE, MARKERS
+  transformHtml, FIRST_PERSON_AVATAR, OJT_CODE
 });
