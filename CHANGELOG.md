@@ -1,11 +1,20 @@
-# CALLORIA v3.7.0 changelog
+# CALLORIA v3.8.0 — GLB Runtime Visibility & Asset Proof
 
-- Added post-employment on-the-job onboarding for product/service knowledge, CRM logging, experienced-agent shadowing, supervised practice and trainer sign-off.
-- Changed the new-applicant default from Banking Operations to General Customer Experience; preserved the banking specialist track and added cross-industry onboarding packs.
-- Restricted own-desk/live-shift access until OJT sign-off and the existing 07:30/14:00 briefing attendance requirement.
-- Removed the oversized third-person player mesh from the active first-person view while preserving the existing world controller.
-- Added Draco decoding alongside Meshopt in staff, office and shared catalogue GLTF loader paths.
-- Allowed staff GLB files using supported Draco/Meshopt compression through the required-extension gate.
-- Added low-tier standing staff candidates and selected low-tier office GLB objects so phone profiles can use first-party models rather than only local fallback geometry.
-- Added first-party Draco decoder output, required-GLB file warnings, runtime GLB placement diagnostics and compact mobile workplace HUD.
-- Replaced the failing v3.5 build transform registration without relying on the brittle staff-loop-ending anchor.
+## Why this release exists
+
+The 3D floor has been reporting a reassuring local-model status even when the actual GLB callback reports zero placed staff. The current `main.js` says `OPTIMISED LOCAL STAFF MODELS ACTIVE` whenever `result.loaded` is zero. That text does not distinguish locally generated fallback meshes from authored GLB assets.
+
+## Changes
+
+- Replaces the misleading zero-load message with `NO GLB MODELS LOADED · FALLBACKS ONLY`.
+- Normalises the combined staff and office GLB placement counts and publishes a single `calloria:glb-assets-ready` event for the in-world panel.
+- Adds a compact, mobile-sized 3D asset audit panel to the immersive HUD.
+- Shows separately: staff GLB placements, office GLB placements, fallback count, device tier, rejected staff candidates, office load errors and model IDs reported as in use.
+- Displays a clear timeout state when the world never reports GLB readiness.
+- Links to the existing Asset Inspector.
+- Retains the v3.7.2 Draco + Meshopt decoder wiring, low-tier GLB workstation plan, first-person-only avatar adapter and OJT gating.
+- Makes asset count formatting safe against invalid numeric values.
+
+## Scope boundary
+
+This is an observability and truthful-status release. It does not include new binary GLB files, manufacture missing models, alter the model registry, or certify visual quality. The repository's asset-gap report lists desk, computer/monitor, reception desk and headset as existing office GLB categories; it does not list staff character GLBs among those confirmed categories. Actual character and office model placement must be judged from the runtime audit after deployment.

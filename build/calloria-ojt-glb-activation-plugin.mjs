@@ -1,6 +1,6 @@
 /**
- * CALLORIA v3.7.2 — upstream workstation-plan compatibility + first-person player
- * + real GLB/Draco activation. Built against repository main commit aa25c54 and its active v2.9 GLB-first + first-shift/workstation Vite transform chain.
+ * CALLORIA v3.8.0 — GLB runtime visibility + first-person player
+ * + real GLB/Draco activation. Built against the current repository main.js and its active v2.9 GLB-first + v3.7.2 OJT/workstation Vite transform chain.
  *
  * This replaces the brittle v3.5 plugin. It does not patch candidate-load loop
  * endings. It registers the real Three.js Draco and Meshopt decoders, adds
@@ -43,7 +43,7 @@ function count(source, needle) { return source.split(needle).length - 1; }
 function one(context, source, needle, label, { strict = true } = {}) {
   const found = count(source, needle);
   if (found !== 1) {
-    const message = `CALLORIA v3.7.2 expected one ${label} anchor; found ${found}.`;
+    const message = `CALLORIA v3.8.0 expected one ${label} anchor; found ${found}.`;
     if (strict && context?.error) context.error(message);
     return false;
   }
@@ -88,7 +88,7 @@ function transformOffice(context, source) {
   if (!one(context, code, importAnchor, 'office GLTFLoader import') ||
       !one(context, code, setupAnchor, 'office Meshopt decoder setup')) return null;
   if (preferredMatches.length !== 1 || headsetMatches.length !== 1 || receptionMatches.length !== 1) {
-    context.error(`CALLORIA v3.7.2 expected one upstream workstation, headset and reception plan (found ${preferredMatches.length}, ${headsetMatches.length}, ${receptionMatches.length}). Refusing a partial transform.`);
+    context.error(`CALLORIA v3.8.0 expected one upstream workstation, headset and reception plan (found ${preferredMatches.length}, ${headsetMatches.length}, ${receptionMatches.length}). Refusing a partial transform.`);
     return null;
   }
 
@@ -226,27 +226,53 @@ function transformMain(context, source) {
   // Remove the legacy inline startShift call if an upstream version retained it.
   const legacyWorkStartCount = count(code, OPEN_WORK_VIEW_ANCHOR);
   if (legacyWorkStartCount === 1) code = code.replace(OPEN_WORK_VIEW_ANCHOR, '/* shift start handled by the v3.7.2 function-entry guard */');
-  else if (legacyWorkStartCount > 1) context.error('CALLORIA v3.7.2 found multiple legacy 3D shift-start anchors.');
+  else if (legacyWorkStartCount > 1) context.error('CALLORIA v3.8.0 found multiple legacy 3D shift-start anchors.');
   // Retain the established 07:30 and 14:00 briefings as prerequisites.
   const dateHelper = `${SIMULATION_DATE_ANCHOR}\nfunction hasBriefingAttendanceForToday(){\n  const simulatedDate=simulationDateNow();\n  const morningDate=new Date(simulatedDate);morningDate.setHours(7,45,0,0);\n  const afternoonDate=new Date(simulatedDate);afternoonDate.setHours(14,15,0,0);\n  const briefingIds=[briefingFor(morningDate),briefingFor(afternoonDate)].filter(Boolean).map(item=>item.id);\n  return (state.briefingAttendance||[]).some(item=>briefingIds.includes(item.briefingId));\n}`;
   code = code.replace(SIMULATION_DATE_ANCHOR, dateHelper);
-  // Preserve the upstream first-shift GLB-ready callback. It already reports
-  // staff/office counts and emits calloria:glb-assets-ready. Do not re-transform
-  // that callback using the obsolete pre-bridge text anchor.
+  // The current main.js still labels a zero-load result as an optimised local
+  // model mode. Replace that exact callback with truthful counts and a complete
+  // event payload for the in-world GLB audit panel. This is deliberately a
+  // warning-only optional transform so a harmless callback formatting change
+  // cannot break the production build.
+  const legacyAssetStatus = "onAssetsReady:result=>{\n        const label=result.loaded?`${result.loaded} 3D STAFF ASSETS READY`:'OPTIMISED LOCAL STAFF MODELS ACTIVE';\n        const status=$('#assetStatus');if(status)status.textContent=label;\n      },";
+  if (count(code, legacyAssetStatus) === 1) {
+    const truthfulAssetStatus = `onAssetsReady:result=>{
+        const safeCount=value=>Number.isFinite(Number(value))?Math.max(0,Number(value)):0;
+        const staffLoaded=safeCount(result?.staffLoaded ?? result?.loaded ?? 0);
+        const officePlaced=safeCount(result?.officePlaced ?? 0);
+        const failures=(Array.isArray(result?.rejected)?result.rejected.length:0)+(Array.isArray(result?.officeErrors)?result.officeErrors.length:0);
+        const status=$('#assetStatus');
+        if(status)status.textContent=staffLoaded||officePlaced ? 'GLB STAFF: '+staffLoaded+' · OFFICE GLB OBJECTS: '+officePlaced : 'NO GLB MODELS LOADED · FALLBACKS ONLY';
+        window.dispatchEvent(new CustomEvent('calloria:glb-assets-ready',{detail:{...result,staffLoaded,officePlaced,failures}}));
+      },`;
+    code = code.replace(legacyAssetStatus, truthfulAssetStatus);
+  } else {
+    context.warn?.('CALLORIA v3.8 could not find the legacy asset-status callback; the runtime audit panel will remain available but may show no status event.');
+  }
   return { code: `/* ${MARKERS.main} */\n${code}`, map: null };
 }
 
 const HUD_STYLE = `
-/* CALLORIA v3.7.2: prevent tutorial cards and player meshes from obscuring the floor. */
+/* CALLORIA v3.8: truthful GLB status without obscuring first-person gameplay. */
 .calloria-world-mission-v23.calloria-tutorial-card-compact{width:min(220px,calc(100vw - 16px))!important;max-width:min(220px,calc(100vw - 16px))!important;max-height:112px!important;overflow:auto!important;box-sizing:border-box!important;padding:7px!important}
 .calloria-world-mission-v23.calloria-tutorial-card-compact h3{font-size:11px!important;line-height:1.2!important;margin:4px 0!important}
 .calloria-world-mission-v23.calloria-tutorial-card-compact p{font-size:8px!important;line-height:1.25!important;margin:3px 0!important}
 .calloria-world-mission-v23.calloria-tutorial-card-compact .calloria-world-mission-v23__controls{display:none!important}
 #calloriaQuickWorkDock{position:absolute;z-index:43;top:88px;right:10px;width:min(175px,calc(100vw - 20px));box-sizing:border-box;padding:8px;border:1px solid rgba(111,220,200,.5);border-radius:11px;background:rgba(5,22,33,.94);color:#eef8f8;pointer-events:auto}
-#calloriaQuickWorkDock[hidden]{display:none!important}
+#calloriaQuickWorkDock[hidden],#calloriaGlbAudit[hidden]{display:none!important}
 #calloriaQuickWorkDock p{margin:4px 0 7px;color:#d1e0e4;font:500 9px/1.35 system-ui,sans-serif}
 #calloriaQuickWorkButton{display:block;width:100%;min-height:40px;padding:8px;border:0;border-radius:8px;background:#087f7f;color:#fff;font:800 10px/1.2 system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
-@media(max-width:760px){#calloriaQuickWorkDock{top:max(82px,calc(env(safe-area-inset-top) + 64px));right:7px;width:min(158px,calc(100vw - 14px));padding:7px}.calloria-world-mission-v23.calloria-tutorial-card-compact{max-height:94px!important;width:min(198px,calc(100vw - 14px))!important;max-width:min(198px,calc(100vw - 14px))!important}}
+#calloriaGlbAudit{position:absolute;z-index:44;top:10px;left:10px;width:min(250px,calc(100vw - 24px));max-height:min(42vh,300px);overflow:auto;box-sizing:border-box;border:1px solid rgba(255,190,90,.55);border-radius:10px;background:rgba(5,18,29,.94);color:#eef6f8;font:10px/1.35 system-ui,sans-serif;pointer-events:auto}
+#calloriaGlbAudit[open]{border-color:rgba(255,190,90,.8)}
+#calloriaGlbAudit summary{padding:9px 10px;cursor:pointer;font-weight:850;letter-spacing:.04em;list-style-position:inside}
+#calloriaGlbAudit .audit-body{padding:0 10px 10px}
+#calloriaGlbAudit .audit-summary{margin:0 0 6px;color:#e5f6f0;font-weight:750}
+#calloriaGlbAudit .audit-note{margin:4px 0;color:#d5e2e7}
+#calloriaGlbAudit .audit-errors{margin:6px 0 8px;padding-left:17px;color:#ffd7ae;overflow-wrap:anywhere}
+#calloriaGlbAudit .audit-assets{margin:6px 0;color:#a8e7d8;overflow-wrap:anywhere}
+#calloriaGlbAudit a{display:inline-flex;min-height:34px;align-items:center;padding:6px 9px;border-radius:7px;background:#165b64;color:#fff;text-decoration:none;font-weight:800}
+@media(max-width:760px){#calloriaQuickWorkDock{top:max(82px,calc(env(safe-area-inset-top) + 64px));right:7px;width:min(158px,calc(100vw - 14px));padding:7px}.calloria-world-mission-v23.calloria-tutorial-card-compact{max-height:94px!important;width:min(198px,calc(100vw - 14px))!important;max-width:min(198px,calc(100vw - 14px))!important}#calloriaGlbAudit{top:max(8px,env(safe-area-inset-top));left:7px;width:min(210px,calc(100vw - 14px));max-height:34vh}}
 `;
 const HUD_SCRIPT = `
 <script id="${MARKERS.html}">
@@ -255,7 +281,44 @@ const HUD_SCRIPT = `
  const dock=document.createElement('aside');dock.id='calloriaQuickWorkDock';dock.hidden=true;dock.setAttribute('aria-label','Open workplace operations');
  dock.innerHTML='<p>Onboarding first. After trainer sign-off, open your workforce briefing and assigned desk.</p><button id="calloriaQuickWorkButton" type="button">OPEN WORKPLACE DESK</button>';
  hud.append(dock);dock.querySelector('#calloriaQuickWorkButton').addEventListener('click',()=>window.dispatchEvent(new CustomEvent('calloria:guided-open-inbound')));
- const sync=()=>{const immersive=document.body.classList.contains('calloria-game-playing');const panel=document.getElementById('stationPanel');dock.hidden=!immersive||Boolean(panel&&!panel.classList.contains('hidden'));};
+ const audit=document.createElement('details');audit.id='calloriaGlbAudit';audit.hidden=true;audit.setAttribute('aria-live','polite');audit.innerHTML='<summary id="calloriaGlbAuditTitle">3D ASSET STATUS · WAITING</summary><div class="audit-body"><p id="calloriaGlbAuditSummary" class="audit-summary">Waiting for the real GLB loader result.</p><p id="calloriaGlbAuditNote" class="audit-note">This panel distinguishes loaded GLB models from local fallback geometry.</p><p id="calloriaGlbAuditAssets" class="audit-assets"></p><ul id="calloriaGlbAuditErrors" class="audit-errors"></ul><a href="/asset-inspector.html" target="_blank" rel="noopener">OPEN 3D ASSET INSPECTOR</a></div>';
+ hud.append(audit);
+ const title=audit.querySelector('#calloriaGlbAuditTitle');
+ const summary=audit.querySelector('#calloriaGlbAuditSummary');
+ const note=audit.querySelector('#calloriaGlbAuditNote');
+ const assetsNode=audit.querySelector('#calloriaGlbAuditAssets');
+ const errorsNode=audit.querySelector('#calloriaGlbAuditErrors');
+ let received=false;
+ const addLine=(label,message)=>{const li=document.createElement('li');li.textContent=label+': '+message;errorsNode.append(li);};
+ const updateAudit=(detail)=>{
+   received=true;
+   const safeCount=value=>Number.isFinite(Number(value))?Math.max(0,Number(value)):0;
+   const staff=safeCount(detail?.staffLoaded??detail?.loaded??0);
+   const office=safeCount(detail?.officePlaced??0);
+   const fallback=safeCount(detail?.fallback??0);
+   const tier=String(detail?.tier||'unknown').toUpperCase();
+   const rejected=Array.isArray(detail?.rejected)?detail.rejected:[];
+   const officeErrors=Array.isArray(detail?.officeErrors)?detail.officeErrors:[];
+   const failures=rejected.length+officeErrors.length;
+   const good=staff>0||office>0;
+   title.textContent='GLB STAFF '+staff+' · OFFICE OBJECTS '+office+' · '+tier;
+   summary.textContent=good?'REAL GLB MODELS PLACED: '+staff+' staff / '+office+' office objects.':'NO GLB MODELS PLACED — THE VISIBLE FALLBACKS ARE NOT GLB ASSETS.';
+   note.textContent='Local staff/furniture fallbacks remaining: '+fallback+'. Failed or rejected model loads: '+failures+'.';
+   const names=[...(Array.isArray(detail?.assetsInUse)?detail.assetsInUse:[]),...(Array.isArray(detail?.officeAssets)?detail.officeAssets:[])];
+   assetsNode.textContent=names.length?'Models in use: '+[...new Set(names)].join(', '):'';
+   errorsNode.replaceChildren();
+   rejected.forEach(item=>addLine('Staff '+String(item?.id||'unknown'),Array.isArray(item?.reasons)?item.reasons.join('; '):'Rejected without a reason'));
+   officeErrors.forEach(item=>addLine('Office '+String(item?.assetId||'unknown'),String(item?.message||'Load failed')));
+   if(!good&&!failures){
+     const reason=String(detail?.reason||'No compatible GLB placement was reported.');
+     addLine('Diagnostic',reason);
+   }
+   audit.hidden=false;
+   audit.open=!good||failures>0;
+ };
+ window.addEventListener('calloria:glb-assets-ready',event=>updateAudit(event.detail||{}));
+ window.setTimeout(()=>{if(!received){updateAudit({staffLoaded:0,officePlaced:0,tier:'unknown',reason:'The 3D world did not publish a GLB readiness result. Check the browser console and asset paths.'});}},15000);
+ const sync=()=>{const immersive=document.body.classList.contains('calloria-game-playing');const panel=document.getElementById('stationPanel');dock.hidden=!immersive||Boolean(panel&&!panel.classList.contains('hidden'));audit.hidden=!immersive||!received;};
  ['calloria:world-immersive','calloria:game-station-panel-opened','calloria:workstation-resumed'].forEach(type=>window.addEventListener(type,sync));
  new MutationObserver(sync).observe(document.body,{attributes:true,attributeFilter:['class']});
  const compact=()=>{const card=document.querySelector('.calloria-world-mission-v23');if(card)card.classList.add('calloria-tutorial-card-compact');};
@@ -277,7 +340,7 @@ function readDracoFile(fileName) {
   const root = dracoDirectory();
   const path = resolve(root, fileName);
   if (!DRACO_FILES.includes(basename(path)) || !path.startsWith(root) || !existsSync(path)) {
-    throw new Error(`CALLORIA v3.7.2 cannot find Three.js Draco decoder asset: ${path}`);
+    throw new Error(`CALLORIA v3.8.0 cannot find Three.js Draco decoder asset: ${path}`);
   }
   return readFileSync(path);
 }
@@ -285,7 +348,7 @@ function readDracoFile(fileName) {
 export function calloriaOJTGLBActivationPlugin() {
   let decoderRoot = null;
   return {
-    name: 'calloria-ojt-glb-activation-v3-7',
+    name: 'calloria-glb-runtime-visibility-v3-8',
     enforce: 'post',
     configResolved() { decoderRoot = dracoDirectory(); },
     buildStart() {
@@ -293,11 +356,11 @@ export function calloriaOJTGLBActivationPlugin() {
       for (const relativePath of GLB_REQUIRED_ASSETS) {
         const assetPath = resolve(assetRoot, relativePath);
         if (!assetPath.startsWith(assetRoot) || !existsSync(assetPath)) {
-          this.warn(`CALLORIA v3.7.2 required GLB file is missing from public/assets/models: ${relativePath}. It will not be replaced by a procedural placeholder.`);
+          this.warn(`CALLORIA v3.8.0 required GLB file is missing from public/assets/models: ${relativePath}. It will not be replaced by a procedural placeholder.`);
           continue;
         }
         const bytes = readFileSync(assetPath).byteLength;
-        if (bytes < 1024) this.warn(`CALLORIA v3.7.2 GLB file is unexpectedly small (${bytes} bytes): ${relativePath}`);
+        if (bytes < 1024) this.warn(`CALLORIA v3.8.0 GLB file is unexpectedly small (${bytes} bytes): ${relativePath}`);
       }
     },
     configureServer(server) {
@@ -346,5 +409,5 @@ export const __calloriaV37Test = Object.freeze({
   MARKERS, TARGETS, DRACO_FILES, GLB_REQUIRED_ASSETS, OFFER_ACCEPT_PREFIX, SIMULATION_DATE_ANCHOR,
   START_SHIFT_TIME_ANCHOR, START_SHIFT_VIEW_ANCHOR, OPEN_WORK_VIEW_ANCHOR,
   transformStaff, transformOffice, transformAssetLoader, transformWorld, transformMain,
-  transformHtml, FIRST_PERSON_AVATAR, OJT_CODE
+  transformHtml, FIRST_PERSON_AVATAR, OJT_CODE, MARKERS
 });

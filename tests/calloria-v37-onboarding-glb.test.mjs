@@ -101,7 +101,7 @@ test('main transform coexists with first-shift and in-world workstation transfor
     "if(simulatedMinute>=17*60){toast('The scheduled shift has ended for today. Start the next simulated workday.','warning');return;}\n  state.day=state.day||1;",
     "  state.currentView='overview';\n  pushOperationEvent('shift','SHIFT-'+state.day,'Shift started; inbound routing opened.','active');",
     "function open3dWorkView(view){\n  close3dStationPanel();\n  state.currentView=view;\n  saveState();\n  window.dispatchEvent(new CustomEvent('calloria:game-operation-selected'));\n  document.body.classList.add('calloria-game-operation');\n  renderView();\n}",
-    "onAssetsReady:result=>{\n        const staffCount=Math.max(0,Number(result?.staffLoaded??result?.loaded??0));\n        const officeCount=Math.max(0,Number(result?.officePlaced??0));\n        const failureCount=(Array.isArray(result?.officeErrors)?result.officeErrors.length:0)+(Array.isArray(result?.rejected)?result.rejected.length:0);\n        const tier=String(result?.tier||'unknown');\n        const status=$('#assetStatus');\n        if(status)status.textContent=`GLB STAFF: ${staffCount} · OFFICE GLB OBJECTS: ${officeCount}`;\n        window.dispatchEvent(new CustomEvent('calloria:glb-assets-ready',{detail:{staff:staffCount,office:officeCount,failures:failureCount,loading:false,tier}}));\n      },"
+    "onAssetsReady:result=>{\n        const label=result.loaded?`${result.loaded} 3D STAFF ASSETS READY`:'OPTIMISED LOCAL STAFF MODELS ACTIVE';\n        const status=$('#assetStatus');if(status)status.textContent=label;\n      },"
   ].join('\n');
   const output = transform(v37.transformMain, source);
   assert.match(output, /selectedTrack: 'service'/);
@@ -112,6 +112,10 @@ test('main transform coexists with first-shift and in-world workstation transfor
   assert.match(output, /Supervised practice/);
   assert.match(output, /GLB STAFF:.*OFFICE GLB OBJECTS/);
   assert.match(output, /calloria:glb-assets-ready/);
+  assert.match(output, /NO GLB MODELS LOADED · FALLBACKS ONLY/);
+  assert.doesNotMatch(output, /OPTIMISED LOCAL STAFF MODELS ACTIVE/);
+  assert.match(output, /staffLoaded/);
+  assert.match(output, /officePlaced/);
   assert.match(output, /Attend the 07:30 morning or 14:00 afternoon operations briefing/);
   assert.match(output, /Complete product and service knowledge first/);
   assert.match(output, /calloriaOJTRequired\(\)/);
@@ -142,6 +146,9 @@ test('HTML HUD compacting is injected only once and retains a direct route to th
   const output = plugin.transformIndexHtml(html);
   assert.match(output, /calloriaQuickWorkDock/);
   assert.match(output, /calloria:guided-open-inbound/);
+  assert.match(output, /calloriaGlbAudit/);
+  assert.match(output, /NO GLB MODELS PLACED/);
+  assert.match(output, /asset-inspector\.html/);
   assert.equal(plugin.transformIndexHtml(output), output);
 });
 

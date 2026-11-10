@@ -1,25 +1,23 @@
-# CALLORIA v3.7.2 verification
+# CALLORIA v3.8.0 verification report
 
-## Checks run in the patch workspace
+## Checks completed in the patch workspace
 
 - `node --check build/calloria-ojt-glb-activation-plugin.mjs`: passed.
-- `node --test tests/calloria-v37-onboarding-glb.test.mjs`: **10 passed, 0 failed**.
+- `node --check tests/calloria-v37-onboarding-glb.test.mjs`: passed.
+- `node --test tests/calloria-v37-onboarding-glb.test.mjs`: 10 passed, 0 failed.
 - ZIP integrity: checked after packaging.
 
-## Regression coverage
-
-- Office loader receives Draco while retaining Meshopt.
-- The office transform accepts the expanded v2.9 plan produced by the earlier `enforce: "pre"` plugin.
-- The office transform also accepts the original plan shape.
-- The upstream station and headset selections remain unchanged.
-- Existing staff-loader, shared asset-loader, low-tier staff placement, first-person, OJT, briefing and HTML HUD checks remain present.
+The focused suite covers Draco + Meshopt setup, original and expanded office device-tier plans, shared asset loader setup, low-tier staff targets, first-person avatar replacement, current main.js callback rewriting from the legacy zero-load label, OJT/briefing gates, and one-time HUD injection.
 
 ## Not verified
 
-- Full repository `npm test` (the complete repository checkout is not present in this patch workspace).
-- Full Vite production build against the user's exact GitHub checkout.
+- Full repository `npm test`.
+- Full Vite production build.
 - Vercel deployment.
-- Browser network loading/rendering of each GLB, skeleton deformation or animation.
-- Android visual inspection and device performance.
+- Browser console/runtime behaviour.
+- Any GLB file's actual visual appearance, skeleton, animation, material quality, scale, or placement on the floor.
+- Physical Android/iOS rendering and performance.
 
-This patch fixes the exact anchor mismatch from the supplied Vercel log. It does not claim that the complete application build or runtime GLB rendering is now verified.
+## Release interpretation
+
+This patch fixes the false-success message and adds runtime evidence. It does not supply missing GLB binaries and cannot claim that any GLB model is now in use until the runtime panel reports successful placement counts greater than zero.

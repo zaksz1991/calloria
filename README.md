@@ -1,14 +1,28 @@
-# CALLORIA v3.7.2 — Office-plan anchor repair
+# CALLORIA v3.8.0 — GLB Runtime Visibility
 
-This is a narrow repair for the Vercel failure on commit `aa25c54`.
+A small, non-destructive overlay for the current v3.7.2 repository state.
 
-The v2.9 GLB-first Vite plugin intentionally expands the office GLB coverage plan in an `enforce: "pre"` transform. The v3.7 OJT/Draco plugin runs later and was incorrectly requiring the earlier pre-expansion string literals. v3.7.2 accepts both valid plan shapes and preserves the upstream plan unchanged while attaching Draco decoding to the office loader.
+### What changes in game
 
-## Files
+When entering the 3D floor, the user can open a compact `3D ASSET STATUS` panel. It reports actual GLB placements separately from local fallback geometry. A zero count is explicitly shown as `NO GLB MODELS PLACED — THE VISIBLE FALLBACKS ARE NOT GLB ASSETS.` Rejected staff models and office load failures are listed with their reported reasons.
 
-- `build/calloria-ojt-glb-activation-plugin.mjs` — complete replacement.
-- `tests/calloria-v37-onboarding-glb.test.mjs` — complete replacement, including regression coverage for both transformed and untransformed plan shapes.
+This makes it possible to distinguish:
+- a model listed in the registry;
+- a binary that exists in the repository;
+- a GLB that successfully loaded;
+- an asset that was actually placed in the scene;
+- a local fallback object.
 
-The unchanged `build/calloria-ojt-runtime.js` is included only so the focused test file can import the plugin in isolation; do not copy or replace it during installation. The patch does not change the OJT runtime, `vite.config.js`, `package.json`, `main.js`, `index.html`, GLB registry or model files.
+These are different states. Registry entries and decoder registration alone do not prove that a model was rendered.
 
-See `INSTALL-GITHUB.md` and `VERIFICATION.md`.
+### What this release does not do
+
+It does not add or replace any `.glb` binary. If the runtime panel reports zero characters, the missing step is still the actual approved character asset or the reason the candidate was rejected. If it reports zero office placements, inspect the specific missing path, decoding, CORS, bounds or placement error before changing the geometry.
+
+### Preserved product scope
+
+Recruitment remains the employment entry gate. Product/service knowledge, CRM/logging practice, agent shadowing, supervised practice and trainer sign-off remain prerequisites before an independent desk is allocated. The main game remains multi-industry customer operations and career progression, not a bank-only training quiz.
+
+### Verification boundary
+
+See `VERIFICATION.md`. Unit/syntax checks do not establish a passing full Vite build, deployed runtime, or successful GLB rendering.
