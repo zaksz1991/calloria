@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101b2b">
+  <title>CALLORIA · Customer 360 & Case Management</title>
+  <link rel="stylesheet" href="/customer-journey.css">
+  <script defer src="/customer-journey-engine.js"></script>
+  <script defer src="/customer-journey.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup"><div class="brand-mark">C</div><div><div class="brand-name">CALLORIA</div><div class="brand-subtitle">CUSTOMER OPERATIONS</div></div></div>
+      <div class="topbar-right"><span class="environment-pill"><i></i> DEMONSTRATION DATA</span><span class="version-label">CUSTOMER 360 · v5.4</span></div>
+    </header>
+    <div class="workspace">
+      <aside class="sidebar">
+        <div class="sidebar-label">WORKSPACE</div>
+        <button class="nav-button active" data-view="queue"><span>▤</span> Case queue <b id="nav-active-count">0</b></button>
+        <button class="nav-button" data-view="customers"><span>◎</span> Customer 360</button>
+        <button class="nav-button" data-view="create"><span>＋</span> Create case</button>
+        <button class="nav-button" data-view="reports"><span>▥</span> Service reports</button>
+        <div class="sidebar-foot"><div class="side-foot-title">OPERATIONS MODULE</div><p>Customer records, contact history and service cases in one working view.</p><span class="local-badge">LOCAL BROWSER STORAGE</span></div>
+      </aside>
+      <main class="main-content">
+        <section class="page-view active" id="view-queue">
+          <div class="page-heading"><div><div class="eyebrow">CUSTOMER OPERATIONS / CASE MANAGEMENT</div><h1>Case queue</h1><p>Prioritise customer work, maintain ownership and protect response commitments.</p></div><button class="button primary" data-go="create">＋ New case</button></div>
+          <div class="metric-grid" id="metric-grid"></div>
+          <div class="queue-layout">
+            <section class="panel queue-panel">
+              <div class="panel-heading"><div><h2>All service cases</h2><p>Priority-ranked working queue</p></div><span class="panel-count" id="queue-count">0 cases</span></div>
+              <div class="filter-row"><input id="case-search" class="field search-field" type="search" placeholder="Search case, customer, owner…" aria-label="Search cases"><select id="filter-status" class="field"><option value="">All statuses</option><option>New</option><option>Open</option><option>Pending Customer</option><option>Pending Internal</option><option>Resolved</option><option>Closed</option></select><select id="filter-priority" class="field"><option value="">All priorities</option><option>P1 - Urgent</option><option>P2 - High</option><option>P3 - Normal</option><option>P4 - Low</option></select></div>
+              <div id="case-list" class="case-list" aria-live="polite"></div>
+            </section>
+            <section class="panel detail-panel" id="case-detail"><div class="empty-state"><div class="empty-icon">▤</div><h3>Select a case</h3><p>Choose a case from the queue to review its customer, SLA, ownership and timeline.</p></div></section>
+          </div>
+        </section>
+
+        <section class="page-view" id="view-customers">
+          <div class="page-heading"><div><div class="eyebrow">CUSTOMER OPERATIONS / CUSTOMER RECORDS</div><h1>Customer 360</h1><p>Review service preferences, linked products, open cases and contact history.</p></div><div class="heading-actions"><button class="button secondary" id="open-customer-modal">＋ Add customer</button><button class="button primary" data-go="create">＋ New case</button></div></div>
+          <div class="customer-layout">
+            <section class="panel customer-directory"><div class="panel-heading"><div><h2>Customer directory</h2><p>Search by name, reference or contact detail</p></div><span class="panel-count" id="customer-count">0 profiles</span></div><input id="customer-search" class="field full-field" type="search" placeholder="Find a customer…" aria-label="Search customers"><div id="customer-list" class="customer-list"></div></section>
+            <section class="panel customer-profile" id="customer-profile"><div class="empty-state"><div class="empty-icon">◎</div><h3>Select a customer</h3><p>Customer cases and interaction history will appear here.</p></div></section>
+          </div>
+        </section>
+
+        <section class="page-view" id="view-create">
+          <div class="page-heading"><div><div class="eyebrow">CUSTOMER OPERATIONS / INTAKE</div><h1>Create a service case</h1><p>Capture the customer need once, assign ownership and set the response target.</p></div><button class="button secondary" data-go="queue">Back to queue</button></div>
+          <div class="form-layout">
+            <form id="create-case-form" class="panel form-panel">
+              <div class="panel-heading"><div><h2>Case details</h2><p>Fields marked required must be completed.</p></div><span class="required-label">* REQUIRED</span></div>
+              <div class="form-grid">
+                <label class="form-field span-2"><span>Customer profile *</span><select id="create-customer" class="field" required></select></label>
+                <label class="form-field span-2"><span>Case subject *</span><input class="field" name="subject" required minlength="5" maxlength="160" placeholder="Describe the reason for contact"></label>
+                <label class="form-field span-2"><span>Issue summary *</span><textarea class="field" name="description" required minlength="20" rows="4" placeholder="Record the customer's stated need, relevant facts and impact."></textarea></label>
+                <label class="form-field"><span>Product / service *</span><select class="field" name="productId" required></select></label>
+                <label class="form-field"><span>Category *</span><select class="field" name="category" required></select></label>
+                <label class="form-field"><span>Priority *</span><select class="field" name="priority" required></select></label>
+                <label class="form-field"><span>Contact channel *</span><select class="field" name="channel" required></select></label>
+                <label class="form-field"><span>Assigned owner</span><input class="field" name="owner" placeholder="Unassigned"></label>
+                <label class="form-field"><span>Team / queue</span><input class="field" name="team" value="Customer Care"></label>
+                <label class="form-field span-2"><span>Tags (comma-separated)</span><input class="field" name="tags" placeholder="e.g. repeat contact, access"></label>
+              </div>
+              <div class="form-actions"><button class="button primary" type="submit">Create case</button><span id="create-feedback" class="form-feedback" role="status"></span></div>
+            </form>
+            <aside class="panel bridge-panel"><div class="eyebrow">CONNECTED MODULES</div><h2>Existing service incident</h2><p>Open incidents from v5.3 can be linked to a customer-impact case. This reads the incident register; it does not alter the incident.</p><label class="form-field"><span>Available incidents</span><select id="incident-select" class="field"><option value="">Checking local incident register…</option></select></label><label class="form-field"><span>Customer to anchor the case</span><select id="incident-customer" class="field"></select></label><label class="form-field"><span>Case owner</span><input id="incident-owner" class="field" value="Service Recovery Queue"></label><button class="button secondary full-button" id="create-incident-case" type="button">Create linked incident case</button><div id="incident-feedback" class="form-feedback" role="status"></div><div class="bridge-divider"></div><div class="bridge-stat"><strong id="incident-bridge-count">0</strong><span>open incidents found</span></div><p class="small-note">Incident import is read-only. The linked case is a separate customer-care record.</p></aside>
+          </div>
+        </section>
+
+        <section class="page-view" id="view-reports">
+          <div class="page-heading"><div><div class="eyebrow">CUSTOMER OPERATIONS / SERVICE ANALYSIS</div><h1>Service reports</h1><p>Review the current case portfolio and export the working register.</p></div><button class="button primary" id="export-cases">↓ Export case register</button></div>
+          <div class="report-grid" id="report-grid"></div>
+          <div class="report-lower"><section class="panel"><div class="panel-heading"><div><h2>Cases by product</h2><p>Current local demonstration records</p></div></div><div id="product-breakdown" class="breakdown-list"></div></section><section class="panel"><div class="panel-heading"><div><h2>Recent operations activity</h2><p>Latest customer and case changes</p></div></div><div id="activity-list" class="activity-list"></div></section></div>
+        </section>
+        <dialog class="customer-dialog" id="customer-dialog">
+          <form id="create-customer-form" method="dialog" class="dialog-form">
+            <div class="panel-heading"><div><h2>Add customer profile</h2><p>Use authorised, minimum-necessary contact details.</p></div><button class="icon-button" type="button" id="close-customer-modal" aria-label="Close">×</button></div>
+            <div class="form-grid">
+              <label class="form-field"><span>First name *</span><input class="field" name="firstName" required minlength="2"></label>
+              <label class="form-field"><span>Last name *</span><input class="field" name="lastName" required minlength="2"></label>
+              <label class="form-field span-2"><span>Email</span><input class="field" name="email" type="email"></label>
+              <label class="form-field"><span>Phone</span><input class="field" name="phone" type="tel"></label>
+              <label class="form-field"><span>Preferred channel</span><select class="field" name="preferredChannel"></select></label>
+              <label class="form-field"><span>Preferred name</span><input class="field" name="preferredName"></label>
+              <label class="form-field"><span>Customer segment</span><input class="field" name="segment" value="General"></label>
+              <label class="form-field span-2"><span>Linked services</span><select class="field" name="services" multiple size="4"></select></label>
+              <label class="consent-row span-2"><input type="checkbox" name="consentEmail"> Customer has consented to email communications</label>
+              <label class="consent-row span-2"><input type="checkbox" name="consentSms"> Customer has consented to SMS communications</label>
+              <label class="consent-row span-2"><input type="checkbox" name="consentMarketing"> Customer has separately consented to marketing</label>
+            </div>
+            <div class="form-actions"><button class="button primary" type="submit">Save customer</button><span id="customer-create-feedback" class="form-feedback" role="status"></span></div>
+          </form>
+        </dialog>
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        <footer class="page-footer">CALLORIA CUSTOMER OPERATIONS · v5.4 · DEMONSTRATION RECORDS ONLY</footer>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

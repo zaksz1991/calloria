@@ -1,14 +1,20 @@
-# Changelog
+# Changelog — CALLORIA v5.4
 
-## v5.3.0 — Service Reliability & Incident Control
+## Added
+- Customer 360 directory, customer profile creation and duplicate-contact checks.
+- Customer service preferences, linked products, separately recorded contact permissions and internal notes.
+- Cross-channel customer case intake, assignment, priority, team and category controls.
+- Priority-based response target clocks with customer-wait pause accounting.
+- Enforced case status transitions, resolution requirements, closure task gate and controlled reopening.
+- Interaction history and owned follow-up tasks.
+- Unified customer journey timeline and case search/filter.
+- Read-only bridges to published v5.2 knowledge and open v5.3 reliability incidents.
+- Customer-impact case creation from an existing reliability incident.
+- Product workload reporting and CSV register export with spreadsheet formula neutralisation.
+- Responsive standalone page and synthetic starter records.
 
-- Added incident intake, severity assignment, incident ownership and controlled lifecycle transitions.
-- Added acknowledgement and customer-update clocks by severity.
-- Added customer-facing, internal operations and leadership update records.
-- Added evidence timeline, owned follow-up tasks and task completion.
-- Added resolution summary and post-incident review requirements before closure.
-- Added planned maintenance schedule and progress control.
-- Added a read-only view of published Knowledge Operations v5.2 notices.
-- Added explicit incident-to-v5.2 draft notice hand-off with duplicate prevention.
-- Added three synthetic practice incident scenarios and CSV export.
-- Added responsive page layout and local storage persistence.
+## Not included
+- No central backend or multi-user data synchronization.
+- No live messaging, telephony, customer notifications or external API operations.
+- No alteration of v5.2 knowledge articles or v5.3 incident records.
+- No modification of the existing CALLORIA Vite configuration or core agent/game files.
