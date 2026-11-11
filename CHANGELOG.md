@@ -1,19 +1,20 @@
-# Changelog — CALLORIA v5.0
+# Changelog — CALLORIA v5.1
 
-## People Operations & Employee Lifecycle
+## Learning & Competency Academy
 
-- Added an employee master register with editable work and organisational records.
-- Added leave entitlements, weekday duration calculation, overlap guards, pending reservations and approval decisions.
-- Added attendance logging with duplicate-day protection and bounded time exceptions.
-- Added probation confirmation, extension and exit-referral workflow with evidence-note requirement.
-- Added employee relations cases, review states and mandatory closure outcomes.
-- Added approval-gated internal transfer proposals and effective-date application.
-- Added offboarding checklist and exit-state guard requiring all controls and the last working date.
-- Added dashboard metrics, HR action queue, activity feed and CSV exports.
-- Added explicit one-way employee snapshot import from Performance & Career v4.9.
-- Added cross-links to v4.7 Supervisor QA, v4.8 Workforce Control and v4.9 Performance & Career pages.
-- Preserved the existing application entry points and project configuration by delivering this as a public-folder overlay.
+- Added a role-aware course catalogue with 11 core, channel, specialist and leadership learning modules.
+- Added individual and department course assignments, due dates and duplicate-assignment protection.
+- Added structured lessons and a gated knowledge assessment with an 80% pass mark.
+- Added failed-attempt state, explicit retake workflow and attempt tracking.
+- Added internal course certification and 365-day renewal/expiry tracking.
+- Added course-linked competency evidence for each mapped skill.
+- Added manager/trainer competency assessment with evidence and assessor requirements.
+- Added a latest-outcome skill matrix for each employee.
+- Added 7:30 AM and 2:00 PM daily briefing schedule and attendance registers.
+- Added dashboard, overdue queue, team learning metrics, activity history and CSV export.
+- Added one-way employee snapshot integration with People Operations v5.0.
+- Preserved existing CALLORIA application entry points and configuration by shipping this as an additive public-folder overlay.
 
 ## Known limits
 
-Local browser storage only; synthetic employee records; no authentication, server persistence, payroll, statutory rules engine, live time-clock feed, legal determination, or multi-user synchronisation. See README.md.
+Browser-local demo storage; synthetic employee/course content; no central multi-user LMS, authentication, accredited qualification, automatic shift/briefing integration, calendar notifications or external learning platform protocol. See README.md.

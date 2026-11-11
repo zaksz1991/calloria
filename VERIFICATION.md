@@ -1,21 +1,24 @@
-# Verification — CALLORIA v5.0
+# Verification — CALLORIA v5.1
 
 ## Passed
 
-- `node --check public/people-operations-engine.js`
-- `node --check public/people-operations.js`
-- Focused Node test suite: **36 passed, 0 failed**.
-- Static HTML/JavaScript binding check: 100 unique HTML IDs, no missing DOM references, no duplicate IDs.
-- ZIP archive integrity check: passed.
+- `node --check public/learning-academy-engine.js`
+- `node --check public/learning-academy.js`
+- Focused Node test suite: **37 passed, 0 failed**.
+- Course/skill catalogue integrity: unique identifiers, valid skill mappings and expected lesson/quiz coverage.
+- Workflow tests: employee import, role-aware assignment, duplicate controls, lesson completion, locked assessments, scoring, explicit retakes, certification dates, competency evidence, briefing slots and attendance rules.
+- CSV escaping and local-storage recovery tests.
+- HTML shell ID uniqueness and page/form/navigation binding checks.
+- ZIP archive integrity check: see release packaging validation.
 
 ## Not performed
 
 - Full CALLORIA repository test suite.
 - Full Vite production build.
 - Vercel deployment or production route verification.
-- End-to-end browser rendering. A local headless Chromium run could not complete in this environment.
-- Integration with a live authenticated employee database or live v4.9 browser storage.
+- Successful browser end-to-end or screenshot verification. Headless Chromium stalled in this environment before completing the render, so browser rendering is not claimed as verified.
+- Live authenticated employee database, HR role permissions, cross-device synchronisation or actual email/calendar/telephony integration.
 
-## Test coverage
+## Important interpretation
 
-Employee creation/edit validation, duplicate IDs/emails, probation date requirements, weekday leave calculations, balance reservations, overlapping leave, leave decisions, attendance duplicate protection, probation outcomes, case documentation/closure, transfer approvals/effective dates/stale transfer holds, offboarding completion guards, v4.9 snapshot import contract, dashboard metrics, persistence recovery, CSV escaping, and HTML selector integrity.
+The 35 passing tests cover the v5.1 engine and static page contracts only. They do not imply that the overlay has been merged into the CALLORIA repository, built by Vite, deployed to Vercel or tested against live application data.

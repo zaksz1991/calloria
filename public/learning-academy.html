@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10233f">
+  <meta name="description" content="CALLORIA Learning and Competency Academy">
+  <title>Learning & Competency Academy | CALLORIA</title>
+  <link rel="stylesheet" href="/learning-academy.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="CALLORIA home"><span class="brand-mark">C</span><span><strong>CALLORIA</strong><small>PEOPLE DEVELOPMENT</small></span></a>
+    <div class="topbar-right">
+      <label class="employee-switcher">Working employee <select id="employee-select" aria-label="Select employee"></select></label>
+      <button class="button button-quiet" id="import-people" type="button">Import v5.0 employees</button>
+    </div>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="side-caption">LEARNING OPERATIONS</div>
+      <nav class="side-nav" aria-label="Learning workspace">
+        <button type="button" class="nav-item active" data-view="dashboard"><span class="nav-icon">▦</span>Overview</button>
+        <button type="button" class="nav-item" data-view="courses"><span class="nav-icon">▤</span>Course catalogue</button>
+        <button type="button" class="nav-item" data-view="learning"><span class="nav-icon">◷</span>Learning records</button>
+        <button type="button" class="nav-item" data-view="competencies"><span class="nav-icon">◇</span>Competency matrix</button>
+        <button type="button" class="nav-item" data-view="briefings"><span class="nav-icon">◫</span>Team briefings</button>
+      </nav>
+      <div class="sidebar-note"><strong>Operating rhythm</strong><span>Morning briefing · 7:30 AM</span><span>Afternoon briefing · 2:00 PM</span><small>Briefing attendance is recorded separately from course completion.</small></div>
+      <div class="side-links"><a href="/people-operations.html">People Operations v5.0 ↗</a><a href="/performance-career.html">Performance & Career v4.9 ↗</a><a href="/supervisor-qa.html">Supervisor & QA v4.7 ↗</a></div>
+    </aside>
+
+    <main class="main-content">
+      <section class="page-heading">
+        <div><div class="eyebrow">CALLORIA · PEOPLE DEVELOPMENT</div><h1 id="page-title">Learning overview</h1><p id="page-subtitle">Training assignments, practical competencies and service briefings.</p></div>
+        <div class="heading-actions"><button class="button button-outline" id="export-report" type="button">Export training report</button></div>
+      </section>
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+      <section id="metrics" class="metrics-grid" aria-label="Learning metrics"></section>
+      <section id="workspace" aria-live="polite"></section>
+      <footer class="app-footer"><span>CALLORIA Learning & Competency Academy · v5.1</span><span>Demonstration workspace · browser-local records</span></footer>
+    </main>
+  </div>
+
+  <script src="/learning-academy-engine.js"></script>
+  <script src="/learning-academy.js"></script>
+</body>
+</html>
