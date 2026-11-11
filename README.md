@@ -1,58 +1,38 @@
-# CALLORIA v4.5.0 — Outbound Campaign Operations
+# CALLORIA v4.6.0 — Multichannel Operations Workbench
 
 ## Purpose
+Adds a browser-based, persistent simulated workbench for voice, email and live chat operations. It advances the product beyond recruitment and assessment into daily agent work. It is an additive module; it does not replace the existing CALLORIA application or claim to complete the full v0.2/v4.x roadmap.
 
-This release advances the post-onboarding working experience from pre-written outbound answer choices to an interactive, multi-turn campaign conversation. It is a simulation of employee work inside a contact centre; it does not call real telephone numbers or connect to an external dialler.
+## Install
+Copy these files into the repository without replacing existing files:
+- `public/multichannel-operations.html`
+- `public/multichannel-operations.css`
+- `public/multichannel-operations.js`
+- `tests/multichannel-operations-v46.test.mjs`
 
-## Player workflow
+Because the existing Vite configuration uses `publicDir: 'public'`, the page is served at `/multichannel-operations.html` after deployment. No Vite config, package manifest, `main.js`, OJT runtime, GLB integration or existing application files are changed.
 
-1. Complete recruitment, the full OJT path, trainer sign-off, workstation allocation and the required shift/briefing gate.
-2. Open Outbound during an active shift while the agent status is Available.
-3. Select an enabled synthetic campaign contact. Existing suppression rules and already-completed campaign attempts remain enforced.
-4. The customer opens the conversation. The agent must identify themselves, state the specific reason for contact and ask whether it is a convenient time.
-5. The customer reacts to a deterministic preference: open to a brief conversation, busy, callback requested, not interested, or do-not-contact.
-6. The agent types responses in their own words. The dialogue checks transparency, permission, empathy, factual clarity and next-step handling.
-7. A busy customer can be routed to an agreed callback; a decline is recorded without continuing the pitch; a do-not-contact request is added immediately to the suppression register.
-8. Complete after-contact work. The existing wrap-up controls validate factual notes and disposition, schedule a future callback and save CRM/campaign records.
-9. Due callbacks can be resumed only after their due time and while the employee is available during the working shift.
+## Gameplay
+1. Open the multichannel operations page and start a simulated shift.
+2. Select Voice, Email or Live chat.
+3. Select a queued synthetic customer contact.
+4. Review the customer context and prior interaction history.
+5. Write a response; the deterministic customer simulation responds.
+6. Request supervisor assistance when needed.
+7. Complete after-contact work; the interaction transcript and QA estimate are stored locally.
 
-## What is included
+The module seeds six fictional contacts across three channels. Records persist in browser local storage under `calloria.multichannel.v46`.
 
-- Conversational outbound campaign UI replacing the legacy multiple-choice outbound contact screen.
-- Deterministic synthetic customer preference and persona responses.
-- Identity, campaign-purpose and time-permission checks.
-- Respectful decline, callback-request and do-not-contact outcomes.
-- Immediate persistence of an opt-out into the existing suppression register, including if the agent ends the active interaction before wrap-up.
-- Existing callback scheduling and due-callback resumption retained.
-- Campaign attempt dashboard, attempt history, suppression register and callback workload summary.
-- Supervisor assistance request and customer voice playback action.
-- Transcript, preference, QA scorecard and compliance evidence saved to the existing CRM case and outbound attempt records.
-- Product-offer sales credit is granted only when the synthetic customer explicitly accepts after receiving the terms; merely completing a product-offer conversation does not count as a sale.
-- Unresolved conversations can be dispositioned as review required and create a supervisor follow-up record rather than being silently counted as completed.
-- Responsive mobile interaction layout.
+## Scope and limitations
+- Voice is a text-based call transcript simulation, not actual audio/telephony.
+- Email and live chat are simulated; no real messages are sent.
+- The module uses local browser storage only. It is not multi-user, cloud-synchronised or connected to the existing central CRM database.
+- QA score is a lightweight simulation estimate, not a validated quality model.
+- Supervisor requests are recorded on the interaction; there is no live supervisor console bridge in this additive module.
+- No GLB, 3D scene, recruitment, OJT, employment or career files are modified.
 
-## Industry scope
-
-The existing campaign catalogue is reused. This plugin does not convert CALLORIA into a bank-only simulator. General customer experience and the existing multi-industry packs remain the product foundation; banking is one optional industry.
-
-## Safety and simulation boundaries
-
-- All customers and campaigns remain fictional synthetic data.
-- No real telephone call is placed; no real phone number, contact list or external dialler is accessed.
-- The game does not claim that a synthetic campaign template has legal consent for real-world marketing. A real deployment would require organisation-approved purpose, lawful contact basis, time-window rules, frequency limits, jurisdictional controls and verified suppression data.
-- The engine flags solicitation of PINs/passwords/OTPs, unverified campaign claims and coercive pressure.
-- Customer opt-out is added to the suppression register immediately, not only when an agent eventually saves wrap-up.
-- Outbound interactions remain separate from recruitment and OJT assessment records.
-
-## Files
-
-- `vite.config.js` — complete merged Vite configuration based on the v4.4 package; registers v4.5 after the existing v4.4 post-transform.
-- `build/calloria-outbound-campaign-v4-5-plugin.mjs` — fail-safe Vite transform for the outbound workbench and CRM evidence bridge.
-- `js/outbound-campaign-engine.js` — deterministic outbound conversation and compliance engine.
-- `tests/outbound-campaign-engine-v45.test.mjs` — engine regression tests.
-- `tests/calloria-v45-outbound-plugin.test.mjs` — integration, anchor, idempotency and transformed-source syntax tests.
-- `INSTALL-GITHUB.md`, `CHANGELOG.md`, `VERIFICATION.md`.
-
-## Compatibility basis and limitation
-
-This overlay targets the exact source shape documented by the v4.4 package, which was prepared against repository commit `74e0582`. It expects the v4.4 inbound conversation plugin and its import to be present. It checks all required anchors before transforming and skips safely with a warning if they do not match. It is not a full project ZIP and must not be installed as a replacement for the repository.
+## Verification
+- `node --check public/multichannel-operations.js` — passed.
+- `node --test tests/multichannel-operations-v46.test.mjs` — 4 passed, 0 failed.
+- Full repository tests and Vite production build — not run; the complete repository was not available in this task.
+- Vercel deployment and browser visual testing — not performed.

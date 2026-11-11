@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+import path from 'node:path';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+test('standalone multichannel workbench exposes voice, email and live chat queues',async()=>{const html=await readFile(path.join(root,'public/multichannel-operations.html'),'utf8');for(const x of ['data-channel="voice"','data-channel="email"','data-channel="chat"','customerContext','replyForm'])assert.ok(html.includes(x),x)});
+test('workbench persists operational records and separates channels',async()=>{const js=await readFile(path.join(root,'public/multichannel-operations.js'),'utf8');for(const x of ['localStorage','calloria.multichannel.v46','channel','state.handled.push','state.qa.push','supervisorRequested'])assert.ok(js.includes(x),x)});
+test('customer replies are escaped before rendering',async()=>{const js=await readFile(path.join(root,'public/multichannel-operations.js'),'utf8');assert.match(js,/function esc\(s\)/);assert.ok(js.includes('esc(m.text)'))});
+test('no external messaging or telephony integration is invoked',async()=>{const js=await readFile(path.join(root,'public/multichannel-operations.js'),'utf8');assert.doesNotMatch(js,/fetch\s*\(|WebSocket\s*\(|RTCPeerConnection\s*\(/)});
