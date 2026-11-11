@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1422">
+  <meta name="description" content="CALLORIA employee performance, promotion examinations and career progression.">
+  <title>Performance & Career | CALLORIA</title>
+  <link rel="stylesheet" href="/performance-career.css">
+  <script src="/performance-career-engine.js" defer></script>
+  <script src="/performance-career.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="/" aria-label="CALLORIA home"><span class="brand-symbol">C</span><span><strong>CALLORIA</strong><small>PEOPLE & PERFORMANCE</small></span></a>
+      <div class="nav-caption">PEOPLE OPERATIONS</div>
+      <nav class="side-nav" aria-label="Performance sections">
+        <button class="nav-link active" data-view="overview"><span class="nav-icon">◫</span>Overview</button>
+        <button class="nav-link" data-view="scorecards"><span class="nav-icon">▤</span>Staff scorecards<span class="nav-count" id="nav-staff-count">10</span></button>
+        <button class="nav-link" data-view="promotions"><span class="nav-icon">↗</span>Promotion centre<span class="nav-count alert" id="nav-promotion-count">—</span></button>
+        <button class="nav-link" data-view="departments"><span class="nav-icon">▦</span>Departments</button>
+        <button class="nav-link" data-view="framework"><span class="nav-icon">⌁</span>Career framework</button>
+      </nav>
+      <div class="sidebar-note"><span class="note-dot"></span><div><b>Performance workspace</b><small>Local demonstration records</small></div></div>
+      <div class="side-bottom"><div class="avatar">HR</div><div><b>People Operations</b><small>Performance & progression</small></div></div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="top-left"><button class="mobile-menu" id="mobile-menu" aria-label="Open navigation">☰</button><div class="crumb">CALLORIA <span>/</span> <b>PERFORMANCE & CAREER</b></div></div>
+        <div class="top-actions"><span class="environment"><i></i> DEMO ENVIRONMENT</span><label class="date-top">CYCLE DATE <input id="cycle-date" type="date" aria-label="Performance cycle date"></label></div>
+      </header>
+
+      <div class="content">
+        <section class="view active" id="view-overview">
+          <div class="page-heading"><div><div class="eyebrow">PEOPLE OPERATIONS / KPI & PROGRESSION</div><h1>Performance command</h1><p>Review service outcomes, identify development needs and manage fair annual promotion decisions.</p></div><div class="heading-tools"><span class="date-display" id="cycle-label">2026 PERFORMANCE CYCLE</span><button class="button secondary" id="sync-qa">Sync supervisor QA evidence</button><button class="button primary" data-go="scorecards">Open scorecards <span>→</span></button></div></div>
+          <div class="metric-grid">
+            <article class="metric-card"><div class="metric-label">ACTIVE HEADCOUNT <span class="metric-icon blue">▦</span></div><strong id="metric-headcount">—</strong><small>Staff on active employment status</small></article>
+            <article class="metric-card"><div class="metric-label">AVERAGE KPI <span class="metric-icon cyan">◈</span></div><strong id="metric-average">—</strong><small>Weighted current-year score</small></article>
+            <article class="metric-card"><div class="metric-label">PROMOTION ELIGIBLE <span class="metric-icon purple">↗</span></div><strong id="metric-eligible">—</strong><small>Meets tenure, KPI and exam-entry gates</small></article>
+            <article class="metric-card"><div class="metric-label">FRONTLINE DUTY COMPLIANCE <span class="metric-icon orange">◎</span></div><strong id="metric-care">—</strong><small id="metric-care-foot">Across all reviewed departments</small></article>
+          </div>
+          <div class="overview-grid">
+            <article class="panel leaderboard-panel"><div class="panel-heading"><div><h2>Performance leaders</h2><p>Highest weighted KPI scores for the selected cycle year</p></div><span class="tag cyan-tag">TOP PERFORMERS</span></div><div id="leaderboard" class="leaderboard"></div></article>
+            <article class="panel attention-panel"><div class="panel-heading"><div><h2>Performance attention</h2><p>Staff requiring targeted manager action</p></div><span class="tag alert-tag" id="attention-count">0 OPEN</span></div><div id="attention-list" class="attention-list"></div></article>
+          </div>
+          <div class="overview-bottom">
+            <article class="panel progress-panel"><div class="panel-heading"><div><h2>Promotion cycle</h2><p>Annual exam activity and remaining opportunities</p></div><button class="text-link" data-go="promotions">Open promotion centre →</button></div><div id="promotion-summary" class="promotion-summary"></div></article>
+            <article class="panel activity-panel"><div class="panel-heading"><div><h2>People activity</h2><p>Recent reviews and career events</p></div></div><div id="activity-list" class="activity-list"></div></article>
+          </div>
+          <div class="disclaimer"><b>Evidence boundary</b><span>Seed employee and KPI records are synthetic. Supervisor QA v4.7 evaluations can be read from the same browser origin when available. This module does not connect to payroll, HRIS, live telephony or authenticated employee accounts.</span></div>
+        </section>
+
+        <section class="view" id="view-scorecards">
+          <div class="page-heading"><div><div class="eyebrow">EMPLOYEE REVIEW / PERFORMANCE EVIDENCE</div><h1>Staff scorecards</h1><p>Maintain monthly performance records using a consistent weighted KPI model.</p></div><div class="heading-tools"><button class="button secondary" id="export-reviews">Export reviews CSV ↓</button><span class="tag" id="review-cycle-tag">CYCLE 2026</span></div></div>
+          <div class="toolbar panel"><label class="search-field">SEARCH STAFF<input id="staff-search" type="search" placeholder="Name, staff ID or department"></label><label>DEPARTMENT<select id="department-filter"><option value="All">All departments</option></select></label><label>REVIEW PERIOD<select id="review-period-filter"><option value="All">All periods</option></select></label><div class="toolbar-stat"><strong id="review-count">0</strong><small>RECORDS</small></div></div>
+          <div class="scorecard-layout">
+            <article class="panel table-panel"><div class="panel-heading"><div><h2>Monthly performance ledger</h2><p>Click a staff member to load their latest scorecard.</p></div><span class="tag">WEIGHTED KPI</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>EMPLOYEE</th><th>DEPARTMENT</th><th>LEVEL</th><th>KPI</th><th>QA</th><th>CSAT</th><th>ATTENDANCE</th><th>CARE DUTY</th><th>GRADE</th></tr></thead><tbody id="scorecard-table"></tbody></table></div><div class="table-foot">KPI weights: QA 25 · CSAT 20 · FCR 15 · adherence 10 · productivity 10 · attendance 10 · compliance 10.</div></article>
+            <article class="panel review-panel"><div class="panel-heading"><div><h2>Record a monthly review</h2><p>All KPI percentages use a 0–100 scale.</p></div><span class="add-mark">＋</span></div>
+              <form id="review-form" class="form-body">
+                <label class="form-label">Employee<select id="review-agent" required></select></label>
+                <label class="form-label">Review period<input id="review-period" type="month" required></label>
+                <div class="form-grid">
+                  <label class="form-label">QA %<input id="review-qa" type="number" min="0" max="100" value="90" required></label>
+                  <label class="form-label">CSAT %<input id="review-csat" type="number" min="0" max="100" value="90" required></label>
+                  <label class="form-label">FCR %<input id="review-fcr" type="number" min="0" max="100" value="85" required></label>
+                  <label class="form-label">Adherence %<input id="review-adherence" type="number" min="0" max="100" value="95" required></label>
+                  <label class="form-label">Productivity %<input id="review-productivity" type="number" min="0" max="100" value="90" required></label>
+                  <label class="form-label">Attendance %<input id="review-attendance" type="number" min="0" max="100" value="98" required></label>
+                  <label class="form-label">Compliance %<input id="review-compliance" type="number" min="0" max="100" value="97" required></label>
+                  <label class="form-label">Training complete %<input id="review-training" type="number" min="0" max="100" value="100" required></label>
+                  <label class="form-label">Frontline care hours<input id="review-care-hours" type="number" min="0" max="744" value="8" required></label>
+                  <label class="form-label">Customer contacts<input id="review-care-contacts" type="number" min="0" max="10000" value="20" required></label>
+                </div>
+                <label class="form-label">Reviewer<input id="reviewer-name" value="Operations Manager" required></label>
+                <label class="form-label">Review notes<textarea id="review-notes" rows="3" placeholder="Evidence, achievements and development areas"></textarea></label>
+                <div class="form-hint">Customer-care duty is mandatory for every department, including IT, QA, workforce, training and operations.</div>
+                <button class="button primary full" type="submit">Save performance review</button>
+              </form>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="view-promotions">
+          <div class="page-heading"><div><div class="eyebrow">CAREER MOVEMENT / ANNUAL PROMOTION EXAM</div><h1>Promotion centre</h1><p>Eligibility is evidence-based. Staff receive no more than one attempt per year and up to three annual attempts per target level.</p></div><div class="heading-tools"><span class="date-display" id="promotion-year-label">2026 ANNUAL CYCLE</span><button class="button secondary" id="export-promotions">Export exam history ↓</button></div></div>
+          <div class="promotion-rules-grid">
+            <div class="rule-chip"><b>80%</b><small>Minimum KPI</small></div><div class="rule-chip"><b>85%</b><small>Minimum QA</small></div><div class="rule-chip"><b>6 months</b><small>Time in current level</small></div><div class="rule-chip"><b>75%</b><small>Exam pass mark</small></div><div class="rule-chip"><b>3 years</b><small>Maximum annual attempts</small></div>
+          </div>
+          <div class="promotion-layout">
+            <article class="panel table-panel"><div class="panel-heading"><div><h2>Promotion eligibility register</h2><p>Each employee is assessed against the next career level.</p></div><span class="tag" id="eligible-tag">— ELIGIBLE</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>EMPLOYEE</th><th>CURRENT LEVEL</th><th>NEXT LEVEL</th><th>KPI</th><th>ATTEMPTS</th><th>DECISION</th><th></th></tr></thead><tbody id="promotion-table"></tbody></table></div><div class="table-foot">Eligibility gates: current-year review, six months in role, KPI ≥80, QA ≥85, compliance ≥90, attendance ≥95, training ≥90, and monthly customer-care duty of ≥8 hours and ≥20 contacts.</div></article>
+            <article class="panel exam-panel"><div class="panel-heading"><div><h2>Record promotion exam</h2><p>Only eligible staff can be assessed.</p></div><span class="add-mark">↗</span></div>
+              <form id="exam-form" class="form-body">
+                <label class="form-label">Eligible employee<select id="exam-agent" required></select></label>
+                <div class="exam-target" id="exam-target">Select an eligible employee to view target level.</div>
+                <div class="exam-fields">
+                  <label class="form-label">Customer handling<input id="exam-customer" type="number" min="0" max="100" value="80" required></label>
+                  <label class="form-label">CRM & documentation<input id="exam-crm" type="number" min="0" max="100" value="80" required></label>
+                  <label class="form-label">Policy knowledge<input id="exam-policy" type="number" min="0" max="100" value="80" required></label>
+                  <label class="form-label">Problem solving<input id="exam-problem" type="number" min="0" max="100" value="80" required></label>
+                  <label class="form-label">Target-role readiness<input id="exam-role" type="number" min="0" max="100" value="80" required></label>
+                  <label class="form-label">Frontline care practice<input id="exam-care" type="number" min="0" max="100" value="80" required></label>
+                </div>
+                <label class="form-label">Assessor<input id="exam-assessor" value="Promotion Panel" required></label>
+                <label class="form-label">Panel notes<textarea id="exam-notes" rows="2" placeholder="Assessment evidence"></textarea></label>
+                <div class="exam-estimate"><small>ESTIMATED EXAM RESULT</small><strong id="exam-estimated">80.0%</strong><span id="exam-estimated-status">Pass threshold: 75%</span></div>
+                <button class="button primary full" id="submit-exam" type="submit">Record annual exam result</button>
+              </form>
+            </article>
+          </div>
+          <article class="panel history-panel"><div class="panel-heading"><div><h2>Annual examination history</h2><p>Failed attempts remain on record. A successful promotion moves the employee to the next level.</p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>YEAR</th><th>EMPLOYEE</th><th>TARGET LEVEL</th><th>EXAM SCORE</th><th>OUTCOME</th><th>ASSESSOR</th><th>DATE</th></tr></thead><tbody id="exam-history-table"></tbody></table></div></article>
+        </section>
+
+        <section class="view" id="view-departments">
+          <div class="page-heading"><div><div class="eyebrow">ORGANISATION DESIGN / CUSTOMER SERVICE STANDARD</div><h1>Department performance</h1><p>Specialist departments retain their technical responsibilities and a shared customer-care obligation.</p></div><div class="heading-tools"><span class="tag cyan-tag">SHARED SERVICE STANDARD</span></div></div>
+          <div class="universal-duty-banner"><div class="duty-icon">◎</div><div><b>Every department serves customers</b><p>Each active employee must complete at least 8 hours of frontline customer-care practice and handle at least 20 customer contacts in every reviewed month. This applies to IT, QA, Workforce, CRM, Training, Operations and every other unit.</p></div><div class="duty-standard"><strong>8h + 20</strong><small>MONTHLY MINIMUM</small></div></div>
+          <div id="department-grid" class="department-grid"></div>
+        </section>
+
+        <section class="view" id="view-framework">
+          <div class="page-heading"><div><div class="eyebrow">CAREER ARCHITECTURE / ROLE EXPECTATIONS</div><h1>Career framework</h1><p>Progression combines performance, tenure, service capability and a formal annual promotion examination.</p></div></div>
+          <div class="framework-layout"><article class="panel career-ladder-panel"><div class="panel-heading"><div><h2>Career ladder</h2><p>Progression follows the next level in sequence.</p></div><span class="tag">6 LEVELS</span></div><div id="career-ladder" class="career-ladder"></div></article>
+            <article class="panel policy-panel"><div class="panel-heading"><div><h2>Promotion policy</h2><p>Minimum safeguards for fair advancement.</p></div></div><div class="policy-list" id="policy-list"></div></article>
+          </div>
+          <article class="panel weighting-panel"><div class="panel-heading"><div><h2>Performance score weighting</h2><p>The same KPI weighting is applied across departments.</p></div><span class="tag cyan-tag">100 POINTS</span></div><div id="weight-bars" class="weight-bars"></div></article>
+        </section>
+      </div>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
