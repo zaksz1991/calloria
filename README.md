@@ -1,67 +1,48 @@
-# CALLORIA v5.2 — Knowledge & Product Operations
+# CALLORIA v5.3 — Service Reliability & Incident Control
 
-An additive service-knowledge workspace for CALLORIA. It adds controlled knowledge authoring, product/service reference records, article-use logging and operational change notices. It gives the service simulator a maintained knowledge workflow instead of treating knowledge management as training-course content alone.
+An additive, browser-local service operations module for the CALLORIA Vite application. It provides an incident lifecycle, severity-based response clocks, customer/internal update records, follow-up ownership, planned maintenance and post-incident reviews.
 
-## Included
+## Files
 
-- Knowledge library with full-text search across titles, summaries, categories, keywords and procedural steps.
-- Filters by article status, product/service and category.
-- Fifteen starter articles covering customer discovery, verification, CRM records, voice, digital channels, complaint recovery, life and personal-development enquiries, relevant service discovery, RuffNeck product support and Kano game support.
-- Six RuffNeck product records: RuffNeck LMS, RuffNeck Prospector, RuffNeck Connect, RuffNeck Social Hub, Kano Run and Kano Keke. Product pages link to their known public sites and list first-line support topics and relevant related services.
-- Multi-industry service context with General Customer Experience as the default and banking as one optional pack.
-- Life, relationship, parenting, habits, emotional-intelligence and personal-development enquiry guidance with clear non-clinical boundaries and escalation reminders.
-- Knowledge article authoring with required title, summary, category and procedural steps.
-- Controlled article lifecycle: Draft → In Review → Published, or Changes Requested → Draft. Only published, non-expired articles appear in published-only search and can be recorded as used.
-- Article revision history retained locally; editing a published item moves its current record back to Draft for review.
-- Article usage record with channel, optional case reference, employee and outcome. Usage counters feed the overview dashboard.
-- Service notice authoring, severity, audience, effective date and manual publication.
-- Manual one-way briefing import from Learning & Competency Academy v5.1 using `calloria.learning-academy.v51`. Cancelled sessions are skipped and previously imported briefing IDs are not duplicated.
-- Article register CSV export, recent activity and stale/expired content reminders.
-- Responsive page layout for desktop and mobile widths.
+Copy the four files in `public/` into the repository's existing `public/` directory:
 
-## Installation
+- `service-reliability.html`
+- `service-reliability.css`
+- `service-reliability.js`
+- `service-reliability-engine.js`
 
-This is an additive public-folder overlay, not a full CALLORIA repository snapshot.
+Do not replace the repository's Vite configuration or other application files. With CALLORIA's configured Vite `publicDir: 'public'`, the page is expected at `/service-reliability.html` after the copied files are included in a successful deployment.
 
-1. Extract the ZIP.
-2. Open `CALLORIA_v5_2_Knowledge_Product_Operations/public`.
-3. Copy these four files into the existing CALLORIA repository `public` folder:
-   - `knowledge-operations.html`
-   - `knowledge-operations.css`
-   - `knowledge-operations.js`
-   - `knowledge-operations-engine.js`
-4. Keep all existing files. Do not replace `vite.config.js`, `main.js`, game entry points, OJT files, GLB assets or any earlier module.
-5. Deploy through the repository's existing deployment process.
+## Included operations
 
-Expected route after deployment: `/knowledge-operations.html`, for example `https://calloria.vercel.app/knowledge-operations.html`.
-
-## Learning Academy briefing import
-
-The **Import v5.1 briefings** control reads the `calloria.learning-academy.v51` browser-local record and imports non-cancelled sessions as published service notices. It is a one-way snapshot import. The source briefing is not modified, and changes made after import are not automatically synchronised. Both pages must have been opened in the same browser profile and same origin for their `localStorage` data to be shared.
-
-## Product and service reference boundaries
-
-The six RuffNeck service names and public sites are seeded as catalogue references. This module does not connect to those live products, retrieve their current features, check outages, access customer accounts, verify support routes or query service telemetry. The text articles are starter guidance for the simulation and must be checked against current approved product documentation before use in a real service operation.
-
-Kano player counts, total sessions, sponsorship inventory, advertising rates, impressions and campaign performance are not available through this module. Agents must not invent or quote those figures without an approved, current source. Service recommendations should be relevant to the customer's stated need and must not displace resolution of the primary request.
-
-The life and personal-development content supports respectful information handling only. It is not a clinical, therapy, legal or emergency service. The simulator content directs urgent or safety-critical issues to the organisation's approved escalation procedure.
+- Incident registration against the six RuffNeck product/game services plus general customer service.
+- Four configurable severity tiers with example acknowledgement and customer-update targets.
+- Enforced lifecycle: Detected → Triaged → Investigating → Mitigating → Monitoring → Resolved → Closed.
+- Assignment, severity-change rationale, response timeline and customer/internal update records.
+- Follow-up tasks with named owner and due date.
+- Resolution summary requirement and post-incident review gate before closure.
+- Planned maintenance register with owner, start/end window and state changes.
+- Read-only published notice display from Knowledge Operations v5.2.
+- Explicit incident-to-Knowledge-Operations bridge that creates a **Draft** notice in the v5.2 local-storage record. The knowledge team must review and publish it separately.
+- CSV incident register export and three synthetic scenario launchers.
+- Responsive layout and local browser persistence.
 
 ## Data and integration boundaries
 
-- All article, notice, usage and activity records are stored in the current browser's `localStorage` under `calloria.knowledge-operations.v52`.
-- Data is not shared across devices, browsers or users. Clearing browser storage can erase it.
-- This is not a secured multi-user knowledge-management system. It has no authenticated author/reviewer roles, tenant isolation, server-side audit trail, backup guarantee, access-control enforcement, notification delivery, approval delegation or central database.
-- The review workflow is an operational simulation; a browser-local reviewer name is not proof of independent approval.
-- The module is not yet connected to CALLORIA's central CRM, agent workstation, customer-care queues, live case records or actual service-status systems. Article use is manually recorded in this page.
-- Do not enter real customer credentials, payment data, confidential customer details or sensitive employee information.
+- Storage key: `calloria.service-reliability.v53`.
+- Knowledge Operations key: `calloria.knowledge-operations.v52`.
+- Cross-module storage access works only when both pages share the same browser profile and origin.
+- The v5.2 bridge writes draft service notices only after an explicit user action. It does not auto-publish notices.
+- The scenario launchers create synthetic records. They are not reports of live service faults.
+- SLA clocks recalculate when the page renders or refreshes. There is no background scheduler, alert service or on-call paging.
+- No live monitoring, telemetry, deployment automation, customer messaging, email, SMS, push notification, or telephony connection is implemented.
+- Data remains in browser local storage. It is not shared across employees or devices and is not suitable for confidential incident evidence.
+- Severity response targets are illustrative internal settings, not legal or contractual SLAs.
 
-## Package layout
+## Existing CALLORIA compatibility
 
-- `public/knowledge-operations.html` — page shell.
-- `public/knowledge-operations.css` — responsive styling.
-- `public/knowledge-operations.js` — page rendering and interactions.
-- `public/knowledge-operations-engine.js` — data model, knowledge lifecycle, notices, import and persistence.
-- `tests/knowledge-operations-v52.test.mjs` — focused unit and page-contract tests.
-- `CHANGELOG.md` — release summary.
-- `VERIFICATION.md` — checks performed and unverified areas.
+The patch is deliberately additive. It does not change `main.js`, Vite configuration, authentication, Supabase, Groq, existing CRM pages, existing agent desks, GLB models or 3D scene files.
+
+## Verification
+
+See `VERIFICATION.md` for the focused tests and explicit unverified items.

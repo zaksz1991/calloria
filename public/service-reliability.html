@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10243d">
+  <meta name="description" content="CALLORIA service reliability, incident and change control workspace">
+  <title>Service Reliability Control | CALLORIA</title>
+  <link rel="stylesheet" href="/service-reliability.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="CALLORIA home"><span class="brand-mark">C</span><span><strong>CALLORIA</strong><small>SERVICE RELIABILITY CONTROL</small></span></a>
+    <div class="topbar-right"><span class="system-label"><i></i> SIMULATION WORKSPACE</span><button class="button button-quiet" id="export-incidents" type="button">Export incident register</button></div>
+  </header>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="side-caption">RELIABILITY OPERATIONS</div>
+      <nav class="side-nav" aria-label="Service reliability workspace">
+        <button class="nav-item active" type="button" data-view="dashboard"><span>▦</span>Control overview</button>
+        <button class="nav-item" type="button" data-view="incidents"><span>◉</span>Incident register</button>
+        <button class="nav-item" type="button" data-view="create"><span>＋</span>Report incident</button>
+        <button class="nav-item" type="button" data-view="maintenance"><span>◷</span>Planned maintenance</button>
+        <button class="nav-item" type="button" data-view="reviews"><span>▤</span>Post-incident reviews</button>
+        <button class="nav-item" type="button" data-view="notices"><span>◈</span>Knowledge notices</button>
+      </nav>
+      <div class="sidebar-card"><span class="side-card-label">SEVERITY RESPONSE TARGETS</span><strong>SEV 1 · 15 / 30 min</strong><span>Acknowledge / customer update</span><strong>SEV 2 · 30 / 60 min</strong><span>Acknowledge / customer update</span><strong>SEV 3 · 4 / 4 hours</strong><span>Acknowledge / customer update</span><strong>SEV 4 · 8 / 8 hours</strong><span>Acknowledge / customer update</span><small>Illustrative internal targets. Not a contractual SLA.</small></div>
+      <div class="side-links"><a href="/knowledge-operations.html">Knowledge Operations v5.2 ↗</a><a href="/supervisor-qa.html">Supervisor & QA v4.7 ↗</a><a href="/case-desk.html">Case Desk ↗</a><a href="/operations-intelligence.html">Operations Intelligence ↗</a></div>
+    </aside>
+    <main class="main-content">
+      <section class="page-heading"><div><div class="eyebrow">CALLORIA · SERVICE ASSURANCE</div><h1 id="page-title">Reliability control</h1><p id="page-subtitle">Detect, triage, mitigate and review service incidents across RuffNeck products and customer channels.</p></div><div class="heading-actions"><button class="button button-primary" id="new-incident" type="button">＋ Report incident</button></div></section>
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+      <section id="metrics" class="metrics-grid" aria-label="Reliability metrics"></section>
+      <section id="workspace" aria-live="polite"></section>
+      <footer class="app-footer"><span>CALLORIA Service Reliability Control · v5.3</span><span>Local simulation data · not a live monitoring or alerting feed</span></footer>
+    </main>
+  </div>
+  <script src="/service-reliability-engine.js"></script>
+  <script src="/service-reliability.js"></script>
+</body>
+</html>

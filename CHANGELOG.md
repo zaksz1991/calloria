@@ -1,18 +1,14 @@
-# Changelog — CALLORIA v5.2
+# Changelog
 
-## Added
-- Knowledge library with search and product/category/status filtering.
-- Fifteen initial service articles, including multi-industry and RuffNeck product-support content.
-- Catalogue records for RuffNeck LMS, Prospector, Connect, Social Hub, Kano Run and Kano Keke.
-- Article creation, revision, review, approval, publication and return-for-changes workflow.
-- Expiry controls and article-use logging against channel, case reference, employee and resolution outcome.
-- Service notice drafting and publication with severity and effective date.
-- One-way import of non-cancelled v5.1 Learning Academy briefings, with duplicate prevention.
-- Overview metrics, recent activity, stale-content reminders and CSV export.
-- Responsive desktop/mobile page layout.
+## v5.3.0 — Service Reliability & Incident Control
 
-## Boundaries
-- Additive standalone public page; no existing CALLORIA application entry point or protected game file is replaced.
-- Uses browser-local storage and synthetic/starter content.
-- Does not connect to live RuffNeck product APIs, central CRM, queues, agent workstation or player telemetry.
-- Does not deliver push notifications or automatically synchronise changes from the Learning Academy.
+- Added incident intake, severity assignment, incident ownership and controlled lifecycle transitions.
+- Added acknowledgement and customer-update clocks by severity.
+- Added customer-facing, internal operations and leadership update records.
+- Added evidence timeline, owned follow-up tasks and task completion.
+- Added resolution summary and post-incident review requirements before closure.
+- Added planned maintenance schedule and progress control.
+- Added a read-only view of published Knowledge Operations v5.2 notices.
+- Added explicit incident-to-v5.2 draft notice hand-off with duplicate prevention.
+- Added three synthetic practice incident scenarios and CSV export.
+- Added responsive page layout and local storage persistence.

@@ -1,25 +1,22 @@
-# Verification — CALLORIA v5.2
+# Verification — CALLORIA v5.3
 
-## Passed
+## Completed checks
 
-- `node --check public/knowledge-operations-engine.js` — passed.
-- `node --check public/knowledge-operations.js` — passed.
-- `node --test tests/knowledge-operations-v52.test.mjs` — **33 passed, 0 failed**.
-- HTML page-shell contract test — passed.
-- HTML ID scan — 7 static IDs, no duplicates.
-- Static selector scan — the only selectors not present in the initial page shell are generated inside the Knowledge Library view (`article-search`, `article-status`, `article-product`, `article-category`, `article-reader`).
-- Learning Academy v5.1 storage-key contract — passed (`calloria.learning-academy.v51`).
-- RuffNeck product seed set — 6 products.
-- Initial knowledge article set — 15 articles.
+- Node syntax check for `public/service-reliability-engine.js`: passed.
+- Node syntax check for `public/service-reliability.js`: passed.
+- Focused engine tests: **38 passed, 0 failed**.
+- Test coverage includes incident validation, state persistence, lifecycle rules, SLA calculation, assignment, severity changes, update cadence, tasks, post-incident review gates, maintenance validation, metrics, Knowledge Operations v5.2 notice bridge, deduplication and CSV escaping.
+- HTML asset contract and duplicate-ID scan: passed.
+- ZIP archive integrity: checked after packaging.
 
 ## Not performed
 
 - Full CALLORIA repository test suite.
-- Vite production build against the full repository.
-- Vercel deployment or live route verification.
-- Browser end-to-end visual testing. No browser automation runtime was available in this package workspace.
-- Integration verification against the central CRM, live agent desktop, actual product services or telephony systems.
+- Vite production build against the current GitHub repository.
+- Vercel deployment.
+- Browser visual, responsive or end-to-end testing.
+- Supabase, authenticated multi-user, real monitoring, customer messaging or telephony integration.
 
-## Important limits
+## Important interpretation
 
-This is a standalone additive module. Its records are browser-local. Learning Academy briefing import is a one-time, one-way read from the same browser origin; there is no automatic or cross-device sync. Product support content is starter simulation content and is not a verified live product manual. No real player statistics, outage status, advertising inventory or sponsorship rates are fetched.
+All incident and maintenance records are local simulation data. Severity clocks run only when the page is open/rendered/refreshed; they do not page a responder in the background. The v5.2 connection creates a draft knowledge notice, not a published notice or customer notification.
