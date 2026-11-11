@@ -16,6 +16,8 @@ import { calloriaErgonomicOfficeChairsPlugin } from './build/calloria-ergonomic-
 import { calloriaCC0LobbyGreeneryPlugin } from './build/calloria-cc0-lobby-greenery-plugin.mjs';
 import { calloriaGlazedDepartmentPartitionsPlugin } from './build/calloria-glazed-department-partitions-plugin.mjs';
 import { calloriaOJTGLBActivationPlugin } from './build/calloria-ojt-glb-activation-plugin.mjs';
+import { calloriaFirstWorkingShiftV44Plugin } from './build/calloria-first-working-shift-v4-4-plugin.mjs';
+
 export default defineConfig({
   base: '/',
   publicDir: 'public',
@@ -39,8 +41,10 @@ export default defineConfig({
     calloriaErgonomicOfficeChairsPlugin(),
     calloriaCC0LobbyGreeneryPlugin(),
     calloriaGlazedDepartmentPartitionsPlugin(),
-    // Keep last: adds Draco after the existing Meshopt and static-staff transforms.
-    calloriaOJTGLBActivationPlugin()
+    // Keep the GLB/OJT transformer after all existing world and office transforms.
+    calloriaOJTGLBActivationPlugin(),
+    // The live-shift integration runs after OJT has inserted its employment gate.
+    calloriaFirstWorkingShiftV44Plugin()
   ],
   build: {
     outDir: 'dist',

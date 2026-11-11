@@ -1,12 +1,12 @@
 /**
- * CALLORIA live inbound simulation engine.
- * Deterministic synthetic customer dialogue for actual shift operations.
- * It is deliberately separate from recruitment assessments and Customer Lab practice.
+ * CALLORIA v4.4 — independent-shift inbound conversation engine.
+ * Synthetic customer dialogue for production-mode gameplay. This is not a
+ * recruitment assessment, OJT exercise, external telephone call or live AI API.
  */
 const PERSONAS = Object.freeze([
   { id: 'concerned', label: 'Concerned', patience: 58 },
   { id: 'frustrated', label: 'Frustrated', patience: 36 },
-  { id: 'confused', label: 'Needs clear explanation', patience: 48 },
+  { id: 'confused', label: 'Needs a clear explanation', patience: 48 },
   { id: 'urgent', label: 'Time pressured', patience: 42 },
   { id: 'calm', label: 'Cooperative', patience: 78 }
 ]);
@@ -15,13 +15,14 @@ const RULES = Object.freeze({
   greeting: /\b(hello|good morning|good afternoon|good evening|thank you for calling|welcome)\b/i,
   empathy: /\b(understand|hear you|sorry|apolog|frustrat|concern|inconvenien|thank you for explaining|i appreciate)\b/i,
   ownership: /\b(i will|i can|i'll|let me|we will|we can|take ownership|assist you|help you|i am going to)\b/i,
-  probe: /\b(when|what time|which|where|how much|reference|amount|date|merchant|beneficiary|transaction|location|error|case number)\b/i,
-  nextStep: /\b(investigat|review|check|trace|case|reference|escalat|follow up|update|within|contact you|next step|specialist|dispute)\b/i,
-  clarity: /\b(first|then|because|once|after|so that|for now|by|before)\b/i,
+  probe: /\b(when|what time|which|where|how much|reference|amount|date|merchant|beneficiary|transaction|location|error|case number|order|booking|ticket|service|device|tracking|delivery|appointment|product)\b/i,
+  nextStep: /\b(investigat|review|check|trace|case|reference|escalat|follow up|update|within|contact you|next step|specialist|dispute|ticket|service team|delivery team|appointment)\b/i,
+  clarity: /\b(first|then|because|once|after|so that|for now|by|before|next)\b/i,
   credentialRequest: /\b(send|share|tell|provide|read out|give me|confirm)\b.{0,55}\b(pin|password|passcode|otp|one[- ]time password|verification code|cvv|security code)\b/i,
   cardDataRequest: /\b(send|share|tell|provide|read out|give me)\b.{0,45}\b(full|entire|complete)?\s*(card number|card details|cvv)\b/i,
-  falsePromise: /\b(guarantee|guaranteed|definitely today|immediately reversed|will certainly be|100% sure|will be fixed today)\b/i,
-  dismissive: /\b(not my problem|calm down|you should have|nothing i can do|just wait|that's your fault)\b/i
+  falsePromise: /\b(guarantee|guaranteed|definitely today|immediately reversed|will certainly be|100% sure|will be fixed today|delivered today for certain)\b/i,
+  dismissive: /\b(not my problem|calm down|you should have|nothing i can do|just wait|that's your fault)\b/i,
+  unresolved: /\b(unresolved|still under review|not yet|cannot confirm|can't confirm|not completed|remains open|no update|pending investigation|awaiting confirmation)\b/i
 });
 
 function choosePersona(seed) {
@@ -30,21 +31,21 @@ function choosePersona(seed) {
 }
 function safeText(value) { return String(value ?? '').trim().slice(0, 1200); }
 function makeCustomerReply(conversation, outcome) {
-  const p = conversation.persona.id;
-  const reference = conversation.transactionReference;
+  const persona = conversation.persona.id;
+  const reference = conversation.reference;
   if (conversation.turn === 1) {
     if (outcome.empathy && outcome.ownership) {
-      if (p === 'urgent') return `Thank you. I am short on time. The transaction reference is ${reference}; it happened earlier today.`;
-      if (p === 'confused') return `Thank you for explaining. I can see the transaction alert, but I do not understand why the service did not complete. The reference is ${reference}.`;
-      return `I appreciate you listening. The transaction reference is ${reference}. I can also confirm the approximate time and amount.`;
+      if (persona === 'urgent') return `Thank you. I am short on time. The reference is ${reference}; the issue started earlier today.`;
+      if (persona === 'confused') return `Thank you for explaining. I can see the service record, but I do not understand why it has not completed. The reference is ${reference}.`;
+      return `I appreciate you listening. The reference is ${reference}. I can also confirm the approximate time and the service involved.`;
     }
-    return p === 'frustrated'
+    return persona === 'frustrated'
       ? 'I have explained what happened already. Please listen and tell me exactly what you are checking.'
       : 'I am still worried. Can you explain what you need to establish before you can help?';
   }
   if (conversation.turn === 2) {
-    if (outcome.probe) return `The reference is ${reference}. The amount and date are on the alert. I have not received a reversal or completion confirmation.`;
-    return p === 'confused'
+    if (outcome.probe) return `The reference is ${reference}. I can confirm the date and the details shown on my confirmation. I still do not have a completed-service update.`;
+    return persona === 'confused'
       ? 'I am not sure which details you need. Please ask me one thing at a time.'
       : 'What information do you need from me to trace this properly?';
   }
@@ -52,7 +53,7 @@ function makeCustomerReply(conversation, outcome) {
     if (outcome.nextStep && outcome.clarity && !outcome.falsePromise) {
       return 'I understand. Please record the case and tell me how I can follow up. I will wait for the confirmed update.';
     }
-    if (p === 'frustrated') return 'I do not want another vague assurance. What action have you actually recorded, and what is the reference?';
+    if (persona === 'frustrated') return 'I do not want another vague assurance. What action have you actually recorded, and what is the reference?';
     return 'Please explain the actual next step, the case reference and how I will receive an update.';
   }
   return 'Thank you for taking the time to review this. Please make sure the next step is recorded.';
@@ -61,12 +62,13 @@ function makeCustomerReply(conversation, outcome) {
 export function createOperationalConversation({ id, scenario, seed = Date.now() } = {}) {
   if (!scenario || typeof scenario !== 'object') throw new TypeError('An inbound scenario is required.');
   const persona = choosePersona(seed);
-  const reference = String(scenario.reference || id || `CALL-${Math.abs(Number(seed) || Date.now())}`);
+  const reference = String(scenario.reference || id || `CONTACT-${Math.abs(Number(seed) || Date.now())}`);
   const opening = safeText(scenario.opening || scenario.issue || 'I need help with a recent service issue.');
   return {
     id: String(id || reference),
     type: 'live_inbound_customer_service',
     dataOrigin: 'synthetic_contact_centre_simulation',
+    industry: String(scenario.industry || scenario.category || 'General customer experience'),
     status: 'active',
     branch: 'opening',
     turn: 0,
@@ -74,7 +76,7 @@ export function createOperationalConversation({ id, scenario, seed = Date.now() 
     persona: { ...persona },
     customer: String(scenario.customer || 'Simulated customer'),
     issue: String(scenario.issue || 'Customer enquiry'),
-    transactionReference: reference,
+    reference,
     messages: [{ id: `${id || reference}-c0`, speaker: 'customer', text: opening, at: new Date().toISOString() }],
     scorecards: [],
     criticalBreaches: [],
@@ -97,7 +99,8 @@ export function evaluateOperationalResponse(text) {
     credentialRequest: RULES.credentialRequest.test(response),
     cardDataRequest: RULES.cardDataRequest.test(response),
     falsePromise: RULES.falsePromise.test(response),
-    dismissive: RULES.dismissive.test(response)
+    dismissive: RULES.dismissive.test(response),
+    unresolved: RULES.unresolved.test(response)
   };
   result.criticalBreaches = [];
   if (result.credentialRequest) result.criticalBreaches.push('credential_solicitation');
@@ -112,9 +115,10 @@ export function evaluateOperationalResponse(text) {
   result.recommendations = [];
   if (!result.empathy) result.recommendations.push('Acknowledge the customer impact before moving into checks.');
   if (!result.ownership) result.recommendations.push('State the action you will personally take.');
-  if (!result.probe) result.recommendations.push('Ask for relevant transaction facts without requesting security credentials.');
+  if (!result.probe) result.recommendations.push('Ask for relevant service facts without requesting security credentials.');
   if (!result.nextStep) result.recommendations.push('Explain a traceable case, investigation or approved specialist route.');
   if (!result.clarity) result.recommendations.push('Use plain language and explain the steps in order.');
+  if (result.unresolved) result.recommendations.push('Keep the case open or escalate it; do not mark an unconfirmed outcome as resolved.');
   if (result.criticalBreaches.length) result.recommendations.unshift('Critical compliance review required.');
   return result;
 }
@@ -135,10 +139,11 @@ export function submitOperationalTurn(conversation, text, now = Date.now()) {
     conversation.status = 'escalated';
     conversation.branch = 'mandatory_review';
     conversation.dispositionHint = 'escalated';
+    conversation.completedAt = at;
     conversation.messages.push({ id: `${conversation.id}-c${conversation.turn}`, speaker: 'customer', text: 'I am uncomfortable continuing with this request. Please involve a supervisor and follow the formal security process.', at });
   } else {
     const customerText = makeCustomerReply(conversation, evaluation);
-    const sufficientResolution = evaluation.nextStep && evaluation.clarity && !evaluation.falsePromise && (evaluation.probe || conversation.turn >= 3);
+    const sufficientResolution = evaluation.nextStep && evaluation.clarity && !evaluation.falsePromise && !evaluation.unresolved && (evaluation.probe || conversation.turn >= 3);
     if (sufficientResolution || conversation.turn >= 4 || conversation.patience <= 0) {
       conversation.status = 'ready_for_wrap_up';
       conversation.branch = sufficientResolution ? 'customer_acknowledged_next_step' : 'specialist_follow_up_required';

@@ -1,32 +1,29 @@
-# CALLORIA v4.3.0 — Trainer Sign-off, Workstation Allocation & First Shift
+# CALLORIA v4.4.0 — First Independent Shift Gameplay
 
-## Purpose
+This is the first post-onboarding operations upgrade. It moves inbound voice from a sequence of pre-written answer choices to actual simulated agent work.
 
-This is a cumulative OJT runtime release. It carries forward the v4.1 interactive agent-shadowing flow and v4.2 multi-turn supervised contact practice, then replaces the earlier one-click sign-off with a staged trainer-review and workstation-allocation process.
+## Player experience
 
-Recruitment remains the employment entry gate. On-the-job training takes place after the employment offer and before independent customer work. The default training pack is General Customer Experience; banking remains one optional industry pack.
-
-## What changes
-
-1. **Evidence-based trainer review.** The trainee must complete product/service knowledge, CRM logging, experienced-agent shadowing and supervised contact practice. The simulated trainer reviews those four records and must attest to evidence, customer-care readiness, safe conduct and system use.
-2. **Separate approval and allocation stages.** Approval does not immediately unlock a shift. The employee must select an operating department and one of twelve workstation positions.
-3. **Universal customer-care foundation.** Every department retains customer-care responsibility. The allocation record stores a department-specific skill plus the universal customer-care rotation requirement and voice, email and live-chat channel capability.
-4. **Briefing-gated first shift.** Newly onboarded employees cannot start their independent shift until a workstation is allocated and attendance at the applicable 07:30 morning or 14:00 afternoon briefing is recorded.
-5. **First-shift evidence.** After the existing shift engine actually activates the shift, CALLORIA records the first independent working-shift event against the assigned workstation. It does not invent completed calls or performance results.
-6. **Compatibility migration.** v4.2 employees who completed training through the previous one-click sign-off but have not yet worked are moved directly to workstation allocation. Employees with prior production work keep their existing access and are grandfathered.
-7. **Training / production separation.** OJT evidence remains training-only. It does not add calls handled, cases, QA, CSAT, AHT, adherence, salary or incentives.
+1. The employee must already be hired, complete product/service knowledge, CRM logging, experienced-agent shadowing and supervised practice, receive trainer sign-off, receive a workstation and satisfy the established shift/briefing gate.
+2. During an active shift, the employee opens the inbound desk and accepts a waiting customer contact from the existing prioritised queue.
+3. The customer speaks first. The player types a response in their own words.
+4. Customer replies branch according to a deterministic persona, the agent's response behaviours and remaining customer patience.
+5. The player can use the linked customer record, knowledge base, hold/resume, supervisor assistance, specialist transfer and queue-return controls.
+6. When the conversation reaches wrap-up or mandatory review, the existing after-contact workflow requires factual notes and a permitted disposition.
+7. The resulting CRM case stores the transcript and response scorecards; the existing queue, QA, CSAT, case and career metrics continue through the existing save path.
 
 ## Included files
 
-- `build/calloria-ojt-runtime.js` — complete cumulative replacement runtime containing v4.1, v4.2 and v4.3 OJT flows.
-- `tests/calloria-v42-supervised-contact-practice.test.mjs` — retained v4.2 regression suite.
-- `tests/calloria-v43-trainer-signoff-allocation.test.mjs` — v4.3 trainer, workstation, briefing and migration tests.
-- `INSTALL-GITHUB.md` — graphical GitHub Desktop installation instructions.
-- `CHANGELOG.md` — release notes.
-- `VERIFICATION.md` — exact test results and verification limits.
+- `vite.config.js` — complete replacement based on the repository Vite configuration at commit `74e0582`; adds the v4.4 plugin after the existing OJT/GLB integration.
+- `build/calloria-first-working-shift-v4-4-plugin.mjs` — Vite transform for the live inbound screen, response form, transcript persistence and QA bridge.
+- `js/operational-conversation-engine.js` — deterministic multi-turn customer dialogue and rule-based customer-care/compliance evaluation.
+- `tests/operational-conversation-engine-v44.test.mjs` — conversation-engine regression tests.
+- `tests/calloria-v44-first-working-shift-plugin.test.mjs` — integration transform and syntax tests.
 
-## Important verification boundary
+## Important limits
 
-The trainer named in the workflow is an in-game simulated trainer. This patch does not connect to a real human manager or external HR platform. Workstation positions are simulated assignments in the employee save; they do not prove that a matching physical GLB desk is correctly rendered in the 3D world. The first shift uses CALLORIA's existing simulated shift and contact queues.
-
-The package tests pass in isolation. A full repository `npm test`, Vite production build, Vercel deployment, live browser session and 3D GLB rendering have not been verified by this package.
+- This package does not contain or replace the complete CALLORIA application.
+- The patch expects the upstream `js/main.js` and existing modules to remain compatible with the exact anchors tested against the `74e0582` source baseline.
+- This is a synthetic call simulation. No real telephone call is placed, no external customer data is accessed, and no LLM provider is called.
+- Existing OJT and GLB files are not included as replacements. Keep the already-installed v4.3 onboarding runtime and v3.8.2 GLB plugin in place.
+- The package does not add the next digital/outbound gameplay channel or complete the GLB rendering issue.
