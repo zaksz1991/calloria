@@ -1,47 +1,51 @@
-# CALLORIA v4.7 — Supervisor & QA Operations
+# CALLORIA v4.8 — Workforce Management & Intraday Control
 
-An additive supervisor-console page for the CALLORIA Vite application. This package does not replace existing project files and does not modify the application entry point, Vite configuration, onboarding, agent gameplay, GLB assets or existing operations pages.
+An additive workforce operations page for the existing CALLORIA Vite application. This patch does not replace or modify `vite.config.js`, `main.js`, the agent desk, OJT, supervisor console, 3D assets or existing game systems.
 
 ## Included
 
-- Supervisor overview with contact, QA, escalation and handled-contact indicators.
-- Multi-channel interaction queue for voice, email, live chat and social contacts.
-- Search and filters for channel, status and priority.
-- Interaction transcript inspection with controls to start a monitoring record, request supervisor assistance, mark a contact complete or raise an escalation.
-- Weighted 100-point QA scorecard with six service criteria.
-- Critical-fail rule: verification/data protection or accuracy below 3/5 caps the result at 49.
-- QA evaluation history and latest agent QA score update within the local demo roster.
-- Coaching register with observed behaviour, agreed action, review date and status tracking.
-- Escalation register with ownership, priority, status and resolution notes.
-- Team performance snapshot.
-- Local browser persistence with a reset-demo control.
+- Daily agent roster with channel/skill matching.
+- Shift assignment with overlap, duration and break validation.
+- Draft/published schedule lifecycle and CSV export.
+- Date selector for the local planning workspace.
+- Intraday status board with a selectable simulated time.
+- Planned-versus-actual adherence checks and exception visibility.
+- Voice, live chat, email and social 30-minute contact forecast.
+- Occupancy target adjustment and staffing workload estimate.
+- Coverage, attention alerts, channel staffing summary and activity trail.
+- Local browser persistence under `calloria.workforce-control.v48`.
 
 ## Installation
 
-Copy the four files in this package's `public/` folder into the existing CALLORIA repository's `public/` folder. Keep the existing files. Do not replace `vite.config.js`, `main.js`, the existing agent desk, OJT code or model files.
+Copy the three files inside this package's `public/` folder into the existing CALLORIA repository's `public/` folder. Preserve all existing files. Do not replace Vite configuration or application entry points.
 
-After the updated application is built and served, open:
+After the updated project is built and deployed, open:
 
-`/supervisor-qa.html`
+`https://calloria.vercel.app/workforce-control.html`
 
-For the current Vercel project, the expected route is:
+The route is available only after the three new files have been added to the deployed project.
 
-`https://calloria.vercel.app/supervisor-qa.html`
+## Controls
 
-This route becomes available only after the new public files are included in the deployed project.
+1. Open **Shift schedule** and select the operating date.
+2. Assign agents only to channels included in their skill profile.
+3. Add draft shifts and publish the daily schedule when the roster is ready.
+4. Export the date's roster as CSV when needed.
+5. Open **Intraday control**, choose a simulated time and update actual states to test adherence monitoring.
+6. Open **Demand forecast** to adjust interval volumes and occupancy assumptions.
 
-## Data and integration boundary
+## Important boundaries
 
-This is an isolated demonstration page. It does not yet read or write CALLORIA's central CRM, employee records, workforce management, telephony provider, real email/chat/social accounts, live voice audio, QA backend or multiplayer sessions. Agent names, contacts, conversations, statuses, metrics and existing escalations are synthetic sample records. Changes are stored in the browser's `localStorage` under `calloria.supervisor-qa.v47`; they are not shared across users or devices.
+This is a local simulation, not a connected workforce management system. Seed roster details, forecast volumes and actual agent states are synthetic. It does not read the v4.7 supervisor console's browser storage or centralise data across users/devices. It is not connected to HR/payroll, telephony/ACD, real agent status feeds, email or chat systems.
 
-The monitoring control records a local supervisor monitoring state; it does not silently join a real telephone call or capture audio. Completing a contact makes it eligible for this page's QA review only. No external messages or customer contacts are sent.
+Staffing estimates use a simple workload formula based on average handling time and occupancy. They do not model Erlang-C, queue arrival distributions, service-level objectives, concurrency, shrinkage or abandonment, and must not be used as a production staffing forecast without validation.
 
 ## Files
 
-- `public/supervisor-qa.html` — standalone page and layout.
-- `public/supervisor-qa.css` — responsive supervisor-console styling.
-- `public/supervisor-qa.js` — browser UI and interaction handling.
-- `public/supervisor-qa-engine.js` — scorecard, state, metrics and record helpers.
-- `tests/supervisor-qa-v47.test.mjs` — focused tests for core engine logic.
-- `CHANGELOG.md` — release notes.
-- `VERIFICATION.md` — exact verification performed and limitations.
+- `public/workforce-control.html`
+- `public/workforce-control.css`
+- `public/workforce-control.js`
+- `public/workforce-control-engine.js`
+- `tests/workforce-control-v48.test.mjs`
+- `CHANGELOG.md`
+- `VERIFICATION.md`

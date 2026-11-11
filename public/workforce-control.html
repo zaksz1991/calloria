@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1422">
+  <meta name="description" content="CALLORIA workforce planning, shift scheduling and intraday operations workspace.">
+  <title>Workforce Control | CALLORIA</title>
+  <link rel="stylesheet" href="/workforce-control.css">
+  <script src="/workforce-control-engine.js" defer></script>
+  <script src="/workforce-control.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="/" aria-label="CALLORIA home"><span class="brand-symbol">C</span><span><strong>CALLORIA</strong><small>WORKFORCE OPERATIONS</small></span></a>
+      <div class="nav-caption">PLANNING WORKSPACE</div>
+      <nav class="side-nav" aria-label="Workforce sections">
+        <button class="nav-link active" data-view="overview"><span class="nav-icon">◫</span>Overview</button>
+        <button class="nav-link" data-view="schedule"><span class="nav-icon">▦</span>Shift schedule<span class="nav-count" id="nav-shift-count">8</span></button>
+        <button class="nav-link" data-view="intraday"><span class="nav-icon">◉</span>Intraday control<span class="nav-count alert" id="nav-exception-count">—</span></button>
+        <button class="nav-link" data-view="forecast"><span class="nav-icon">⌁</span>Demand forecast</button>
+      </nav>
+      <div class="sidebar-note"><span class="note-dot"></span><div><b>Local planning workspace</b><small>Demo workforce data</small></div></div>
+      <div class="side-bottom"><div class="avatar">WM</div><div><b>Workforce Manager</b><small>Operations planning</small></div></div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="top-left"><button class="mobile-menu" id="mobile-menu" aria-label="Open navigation">☰</button><div class="crumb">CALLORIA <span>/</span> <b>WORKFORCE CONTROL</b></div></div>
+        <div class="top-actions"><span class="environment"><i></i> DEMO ENVIRONMENT</span><label class="date-top">OPERATING DATE <input id="top-date" type="date" aria-label="Operating date"></label></div>
+      </header>
+
+      <div class="content">
+        <section class="view active" id="view-overview">
+          <div class="page-heading"><div><div class="eyebrow">WORKFORCE MANAGEMENT / DAILY OPERATIONS</div><h1>Workforce command</h1><p>Plan the shift, align staffing to forecast demand and manage intraday exceptions.</p></div><div class="heading-tools"><span class="date-display" id="overview-date">WEDNESDAY · 11 NOV 2026</span><button class="button primary" data-go="schedule">Manage schedule <span>→</span></button></div></div>
+          <div class="metric-grid">
+            <article class="metric-card"><div class="metric-label">SCHEDULED TODAY <span class="metric-icon blue">▦</span></div><strong id="metric-scheduled">—</strong><small id="metric-scheduled-foot">Agents on today's roster</small></article>
+            <article class="metric-card"><div class="metric-label">ON-SHIFT NOW <span class="metric-icon cyan">◉</span></div><strong id="metric-working">—</strong><small id="metric-working-foot">Working, excluding breaks</small></article>
+            <article class="metric-card"><div class="metric-label">ADHERENCE <span class="metric-icon purple">⌁</span></div><strong id="metric-adherence">—</strong><small id="metric-adherence-foot">Against planned activity</small></article>
+            <article class="metric-card"><div class="metric-label">STAFFING GAP <span class="metric-icon orange">↗</span></div><strong id="metric-gap">—</strong><small id="metric-gap-foot">At selected forecast interval</small></article>
+          </div>
+
+          <div class="overview-grid">
+            <article class="panel coverage-panel">
+              <div class="panel-heading"><div><h2>Intraday staffing coverage</h2><p>Workload-based staffing estimate · 30-minute intervals</p></div><span class="tag" id="coverage-date-tag">TODAY</span></div>
+              <div class="coverage-summary"><div><small>SELECTED INTERVAL</small><strong id="coverage-time">10:30</strong></div><div><small>REQUIRED</small><strong id="coverage-required">—</strong></div><div><small>AVAILABLE</small><strong id="coverage-available">—</strong></div><div><small>STATUS</small><strong class="coverage-state" id="coverage-status">—</strong></div></div>
+              <div class="interval-bars" id="overview-interval-bars"></div>
+              <div class="chart-legend"><span><i class="legend-required"></i>Required agents</span><span><i class="legend-available"></i>Available agents</span></div>
+            </article>
+            <article class="panel alerts-panel">
+              <div class="panel-heading"><div><h2>Operational attention</h2><p>Exceptions that require workforce action</p></div><span class="tag alert-tag" id="alert-total">0 OPEN</span></div>
+              <div class="attention-items" id="attention-items"></div>
+            </article>
+          </div>
+          <div class="overview-bottom">
+            <article class="panel today-panel"><div class="panel-heading"><div><h2>Today's staffing plan</h2><p>Shift coverage by contact channel</p></div><button class="text-link" data-go="schedule">View roster →</button></div><div id="channel-summary" class="channel-summary"></div></article>
+            <article class="panel activity-panel"><div class="panel-heading"><div><h2>Workforce activity</h2><p>Recent planning and intraday actions</p></div></div><div id="activity-list" class="activity-list"></div></article>
+          </div>
+          <div class="disclaimer"><b>Planning boundary</b><span>Staffing requirements are directional workload estimates using average handling-time assumptions and a target occupancy. They are not an Erlang-C service-level forecast and are not connected to live ACD, HR, payroll or agent state feeds.</span></div>
+        </section>
+
+        <section class="view" id="view-schedule">
+          <div class="page-heading"><div><div class="eyebrow">ROSTER DESIGN / SHIFT ALLOCATION</div><h1>Shift schedule</h1><p>Assign skilled agents to channels, protect breaks and publish the daily roster.</p></div><div class="heading-tools"><button class="button secondary" id="export-csv">Export CSV ↓</button><button class="button primary" id="publish-schedule">Publish daily schedule</button></div></div>
+          <div class="schedule-toolbar panel"><div class="toolbar-date"><label>OPERATING DATE<input id="schedule-date" type="date"></label><span id="schedule-publish-state" class="publish-state">DRAFT PLAN</span></div><div class="schedule-totals"><div><b id="schedule-total">0</b><small>SHIFTS</small></div><div><b id="schedule-published">0</b><small>PUBLISHED</small></div><div><b id="schedule-draft">0</b><small>DRAFT</small></div></div></div>
+          <div class="schedule-layout">
+            <article class="panel roster-panel"><div class="panel-heading"><div><h2>Daily roster</h2><p>Shift and break assignments for the selected date</p></div><span class="tag" id="roster-count">0 ASSIGNMENTS</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>AGENT</th><th>TEAM</th><th>CHANNEL</th><th>SHIFT</th><th>BREAK</th><th>STATUS</th></tr></thead><tbody id="schedule-table"></tbody></table></div><div class="table-foot">Shifts crossing midnight are not supported in this release.</div></article>
+            <article class="panel add-shift-panel"><div class="panel-heading"><div><h2>Add a shift</h2><p>New assignments start as draft</p></div><span class="add-mark">＋</span></div>
+              <form id="shift-form" class="form-body">
+                <label class="form-label">Agent<select id="shift-agent" required></select></label>
+                <label class="form-label">Primary channel<select id="shift-channel" required><option>Voice</option><option>Live chat</option><option>Email</option><option>Social</option></select></label>
+                <div class="form-row"><label class="form-label">Start<input id="shift-start" type="time" value="16:00" required></label><label class="form-label">End<input id="shift-end" type="time" value="22:00" required></label></div>
+                <div class="form-row"><label class="form-label">Break starts<input id="shift-break-start" type="time" value="19:00" required></label><label class="form-label">Break ends<input id="shift-break-end" type="time" value="19:15" required></label></div>
+                <div class="form-hint" id="shift-skill-hint">Select an agent to view their channel skills.</div>
+                <button class="button primary full" type="submit">Add draft shift</button>
+              </form>
+            </article>
+          </div>
+          <div class="rule-note"><b>Scheduling checks</b><span>Agent skill match · No overlapping shifts · Shift duration 1–12 hours · Break contained within shift · Minimum break 15 minutes.</span></div>
+        </section>
+
+        <section class="view" id="view-intraday">
+          <div class="page-heading"><div><div class="eyebrow">REAL-TIME MANAGEMENT / ADHERENCE CONTROL</div><h1>Intraday control</h1><p>Compare planned activity with the agent status entered in this local simulation.</p></div><div class="intraday-time-control"><label>SIMULATED TIME<select id="simulated-time"></select></label><span class="tag cyan-tag">MANUAL SIMULATION</span></div></div>
+          <div class="intraday-kpis"><div class="kpi-box"><small>PLANNED ON SHIFT</small><strong id="intra-scheduled">—</strong></div><div class="kpi-box"><small>PLANNED WORKING</small><strong id="intra-working">—</strong></div><div class="kpi-box"><small>PLANNED BREAK</small><strong id="intra-break">—</strong></div><div class="kpi-box"><small>ADHERENCE</small><strong id="intra-adherence">—</strong></div><div class="kpi-box"><small>EXCEPTIONS</small><strong id="intra-exceptions">—</strong></div></div>
+          <div class="intraday-layout">
+            <article class="panel agent-status-panel"><div class="panel-heading"><div><h2>Agent status board</h2><p>Change actual state to simulate an intraday update</p></div><span class="tag">LOCAL DEMO</span></div><div class="table-wrap"><table class="data-table intraday-table"><thead><tr><th>AGENT</th><th>PLANNED</th><th>ACTUAL STATUS</th><th>ADHERENCE</th><th>SHIFT</th></tr></thead><tbody id="intraday-table"></tbody></table></div></article>
+            <article class="panel exception-panel"><div class="panel-heading"><div><h2>Adherence exceptions</h2><p>Planned and actual status do not align</p></div><span class="tag alert-tag" id="exception-count">0</span></div><div id="exception-list" class="exception-list"></div></article>
+          </div>
+          <div class="disclaimer"><b>Adherence calculation</b><span>Working includes Available, On contact and Wrap-up. Break must match a planned break. Off-duty staff are expected to be Offline. Training and Lunch are treated as exceptions unless explicitly scheduled in the roster.</span></div>
+        </section>
+
+        <section class="view" id="view-forecast">
+          <div class="page-heading"><div><div class="eyebrow">CAPACITY PLANNING / CONTACT VOLUME</div><h1>Demand forecast</h1><p>Review 30-minute contact volumes and their indicative staffing requirement.</p></div><div class="forecast-target"><label>OCCUPANCY TARGET <select id="occupancy-target"><option value="0.75">75%</option><option value="0.8">80%</option><option value="0.82" selected>82%</option><option value="0.85">85%</option><option value="0.9">90%</option></select></label></div></div>
+          <div class="forecast-layout">
+            <article class="panel forecast-table-panel"><div class="panel-heading"><div><h2>Interval demand plan</h2><p>Contact volumes by 30-minute interval</p></div><span class="tag">VOLUME PLAN</span></div><div class="table-wrap"><table class="data-table forecast-table"><thead><tr><th>INTERVAL</th><th>VOICE</th><th>LIVE CHAT</th><th>EMAIL</th><th>SOCIAL</th><th>REQUIRED STAFF</th><th>ROSTER STATUS</th></tr></thead><tbody id="forecast-table"></tbody></table></div></article>
+            <article class="panel edit-forecast-panel"><div class="panel-heading"><div><h2>Adjust forecast</h2><p>Scenario changes are saved locally</p></div></div><form id="forecast-form" class="form-body"><label class="form-label">Interval<select id="forecast-time"></select></label><div class="forecast-input-grid"><label>Voice<input id="forecast-voice" type="number" min="0" max="500" step="1"></label><label>Live chat<input id="forecast-chat" type="number" min="0" max="500" step="1"></label><label>Email<input id="forecast-email" type="number" min="0" max="500" step="1"></label><label>Social<input id="forecast-social" type="number" min="0" max="500" step="1"></label></div><button class="button primary full" type="submit">Save interval forecast</button><div class="form-hint">AHT assumptions: Voice 6 min · Live chat 4 min · Email 5 min · Social 4.5 min.</div></form></article>
+          </div>
+          <div class="forecast-footnote"><b>Forecast methodology</b><p>Required agents = rounded-up total handling workload ÷ (30-minute interval × occupancy target). This capacity proxy does not model arrival distribution, service-level targets, shrinkage, concurrency or queue abandonment. Use a validated WFM model before making real staffing decisions.</p></div>
+        </section>
+
+        <footer class="footer"><span>CALLORIA · WORKFORCE MANAGEMENT &amp; INTRADAY CONTROL</span><span>v4.8 · LOCAL DEMO DATA</span></footer>
+      </div>
+    </main>
+  </div>
+  <div class="toast-stack" id="toast-stack" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>

@@ -1,18 +1,18 @@
-# Verification — v4.7
+# v4.8 verification record
 
-## Passed
+## Automated checks
 
-- JavaScript syntax check: `public/supervisor-qa-engine.js`.
-- JavaScript syntax check: `public/supervisor-qa.js`.
-- Focused Node test suite: 11 passed, 0 failed.
-- Test coverage includes initial multi-channel data, weighted QA scoring, critical-fail capping, rating normalization, evaluation validation, escalation validation/defaults, metrics, combined interaction filtering, local persistence, corrupted-state fallback and bounded activity history.
+- `node --check public/workforce-control-engine.js` — passed.
+- `node --check public/workforce-control.js` — passed.
+- `node --test tests/workforce-control-v48.test.mjs` — 15 focused tests passed, 0 failed.
+- `unzip -t CALLORIA_v4_8_Workforce_Management_Patch.zip` — passed after archive creation.
 
 ## Not performed
 
 - Full CALLORIA repository test suite.
-- Full Vite production build against the user's current `main` branch.
-- Vercel deployment verification.
-- Real browser visual or end-to-end interaction test.
-- Integration with central CRM, employee accounts, telephony, email, chat, social channels, WFM, audio monitoring or multiplayer data.
+- Full Vite production build.
+- Vercel deployment.
+- Live browser visual/interaction test against the deployed site.
+- Integration test with v4.7 supervisor QA, central CRM, HR, ACD/telephony or real workforce data.
 
-The page is an additive standalone demo. Its seeded data and saved changes remain local to the browser. Passing focused tests does not establish that the user's current repository builds or that the page is already deployed.
+This is an additive standalone page using synthetic local records. The staffing calculation is a workload proxy, not an Erlang-C workforce forecast.

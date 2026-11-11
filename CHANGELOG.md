@@ -1,10 +1,16 @@
-# v4.7 — Supervisor & QA Operations
+# CALLORIA v4.8 — Workforce Management & Intraday Control
 
-- Added a separate supervisor control-room page.
-- Added a synthetic multi-channel monitoring queue with transcript review and supervisor controls.
-- Added weighted QA evaluation and critical-failure handling.
-- Added coaching records and review-status tracking.
-- Added escalation ownership, status and resolution management.
-- Added team roster and shift performance views.
-- Added localStorage persistence and demo-data reset.
-- Kept all changes additive under `public/` and added focused core-engine tests.
+## Added
+- Daily shift roster with agent skill validation, shift-duration checks, break validation and overlap prevention.
+- Draft and published schedule states, date selection and CSV roster export.
+- Intraday status board with a manually selected simulation time.
+- Planned-versus-actual status adherence calculation and exception register.
+- 30-minute multi-channel contact-volume forecast for voice, live chat, email and social.
+- Adjustable occupancy target and workload-based indicative staffing requirement.
+- Staffing coverage view, intraday alerts, channel roster summary and workforce activity log.
+- Local browser persistence under a dedicated v4.8 storage key.
+
+## Boundaries
+- This is an additive standalone operations page. It does not modify existing CALLORIA pages or connect to central agent records, HR, payroll, ACD/telephony, email/chat providers, live queue events or multiplayer data.
+- All roster, forecast, demand and actual-state data are illustrative local demo records.
+- Staffing numbers use a workload proxy, not Erlang-C or a validated service-level forecast.
