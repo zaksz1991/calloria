@@ -1,24 +1,25 @@
-# Verification — CALLORIA v5.1
+# Verification — CALLORIA v5.2
 
 ## Passed
 
-- `node --check public/learning-academy-engine.js`
-- `node --check public/learning-academy.js`
-- Focused Node test suite: **37 passed, 0 failed**.
-- Course/skill catalogue integrity: unique identifiers, valid skill mappings and expected lesson/quiz coverage.
-- Workflow tests: employee import, role-aware assignment, duplicate controls, lesson completion, locked assessments, scoring, explicit retakes, certification dates, competency evidence, briefing slots and attendance rules.
-- CSV escaping and local-storage recovery tests.
-- HTML shell ID uniqueness and page/form/navigation binding checks.
-- ZIP archive integrity check: see release packaging validation.
+- `node --check public/knowledge-operations-engine.js` — passed.
+- `node --check public/knowledge-operations.js` — passed.
+- `node --test tests/knowledge-operations-v52.test.mjs` — **33 passed, 0 failed**.
+- HTML page-shell contract test — passed.
+- HTML ID scan — 7 static IDs, no duplicates.
+- Static selector scan — the only selectors not present in the initial page shell are generated inside the Knowledge Library view (`article-search`, `article-status`, `article-product`, `article-category`, `article-reader`).
+- Learning Academy v5.1 storage-key contract — passed (`calloria.learning-academy.v51`).
+- RuffNeck product seed set — 6 products.
+- Initial knowledge article set — 15 articles.
 
 ## Not performed
 
 - Full CALLORIA repository test suite.
-- Full Vite production build.
-- Vercel deployment or production route verification.
-- Successful browser end-to-end or screenshot verification. Headless Chromium stalled in this environment before completing the render, so browser rendering is not claimed as verified.
-- Live authenticated employee database, HR role permissions, cross-device synchronisation or actual email/calendar/telephony integration.
+- Vite production build against the full repository.
+- Vercel deployment or live route verification.
+- Browser end-to-end visual testing. No browser automation runtime was available in this package workspace.
+- Integration verification against the central CRM, live agent desktop, actual product services or telephony systems.
 
-## Important interpretation
+## Important limits
 
-The 35 passing tests cover the v5.1 engine and static page contracts only. They do not imply that the overlay has been merged into the CALLORIA repository, built by Vite, deployed to Vercel or tested against live application data.
+This is a standalone additive module. Its records are browser-local. Learning Academy briefing import is a one-time, one-way read from the same browser origin; there is no automatic or cross-device sync. Product support content is starter simulation content and is not a verified live product manual. No real player statistics, outage status, advertising inventory or sponsorship rates are fetched.

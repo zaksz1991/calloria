@@ -1,64 +1,67 @@
-# CALLORIA v5.1 — Learning & Competency Academy
+# CALLORIA v5.2 — Knowledge & Product Operations
 
-An additive learning-management workspace for CALLORIA. It expands the employee lifecycle from v5.0 into ongoing role-based learning, practical skill evidence, internal course certifications and the daily service/product briefing cycle.
-
-This release does not replace any existing CALLORIA application entry point, Vite configuration, recruitment flow, OJT flow, GLB asset, 3D workplace or game system.
+An additive service-knowledge workspace for CALLORIA. It adds controlled knowledge authoring, product/service reference records, article-use logging and operational change notices. It gives the service simulator a maintained knowledge workflow instead of treating knowledge management as training-course content alone.
 
 ## Included
 
-- Course catalogue with 11 structured learning modules covering general customer experience, verification and data care, CRM/case records, voice, digital channels, complaint recovery, QA calibration, workforce operations, systems support/cyber hygiene, team coaching and knowledge management.
-- Role-aware assignment to one employee or supported department groups. Duplicate open assignments are blocked; unsupported role-specific bulk assignments are rejected.
-- Lesson completion tracking. An assessment is locked until every lesson is marked complete.
-- Three-question knowledge checks, an 80% pass mark, attempt history, failed-course reset and explicit retake flow.
-- Internal course certification with a 365-day validity period and renewal/expiry status calculation.
-- Automatic course-linked competency evidence for every skill mapped to a passed course.
-- Manual manager/trainer competency assessments with required observable evidence and assessor identity.
-- Employee skill matrix showing the latest recorded outcome for each competency.
-- Morning 7:30 AM and afternoon 2:00 PM team briefing scheduling, topic/audience/trainer, change summary and attendance records.
-- Duplicate briefing slot and duplicate attendee controls.
-- Dashboard, overdue queue, completion/renewal metrics, recent activity and CSV training report.
-- Explicit one-way employee snapshot import from People Operations v5.0 when both pages use the same browser and origin. First initialisation also reads that snapshot when available.
-- Links back to People Operations, Performance & Career and Supervisor & QA pages.
+- Knowledge library with full-text search across titles, summaries, categories, keywords and procedural steps.
+- Filters by article status, product/service and category.
+- Fifteen starter articles covering customer discovery, verification, CRM records, voice, digital channels, complaint recovery, life and personal-development enquiries, relevant service discovery, RuffNeck product support and Kano game support.
+- Six RuffNeck product records: RuffNeck LMS, RuffNeck Prospector, RuffNeck Connect, RuffNeck Social Hub, Kano Run and Kano Keke. Product pages link to their known public sites and list first-line support topics and relevant related services.
+- Multi-industry service context with General Customer Experience as the default and banking as one optional pack.
+- Life, relationship, parenting, habits, emotional-intelligence and personal-development enquiry guidance with clear non-clinical boundaries and escalation reminders.
+- Knowledge article authoring with required title, summary, category and procedural steps.
+- Controlled article lifecycle: Draft → In Review → Published, or Changes Requested → Draft. Only published, non-expired articles appear in published-only search and can be recorded as used.
+- Article revision history retained locally; editing a published item moves its current record back to Draft for review.
+- Article usage record with channel, optional case reference, employee and outcome. Usage counters feed the overview dashboard.
+- Service notice authoring, severity, audience, effective date and manual publication.
+- Manual one-way briefing import from Learning & Competency Academy v5.1 using `calloria.learning-academy.v51`. Cancelled sessions are skipped and previously imported briefing IDs are not duplicated.
+- Article register CSV export, recent activity and stale/expired content reminders.
+- Responsive page layout for desktop and mobile widths.
 
 ## Installation
 
-This is an additive public-folder overlay, not a full repository snapshot.
+This is an additive public-folder overlay, not a full CALLORIA repository snapshot.
 
 1. Extract the ZIP.
-2. Open `CALLORIA_v5_1_Learning_Competency_Academy/public`.
+2. Open `CALLORIA_v5_2_Knowledge_Product_Operations/public`.
 3. Copy these four files into the existing CALLORIA repository `public` folder:
-   - `learning-academy.html`
-   - `learning-academy.css`
-   - `learning-academy.js`
-   - `learning-academy-engine.js`
-4. Keep all existing files. Do not replace `vite.config.js`, `main.js`, game entry points, OJT files, protected assets or other modules.
-5. Deploy using the repository's normal process.
+   - `knowledge-operations.html`
+   - `knowledge-operations.css`
+   - `knowledge-operations.js`
+   - `knowledge-operations-engine.js`
+4. Keep all existing files. Do not replace `vite.config.js`, `main.js`, game entry points, OJT files, GLB assets or any earlier module.
+5. Deploy through the repository's existing deployment process.
 
-The expected page route after deployment is `/learning-academy.html`, e.g. `https://calloria.vercel.app/learning-academy.html`.
+Expected route after deployment: `/knowledge-operations.html`, for example `https://calloria.vercel.app/knowledge-operations.html`.
 
-## Employee import
+## Learning Academy briefing import
 
-The module reads `calloria.people-operations.v50`. If People Operations v5.0 is already saved in the same browser and origin when the academy is first opened, its employee profiles are used as the starting roster. Otherwise, a synthetic roster is created.
+The **Import v5.1 briefings** control reads the `calloria.learning-academy.v51` browser-local record and imports non-cancelled sessions as published service notices. It is a one-way snapshot import. The source briefing is not modified, and changes made after import are not automatically synchronised. Both pages must have been opened in the same browser profile and same origin for their `localStorage` data to be shared.
 
-Use **Import v5.0 employees** to refresh the academy's employee snapshot deliberately. Import is one-way: it updates the academy roster only. Training assignments, results, competencies and briefings do not write back to People Operations. There is no automatic sync or cross-device sync.
+## Product and service reference boundaries
 
-## Data and operational boundaries
+The six RuffNeck service names and public sites are seeded as catalogue references. This module does not connect to those live products, retrieve their current features, check outages, access customer accounts, verify support routes or query service telemetry. The text articles are starter guidance for the simulation and must be checked against current approved product documentation before use in a real service operation.
 
-- Demo content and employee records are synthetic. Course material is illustrative operational training content, not a legal, regulatory or policy certification.
-- All academy records use the current browser's `localStorage`. Records are not shared between browsers, devices or users and may be lost when browser storage is cleared.
-- This is not an authenticated LMS or HR platform. It has no real tenant isolation, learner/manager/trainer permissions, secure server-side audit trail, backup, encryption-at-rest guarantee, central database, SCORM/xAPI support, live virtual classroom or actual notification delivery.
-- The course certifications are internal demonstration records. They are not accredited qualifications, professional licences or proof of regulatory compliance.
-- Marking a lesson complete is a learner action in this simulation. Practical workplace capability still requires human observation and sign-off. Course pass results create evidence for mapped skills, but do not replace supervisory assessment.
-- Competency assessments are only as reliable as the entered evidence and assessor. Use synthetic case references; do not enter real customer personal information.
-- Briefing attendance is manually recorded. The module does not send calendar invitations, push notifications or automatically connect to shifts or rosters.
-- Do not enter confidential employee, customer, health or security information into this demonstration build.
+Kano player counts, total sessions, sponsorship inventory, advertising rates, impressions and campaign performance are not available through this module. Agents must not invent or quote those figures without an approved, current source. Service recommendations should be relevant to the customer's stated need and must not displace resolution of the primary request.
+
+The life and personal-development content supports respectful information handling only. It is not a clinical, therapy, legal or emergency service. The simulator content directs urgent or safety-critical issues to the organisation's approved escalation procedure.
+
+## Data and integration boundaries
+
+- All article, notice, usage and activity records are stored in the current browser's `localStorage` under `calloria.knowledge-operations.v52`.
+- Data is not shared across devices, browsers or users. Clearing browser storage can erase it.
+- This is not a secured multi-user knowledge-management system. It has no authenticated author/reviewer roles, tenant isolation, server-side audit trail, backup guarantee, access-control enforcement, notification delivery, approval delegation or central database.
+- The review workflow is an operational simulation; a browser-local reviewer name is not proof of independent approval.
+- The module is not yet connected to CALLORIA's central CRM, agent workstation, customer-care queues, live case records or actual service-status systems. Article use is manually recorded in this page.
+- Do not enter real customer credentials, payment data, confidential customer details or sensitive employee information.
 
 ## Package layout
 
-- `public/learning-academy.html` — page shell.
-- `public/learning-academy.css` — responsive workspace styles.
-- `public/learning-academy.js` — page interactions and rendering.
-- `public/learning-academy-engine.js` — course, competency, briefing, import and persistence logic.
-- `tests/learning-academy-v51.test.mjs` — focused unit and static integration tests.
+- `public/knowledge-operations.html` — page shell.
+- `public/knowledge-operations.css` — responsive styling.
+- `public/knowledge-operations.js` — page rendering and interactions.
+- `public/knowledge-operations-engine.js` — data model, knowledge lifecycle, notices, import and persistence.
+- `tests/knowledge-operations-v52.test.mjs` — focused unit and page-contract tests.
 - `CHANGELOG.md` — release summary.
 - `VERIFICATION.md` — checks performed and unverified areas.

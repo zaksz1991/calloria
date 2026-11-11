@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10243d">
+  <meta name="description" content="CALLORIA Knowledge and Product Operations workspace">
+  <title>Knowledge & Product Operations | CALLORIA</title>
+  <link rel="stylesheet" href="/knowledge-operations.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="CALLORIA home"><span class="brand-mark">C</span><span><strong>CALLORIA</strong><small>SERVICE KNOWLEDGE OPERATIONS</small></span></a>
+    <div class="topbar-right"><span class="system-label"><i></i> DEMONSTRATION WORKSPACE</span><button class="button button-quiet" id="import-briefings" type="button">Import v5.1 briefings</button></div>
+  </header>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="side-caption">SERVICE OPERATIONS</div>
+      <nav class="side-nav" aria-label="Knowledge workspace">
+        <button class="nav-item active" type="button" data-view="dashboard"><span>▦</span>Overview</button>
+        <button class="nav-item" type="button" data-view="library"><span>▤</span>Knowledge library</button>
+        <button class="nav-item" type="button" data-view="authoring"><span>＋</span>Article authoring</button>
+        <button class="nav-item" type="button" data-view="catalog"><span>◈</span>Products & services</button>
+        <button class="nav-item" type="button" data-view="notices"><span>◷</span>Service notices</button>
+      </nav>
+      <div class="sidebar-card"><span class="side-card-label">DAILY BRIEFING RHYTHM</span><strong>07:30 AM</strong><span>Morning service update</span><strong>02:00 PM</strong><span>Afternoon service update</span><small>Imported briefing records are published as notices for agent reference.</small></div>
+      <div class="side-links"><a href="/learning-academy.html">Learning Academy v5.1 ↗</a><a href="/supervisor-qa.html">Supervisor & QA v4.7 ↗</a><a href="/customer-care.html">Customer Care ↗</a><a href="/case-desk.html">Case Desk ↗</a></div>
+    </aside>
+    <main class="main-content">
+      <section class="page-heading"><div><div class="eyebrow">CALLORIA · SERVICE ENABLEMENT</div><h1 id="page-title">Knowledge operations</h1><p id="page-subtitle">Controlled service knowledge, product support routes and operational change notices.</p></div><div class="heading-actions"><button id="export-articles" class="button button-outline" type="button">Export article register</button></div></section>
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+      <section id="metrics" class="metrics-grid" aria-label="Knowledge operations metrics"></section>
+      <section id="workspace" aria-live="polite"></section>
+      <footer class="app-footer"><span>CALLORIA Knowledge & Product Operations · v5.2</span><span>Local demonstration records · not a live service-status feed</span></footer>
+    </main>
+  </div>
+  <script src="/knowledge-operations-engine.js"></script>
+  <script src="/knowledge-operations.js"></script>
+</body>
+</html>
