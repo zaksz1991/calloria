@@ -1,60 +1,79 @@
-# CALLORIA v5.8 — Billing & Revenue Operations
+# CALLORIA v5.9 — Finance Reconciliation & Period Close
 
-Additive browser-local order-to-cash module for the CALLORIA commercial operations simulator.
+An additive browser module for bank-statement CSV import, receipt reconciliation against Billing v5.8, evidence-backed transaction classification, and two-person finance period close.
 
-## Included
+## Package contents
 
-- Customer order register for one-time and recurring services.
-- Draft order creation with customer, product, amount, currency, frequency, effective dates, owner and payment terms.
-- One-way import of won v5.7 sales opportunities into draft orders. Imported records require a separate approval and scope review before billing.
-- Segregated order approval: the order owner cannot approve their own order; customer acceptance evidence and confirmed scope are mandatory.
-- Recurring order activation, pause, resume, completion and cancellation controls.
-- Draft invoice creation from approved/active orders, with period uniqueness for recurring invoices and duplicate prevention for one-time orders.
-- Invoice issue/lock, due-date control and void restrictions. Issued invoices are not edited; corrections use approved credit notes.
-- Verified receipt register with external reference de-duplication, independently recorded and verified by separate people.
-- Receipt allocation with customer and currency matching, receipt-balance and invoice-balance controls. No foreign-exchange conversion is performed.
-- Credit notes with separate preparer and approver, amount revalidation at approval and application to outstanding invoice balance.
-- Invoice disputes that pause creation of collection tasks until documented resolution.
-- Internal-only collection tasks; they do not send reminders or customer messages.
-- Refund request, independent approval and separate settlement recording. A refund must identify the payment allocation and settlement reverses only that allocation in the local ledger.
-- Multi-currency dashboard totals by currency rather than adding unlike currencies; receivables aging and control queue.
-- CSV exports for orders, invoices, receipts, financial controls and activity, with spreadsheet formula neutralisation.
-- Responsive desktop/mobile layout.
+```text
+CALLORIA_v5_9_Finance_Reconciliation/
+├── public/
+│   ├── finance-reconciliation.html
+│   ├── finance-reconciliation.css
+│   ├── finance-reconciliation.js
+│   └── finance-reconciliation-engine.js
+├── samples/
+│   └── bank-statement-template.csv
+├── tests/
+│   ├── finance-reconciliation-v59.test.mjs
+│   └── finance-reconciliation-html-v59.test.mjs
+├── CHANGELOG.md
+├── README.md
+└── VERIFICATION.md
+```
 
 ## Installation
 
-This is an overlay patch, not a complete CALLORIA repository export. Copy these four files from the package's `public/` folder into the repository's existing `public/` folder:
+Copy the four files in this package's `public/` directory into the existing CALLORIA repository's `public/` directory. Preserve all existing files.
 
-- `billing-operations.html`
-- `billing-operations.css`
-- `billing-operations.js`
-- `billing-operations-engine.js`
+Do not replace the existing `billing-operations.html`, `billing-operations.js` or `billing-operations-engine.js` files. v5.9 reads Billing v5.8 data without writing to or changing the v5.8 storage record.
 
-Preserve existing files and configuration. The module is standalone; v5.7 Sales Operations and v5.4 Customer 360 are optional local-storage read sources.
+With the existing Vite configuration using `publicDir: 'public'`, the expected page route after the files are deployed is:
 
-After the files are committed and deployed, open:
+`/finance-reconciliation.html`
 
-`https://calloria.vercel.app/billing-operations.html`
+Production URL after deployment:
 
-## Workflow
+`https://calloria.vercel.app/finance-reconciliation.html`
 
-1. Create an order directly or import won v5.7 opportunities. Imports produce draft orders, not approved orders.
-2. Have a different staff member approve the order using customer acceptance evidence and confirmed scope.
-3. Create an invoice draft from an approved or active order. Recurring invoices require a period end and cannot be duplicated for the same order/period.
-4. Review and issue the invoice. The issued record is locked. Use a credit note for a correction rather than changing an issued invoice.
-5. Record a receipt only after an external bank/processor receipt has been independently verified. Receipt recorder and verifier must be different people.
-6. Allocate receipts to invoices with matching customer references and currency. Over-allocation and overpayment are blocked.
-7. Use disputes to pause new collection actions during a billing investigation. Collections are internal tasks only.
-8. Credit notes and refunds require segregation of duties. Refund settlement is recorded only after an external transfer has been completed and evidenced; CALLORIA does not move funds.
+The route has not been verified on the live deployment.
 
-## Data and integration boundaries
+## Using the module
 
-- Local data key: `calloria.billing-operations.v58`.
-- Optional won sales source: `calloria.sales-operations.v57`.
-- Optional customer profile snapshot source: `calloria.customer-journey.v54`.
-- Sales import reads won deals and creates local draft orders only. It does not change the source sales records.
-- Customer refresh reads a summary count only. It does not alter Customer 360 records.
-- No Supabase, central CRM, accounting ledger, tax calculation, payment gateway, bank feed, FX service, email/SMS dispatch or external invoice delivery is connected.
-- Tax amounts are entered by an operator; the module does not calculate tax or establish legal tax treatment.
-- Dashboard figures represent records in this browser only, not audited revenue, cash receipts, statutory accounts or consolidated financial statements.
-- Do not enter card numbers, bank credentials, authentication secrets or confidential financial/customer information into this demonstration module. All first-launch sample records are synthetic and marked `demo` in the stored data.
+1. Open Billing & Revenue Operations v5.8 on the same browser origin and ensure its records have been saved.
+2. Open Finance Reconciliation v5.9 on that same origin and browser profile.
+3. Select **Import v5.8 receipts**. This reads the `calloria.billing-operations.v58` local-storage record. It imports receipt summaries only.
+4. Export a bank statement from the bank independently as CSV. Use the supplied CSV template or equivalent headers.
+5. Choose the bank account, record the importing operator and import the statement file.
+6. Use **Auto-match exact references** for unique reference + exact amount + exact currency matches.
+7. Review amount/currency suggestions manually. Manual matching still requires exact amount and currency plus an evidence reason.
+8. Classify fees, transfers, interest and other statement movements with a named operator and written evidence. Use exclusions only with a documented reason.
+9. Prepare a period close, resolve every blocker, refresh the checklist, then obtain approval from a different person.
+
+### CSV format
+
+The importer accepts a transaction date and either a signed `amount` or separate `debit` and `credit` columns. Supported aliases include `transactionDate`, `bookingDate`, `valueDate`, `reference`, `bankReference`, `transactionReference`, `narration`, `details`, `currency`, `ccy`, `bankAccount`, `account` and `accountName`.
+
+Currencies currently accepted: NGN, USD, GBP and EUR. Amounts use decimal notation; commas used as thousands separators are removed. Debit and credit values must not both be populated for the same row.
+
+## Controls
+
+- Automatic matching requires one unique receipt candidate with exact reference, amount and currency.
+- Similar amount/date candidates are suggestions only; they are not automatically linked.
+- Manual matching requires exact amount and currency, a named operator and a written reason.
+- A Billing receipt cannot be matched to more than one bank statement line.
+- Bank credits not represented in Billing may be classified, but must not be misrepresented as customer receipts.
+- Every statement movement must be matched, classified or explicitly excluded before period close.
+- Every Billing receipt in the period must have a bank statement match.
+- Period approval is blocked by unresolved items and requires a different person from the preparer.
+- Approved periods are locked against new statement imports in this browser workspace. Reopening requires a different person from the approver and a documented reason.
+- CSV exports escape spreadsheet formula-leading values.
+
+## Integration boundary and limitations
+
+This is a browser-local demonstration module. Reconciliation records are stored under `calloria.finance-reconciliation.v59` in browser local storage. Billing v5.8 is read from `calloria.billing-operations.v58` on the same browser origin; it is not changed by this module.
+
+There is no live bank feed, open-banking connection, bank-account verification, payment processing, accounting ledger, general-ledger posting, tax engine, payroll integration, invoice settlement, email delivery or multi-user database. A CSV statement is operator-supplied evidence, not proof that CALLORIA verified the bank source.
+
+Net processor settlements, fee deductions from customer receipts, split deposits and partial bank matches are not supported. Amount/currency discrepancies remain unmatched and must be investigated outside this matching flow. This module does not calculate tax, recognize revenue under accounting standards or certify statutory financial statements.
+
+Do not upload bank credentials, card data or confidential customer data. All sample values in the template are fictional.

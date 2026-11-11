@@ -1,556 +1,370 @@
 TAP version 13
-# Subtest: page references the v5.8 stylesheet, engine and controller
-ok 1 - page references the v5.8 stylesheet, engine and controller
+# Subtest: finance page loads the v5.9 engine before its UI controller
+ok 1 - finance page loads the v5.9 engine before its UI controller
   ---
-  duration_ms: 0.802795
+  duration_ms: 0.981402
   type: 'test'
   ...
-# Subtest: page static IDs are unique
-ok 2 - page static IDs are unique
+# Subtest: all static ID selectors referenced by the UI exist in the HTML
+ok 2 - all static ID selectors referenced by the UI exist in the HTML
   ---
-  duration_ms: 0.419189
+  duration_ms: 1.068633
   type: 'test'
   ...
-# Subtest: all static ID selectors used by the controller exist in the page
-ok 3 - all static ID selectors used by the controller exist in the page
+# Subtest: HTML contains no duplicate IDs
+ok 3 - HTML contains no duplicate IDs
   ---
-  duration_ms: 0.789074
+  duration_ms: 0.260871
   type: 'test'
   ...
-# Subtest: work area tabs and corresponding panels exist
-ok 4 - work area tabs and corresponding panels exist
+# Subtest: page exposes the required reconciliation, statement and period-close work areas
+ok 4 - page exposes the required reconciliation, statement and period-close work areas
   ---
-  duration_ms: 0.196045
+  duration_ms: 0.28611
   type: 'test'
   ...
-# Subtest: order, invoice and receipt forms are present
-ok 5 - order, invoice and receipt forms are present
+# Subtest: billing bridge uses the exact v5.8 storage key and never writes to billing storage
+ok 5 - billing bridge uses the exact v5.8 storage key and never writes to billing storage
   ---
-  duration_ms: 0.127531
+  duration_ms: 0.305778
   type: 'test'
   ...
-# Subtest: control exception lists are present
-ok 6 - control exception lists are present
+# Subtest: page clearly discloses its local demonstration and bank-connection limits
+ok 6 - page clearly discloses its local demonstration and bank-connection limits
   ---
-  duration_ms: 0.114592
+  duration_ms: 0.172029
   type: 'test'
   ...
-# Subtest: mobile responsive breakpoints are defined
-ok 7 - mobile responsive breakpoints are defined
+# Subtest: statement import uses a CSV-only file input
+ok 7 - statement import uses a CSV-only file input
   ---
-  duration_ms: 0.132448
+  duration_ms: 0.250896
   type: 'test'
   ...
-# Subtest: engine exposes tested order-to-cash and exception control methods
-ok 8 - engine exposes tested order-to-cash and exception control methods
+# Subtest: CSV parser preserves quoted commas and escaped double quotes
+ok 8 - CSV parser preserves quoted commas and escaped double quotes
   ---
-  duration_ms: 0.557777
+  duration_ms: 1.861803
   type: 'test'
   ...
-# Subtest: export controls exist for orders, invoices, receipts and exceptions
-ok 9 - export controls exist for orders, invoices, receipts and exceptions
+# Subtest: CSV parser rejects an unterminated quoted cell
+ok 9 - CSV parser rejects an unterminated quoted cell
   ---
-  duration_ms: 1.150557
+  duration_ms: 0.419199
   type: 'test'
   ...
-# Subtest: dynamic action form supports invoice selectors for receipt allocation and refund reversal
-ok 10 - dynamic action form supports invoice selectors for receipt allocation and refund reversal
+# Subtest: CSV parser ignores blank lines and a UTF-8 BOM
+ok 10 - CSV parser ignores blank lines and a UTF-8 BOM
   ---
-  duration_ms: 0.313741
+  duration_ms: 0.624727
   type: 'test'
   ...
-# Subtest: version and storage contracts are stable
-ok 11 - version and storage contracts are stable
+# Subtest: initial state starts with no fabricated statement transactions
+ok 11 - initial state starts with no fabricated statement transactions
   ---
-  duration_ms: 1.124718
+  duration_ms: 0.503075
   type: 'test'
   ...
-# Subtest: initial workspace contains only marked synthetic financial records
-ok 12 - initial workspace contains only marked synthetic financial records
+# Subtest: valid CSV imports a bank credit as a positive amount
+ok 12 - valid CSV imports a bank credit as a positive amount
   ---
-  duration_ms: 0.850357
+  duration_ms: 1.020361
   type: 'test'
   ...
-# Subtest: state normalisation repairs malformed collections
-ok 13 - state normalisation repairs malformed collections
+# Subtest: separate debit and credit columns become signed movements
+ok 13 - separate debit and credit columns become signed movements
   ---
-  duration_ms: 0.240742
+  duration_ms: 0.300461
   type: 'test'
   ...
-# Subtest: load returns demo state for empty storage
-ok 14 - load returns demo state for empty storage
+# Subtest: CSV import skips exact duplicate statement rows on re-import
+ok 14 - CSV import skips exact duplicate statement rows on re-import
   ---
-  duration_ms: 0.162984
+  duration_ms: 0.591107
   type: 'test'
   ...
-# Subtest: load tolerates invalid JSON
-ok 15 - load tolerates invalid JSON
+# Subtest: duplicate rows inside one CSV file are counted and skipped
+ok 15 - duplicate rows inside one CSV file are counted and skipped
   ---
-  duration_ms: 0.205418
+  duration_ms: 0.257776
   type: 'test'
   ...
-# Subtest: save persists JSON state
-ok 16 - save persists JSON state
+# Subtest: CSV import rejects files with no transaction body
+ok 16 - CSV import rejects files with no transaction body
   ---
-  duration_ms: 0.323816
+  duration_ms: 0.420992
   type: 'test'
   ...
-# Subtest: save safely reports storage quota failure
-ok 17 - save safely reports storage quota failure
+# Subtest: CSV import requires a date and amount/debit/credit columns
+ok 17 - CSV import requires a date and amount/debit/credit columns
   ---
-  duration_ms: 0.190385
+  duration_ms: 0.364507
   type: 'test'
   ...
-# Subtest: clean removes markup and control characters
-ok 18 - clean removes markup and control characters
+# Subtest: CSV import rejects invalid calendar dates
+ok 18 - CSV import rejects invalid calendar dates
   ---
-  duration_ms: 0.212719
+  duration_ms: 0.205117
   type: 'test'
   ...
-# Subtest: amount rejects negatives and zero for mandatory amounts
-ok 19 - amount rejects negatives and zero for mandatory amounts
+# Subtest: CSV import rejects zero-value statement movements
+ok 19 - CSV import rejects zero-value statement movements
   ---
-  duration_ms: 0.616946
+  duration_ms: 0.177716
   type: 'test'
   ...
-# Subtest: amount supports explicit zero for optional tax amount
-ok 20 - amount supports explicit zero for optional tax amount
+# Subtest: CSV import rejects unsupported currencies
+ok 20 - CSV import rejects unsupported currencies
   ---
-  duration_ms: 0.283005
+  duration_ms: 0.14666
   type: 'test'
   ...
-# Subtest: amount rejects values beyond the documented input limit
-ok 21 - amount rejects values beyond the documented input limit
+# Subtest: CSV import rejects rows with debit and credit populated together
+ok 21 - CSV import rejects rows with debit and credit populated together
   ---
-  duration_ms: 0.177557
+  duration_ms: 0.176184
   type: 'test'
   ...
-# Subtest: currency formatter uses requested currency
-ok 22 - currency formatter uses requested currency
+# Subtest: CSV import requires an active bank account
+ok 22 - CSV import requires an active bank account
   ---
-  duration_ms: 12.212813
+  duration_ms: 0.122234
   type: 'test'
   ...
-# Subtest: creates a draft order with a generated reference
-ok 23 - creates a draft order with a generated reference
+# Subtest: CSV import rejects rows for an approved period
+ok 23 - CSV import rejects rows for an approved period
   ---
-  duration_ms: 0.6064
+  duration_ms: 1.075884
   type: 'test'
   ...
-# Subtest: rejects an order without a customer identity
-ok 24 - rejects an order without a customer identity
+# Subtest: Billing import copies receipt summaries without card or bank credentials
+ok 24 - Billing import copies receipt summaries without card or bank credentials
   ---
-  duration_ms: 0.30623
+  duration_ms: 0.117767
   type: 'test'
   ...
-# Subtest: rejects an order without a product or service
-ok 25 - rejects an order without a product or service
+# Subtest: Billing import refreshes the same receipt instead of duplicating it
+ok 25 - Billing import refreshes the same receipt instead of duplicating it
   ---
-  duration_ms: 0.208523
+  duration_ms: 0.122203
   type: 'test'
   ...
-# Subtest: rejects an unsupported currency
-ok 26 - rejects an unsupported currency
+# Subtest: candidate ranking puts an exact reference and amount first
+ok 26 - candidate ranking puts an exact reference and amount first
   ---
-  duration_ms: 0.17278
+  duration_ms: 0.421002
   type: 'test'
   ...
-# Subtest: rejects an invalid billing frequency
-ok 27 - rejects an invalid billing frequency
+# Subtest: amount and currency alone produce a suggestion, not an exact match
+ok 27 - amount and currency alone produce a suggestion, not an exact match
   ---
-  duration_ms: 0.134171
+  duration_ms: 0.323245
   type: 'test'
   ...
-# Subtest: rejects an end date before the order start date
-ok 28 - rejects an end date before the order start date
+# Subtest: exact auto-match links unique reference, amount and currency
+ok 28 - exact auto-match links unique reference, amount and currency
   ---
-  duration_ms: 0.158498
+  duration_ms: 0.482534
   type: 'test'
   ...
-# Subtest: rejects payment terms outside 0 to 120 days
-ok 29 - rejects payment terms outside 0 to 120 days
+# Subtest: auto-match leaves amount-only suggestions unmatched
+ok 29 - auto-match leaves amount-only suggestions unmatched
   ---
-  duration_ms: 0.972359
+  duration_ms: 0.206479
   type: 'test'
   ...
-# Subtest: source opportunity cannot be imported into two orders
-ok 30 - source opportunity cannot be imported into two orders
+# Subtest: auto-match leaves ambiguous exact references for review
+ok 30 - auto-match leaves ambiguous exact references for review
   ---
-  duration_ms: 0.332659
+  duration_ms: 0.245879
   type: 'test'
   ...
-# Subtest: imports only won sales opportunities and marks resulting orders as draft
-ok 31 - imports only won sales opportunities and marks resulting orders as draft
+# Subtest: manual matching requires an evidence explanation
+ok 31 - manual matching requires an evidence explanation
   ---
-  duration_ms: 0.397687
+  duration_ms: 0.19977
   type: 'test'
   ...
-# Subtest: won sales opportunity without a positive estimate is skipped
-ok 32 - won sales opportunity without a positive estimate is skipped
+# Subtest: manual matching permits exact amount/currency and records the reason
+ok 32 - manual matching permits exact amount/currency and records the reason
   ---
-  duration_ms: 0.128493
+  duration_ms: 0.183335
   type: 'test'
   ...
-# Subtest: re-importing a won opportunity skips its existing order
-ok 33 - re-importing a won opportunity skips its existing order
+# Subtest: manual matching rejects a currency mismatch
+ok 33 - manual matching rejects a currency mismatch
   ---
-  duration_ms: 0.203035
+  duration_ms: 0.213841
   type: 'test'
   ...
-# Subtest: order approval requires another person from the order owner
-ok 34 - order approval requires another person from the order owner
+# Subtest: manual matching rejects an amount mismatch rather than masking fees
+ok 34 - manual matching rejects an amount mismatch rather than masking fees
   ---
-  duration_ms: 0.255484
+  duration_ms: 0.181903
   type: 'test'
   ...
-# Subtest: order approval requires customer acceptance and scope evidence
-ok 35 - order approval requires customer acceptance and scope evidence
+# Subtest: a Billing receipt can be matched to only one bank line
+ok 35 - a Billing receipt can be matched to only one bank line
   ---
-  duration_ms: 0.217737
+  duration_ms: 0.196815
   type: 'test'
   ...
-# Subtest: approves a draft order after independent evidence review
-ok 36 - approves a draft order after independent evidence review
+# Subtest: debit classification accepts an expense class with evidence
+ok 36 - debit classification accepts an expense class with evidence
   ---
-  duration_ms: 0.402555
+  duration_ms: 0.196175
   type: 'test'
   ...
-# Subtest: only approved recurring orders can be activated
-ok 37 - only approved recurring orders can be activated
+# Subtest: debit classification rejects a credit-only category
+ok 37 - debit classification rejects a credit-only category
   ---
-  duration_ms: 0.296775
+  duration_ms: 0.364678
   type: 'test'
   ...
-# Subtest: one-time order release remains an approved fulfilment order
-ok 38 - one-time order release remains an approved fulfilment order
+# Subtest: credit classification accepts bank interest and an evidence note
+ok 38 - credit classification accepts bank interest and an evidence note
   ---
-  duration_ms: 0.152079
+  duration_ms: 0.218418
   type: 'test'
   ...
-# Subtest: only valid order status transitions are permitted
-ok 39 - only valid order status transitions are permitted
+# Subtest: classification rejects a statement line already matched
+ok 39 - classification rejects a statement line already matched
   ---
-  duration_ms: 0.344888
+  duration_ms: 0.294892
   type: 'test'
   ...
-# Subtest: invoice creation requires an approved or active order
-ok 40 - invoice creation requires an approved or active order
+# Subtest: classification requires a named operator
+ok 40 - classification requires a named operator
   ---
-  duration_ms: 0.365879
+  duration_ms: 0.356925
   type: 'test'
   ...
-# Subtest: creates a draft invoice from an approved one-time order
-ok 41 - creates a draft invoice from an approved one-time order
+# Subtest: approved exclusion requires a substantial reason and is retained in state
+ok 41 - approved exclusion requires a substantial reason and is retained in state
   ---
-  duration_ms: 0.287442
+  duration_ms: 0.324447
   type: 'test'
   ...
-# Subtest: tax is a separately entered amount, not calculated by the engine
-ok 42 - tax is a separately entered amount, not calculated by the engine
+# Subtest: period summary blocks when no Billing receipt snapshot has been imported
+ok 42 - period summary blocks when no Billing receipt snapshot has been imported
   ---
-  duration_ms: 0.168533
+  duration_ms: 0.330075
   type: 'test'
   ...
-# Subtest: one-time order cannot receive a duplicate non-void invoice
-ok 43 - one-time order cannot receive a duplicate non-void invoice
+# Subtest: period summary counts unmatched statement lines and missing receipts
+ok 43 - period summary counts unmatched statement lines and missing receipts
   ---
-  duration_ms: 0.197747
+  duration_ms: 0.29317
   type: 'test'
   ...
-# Subtest: recurring invoice requires a billing period end
-ok 44 - recurring invoice requires a billing period end
+# Subtest: period summary calculates credit and debit totals by currency
+ok 44 - period summary calculates credit and debit totals by currency
   ---
-  duration_ms: 0.27301
+  duration_ms: 0.361913
   type: 'test'
   ...
-# Subtest: recurring invoice is unique for an order and billing period
-ok 45 - recurring invoice is unique for an order and billing period
+# Subtest: period summary rejects an end date before its start date
+ok 45 - period summary rejects an end date before its start date
   ---
-  duration_ms: 0.263665
+  duration_ms: 0.152278
   type: 'test'
   ...
-# Subtest: only draft invoices can be issued
-ok 46 - only draft invoices can be issued
+# Subtest: period preparation records blockers instead of falsely approving
+ok 46 - period preparation records blockers instead of falsely approving
   ---
-  duration_ms: 0.318748
+  duration_ms: 0.340852
   type: 'test'
   ...
-# Subtest: invoice due date cannot precede issue date
-ok 47 - invoice due date cannot precede issue date
+# Subtest: period close cannot be approved while blockers remain
+ok 47 - period close cannot be approved while blockers remain
   ---
-  duration_ms: 0.384396
+  duration_ms: 0.351007
   type: 'test'
   ...
-# Subtest: issue invoice locks the invoice and records issuer and due date
-ok 48 - issue invoice locks the invoice and records issuer and due date
+# Subtest: refreshing a prepared close clears blockers after reconciliation is completed
+ok 48 - refreshing a prepared close clears blockers after reconciliation is completed
   ---
-  duration_ms: 0.225989
+  duration_ms: 0.599299
   type: 'test'
   ...
-# Subtest: void invoice requires a documented reason
-ok 49 - void invoice requires a documented reason
+# Subtest: period close approval succeeds with independent approver after a clean checklist
+ok 49 - period close approval succeeds with independent approver after a clean checklist
   ---
-  duration_ms: 0.376004
+  duration_ms: 0.33277
   type: 'test'
   ...
-# Subtest: unpaid invoice can be voided with documented reason
-ok 50 - unpaid invoice can be voided with documented reason
+# Subtest: period close approval enforces a separate person from the preparer
+ok 50 - period close approval enforces a separate person from the preparer
   ---
-  duration_ms: 0.295694
+  duration_ms: 0.357686
   type: 'test'
   ...
-# Subtest: invoice with payment activity cannot be voided
-ok 51 - invoice with payment activity cannot be voided
+# Subtest: a prepared close must be refreshed if new unmatched lines are imported before approval
+ok 51 - a prepared close must be refreshed if new unmatched lines are imported before approval
   ---
-  duration_ms: 0.715814
+  duration_ms: 0.542434
   type: 'test'
   ...
-# Subtest: receipt requires external reference and evidence
-ok 52 - receipt requires external reference and evidence
+# Subtest: period close prevents overlapping approved closes
+ok 52 - period close prevents overlapping approved closes
   ---
-  duration_ms: 0.247481
+  duration_ms: 0.451577
   type: 'test'
   ...
-# Subtest: receipt recording and independent verification must be separated
-ok 53 - receipt recording and independent verification must be separated
+# Subtest: duplicate prepared close for the same period is prevented
+ok 53 - duplicate prepared close for the same period is prevented
   ---
-  duration_ms: 0.143355
+  duration_ms: 0.467471
   type: 'test'
   ...
-# Subtest: records a verified receipt without processing a payment
-ok 54 - records a verified receipt without processing a payment
+# Subtest: reopening an approved period requires a different operator and a reason
+ok 54 - reopening an approved period requires a different operator and a reason
   ---
-  duration_ms: 0.125538
+  duration_ms: 0.363055
   type: 'test'
   ...
-# Subtest: duplicate external receipt references are rejected case-insensitively
-ok 55 - duplicate external receipt references are rejected case-insensitively
+# Subtest: reopened period is no longer locked against corrected statement import
+ok 55 - reopened period is no longer locked against corrected statement import
   ---
-  duration_ms: 0.170175
+  duration_ms: 0.317186
   type: 'test'
   ...
-# Subtest: payment allocation rejects a draft invoice
-ok 56 - payment allocation rejects a draft invoice
+# Subtest: a prepared close cannot be reopened
+ok 56 - a prepared close cannot be reopened
   ---
-  duration_ms: 0.463115
+  duration_ms: 0.172649
   type: 'test'
   ...
-# Subtest: payment and invoice currencies must match
-ok 57 - payment and invoice currencies must match
+# Subtest: dashboard aggregates matching counts and currencies
+ok 57 - dashboard aggregates matching counts and currencies
   ---
-  duration_ms: 0.268693
+  duration_ms: 0.291638
   type: 'test'
   ...
-# Subtest: payment and invoice customer references must match
-ok 58 - payment and invoice customer references must match
+# Subtest: state can be saved and loaded from browser-like storage
+ok 58 - state can be saved and loaded from browser-like storage
   ---
-  duration_ms: 0.240691
+  duration_ms: 0.388363
   type: 'test'
   ...
-# Subtest: receipt cannot be over-allocated
-ok 59 - receipt cannot be over-allocated
+# Subtest: malformed stored JSON safely falls back to an initial state
+ok 59 - malformed stored JSON safely falls back to an initial state
   ---
-  duration_ms: 0.296545
+  duration_ms: 0.584397
   type: 'test'
   ...
-# Subtest: invoice cannot be overpaid through receipt allocation
-ok 60 - invoice cannot be overpaid through receipt allocation
+# Subtest: CSV export protects spreadsheet formulas
+ok 60 - CSV export protects spreadsheet formulas
   ---
-  duration_ms: 0.252048
+  duration_ms: 0.234932
   type: 'test'
   ...
-# Subtest: partial allocation produces a part-paid invoice and correct balance
-ok 61 - partial allocation produces a part-paid invoice and correct balance
-  ---
-  duration_ms: 0.278718
-  type: 'test'
-  ...
-# Subtest: full allocation marks invoice paid
-ok 62 - full allocation marks invoice paid
-  ---
-  duration_ms: 0.225328
-  type: 'test'
-  ...
-# Subtest: credit note requires issued invoice and a valid amount
-ok 63 - credit note requires issued invoice and a valid amount
-  ---
-  duration_ms: 0.312389
-  type: 'test'
-  ...
-# Subtest: credit note cannot exceed outstanding invoice balance
-ok 64 - credit note cannot exceed outstanding invoice balance
-  ---
-  duration_ms: 0.235364
-  type: 'test'
-  ...
-# Subtest: credit note approval requires a person different from preparer
-ok 65 - credit note approval requires a person different from preparer
-  ---
-  duration_ms: 0.325138
-  type: 'test'
-  ...
-# Subtest: approved credit note applies to invoice balance
-ok 66 - approved credit note applies to invoice balance
-  ---
-  duration_ms: 0.323145
-  type: 'test'
-  ...
-# Subtest: credit note is rejected if invoice balance changed before approval
-ok 67 - credit note is rejected if invoice balance changed before approval
-  ---
-  duration_ms: 0.281622
-  type: 'test'
-  ...
-# Subtest: only outstanding invoices can be disputed
-ok 68 - only outstanding invoices can be disputed
-  ---
-  duration_ms: 0.245989
-  type: 'test'
-  ...
-# Subtest: only one open dispute per invoice is permitted
-ok 69 - only one open dispute per invoice is permitted
-  ---
-  duration_ms: 0.278599
-  type: 'test'
-  ...
-# Subtest: open invoice dispute pauses creation of collection tasks
-ok 70 - open invoice dispute pauses creation of collection tasks
-  ---
-  duration_ms: 0.816015
-  type: 'test'
-  ...
-# Subtest: dispute resolution requires a controlled outcome and evidence
-ok 71 - dispute resolution requires a controlled outcome and evidence
-  ---
-  duration_ms: 0.286179
-  type: 'test'
-  ...
-# Subtest: resolved dispute permits a new internal collection task
-ok 72 - resolved dispute permits a new internal collection task
-  ---
-  duration_ms: 0.209385
-  type: 'test'
-  ...
-# Subtest: collection task completion requires an outcome and user
-ok 73 - collection task completion requires an outcome and user
-  ---
-  duration_ms: 0.363205
-  type: 'test'
-  ...
-# Subtest: collection tasks are internal only and can be completed
-ok 74 - collection tasks are internal only and can be completed
-  ---
-  duration_ms: 0.230526
-  type: 'test'
-  ...
-# Subtest: refund cannot exceed payment amount allocated to invoices
-ok 75 - refund cannot exceed payment amount allocated to invoices
-  ---
-  duration_ms: 0.447462
-  type: 'test'
-  ...
-# Subtest: refund request reserves allocated amount against duplicate requests
-ok 76 - refund request reserves allocated amount against duplicate requests
-  ---
-  duration_ms: 0.413941
-  type: 'test'
-  ...
-# Subtest: refund approval requires separation from requester
-ok 77 - refund approval requires separation from requester
-  ---
-  duration_ms: 0.295754
-  type: 'test'
-  ...
-# Subtest: refund request can be rejected with independent review reason
-ok 78 - refund request can be rejected with independent review reason
-  ---
-  duration_ms: 0.258508
-  type: 'test'
-  ...
-# Subtest: refund settlement requires a separate requester, approver and settlement recorder
-ok 79 - refund settlement requires a separate requester, approver and settlement recorder
-  ---
-  duration_ms: 0.543656
-  type: 'test'
-  ...
-# Subtest: manual refund settlement reverses the original invoice allocation
-ok 80 - manual refund settlement reverses the original invoice allocation
-  ---
-  duration_ms: 0.311468
-  type: 'test'
-  ...
-# Subtest: settled refund does not remain double-reserved against the remaining receipt balance
-ok 81 - settled refund does not remain double-reserved against the remaining receipt balance
-  ---
-  duration_ms: 0.252209
-  type: 'test'
-  ...
-# Subtest: refund cannot be marked settled before approval
-ok 82 - refund cannot be marked settled before approval
-  ---
-  duration_ms: 0.532269
-  type: 'test'
-  ...
-# Subtest: customer snapshot import reads profile summary only
-ok 83 - customer snapshot import reads profile summary only
-  ---
-  duration_ms: 0.139059
-  type: 'test'
-  ...
-# Subtest: customer snapshot import rejects malformed source
-ok 84 - customer snapshot import rejects malformed source
-  ---
-  duration_ms: 0.119099
-  type: 'test'
-  ...
-# Subtest: dashboard separates currency balances rather than adding unlike currencies
-ok 85 - dashboard separates currency balances rather than adding unlike currencies
-  ---
-  duration_ms: 0.45305
-  type: 'test'
-  ...
-# Subtest: dashboard aging categorises current outstanding invoices
-ok 86 - dashboard aging categorises current outstanding invoices
-  ---
-  duration_ms: 0.191717
-  type: 'test'
-  ...
-# Subtest: CSV export escapes quotes and neutralises spreadsheet formulas
-ok 87 - CSV export escapes quotes and neutralises spreadsheet formulas
-  ---
-  duration_ms: 0.247221
-  type: 'test'
-  ...
-# Subtest: rejects an unapproved payment method label
-ok 88 - rejects an unapproved payment method label
-  ---
-  duration_ms: 0.401653
-  type: 'test'
-  ...
-# Subtest: refund must identify the payment allocation it reverses
-ok 89 - refund must identify the payment allocation it reverses
-  ---
-  duration_ms: 0.274532
-  type: 'test'
-  ...
-# Subtest: refund requests cannot target an unrelated invoice
-ok 90 - refund requests cannot target an unrelated invoice
-  ---
-  duration_ms: 0.547342
-  type: 'test'
-  ...
-# Subtest: refund settlement reverses only the invoice named on its request
-ok 91 - refund settlement reverses only the invoice named on its request
-  ---
-  duration_ms: 0.45288
-  type: 'test'
-  ...
-1..91
-# tests 91
+1..60
+# tests 60
 # suites 0
-# pass 91
+# pass 60
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 199.142144
+# duration_ms 196.299589

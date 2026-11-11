@@ -1,0 +1,3 @@
+date,reference,description,amount,currency,bankAccount
+2026-11-04,TRANSFER-EXAMPLE-001,Example customer receipt,50000,NGN,Primary operating account
+2026-11-04,BANK-FEE-EXAMPLE,Example monthly bank fee,-250,NGN,Primary operating account
