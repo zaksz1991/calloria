@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101a2a">
+  <meta name="description" content="CALLORIA supervisor monitoring, quality assurance, coaching and escalation console.">
+  <title>Supervisor &amp; QA Operations · CALLORIA</title>
+  <link rel="stylesheet" href="/supervisor-qa.css">
+  <script defer src="/supervisor-qa-engine.js"></script>
+  <script defer src="/supervisor-qa.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-lockup">
+        <div class="brand-mark">C</div>
+        <div><div class="brand-name">CALLORIA</div><div class="brand-sub">OPERATIONS SUITE</div></div>
+      </div>
+      <div class="workspace-label">SUPERVISOR WORKSPACE</div>
+      <nav class="side-nav" aria-label="Supervisor sections">
+        <button class="nav-item active" data-view="overview"><span class="nav-icon">▦</span><span>Overview</span><span class="nav-count" id="nav-open-count">5</span></button>
+        <button class="nav-item" data-view="monitoring"><span class="nav-icon">◉</span><span>Live monitoring</span></button>
+        <button class="nav-item" data-view="quality"><span class="nav-icon">✓</span><span>Quality assurance</span></button>
+        <button class="nav-item" data-view="coaching"><span class="nav-icon">↗</span><span>Agent coaching</span></button>
+        <button class="nav-item" data-view="escalations"><span class="nav-icon">⚑</span><span>Escalations</span><span class="nav-count alert" id="nav-escalation-count">2</span></button>
+        <button class="nav-item" data-view="team"><span class="nav-icon">▤</span><span>Team performance</span></button>
+      </nav>
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-status"><span class="status-dot"></span><span>Demo environment</span><span class="demo-pill">LOCAL</span></div>
+      <div class="user-card"><div class="avatar supervisor-avatar">MB</div><div class="user-details"><strong>Maryam Bello</strong><span>Contact Centre Supervisor</span></div><span class="user-menu">•••</span></div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobile-menu" aria-label="Open navigation">☰</button>
+        <div class="breadcrumb"><span>Operations</span><span class="crumb-sep">/</span><strong id="page-crumb">Overview</strong></div>
+        <div class="topbar-right"><div class="shift-chip"><span class="status-dot"></span> Morning shift <b>07:00–15:00</b></div><div class="date-chip" id="current-date">Wednesday · 11 November 2026</div><div class="avatar small-avatar">MB</div></div>
+      </header>
+
+      <div class="content-wrap">
+        <section class="view active" id="view-overview">
+          <div class="page-heading"><div><div class="eyebrow">CONTROL ROOM / MORNING OPERATIONS</div><h1>Supervisor overview</h1><p>Monitor service activity, support agents and protect the customer experience.</p></div><div class="heading-actions"><span class="live-badge"><i></i> SIMULATED LIVE SNAPSHOT</span><button class="button secondary" id="reset-demo">Reset demo data</button></div></div>
+          <div class="metric-grid" id="overview-metrics"></div>
+          <div class="overview-grid">
+            <article class="panel queue-panel"><div class="panel-heading"><div><h2>Contacts requiring attention</h2><p>Active contacts ranked by operational priority</p></div><button class="text-button" data-go="monitoring">Open monitor ↗</button></div><div id="attention-list" class="attention-list"></div></article>
+            <article class="panel activity-panel"><div class="panel-heading"><div><h2>Supervisor activity</h2><p>Recent operational actions</p></div><span class="muted-label">LATEST</span></div><div id="activity-list" class="activity-list"></div></article>
+            <article class="panel team-snapshot"><div class="panel-heading"><div><h2>Team at a glance</h2><p>Current status and quality indicators</p></div><button class="text-button" data-go="team">View team ↗</button></div><div id="team-snapshot-list"></div></article>
+            <article class="panel escalation-snapshot"><div class="panel-heading"><div><h2>Escalation watch</h2><p>Cases awaiting supervisor action</p></div><button class="text-button" data-go="escalations">View all ↗</button></div><div id="escalation-snapshot-list"></div></article>
+          </div>
+        </section>
+
+        <section class="view" id="view-monitoring">
+          <div class="page-heading"><div><div class="eyebrow">CONTACT CENTRE / REAL-TIME CONTROL</div><h1>Live contact monitoring</h1><p>Review active customer interactions and provide timely supervisor support.</p></div><div class="heading-actions"><span class="live-badge"><i></i> SIMULATED QUEUE</span></div></div>
+          <div class="monitor-layout">
+            <article class="panel monitor-queue"><div class="panel-heading"><div><h2>Interaction queue</h2><p id="queue-summary">5 contacts in the current snapshot</p></div><span class="small-tag">ALL CHANNELS</span></div>
+              <div class="filter-row"><input id="interaction-search" class="field search-field" type="search" placeholder="Search agent, customer, case…" aria-label="Search interactions"><select id="channel-filter" class="field"><option>All channels</option><option>Voice</option><option>Email</option><option>Live chat</option><option>Social</option></select><select id="status-filter" class="field"><option>All statuses</option><option>Active</option><option>Wrap-up</option><option>Waiting</option><option>Completed</option></select><select id="priority-filter" class="field"><option>All priorities</option><option>Urgent</option><option>High</option><option>Normal</option><option>Low</option></select></div>
+              <div id="interaction-list" class="interaction-list"></div>
+            </article>
+            <article class="panel interaction-detail" id="interaction-detail"><div class="empty-state"><div class="empty-icon">◉</div><h3>Select an interaction</h3><p>Choose a queue item to inspect its transcript and supervisor controls.</p></div></article>
+          </div>
+        </section>
+
+        <section class="view" id="view-quality">
+          <div class="page-heading"><div><div class="eyebrow">CUSTOMER EXPERIENCE / QUALITY CONTROL</div><h1>Quality assurance</h1><p>Score completed contacts against a consistent, weighted service standard.</p></div><div class="heading-actions"><span class="small-tag blue-tag">100-POINT SCORECARD</span></div></div>
+          <div class="quality-layout">
+            <article class="panel qa-form-panel"><div class="panel-heading"><div><h2>New contact evaluation</h2><p>Rate each behaviour from 1 (not demonstrated) to 5 (excellent).</p></div><span class="small-tag">SUPERVISOR REVIEW</span></div>
+              <form id="qa-form">
+                <div class="field-grid"><label class="form-label">Interaction<select id="qa-interaction" class="field" required></select></label><label class="form-label">Evaluator<input id="qa-evaluator" class="field" value="Maryam Bello" required></label></div>
+                <div id="qa-criteria" class="qa-criteria"></div>
+                <label class="form-label notes-label">Evaluation notes<textarea id="qa-notes" class="field textarea" rows="3" placeholder="Record evidence, strengths and improvement areas…"></textarea></label>
+                <div class="qa-form-footer"><div class="score-preview"><span>LIVE SCORE</span><strong id="qa-preview-score">—</strong><em id="qa-preview-outcome">Rate all criteria</em></div><button class="button primary" type="submit">Save evaluation</button></div>
+              </form>
+            </article>
+            <article class="panel qa-history-panel"><div class="panel-heading"><div><h2>Evaluation history</h2><p>Saved locally in this browser</p></div><span class="small-tag" id="qa-history-count">0 RECORDS</span></div><div id="qa-history-list" class="qa-history-list"></div></article>
+          </div>
+          <div class="info-banner"><span class="info-mark">i</span><div><strong>Critical control rule</strong><p>Verification/data protection and information accuracy are critical criteria. A rating below 3 on either criterion caps the evaluation at 49 and produces a fail outcome.</p></div></div>
+        </section>
+
+        <section class="view" id="view-coaching">
+          <div class="page-heading"><div><div class="eyebrow">PEOPLE DEVELOPMENT / PERFORMANCE SUPPORT</div><h1>Agent coaching</h1><p>Turn monitoring and QA findings into specific, documented coaching actions.</p></div></div>
+          <div class="coaching-layout">
+            <article class="panel coaching-form-panel"><div class="panel-heading"><div><h2>Create coaching record</h2><p>Keep coaching evidence-based, practical and measurable.</p></div></div>
+              <form id="coaching-form"><div class="form-stack"><label class="form-label">Agent<select class="field" id="coaching-agent" required></select></label><label class="form-label">Coaching focus<select class="field" id="coaching-focus"><option>Customer communication</option><option>Verification and data protection</option><option>Product and policy accuracy</option><option>Investigation and ownership</option><option>Resolution and case closure</option><option>Time management and wrap-up</option></select></label><label class="form-label">Observed behaviour<textarea class="field textarea" id="coaching-observed" rows="3" required placeholder="What happened? Include the interaction reference where possible."></textarea></label><label class="form-label">Agreed action<textarea class="field textarea" id="coaching-action" rows="3" required placeholder="What will the agent do differently, and how will success be measured?"></textarea></label><div class="field-grid"><label class="form-label">Review date<input class="field" id="coaching-date" type="date" required></label><label class="form-label">Record status<select class="field" id="coaching-status"><option>Open</option><option>Delivered</option><option>Completed</option></select></label></div></div><button class="button primary full-button" type="submit">Save coaching record</button></form>
+            </article>
+            <article class="panel coaching-records-panel"><div class="panel-heading"><div><h2>Coaching register</h2><p>Track commitments and follow-up reviews</p></div><span class="small-tag" id="coaching-count">0 RECORDS</span></div><div id="coaching-list" class="coaching-list"></div></article>
+          </div>
+        </section>
+
+        <section class="view" id="view-escalations">
+          <div class="page-heading"><div><div class="eyebrow">SERVICE RECOVERY / CASE GOVERNANCE</div><h1>Escalation management</h1><p>Assign ownership, record decisions and close the loop on service failures.</p></div><div class="heading-actions"><span class="small-tag orange-tag" id="escalation-open-chip">2 OPEN CASES</span></div></div>
+          <div class="escalation-layout"><article class="panel escalation-table-panel"><div class="panel-heading"><div><h2>Escalation register</h2><p>Open, in-review and resolved supervisor cases</p></div><select id="escalation-filter" class="field compact-field"><option>All cases</option><option>Open</option><option>In review</option><option>Resolved</option></select></div><div id="escalation-list" class="escalation-list"></div></article>
+            <article class="panel escalation-detail-panel" id="escalation-detail"><div class="empty-state"><div class="empty-icon">⚑</div><h3>Select an escalation</h3><p>Choose a case to assign an owner, update status and record the resolution.</p></div></article></div>
+        </section>
+
+        <section class="view" id="view-team">
+          <div class="page-heading"><div><div class="eyebrow">WORKFORCE / SERVICE PERFORMANCE</div><h1>Team performance</h1><p>Review agent workload, quality indicators and supervisor ownership.</p></div><span class="small-tag blue-tag">SHIFT SNAPSHOT</span></div>
+          <article class="panel team-table-panel"><div class="panel-heading"><div><h2>Agent roster</h2><p>Performance values are illustrative demo data until connected to production records.</p></div><span class="small-tag" id="team-count">5 AGENTS</span></div><div class="table-scroll"><table class="data-table"><thead><tr><th>AGENT</th><th>TEAM / SKILLS</th><th>STATUS</th><th>HANDLED</th><th>QA</th><th>ADHERENCE</th><th>SUPERVISOR</th></tr></thead><tbody id="team-table-body"></tbody></table></div></article>
+          <div class="info-banner team-note"><span class="info-mark">i</span><div><strong>Operational data boundary</strong><p>This console currently runs on synthetic interaction and roster records stored in local browser storage. It is not connected to employee accounts, telephony, central CRM, workforce management or multiplayer sessions.</p></div></div>
+        </section>
+        <footer class="app-footer"><span>CALLORIA · SUPERVISOR &amp; QA OPERATIONS</span><span>v4.7 · LOCAL DEMO DATA</span></footer>
+      </div>
+    </main>
+  </div>
+  <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <dialog class="modal" id="escalation-modal"><form method="dialog" id="escalation-form"><div class="modal-heading"><div><div class="eyebrow">SUPERVISOR ACTION</div><h2>Raise an escalation</h2></div><button class="icon-button" value="cancel" aria-label="Close">×</button></div><input type="hidden" id="escalation-interaction-id"><label class="form-label">Reason<textarea class="field textarea" id="escalation-reason" rows="3" required placeholder="Describe why supervisor intervention is required."></textarea></label><div class="field-grid"><label class="form-label">Priority<select class="field" id="escalation-priority"><option>Normal</option><option>High</option><option>Urgent</option><option>Low</option></select></label><label class="form-label">Owner<select class="field" id="escalation-owner"><option>Maryam Bello</option><option>Samuel Garba</option><option>Unassigned</option></select></label></div><div class="modal-actions"><button class="button secondary" value="cancel">Cancel</button><button class="button primary" id="save-escalation" value="default">Create escalation</button></div></form></dialog>
+</body>
+</html>
