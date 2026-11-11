@@ -1,20 +1,22 @@
-# v5.6 Verification
+# v5.7 Verification
 
-## Automated checks performed
+## Checks performed
 
-- `node --check public/voice-of-customer-engine.js` — passed.
-- `node --check public/voice-of-customer.js` — passed.
-- Focused Node test suite — **69 passed, 0 failed**.
-  - 54 engine and integration logic tests.
-  - 15 HTML, asset, control-binding and responsive-layout contract tests.
-- Static HTML ID uniqueness check — passed.
-- Static page selector audit — all referenced static controls exist; three unmatched IDs are created dynamically in the feedback detail view.
-- ZIP integrity — verified separately after packaging.
+- `node --check public/sales-operations-engine.js` — passed.
+- `node --check public/sales-operations.js` — passed.
+- `node --test tests/*.test.mjs` — **56 passed, 0 failed**.
+- Static HTML contract checks — passed.
+- Duplicate static HTML IDs — none.
+- ZIP archive integrity — checked after packaging.
 
-## Not verified
+## Not performed
 
-The full CALLORIA repository was not available in this workspace. The complete Vite production build, existing repository test suite, Vercel build/deployment and live browser end-to-end testing were not run. A headless Chromium page-render attempt stalled in the execution environment and did not produce a usable DOM snapshot.
+- Full CALLORIA repository test suite.
+- Full Vite production build.
+- Vercel deployment.
+- Production URL or browser end-to-end verification.
+- Live Supabase, telephony, customer messaging, payments, campaign inventory or commercial pricing integration.
 
-## Scope limitations
+## Data boundaries
 
-The package is an additive public-page overlay. It uses browser-local demonstration data and synthetic sample feedback. v5.5 contact import and v5.4 case write-through are implemented against their documented storage keys, but must be verified on the deployed browser origin after installation.
+This is a standalone browser-local demonstration module. Customer 360 integration reads the v5.4 local record and writes only a note after explicit user action. Workbench completed-contact records are read for availability/counting only; they are not automatically converted into opportunities or contacted. No message or proposal is sent externally. Sample data is synthetic.

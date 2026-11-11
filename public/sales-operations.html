@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101c2b">
+  <title>Sales & Partnership Operations · CALLORIA</title>
+  <link rel="stylesheet" href="/sales-operations.css">
+  <script defer src="/sales-operations-engine.js"></script>
+  <script defer src="/sales-operations.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand"><div class="brand-mark">C</div><div><strong>CALLORIA</strong><span>SALES & PARTNERSHIP OPERATIONS</span></div></div>
+      <div class="topbar-right"><span class="environment"><i></i> DEMONSTRATION WORKSPACE</span><a href="/agent-workbench.html">Agent Workbench</a></div>
+    </header>
+    <main class="page">
+      <section class="page-heading">
+        <div><div class="eyebrow">COMMERCIAL OPERATIONS / v5.7</div><h1>Sales & Partnership Pipeline</h1><p>Qualify genuine customer needs, manage service opportunities and review sponsorship enquiries without pressure selling.</p></div>
+        <div class="heading-actions"><button class="button secondary" id="refresh-integrations">Refresh customer data</button><button class="button primary" id="new-opportunity">＋ New opportunity</button></div>
+      </section>
+      <section class="policy-banner"><strong>Ethical sales controls</strong><span>Explicit permission, documented need and product suitability are required before qualification. Unresolved serious complaints block qualification unless a supervisor review is documented. Do not invent prices, audience figures, product capabilities or sponsorship availability.</span></section>
+      <section class="metrics" aria-label="Pipeline metrics">
+        <article class="metric"><span>ACTIVE OPPORTUNITIES</span><strong id="metric-active">0</strong><small id="metric-total">0 total records</small></article>
+        <article class="metric"><span>QUALIFIED / PROPOSAL</span><strong id="metric-qualified">0</strong><small id="metric-proposals">0 proposals</small></article>
+        <article class="metric"><span>ESTIMATED PIPELINE</span><strong id="metric-pipeline">₦0</strong><small>Operator-entered estimates only</small></article>
+        <article class="metric"><span>WON ESTIMATE</span><strong id="metric-won">₦0</strong><small id="metric-conversion">0% conversion of decided deals</small></article>
+        <article class="metric"><span>FOLLOW-UPS</span><strong id="metric-followups">0</strong><small id="metric-overdue">0 overdue</small></article>
+      </section>
+      <section class="toolbar">
+        <div class="toolbar-title"><h2>Opportunity register</h2><span id="record-count">0 records</span></div>
+        <div class="filters"><input id="search" type="search" placeholder="Search customer, reference, product or need" aria-label="Search opportunities"><select id="stage-filter" aria-label="Filter by stage"><option value="All">All stages</option><option>New</option><option>Qualified</option><option>Proposal</option><option>Negotiation</option><option>Won</option><option>Lost</option><option>Disqualified</option></select><select id="type-filter" aria-label="Filter by type"><option value="All">All types</option></select><button id="export-csv" class="button secondary">Export CSV</button></div>
+      </section>
+      <section class="workspace">
+        <aside class="opportunity-list-panel"><div class="list-heading"><strong>OPPORTUNITIES</strong><span>Newest first</span></div><div id="opportunity-list" class="opportunity-list" aria-live="polite"></div></aside>
+        <section class="detail-panel" aria-live="polite"><div class="detail-panel-heading"><span id="detail-state">SELECT AN OPPORTUNITY</span><span id="detail-reference"></span></div><div id="opportunity-detail" class="opportunity-detail"><div class="empty-state"><div class="empty-icon">↗</div><strong>No opportunity selected</strong><p>Select a record to review qualification, proposals, follow-ups and sales controls.</p></div></div></section>
+      </section>
+      <section class="lower-grid">
+        <article class="panel"><div class="panel-head"><div><span class="eyebrow">NEXT ACTIONS</span><h2>Follow-up control</h2></div><span class="panel-note">Scheduled commitments</span></div><div id="followup-table" class="table-wrap"></div></article>
+        <article class="panel"><div class="panel-head"><div><span class="eyebrow">CONTROL LOG</span><h2>Recent activity</h2></div><span class="panel-note">Local audit trail</span></div><div id="activity-list" class="activity-list"></div></article>
+      </section>
+      <footer class="footer-note">Browser-local demonstration data. No prices, campaign inventory, player counts or revenue are retrieved from live services. Do not enter confidential customer or payment information.</footer>
+    </main>
+  </div>
+
+  <dialog id="opportunity-dialog" class="modal">
+    <form id="opportunity-form" method="dialog">
+      <div class="modal-head"><div><span class="eyebrow">CREATE RECORD</span><h2>New sales opportunity</h2></div><button class="icon-button" type="button" data-close="opportunity-dialog" aria-label="Close">×</button></div>
+      <div class="form-grid">
+        <label>Customer profile<select id="form-customer"><option value="">New prospect / not linked</option></select></label>
+        <label>Prospect / customer name<input id="form-customer-name" maxlength="140" placeholder="Full name or organisation"></label>
+        <label>Opportunity type<select id="form-type" required></select></label>
+        <label>Product / service<select id="form-product" required></select></label>
+        <label>Source<select id="form-source" required></select></label>
+        <label>Contact channel<select id="form-channel" required></select></label>
+        <label>Owner<input id="form-owner" maxlength="100" value="Sales Desk" required></label>
+        <label>Estimated value (NGN)<input id="form-value" type="number" min="0" max="1000000000000" step="0.01" placeholder="Optional; no price is assumed"></label>
+        <label class="wide">Customer's stated need<textarea id="form-need" minlength="20" maxlength="1000" required placeholder="Describe what the customer asked for and the business problem they want to solve."></textarea></label>
+        <label class="wide">Evidence of product fit<textarea id="form-fit" minlength="20" maxlength="1000" required placeholder="Explain why this product may fit the stated need. Record limits and alternatives."></textarea></label>
+        <label class="wide">Specific next action<input id="form-next-action" minlength="8" maxlength="400" required placeholder="Example: confirm demo requirements with the customer"></label>
+        <label>Next action due<input id="form-followup" type="datetime-local" required></label>
+        <label class="check-label"><input id="form-permission" type="checkbox"> Customer explicitly agreed to discuss this opportunity</label>
+        <label class="wide">How permission was obtained<input id="form-permission-note" maxlength="500" placeholder="Required before qualification"></label>
+      </div>
+      <div class="modal-actions"><button class="button secondary" type="button" data-close="opportunity-dialog">Cancel</button><button class="button primary" type="submit">Create opportunity</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="proposal-dialog" class="modal">
+    <form id="proposal-form" method="dialog">
+      <div class="modal-head"><div><span class="eyebrow">DRAFT / FOR REVIEW</span><h2>Prepare proposal</h2></div><button class="icon-button" type="button" data-close="proposal-dialog" aria-label="Close">×</button></div>
+      <div class="form-grid">
+        <label class="wide">Proposal summary<textarea id="proposal-summary" minlength="20" required></textarea></label>
+        <label class="wide">Terms and scope<textarea id="proposal-terms" minlength="20" required></textarea></label>
+        <label class="wide">Limitations, assumptions and disclosures<textarea id="proposal-disclosures" minlength="20" required placeholder="State what is not included, what needs confirmation and any unverified metrics. "></textarea></label>
+        <label>Estimated value (NGN)<input id="proposal-value" type="number" min="0" step="0.01" placeholder="Optional; approved estimate only"></label>
+        <label>Discount (%)<input id="proposal-discount" type="number" min="0" max="50" step="0.1" value="0"></label>
+        <label>Estimate basis<input id="proposal-basis" maxlength="100" value="Approved internal estimate"></label>
+        <label class="check-label"><input id="proposal-approval" type="checkbox"> Supervisor approved discount above 20%</label>
+      </div>
+      <div class="modal-actions"><button class="button secondary" type="button" data-close="proposal-dialog">Cancel</button><button class="button primary" type="submit">Save proposal draft</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="followup-dialog" class="modal compact">
+    <form id="followup-form" method="dialog">
+      <div class="modal-head"><div><span class="eyebrow">CUSTOMER COMMITMENT</span><h2>Schedule follow-up</h2></div><button class="icon-button" type="button" data-close="followup-dialog" aria-label="Close">×</button></div>
+      <label>Channel<select id="followup-channel"></select></label>
+      <label>Due date and time<input id="followup-due" type="datetime-local" required></label>
+      <label>Action<input id="followup-action" minlength="8" maxlength="400" required></label>
+      <label>Owner<input id="followup-owner" maxlength="100"></label>
+      <label class="check-label"><input id="followup-marketing" type="checkbox"> This is a marketing message</label>
+      <p class="form-help">Marketing follow-ups are allowed only when the linked Customer 360 profile already records marketing consent. This form cannot create consent.</p>
+      <div class="modal-actions"><button class="button secondary" type="button" data-close="followup-dialog">Cancel</button><button class="button primary" type="submit">Schedule</button></div>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
