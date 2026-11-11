@@ -1,22 +1,20 @@
-# Verification — CALLORIA v5.5
+# v5.6 Verification
 
-## Executed checks
+## Automated checks performed
 
-- `node --check public/agent-workbench-engine.js` — passed.
-- `node --check public/agent-workbench.js` — passed.
-- `node --test tests/*.test.mjs` — 34 passed, 0 failed.
-- Static HTML contract — passed.
-- Duplicate static HTML IDs — none.
-- Customer Journey v5.4 engine API compatibility — exercised using the pinned v5.4 engine fixture.
-- Customer Journey write-through tests — passed for new case, existing open case, note-only and missing-customer failure paths.
-- No network transport or remote telephony calls in the agent-workbench page script — verified by static check.
+- `node --check public/voice-of-customer-engine.js` — passed.
+- `node --check public/voice-of-customer.js` — passed.
+- Focused Node test suite — **69 passed, 0 failed**.
+  - 54 engine and integration logic tests.
+  - 15 HTML, asset, control-binding and responsive-layout contract tests.
+- Static HTML ID uniqueness check — passed.
+- Static page selector audit — all referenced static controls exist; three unmatched IDs are created dynamically in the feedback detail view.
+- ZIP integrity — verified separately after packaging.
 
-## Not performed
+## Not verified
 
-- Full CALLORIA repository test suite.
-- Full Vite production build.
-- Vercel deployment.
-- Browser end-to-end or visual rendering test.
-- Live email, social, SMS, in-app, voice or telephony integration.
+The full CALLORIA repository was not available in this workspace. The complete Vite production build, existing repository test suite, Vercel build/deployment and live browser end-to-end testing were not run. A headless Chromium page-render attempt stalled in the execution environment and did not produce a usable DOM snapshot.
 
-This patch is an additive overlay and requires the existing v5.4 Customer Journey page engine to be present at `/customer-journey-engine.js` on the same browser origin.
+## Scope limitations
+
+The package is an additive public-page overlay. It uses browser-local demonstration data and synthetic sample feedback. v5.5 contact import and v5.4 case write-through are implemented against their documented storage keys, but must be verified on the deployed browser origin after installation.

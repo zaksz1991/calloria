@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>CALLORIA · Voice of Customer</title>
+  <link rel="stylesheet" href="/voice-of-customer.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="CALLORIA home"><span class="brand-mark">C</span><span><strong>CALLORIA</strong><small>CUSTOMER EXPERIENCE · V5.6</small></span></a>
+    <nav class="top-nav" aria-label="Customer operations modules">
+      <a href="/agent-workbench.html">Agent workbench</a>
+      <a href="/customer-journey.html">Customer 360</a>
+      <a class="active" href="/voice-of-customer.html">Voice of Customer</a>
+    </nav>
+    <span class="local-badge"><i></i> LOCAL DEMO DATA</span>
+  </header>
+
+  <main class="workspace">
+    <section class="page-heading">
+      <div><div class="eyebrow">CUSTOMER OPERATIONS / EXPERIENCE INTELLIGENCE</div><h1>Voice of the customer</h1><p>Capture customer sentiment, identify recurring friction and manage service-recovery commitments.</p></div>
+      <div class="heading-actions">
+        <button id="import-contacts" class="button button-secondary">Import completed contacts</button>
+        <button id="new-feedback" class="button button-primary">Record feedback</button>
+        <div class="export-menu"><button id="export-menu-button" class="button button-ghost" aria-expanded="false">Export ▾</button><div id="export-menu" class="export-dropdown hidden"><button id="export-feedback">Feedback register CSV</button><button id="export-recovery">Recovery register CSV</button></div></div>
+      </div>
+    </section>
+
+    <section id="integration-notice" class="notice-strip" aria-live="polite">Feedback and recovery records are stored in this browser. Completed contacts can be imported from the v5.5 workbench.</section>
+
+    <section class="metric-grid" aria-label="Customer experience metrics">
+      <article class="metric-card"><span>Feedback responses</span><strong id="metric-responses">0</strong><small>Recorded feedback</small></article>
+      <article class="metric-card"><span>Average CSAT</span><strong id="metric-csat">—</strong><small>Scale 1 to 5</small></article>
+      <article class="metric-card"><span>Satisfied customers</span><strong id="metric-satisfied">—</strong><small>CSAT 4 or 5</small></article>
+      <article class="metric-card"><span>Net Promoter Score</span><strong id="metric-nps">—</strong><small>Range −100 to +100</small></article>
+      <article class="metric-card"><span>Ease of service</span><strong id="metric-ces">—</strong><small>5 means very easy</small></article>
+      <article class="metric-card"><span>Open recovery</span><strong id="metric-recovery">0</strong><small id="metric-overdue">0 overdue</small></article>
+    </section>
+
+    <section class="main-grid">
+      <section class="panel feedback-panel">
+        <div class="panel-head"><div><div class="eyebrow">CUSTOMER SIGNAL</div><h2>Feedback register</h2></div><span class="count-pill" id="feedback-count">0</span></div>
+        <div class="list-tools"><input id="feedback-search" type="search" placeholder="Search reference, customer or comment" aria-label="Search feedback"><select id="feedback-filter" aria-label="Filter feedback"><option value="">All feedback</option><option value="recovery">Needs recovery</option><option value="Promoter">Promoters</option><option value="Passive">Passives</option><option value="Detractor">Detractors</option></select></div>
+        <div id="feedback-list" class="feedback-list" aria-live="polite"></div>
+        <div class="panel-foot"><span class="status-dot"></span> Sample entries are labelled; replace with recorded responses for your exercise.</div>
+      </section>
+
+      <section class="panel detail-panel">
+        <div class="panel-head"><div><div class="eyebrow">RESPONSE REVIEW</div><h2>Feedback details</h2></div><span class="mini-badge" id="detail-state">SELECT A RESPONSE</span></div>
+        <div id="feedback-detail" class="detail-body"><div class="empty-state"><div class="empty-icon">◎</div><strong>No response selected</strong><p>Select a feedback record to inspect its scores, customer comment and case link.</p></div></div>
+      </section>
+
+      <aside class="insights-rail">
+        <section class="panel insight-panel">
+          <div class="panel-head"><div><div class="eyebrow">CUSTOMER LOYALTY</div><h2>NPS distribution</h2></div><span class="mini-badge">0–10</span></div>
+          <div id="nps-bars" class="bar-list"></div>
+          <div class="chart-legend"><span><i class="green"></i>Promoters 9–10</span><span><i class="amber"></i>Passives 7–8</span><span><i class="red"></i>Detractors 0–6</span></div>
+        </section>
+        <section class="panel insight-panel">
+          <div class="panel-head"><div><div class="eyebrow">EXPERIENCE DRIVERS</div><h2>Feedback themes</h2></div></div>
+          <div id="theme-bars" class="bar-list"></div>
+        </section>
+        <section class="panel insight-panel">
+          <div class="panel-head"><div><div class="eyebrow">CHANNEL QUALITY</div><h2>CSAT by channel</h2></div></div>
+          <div class="table-wrap"><table class="compact-table"><thead><tr><th>Channel</th><th>Responses</th><th>CSAT</th></tr></thead><tbody id="channel-rows"></tbody></table></div>
+        </section>
+      </aside>
+    </section>
+
+    <section class="panel section-panel">
+      <div class="panel-head"><div><div class="eyebrow">POST-CONTACT SURVEYS</div><h2>Completed contacts awaiting feedback entry</h2><p class="section-subtitle">Import creates local survey candidates only. It does not send email, SMS or any external survey.</p></div><span class="count-pill" id="invitation-count">0</span></div>
+      <div class="table-wrap"><table><thead><tr><th>Contact</th><th>Customer</th><th>Channel</th><th>Product</th><th>Completed</th><th>Status</th><th></th></tr></thead><tbody id="invitation-rows"><tr><td colspan="7" class="empty-cell">No imported completed contacts yet.</td></tr></tbody></table></div>
+    </section>
+
+    <section class="panel section-panel recovery-panel">
+      <div class="panel-head"><div><div class="eyebrow">SERVICE RECOVERY</div><h2>Customer recovery commitments</h2><p class="section-subtitle">Low CSAT, NPS detractor or difficult-effort responses create a 24-hour follow-up task.</p></div><span class="count-pill" id="recovery-count">0</span></div>
+      <div class="table-wrap"><table><thead><tr><th>Task</th><th>Customer / contact</th><th>Reason</th><th>Priority</th><th>Owner</th><th>Status</th><th>Due</th><th></th></tr></thead><tbody id="recovery-rows"><tr><td colspan="8" class="empty-cell">No recovery tasks.</td></tr></tbody></table></div>
+    </section>
+
+    <section class="privacy-note"><strong>Data boundary:</strong> The module uses browser-local demonstration data. Do not enter real customer secrets, payment credentials, passwords, authentication codes or sensitive personal information.</section>
+  </main>
+
+  <dialog id="feedback-dialog" class="modal">
+    <form id="feedback-form" method="dialog">
+      <div class="modal-head"><div><div class="eyebrow">SURVEY RESPONSE</div><h2>Record customer feedback</h2></div><button type="button" class="icon-button" id="close-feedback" aria-label="Close">×</button></div>
+      <p id="feedback-form-context" class="modal-intro">Record a response provided by the customer. No outbound survey is sent.</p>
+      <input id="invitation-id" type="hidden">
+      <div class="form-grid">
+        <label class="field">Customer reference<input id="input-customer" maxlength="80" placeholder="CUS-1001"></label>
+        <label class="field">Contact reference<input id="input-contact" maxlength="100" placeholder="CT-55001"></label>
+        <label class="field">Linked case reference<input id="input-case" maxlength="100" placeholder="CASE-54001"></label>
+        <label class="field">Channel<select id="input-channel"></select></label>
+        <label class="field">Product / service<select id="input-product"></select></label>
+        <label class="field">Primary feedback theme<select id="input-theme"></select></label>
+      </div>
+      <div class="rating-grid">
+        <label class="field">CSAT · satisfaction<select id="input-csat" required><option value="5">5 — Very satisfied</option><option value="4">4 — Satisfied</option><option value="3" selected>3 — Neutral</option><option value="2">2 — Dissatisfied</option><option value="1">1 — Very dissatisfied</option></select></label>
+        <label class="field">NPS · recommend (0–10)<select id="input-nps" required></select></label>
+        <label class="field">CES · ease (1–5)<select id="input-ces" required><option value="5">5 — Very easy</option><option value="4">4 — Easy</option><option value="3" selected>3 — Neither</option><option value="2">2 — Difficult</option><option value="1">1 — Very difficult</option></select></label>
+      </div>
+      <label class="field">Customer comment<textarea id="input-comment" minlength="5" maxlength="1200" rows="4" required placeholder="Capture the customer's feedback without adding secrets or sensitive details."></textarea></label>
+      <p id="feedback-error" class="form-error" aria-live="polite"></p>
+      <div class="modal-actions"><button type="button" id="cancel-feedback" class="button button-ghost">Cancel</button><button type="submit" class="button button-primary">Save feedback</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="recovery-dialog" class="modal compact-modal">
+    <form id="recovery-form" method="dialog">
+      <div class="modal-head"><div><div class="eyebrow">SERVICE RECOVERY CONTROL</div><h2>Update recovery task</h2></div><button type="button" class="icon-button" id="close-recovery" aria-label="Close">×</button></div>
+      <input id="recovery-task-id" type="hidden">
+      <p id="recovery-context" class="modal-intro"></p>
+      <label class="field">Accountable owner<input id="recovery-owner" maxlength="100" required></label>
+      <label class="field">Status<select id="recovery-status"></select></label>
+      <label class="field">Update note<textarea id="recovery-note" rows="2" maxlength="600" placeholder="What action was taken?"></textarea></label>
+      <label class="field">Resolution / outcome<textarea id="recovery-resolution" rows="3" maxlength="1000" placeholder="Required when resolving or closing the task."></textarea></label>
+      <p id="recovery-error" class="form-error" aria-live="polite"></p>
+      <div class="modal-actions"><button type="button" id="cancel-recovery" class="button button-ghost">Cancel</button><button type="submit" class="button button-primary">Save recovery update</button></div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/voice-of-customer-engine.js"></script>
+  <script src="/voice-of-customer.js"></script>
+</body>
+</html>
