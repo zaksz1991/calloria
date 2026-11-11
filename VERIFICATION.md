@@ -1,23 +1,21 @@
-# Verification — CALLORIA v4.9
+# Verification — CALLORIA v5.0
 
-## Checks performed
+## Passed
 
-- `node --check public/performance-career-engine.js` — passed.
-- `node --check public/performance-career.js` — passed.
-- `node --test tests/performance-career-v49.test.mjs` — 18 passed, 0 failed.
-- HTML/JavaScript selector consistency check — passed: no duplicate HTML IDs and no JavaScript ID selectors missing from the page.
-- ZIP archive integrity check — passed.
+- `node --check public/people-operations-engine.js`
+- `node --check public/people-operations.js`
+- Focused Node test suite: **36 passed, 0 failed**.
+- Static HTML/JavaScript binding check: 100 unique HTML IDs, no missing DOM references, no duplicate IDs.
+- ZIP archive integrity check: passed.
 
-## Coverage
-
-The 18 focused tests cover weighted KPI calculation, value clamping, monthly review validation, universal frontline customer-care rules, promotion eligibility gates, tenure and review recency, examination scoring, successful promotion, failed and duplicate annual attempts, three-attempt exhaustion, blocked ineligible exams, supervisor QA evidence sync, department policy, dashboard calculations, local persistence and staff validation.
-
-## Not verified
+## Not performed
 
 - Full CALLORIA repository test suite.
 - Full Vite production build.
-- Vercel build or deployment.
-- Live integration with CALLORIA's central CRM, HR records or v4.8 workforce data.
-- Full browser visual and end-to-end interaction testing.
+- Vercel deployment or production route verification.
+- End-to-end browser rendering. A local headless Chromium run could not complete in this environment.
+- Integration with a live authenticated employee database or live v4.9 browser storage.
 
-This package is an additive module. Passing focused module tests does not establish that the complete deployed CALLORIA application builds or that this route has already been deployed.
+## Test coverage
+
+Employee creation/edit validation, duplicate IDs/emails, probation date requirements, weekday leave calculations, balance reservations, overlapping leave, leave decisions, attendance duplicate protection, probation outcomes, case documentation/closure, transfer approvals/effective dates/stale transfer holds, offboarding completion guards, v4.9 snapshot import contract, dashboard metrics, persistence recovery, CSV escaping, and HTML selector integrity.

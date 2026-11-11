@@ -1,20 +1,19 @@
-# Changelog — CALLORIA v4.9
+# Changelog — CALLORIA v5.0
 
-## Added
-- Employee monthly scorecards and weighted KPI calculations.
-- Monthly review entry with reviewer notes and frontline customer-care evidence.
-- Six-level career ladder and promotion eligibility register.
-- Six-domain weighted annual promotion examination.
-- Annual attempt control: maximum one attempt per year and three attempts per target level.
-- Pass/fail history and automatic advancement by one level after a pass.
-- Review recency, minimum tenure, KPI, QA, compliance, attendance, training and customer-care eligibility gates.
-- Department performance summaries and an explicit customer-care obligation for every department.
-- Read-only supervisor QA v4.7 evidence import from same-origin localStorage.
-- CSV exports for performance reviews and promotion exam history.
-- Local persistence using a new v4.9 storage key.
+## People Operations & Employee Lifecycle
 
-## Boundaries
-- Standalone additive route; no existing project entry point or Vite configuration changed.
-- Demo employee records and manual KPI evidence remain local to the browser.
-- Workforce v4.8 attendance, roster and productivity records are not automatically connected.
-- No HRIS, payroll, live telephony, CRM, ACD or central multi-user data integration.
+- Added an employee master register with editable work and organisational records.
+- Added leave entitlements, weekday duration calculation, overlap guards, pending reservations and approval decisions.
+- Added attendance logging with duplicate-day protection and bounded time exceptions.
+- Added probation confirmation, extension and exit-referral workflow with evidence-note requirement.
+- Added employee relations cases, review states and mandatory closure outcomes.
+- Added approval-gated internal transfer proposals and effective-date application.
+- Added offboarding checklist and exit-state guard requiring all controls and the last working date.
+- Added dashboard metrics, HR action queue, activity feed and CSV exports.
+- Added explicit one-way employee snapshot import from Performance & Career v4.9.
+- Added cross-links to v4.7 Supervisor QA, v4.8 Workforce Control and v4.9 Performance & Career pages.
+- Preserved the existing application entry points and project configuration by delivering this as a public-folder overlay.
+
+## Known limits
+
+Local browser storage only; synthetic employee records; no authentication, server persistence, payroll, statutory rules engine, live time-clock feed, legal determination, or multi-user synchronisation. See README.md.

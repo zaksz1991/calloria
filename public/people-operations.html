@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0a1524">
+  <meta name="description" content="CALLORIA People Operations employee lifecycle, leave, attendance, employee cases and offboarding workspace.">
+  <title>People Operations | CALLORIA</title>
+  <link rel="stylesheet" href="/people-operations.css">
+  <script src="/people-operations-engine.js" defer></script>
+  <script src="/people-operations.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="/" aria-label="CALLORIA home"><span class="brand-mark">C</span><span><b>CALLORIA</b><small>PEOPLE OPERATIONS</small></span></a>
+      <div class="nav-label">EMPLOYEE LIFECYCLE</div>
+      <nav class="nav-list" aria-label="People Operations sections">
+        <button class="nav-item active" data-view="overview"><span>◫</span>Overview</button>
+        <button class="nav-item" data-view="directory"><span>▦</span>Employee directory</button>
+        <button class="nav-item" data-view="leave"><span>◷</span>Leave management <i id="nav-leave-count">0</i></button>
+        <button class="nav-item" data-view="attendance"><span>✓</span>Attendance & probation</button>
+        <button class="nav-item" data-view="cases"><span>▤</span>Employee cases & transfers</button>
+        <button class="nav-item" data-view="offboarding"><span>↗</span>Offboarding</button>
+      </nav>
+      <div class="nav-label related-label">RELATED WORKSPACES</div>
+      <div class="related-links"><a href="/performance-career.html">Performance & career ↗</a><a href="/workforce-control.html">Workforce control ↗</a><a href="/supervisor-qa.html">Supervisor & QA ↗</a></div>
+      <div class="sidebar-bottom"><span class="status-dot"></span><div><b>Demo HR workspace</b><small>Browser-local records</small></div></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-left"><button id="menu-toggle" class="menu-toggle" aria-label="Toggle navigation">☰</button><span>CALLORIA <em>/</em> <b>PEOPLE OPERATIONS</b></span></div>
+        <div class="topbar-right"><span class="demo-badge"><i></i> DEMO ENVIRONMENT</span><label class="asof">AS OF <input type="date" id="as-of-date" aria-label="Workspace date"></label></div>
+      </header>
+      <div class="content">
+        <section class="view active" id="view-overview">
+          <div class="page-head"><div><div class="eyebrow">HUMAN RESOURCES / EMPLOYEE LIFECYCLE</div><h1>People operations command</h1><p>Maintain employee records, coordinate leave, document attendance, manage employee cases and control exits.</p></div><div class="head-actions"><button class="btn btn-outline" id="import-performance">Import v4.9 staff snapshot</button><button class="btn btn-primary" data-go="directory">Open employee directory <span>→</span></button></div></div>
+          <div class="metric-grid">
+            <article class="metric-card"><div class="metric-top">TOTAL HEADCOUNT <span class="metric-icon blue">▦</span></div><strong id="metric-headcount">—</strong><small>Employee records in this workspace</small></article>
+            <article class="metric-card"><div class="metric-top">ACTIVE EMPLOYEES <span class="metric-icon green">✓</span></div><strong id="metric-active">—</strong><small>Currently marked active</small></article>
+            <article class="metric-card"><div class="metric-top">PENDING LEAVE <span class="metric-icon amber">◷</span></div><strong id="metric-leave">—</strong><small>Requests awaiting a decision</small></article>
+            <article class="metric-card"><div class="metric-top">OPEN EMPLOYEE CASES <span class="metric-icon red">▤</span></div><strong id="metric-cases">—</strong><small>Open or under review</small></article>
+          </div>
+          <div class="overview-grid">
+            <article class="panel"><div class="panel-head"><div><h2>People attention queue</h2><p>Items that require an HR or manager decision.</p></div><span class="pill pill-amber" id="attention-total">0 ACTIONS</span></div><div id="attention-list" class="attention-list"></div></article>
+            <article class="panel"><div class="panel-head"><div><h2>Employment lifecycle</h2><p>Current employee status distribution.</p></div><span class="pill">HEADCOUNT</span></div><div id="status-breakdown" class="status-breakdown"></div></article>
+          </div>
+          <article class="panel activity-panel"><div class="panel-head"><div><h2>Recent people activity</h2><p>Latest workspace actions and employee lifecycle events.</p></div><button class="link-button" data-go="cases">Manage employee cases →</button></div><div id="activity-feed" class="activity-feed"></div></article>
+          <div class="notice"><b>Data and policy boundary</b><span>Seed records are synthetic. Records are stored in this browser only. The v4.9 import is an explicit one-way snapshot; this module does not update performance records, payroll, authentication, live attendance devices or a central HRIS. Configure leave entitlements and local policy before real use. Public holidays are not excluded from weekday calculations.</span></div>
+        </section>
+
+        <section class="view" id="view-directory">
+          <div class="page-head"><div><div class="eyebrow">EMPLOYEE RECORDS / ORGANISATION DIRECTORY</div><h1>Employee directory</h1><p>Maintain the operational employment record and view employee lifecycle status.</p></div><div class="head-actions"><button class="btn btn-outline" id="export-directory">Export directory CSV ↓</button></div></div>
+          <div class="toolbar panel"><label>SEARCH EMPLOYEES<input id="directory-search" type="search" placeholder="Name, staff ID, email or role"></label><label>DEPARTMENT<select id="directory-department"><option value="All">All departments</option></select></label><label>EMPLOYMENT STATUS<select id="directory-status"><option value="All">All statuses</option></select></label><div class="toolbar-count"><b id="directory-count">0</b><small>EMPLOYEES</small></div></div>
+          <div class="directory-layout">
+            <article class="panel table-panel"><div class="panel-head"><div><h2>Employee register</h2><p>Select a record to view its current HR snapshot.</p></div><span class="pill">EMPLOYEE MASTER</span></div><div class="table-wrap"><table><thead><tr><th>EMPLOYEE</th><th>DEPARTMENT</th><th>ROLE</th><th>SUPERVISOR</th><th>HIRE DATE</th><th>STATUS</th></tr></thead><tbody id="directory-table"></tbody></table></div></article>
+            <aside class="panel form-panel"><div class="panel-head"><div><h2 id="profile-form-title">Add employee record</h2><p>Use authorised work information only.</p></div><span class="add-icon">＋</span></div>
+              <form id="profile-form" class="form-stack">
+                <label>Staff ID<input id="profile-id" placeholder="e.g. ag-150" required></label>
+                <label>Full name<input id="profile-name" maxlength="120" required></label>
+                <label>Work email<input id="profile-email" type="email" placeholder="name@company.example"></label>
+                <label>Department<select id="profile-department" required></select></label>
+                <label>Job title<input id="profile-title" maxlength="100" required></label>
+                <label>Reporting supervisor<input id="profile-supervisor" maxlength="100" required></label>
+                <div class="form-grid"><label>Hire date<input id="profile-hire-date" type="date" required></label><label>Contract type<select id="profile-contract"></select></label></div>
+                <div class="form-grid"><label>Work pattern<select id="profile-pattern"><option>Full-time</option><option>Part-time</option><option>Shift-based</option><option>Hybrid</option><option>Remote</option></select></label><label>Employment status<select id="profile-status"></select></label></div>
+                <label id="profile-probation-wrap" class="hidden">Probation review due<input id="profile-probation-due" type="date"></label>
+                <div class="form-grid four"><label>Annual leave days<input id="balance-annual" type="number" min="0" max="365" value="20"></label><label>Casual days<input id="balance-casual" type="number" min="0" max="365" value="5"></label><label>Sick days<input id="balance-sick" type="number" min="0" max="365" value="10"></label><label>Parental days<input id="balance-parental" type="number" min="0" max="365" value="0"></label></div>
+                <label>HR record note<textarea id="profile-notes" rows="2" maxlength="500" placeholder="Non-sensitive employment administration note"></textarea></label>
+                <div class="form-actions"><button class="btn btn-primary" type="submit" id="save-profile">Save employee</button><button class="btn btn-ghost" type="button" id="reset-profile">Clear</button></div>
+              </form>
+              <div id="profile-detail" class="profile-detail hidden"></div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="view-leave">
+          <div class="page-head"><div><div class="eyebrow">TIME OFF / APPROVAL WORKFLOW</div><h1>Leave management</h1><p>Submit employee leave requests, calculate weekday duration and track approval against recorded balances.</p></div><div class="head-actions"><button class="btn btn-outline" id="export-leave">Export leave CSV ↓</button></div></div>
+          <div class="leave-layout">
+            <article class="panel table-panel"><div class="panel-head"><div><h2>Leave request ledger</h2><p>Pending requests reserve available balance until decided.</p></div><span class="pill pill-amber" id="pending-leave-label">0 PENDING</span></div><div class="table-wrap"><table><thead><tr><th>EMPLOYEE</th><th>TYPE</th><th>DATES</th><th>DAYS</th><th>REASON</th><th>STATUS</th><th>DECISION</th></tr></thead><tbody id="leave-table"></tbody></table></div></article>
+            <aside class="panel form-panel"><div class="panel-head"><div><h2>Submit leave request</h2><p>Working days are Monday to Friday.</p></div><span class="add-icon">◷</span></div>
+              <form id="leave-form" class="form-stack">
+                <label>Employee<select id="leave-employee" required></select></label><label>Leave type<select id="leave-type" required></select></label>
+                <div class="form-grid"><label>Start date<input id="leave-start" type="date" required></label><label>End date<input id="leave-end" type="date" required></label></div>
+                <div class="balance-preview" id="leave-balance-preview">Choose an employee and leave type to view their balance.</div>
+                <label>Reason / planning note<textarea id="leave-reason" rows="3" maxlength="180" placeholder="Do not enter diagnosis or sensitive medical details."></textarea></label>
+                <button class="btn btn-primary" type="submit">Submit leave request</button>
+              </form>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="view-attendance">
+          <div class="page-head"><div><div class="eyebrow">WORK ATTENDANCE / PROBATION CHECKPOINT</div><h1>Attendance & probation</h1><p>Record attendance exceptions and formally document the end-of-probation decision.</p></div><div class="head-actions"><button class="btn btn-outline" id="export-attendance">Export attendance CSV ↓</button></div></div>
+          <div class="attendance-layout">
+            <article class="panel table-panel"><div class="panel-head"><div><h2>Attendance register</h2><p>One daily status record per employee. Attendance does not automatically change pay.</p></div><span class="pill">DAILY RECORDS</span></div><div class="table-wrap"><table><thead><tr><th>DATE</th><th>EMPLOYEE</th><th>STATUS</th><th>MINUTES</th><th>NOTE</th></tr></thead><tbody id="attendance-table"></tbody></table></div></article>
+            <aside class="panel form-panel"><div class="panel-head"><div><h2>Record attendance</h2><p>Use roster or approved evidence.</p></div><span class="add-icon">✓</span></div>
+              <form id="attendance-form" class="form-stack"><label>Employee<select id="attendance-employee" required></select></label><label>Date<input id="attendance-date" type="date" required></label><label>Status<select id="attendance-status"><option>Present</option><option>Late</option><option>Absent</option><option>Early departure</option><option>Remote</option><option>Approved leave</option></select></label><label>Minutes late / early<input id="attendance-minutes" type="number" min="0" max="1440" value="0"></label><label>Evidence note<textarea id="attendance-note" rows="2" maxlength="260"></textarea></label><button class="btn btn-primary" type="submit">Save attendance record</button></form>
+            </aside>
+          </div>
+          <article class="panel probation-panel"><div class="panel-head"><div><h2>Probation review queue</h2><p>Only employees marked Probation can receive a confirmation, extension or end-employment decision.</p></div><span class="pill pill-amber" id="probation-count">0 DUE / ACTIVE</span></div><div class="probation-layout"><div id="probation-list" class="probation-list"></div><form id="probation-form" class="form-stack compact-form"><label>Employee on probation<select id="probation-employee" required></select></label><label>Decision<select id="probation-outcome"><option value="Confirm">Confirm employment</option><option value="Extend">Extend probation</option><option value="End employment">Refer for exit process</option></select></label><label id="extension-date-wrap" class="hidden">New review date<input id="probation-new-date" type="date"></label><label>Reviewer<input id="probation-reviewer" value="People Operations" required></label><label>Evidence and review summary<textarea id="probation-notes" rows="3" minlength="12" required placeholder="Document training completion, service quality, attendance and role readiness."></textarea></label><button class="btn btn-primary" type="submit">Record probation decision</button></form></div></article>
+        </section>
+
+        <section class="view" id="view-cases">
+          <div class="page-head"><div><div class="eyebrow">EMPLOYEE RELATIONS / INTERNAL MOBILITY</div><h1>Employee cases & transfers</h1><p>Keep objective records of coaching, recognition, grievances, workplace concerns and internal movement.</p></div><div class="head-actions"><button class="btn btn-outline" id="export-cases">Export cases CSV ↓</button></div></div>
+          <div class="cases-layout">
+            <article class="panel table-panel"><div class="panel-head"><div><h2>People case register</h2><p>A case entry is a record of a concern or review, not a finding of fault.</p></div><span class="pill" id="open-case-label">0 OPEN</span></div><div class="table-wrap"><table><thead><tr><th>EMPLOYEE</th><th>TYPE</th><th>CASE</th><th>OWNER</th><th>OPENED</th><th>STATUS</th><th></th></tr></thead><tbody id="cases-table"></tbody></table></div></article>
+            <div class="stacked-forms">
+              <article class="panel form-panel"><div class="panel-head"><div><h2>Open an employee case</h2><p>Record factual context and next steps.</p></div><span class="add-icon">＋</span></div><form id="case-form" class="form-stack"><label>Employee<select id="case-employee" required></select></label><label>Case type<select id="case-type"></select></label><label>Case title<input id="case-title" maxlength="120" required></label><div class="form-grid"><label>Priority<select id="case-priority"><option>Low</option><option selected>Normal</option><option>High</option></select></label><label>Case owner<input id="case-owner" value="People Operations" required></label></div><label>Objective context / evidence<textarea id="case-notes" rows="3" minlength="10" required></textarea></label><button class="btn btn-primary" type="submit">Open employee case</button></form></article>
+              <article class="panel form-panel"><div class="panel-head"><div><h2>Propose internal transfer</h2><p>Requires a separate approval before employee details change.</p></div><span class="add-icon">↔</span></div><form id="transfer-form" class="form-stack"><label>Employee<select id="transfer-employee" required></select></label><label>Destination department<select id="transfer-department" required></select></label><label>New job title<input id="transfer-title" maxlength="100" placeholder="Keep current title"></label><label>New supervisor<input id="transfer-supervisor" maxlength="100" placeholder="Keep current supervisor"></label><label>Effective date<input id="transfer-date" type="date" required></label><label>Business reason<textarea id="transfer-reason" rows="2" maxlength="400"></textarea></label><button class="btn btn-primary" type="submit">Submit transfer proposal</button></form></article>
+            </div>
+          </div>
+          <article class="panel transfer-panel"><div class="panel-head"><div><h2>Internal movement register</h2><p>Approved transfers update only this module's employee snapshot.</p></div></div><div class="table-wrap"><table><thead><tr><th>EMPLOYEE</th><th>FROM</th><th>TO</th><th>EFFECTIVE</th><th>PROPOSED BY</th><th>STATUS</th><th>DECISION</th></tr></thead><tbody id="transfer-table"></tbody></table></div></article>
+        </section>
+
+        <section class="view" id="view-offboarding">
+          <div class="page-head"><div><div class="eyebrow">EMPLOYMENT EXIT / CONTROLLED HANDOVER</div><h1>Offboarding control</h1><p>Track exit tasks before an employee profile can be marked as exited.</p></div><div class="head-actions"><button class="btn btn-outline" id="export-offboarding">Export offboarding CSV ↓</button></div></div>
+          <div class="offboarding-layout">
+            <article class="panel table-panel"><div class="panel-head"><div><h2>Exit management register</h2><p>System access and payroll tasks are hand-offs, not actions performed by this module.</p></div><span class="pill" id="offboarding-count">0 IN PROGRESS</span></div><div id="offboarding-list" class="offboarding-list"></div></article>
+            <aside class="panel form-panel"><div class="panel-head"><div><h2>Start offboarding</h2><p>Employee moves to Notice period until all exit controls pass.</p></div><span class="add-icon">↗</span></div><form id="offboarding-form" class="form-stack"><label>Employee<select id="offboarding-employee" required></select></label><label>Last working date<input id="offboarding-date" type="date" required></label><label>Exit reason<select id="offboarding-reason"><option>Resignation</option><option>End of fixed-term contract</option><option>Retirement</option><option>Role redundancy</option><option>Other approved reason</option></select></label><button class="btn btn-primary" type="submit">Start exit checklist</button></form></aside>
+          </div>
+          <div class="notice"><b>Exit control safeguards</b><span>All checklist items must be marked complete before closure. The final payroll task only records that an authorised team was notified; this module does not calculate or release salary, benefits, deductions or final settlement.</span></div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

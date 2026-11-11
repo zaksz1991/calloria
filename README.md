@@ -1,73 +1,60 @@
-# CALLORIA v4.9 — Performance, Promotion & Career Progression
+# CALLORIA v5.0 — People Operations
 
-An additive employee performance and career progression workspace for the existing CALLORIA Vite application. This patch does not replace or modify `vite.config.js`, `main.js`, the agent desk, the OJT flow, workforce control, supervisor console, 3D assets or existing game systems.
+An additive browser-based People Operations workspace for the CALLORIA simulation. It extends the v4.7–v4.9 operations modules without replacing existing project files or modifying `main.js`, `vite.config.js`, the recruitment flow, OJT, 3D assets or game systems.
 
-## Included
+## Included modules
 
-- Employee scorecards with a weighted performance model.
-- Monthly performance review entry and CSV export.
-- KPI model: QA 25%, CSAT 20%, FCR 15%, schedule adherence 10%, productivity 10%, attendance 10%, compliance 10%.
-- Promotion eligibility register and evidence-based eligibility reasons.
-- Annual promotion examination with six weighted assessment domains.
-- One exam attempt per calendar year and a maximum of three attempts per target level.
-- Exam history, pass/fail outcome and automatic one-level career advancement after a pass.
-- Six-level career framework from Customer Service Associate to Operations Manager.
-- Department performance dashboard for General CX, Voice, Email, Social, IT, QA, Workforce, CRM, Training, Operations and Sales.
-- Universal monthly customer-care duty across every department: at least 8 frontline hours and 20 customer contacts per reviewed month.
-- Optional read-only import of saved v4.7 Supervisor QA evaluations from same-origin browser storage.
-- Local browser persistence under `calloria.performance-career.v49`.
+- Employee register with staff ID, work email, department, job title, supervisor, hire date, contract type, work pattern and employment status.
+- Configurable sample leave entitlements per employee.
+- Leave request workflow with weekday calculation, overlapping-date checks, pending balance reservations, approval/rejection and CSV export.
+- Daily attendance register with one status per employee per date; lateness and early departure minutes are recorded without automatic payroll deductions.
+- Probation decision workflow: confirm, extend with a future review date, or refer for an exit process. Evidence notes are required.
+- Employee relations case register for coaching, recognition, grievances, conduct review, attendance review and workplace concerns. Closing a case requires a recorded outcome.
+- Internal transfer proposal and approval. A future-dated approved transfer is applied only when the workspace date reaches its effective date; stale transfers are placed on hold.
+- Controlled offboarding with equipment, access-removal request, handover, payroll hand-off and exit interview controls. The employee is not marked Exited until every checklist item is complete and the recorded last working date has arrived.
+- Overview dashboard, attention queue, activity history and CSV exports.
+- Explicit one-way import of employee identity/department/level/supervisor/status snapshots from Performance & Career v4.9 when both pages run on the same browser origin.
+- Links to the previous Performance & Career, Workforce Control and Supervisor QA pages.
 
 ## Installation
 
-Copy these four files from the package's `public/` folder into the existing CALLORIA repository's `public/` folder. Preserve all existing files:
+This is an additive overlay, not a full repository snapshot.
 
-- `performance-career.html`
-- `performance-career.css`
-- `performance-career.js`
-- `performance-career-engine.js`
+1. Extract the ZIP.
+2. Open the `CALLORIA_v5_0_People_Operations/public` folder.
+3. Copy these four files into the existing CALLORIA repository `public` folder:
+   - `people-operations.html`
+   - `people-operations.css`
+   - `people-operations.js`
+   - `people-operations-engine.js`
+4. Keep all existing project files. Do not replace the existing Vite configuration or application entry points.
+5. Deploy using the repository's normal process.
 
-Do not replace Vite configuration or application entry points. With the existing Vite `publicDir: 'public'` configuration, the page is served at:
+The page route is `/people-operations.html` and the live route after deployment is expected to be `https://calloria.vercel.app/people-operations.html`.
 
-`https://calloria.vercel.app/performance-career.html`
+## v4.9 staff snapshot import
 
-The route exists only after these files have been added to the project and that project has been built and deployed.
+Open Performance & Career v4.9 first in the same browser and origin so its `calloria.performance-career.v49` local-storage record exists. Then open People Operations and use **Import v4.9 staff snapshot**. The import updates this module's employee snapshot and adds missing staff records. It does not write back to v4.9, copy monthly KPIs, or synchronize automatically. Repeat the import deliberately when a refresh is needed.
 
-## Using the workspace
+## Data and operational boundaries
 
-1. Set the cycle date in the top bar.
-2. Open **Staff scorecards** to inspect the monthly ledger or record a review.
-3. Enter the seven weighted KPI percentages, mandatory training completion, customer-care hours and customer contacts.
-4. Open **Promotion centre** to review the reasons each employee is eligible or blocked.
-5. Select an eligible employee and record the six-domain promotion examination.
-6. Use the department view to review customer-care duty compliance across specialist teams.
-7. Export scorecards or exam history as CSV when required.
-
-## Promotion policy implemented
-
-Promotion entry requires an active employee, at least six months at the current level, a current-year review no older than two months, weighted KPI of at least 80%, QA of at least 85%, compliance of at least 90%, attendance of at least 95%, mandatory training completion of at least 90%, and the universal monthly frontline customer-care minimum of 8 hours plus 20 customer contacts.
-
-The promotion exam pass mark is 75%. Only one attempt per calendar year is accepted. A maximum of three attempts is permitted for each target level. A successful exam advances the employee exactly one level and resets the tenure clock for the new level. Failed attempts remain in the employee's exam history.
-
-These thresholds are explicit simulation policy defaults and can be revised as the operating model is calibrated.
-
-## Supervisor QA evidence sync
-
-The **Sync supervisor QA evidence** button reads the v4.7 localStorage record `calloria.supervisor-qa.v47` when both pages use the same browser origin. For each employee with saved evaluations in the selected cycle year, it averages the saved QA scores and updates the QA metric on that employee's latest cycle-year review. It does not write to or alter the v4.7 supervisor data.
-
-This is a browser-local evidence bridge, not a live API integration. It will not retrieve evidence from another browser, device, account or deployment origin. If v4.7 records are absent or use an unsupported version, the sync reports that no compatible source was found.
-
-## Data and integration boundaries
-
-All staff, monthly review and exam records in this release are synthetic demonstration data and are stored in the current browser's localStorage. The app does not connect to production HR records, payroll, authenticated employee accounts, telephony, CRM, ACD, real customer contacts or an external learning platform. Attendance, schedule adherence, productivity and customer-care hours/contacts are entered as review evidence; they are not automatically pulled from v4.8 Workforce Control. Do not treat demonstration scores or seeded exam histories as real employee performance records.
-
-The workspace is standalone and is not yet part of CALLORIA's central navigation or a multi-user central database.
+- Demonstration data is synthetic. A small sample employee population is preloaded.
+- All records are stored in the current browser's `localStorage`. They are not shared between staff, browsers or devices and can be cleared by browser storage cleanup.
+- This is not an authenticated HR information system. It has no tenant isolation, user roles, manager permissions, server-side audit trail, encryption-at-rest guarantees, backup, or central multi-user database.
+- Do not enter real employee personal data, grievance evidence, medical details or other confidential HR information into this demonstration build.
+- Leave entitlement values are editable examples, not a statement of CALLORIA employment policy or Nigerian statutory entitlements. Weekday calculation excludes Saturday and Sunday but does not apply public holidays, shift calendars, accrual or carry-over rules.
+- Attendance is manually recorded. There is no biometric/time-clock feed, automatic schedule reconciliation or payroll deduction.
+- The payroll checklist item is a notification/handoff marker only. There is no salary calculation, payment, benefits or final settlement function.
+- Probation confirmation and exit routing are workflow records, not legal advice or automated employment decisions. Human review is required.
+- Employee-case records are neutral administrative records, not findings of misconduct.
+- CSV export is a manual download and does not create a secure archive.
 
 ## Files
 
-- `public/performance-career.html`
-- `public/performance-career.css`
-- `public/performance-career.js`
-- `public/performance-career-engine.js`
-- `tests/performance-career-v49.test.mjs`
-- `CHANGELOG.md`
-- `VERIFICATION.md`
+- `public/people-operations.html` — workspace interface.
+- `public/people-operations.css` — responsive styling.
+- `public/people-operations.js` — UI rendering and browser events.
+- `public/people-operations-engine.js` — validation, workflows and local persistence.
+- `tests/people-operations-v50.test.mjs` — focused unit and integration-contract tests.
+- `CHANGELOG.md` — release notes.
+- `VERIFICATION.md` — exact verification scope.
