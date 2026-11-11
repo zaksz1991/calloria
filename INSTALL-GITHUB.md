@@ -1,60 +1,67 @@
-# Install CALLORIA v4.4.0 using GitHub Desktop
+# Install CALLORIA v4.5.0 using GitHub Desktop
 
-## Before applying
+## Required baseline
 
-This overlay targets the public repository source baseline at commit `74e0582` and assumes the previously installed OJT/workstation allocation runtime is retained. Do not apply it over a newer, structurally changed `main.js` without reconciling the integration anchors first.
+Apply this overlay only after the v4.4.0 First Independent Working Shift package is already installed in `zaksz1991/calloria` and its Vite configuration, plugin and engine are present. The v4.4 package targeted the source shape at commit `74e0582`. This v4.5 package preserves the v4.4 integration and registers the outbound plugin after it.
+
+Do not stack this patch on an unverified or structurally different `main.js`. The new plugin deliberately skips its transform if its v4.4 import or outbound save anchors do not match exactly once.
 
 ## Files to add
 
-Copy these complete files into the matching repository locations:
+Copy these complete files into the matching repository folders:
 
-- `build/calloria-first-working-shift-v4-4-plugin.mjs`
-- `js/operational-conversation-engine.js`
-- `tests/operational-conversation-engine-v44.test.mjs`
-- `tests/calloria-v44-first-working-shift-plugin.test.mjs`
+- `build/calloria-outbound-campaign-v4-5-plugin.mjs`
+- `js/outbound-campaign-engine.js`
+- `tests/outbound-campaign-engine-v45.test.mjs`
+- `tests/calloria-v45-outbound-plugin.test.mjs`
 
 ## File to replace completely
 
-- `vite.config.js` — use the complete file supplied in this package. It preserves the currently registered GLB, office, supervisor, first-shift and OJT plugins, then registers the v4.4 live-shift plugin after the OJT/GLB plugin.
+- `vite.config.js` — use the supplied complete merged configuration. It retains the existing GLB, office, supervisor, first-shift and OJT plugins, registers v4.4, then registers the v4.5 outbound campaign plugin after v4.4.
+
+Do not replace `package.json` or `package-lock.json`.
 
 ## Do not replace
 
-- `package.json` or `package-lock.json`
 - `js/main.js`
+- `build/calloria-first-working-shift-v4-4-plugin.mjs`
+- `js/operational-conversation-engine.js`
 - `build/calloria-ojt-runtime.js`
 - `build/calloria-ojt-glb-activation-plugin.mjs`
-- any existing GLB model or anything under `public/assets/models/`
-- existing recruitment, CRM, queue, workforce, voice or Supabase modules
+- any GLB registry, GLB model, or anything under `public/assets/models/`
+- recruitment, workforce, CRM, queue, digital-channel, voice or Supabase modules
 
 ## GitHub Desktop steps
 
 1. Extract the ZIP in Windows File Explorer.
 2. Open the existing `zaksz1991/calloria` repository in GitHub Desktop.
 3. Choose **Repository → Show in Explorer**.
-4. Copy the four new files into their matching `build`, `js` and `tests` folders.
-5. Replace `vite.config.js` with the complete supplied file.
-6. Return to GitHub Desktop and inspect the changed-file list. It should show one replaced config, one new build plugin, one new engine and two new tests.
-7. Commit to `main` with the summary `CALLORIA v4.4.0 — first independent shift gameplay` and push.
-8. Inspect the Vercel deployment log. A successful focused test run is not a substitute for the production build.
+4. Copy the four new files into the matching `build`, `js` and `tests` folders.
+5. Replace `vite.config.js` with the complete supplied v4.5 configuration.
+6. Review the changed-file list. It should show one replaced Vite configuration and four new files.
+7. Commit to `main` with the summary `CALLORIA v4.5.0 — outbound campaign operations` and push.
+8. Inspect Vercel's full build log. Focused package tests are not a substitute for the full repository build.
 
-## No backend migration
+## No backend migration or new environment variables
 
-This patch uses the existing client-side simulation/save architecture. It requires no Supabase SQL migration and no new environment variables.
+This overlay uses the existing browser save, campaign, callback, suppression and CRM record architecture. It requires no Supabase SQL migration, telephony account, AI key or additional Vercel environment variable.
 
 ## Browser acceptance checklist
 
-After a successful build/deployment:
+1. Complete recruitment, product/service knowledge, CRM logging, experienced-agent shadowing, supervised practice, trainer sign-off and workstation allocation.
+2. Attend the required briefing and start an independent shift.
+3. Open Outbound and confirm the old multiple-choice script is replaced by the campaign operations desk.
+4. Start a synthetic campaign contact. Confirm the customer opens and the response field accepts free text.
+5. Attempt an incomplete introduction. Confirm the customer asks who is calling and why.
+6. Identify the agent/organisation, explain the real campaign purpose and ask permission to continue.
+7. Complete a regular interaction. Confirm after-contact work, disposition, CRM transcript, QA and outbound attempt history are saved.
+8. Complete a busy/callback-request scenario. Confirm a future callback can be scheduled and cannot be resumed before it is due.
+9. Resume the callback after its due time during an available shift. Confirm it creates a new outbound attempt linked to the callback.
+10. Complete a do-not-contact scenario. Confirm the suppression register updates immediately and the same contact is blocked from a later campaign attempt, even if the active attempt is ended before wrap-up.
+11. Complete a decline scenario. Confirm the customer decision is recorded without forcing a sale.
+12. Confirm no real telephone call is placed and no real customer contact details are used.
+13. Test the campaign and callback layouts on a physical mobile device.
 
-1. Complete recruitment and accept an employment offer.
-2. Complete product/service knowledge, CRM logging, experienced-agent shadowing and supervised practice.
-3. Receive simulated trainer sign-off and workstation allocation.
-4. Attend the correct operations briefing and start the shift.
-5. Open Inbound and accept a queued customer.
-6. Confirm the inbound screen shows a conversation transcript and a free-text response box rather than answer-choice buttons.
-7. Send several agent responses and verify that the synthetic customer replies and patience/QA figures change.
-8. Test hold/resume and supervisor assistance.
-9. Complete a conversation, enter factual wrap-up notes and save the disposition.
-10. Open CRM and verify the case contains the conversation transcript and scorecards.
-11. Repeat with a non-banking scenario to confirm that general customer care and other industries remain supported.
+## Verification boundary
 
-The browser and Vercel checks above have not been performed by preparing this ZIP.
+The supplied v4.5 engine and plugin tests pass in isolation. A full repository `npm test`, full Vite production build, Vercel deployment, browser session, actual outbound telephony and physical-device test have not been performed by preparing this ZIP. The current patch is a synthetic gameplay upgrade, not a live dialler integration.

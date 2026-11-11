@@ -1,27 +1,16 @@
-# CALLORIA v4.4.0 — First Independent Shift Gameplay
+# Changelog — CALLORIA v4.5.0
 
-## What changes
-
-- Replaces the inbound call's legacy multiple-choice response panel with a live, multi-turn agent/customer conversation workspace.
-- Creates a conversation when the agent accepts an actual queued inbound contact during an active shift.
-- Uses deterministic customer personas with changing patience and conditional replies.
-- Lets the player type natural-language responses instead of choosing pre-written answers.
-- Evaluates greeting, empathy, ownership, probing, clarity and next-step explanation.
-- Flags credential solicitation, payment-card data solicitation, unverified promises and dismissive treatment as critical review events.
-- Shows the linked customer/CRM context, case reference, queue route, wait and interaction branch during the call.
-- Preserves hold, resume, supervisor request, transfer, queue return and existing after-contact-work controls.
-- Persists the transcript and turn scorecards into the CRM case record.
-- Uses the conversation's QA result for the inbound wrap-up score; keeps unresolved customer outcomes open/escalated rather than falsely marking them resolved.
-- Adds responsive transcript and reply controls for mobile screens.
-
-## Product boundaries
-
-- Recruitment and the four OJT modules remain the entry gate. This engine is for post-training, independent shift work only.
-- The existing inbound queue and industry scenario catalogue are reused. The conversation engine is industry-neutral and does not default all contacts to banking.
-- Customer conversations are synthetic and deterministic/rule-based. This is not an LLM or a live contact-centre telephony connection.
-- The existing browser speech playback action is retained; microphone capture and speech recognition are not introduced by this release.
-- No external customer records, phone calls, messaging providers or production CRM systems are accessed.
-
-## Build integration
-
-The new Vite plugin runs after the existing OJT/GLB plugin. It uses exact, single-occurrence anchors and skips the live-shift transform with a warning if the upstream source has materially changed; it does not apply a partial transform.
+- Replaced the legacy multiple-choice outbound campaign interaction panel with a free-text, multi-turn agent/customer conversation.
+- Added synthetic customer preferences for open conversation, busy, callback requested, declined and do-not-contact.
+- Requires transparent agent identity, campaign purpose and permission to continue before the customer conversation proceeds.
+- Added customer reactions, conversation transcript, patience, turn score and interaction QA summary.
+- Added safe handling for refusal, callback request and opt-out.
+- Writes a do-not-contact request into the existing suppression register as soon as it is discovered, so ending an interaction cannot bypass suppression.
+- Preserved the existing shift availability gate, campaign start logic, callbacks, callback due-time guard, wrap-up, CRM cases, outbound attempts, QA, performance and career save path.
+- Added campaign activity summary, callback due summary, recent attempt history and suppression-register view.
+- Added outbound supervisor assistance request and customer speech playback.
+- Persists conversation transcript, customer preference, permission status, callback/suppression outcome and critical breach evidence in CRM and outbound attempt records.
+- Allows a review-required after-contact disposition for unresolved outbound interactions and opens a supervisor follow-up record.
+- Awards product-offer sales credit only after an explicit simulated customer acceptance; a completed conversation alone is not a sale.
+- Added responsive mobile styles and regression tests.
+- No external dialler, telephony provider, AI provider, customer contact data or backend migration was introduced.
