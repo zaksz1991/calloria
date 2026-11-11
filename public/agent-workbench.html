@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>CALLORIA · Omnichannel Agent Workbench</title>
+  <link rel="stylesheet" href="/agent-workbench.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="CALLORIA home"><span class="brand-mark">C</span><span><strong>CALLORIA</strong><small>AGENT WORKBENCH · V5.5</small></span></a>
+    <div class="shift-controls">
+      <label class="agent-name-wrap"><span>Agent</span><input id="agent-name" maxlength="100" value="Agent Trainee" autocomplete="name"></label>
+      <label class="agent-name-wrap"><span>Team</span><select id="agent-team"><option>Customer Care</option><option>Digital Support</option><option>Technical Support</option><option>Player Support</option><option>Sales & Service</option><option>Service Recovery</option><option>General Enquiries</option></select></label>
+      <span id="shift-state" class="presence-chip offline">OFF SHIFT</span>
+      <button id="start-shift" class="button button-primary">Start shift</button>
+      <button id="end-shift" class="button button-ghost" disabled>End shift</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="page-heading">
+      <div><div class="eyebrow">CUSTOMER OPERATIONS / FRONTLINE</div><h1>Omnichannel agent desk</h1><p>Work inbound contacts, use approved knowledge and record every outcome against the customer journey.</p></div>
+      <div class="heading-actions"><label class="presence-select">Presence <select id="presence-select" disabled><option>Available</option><option>Break</option><option>Offline</option></select></label><button id="export-csv" class="button button-ghost">Export contact log</button></div>
+    </section>
+
+    <section id="notice-strip" class="notice-strip" aria-live="polite"></section>
+
+    <section class="metric-grid" aria-label="Agent shift metrics">
+      <article class="metric-card"><span>Waiting contacts</span><strong id="metric-queued">0</strong><small>Across all channels</small></article>
+      <article class="metric-card"><span>Handled</span><strong id="metric-handled">0</strong><small>This browser's workbench</small></article>
+      <article class="metric-card"><span>Transferred</span><strong id="metric-transferred">0</strong><small>Specialist hand-offs</small></article>
+      <article class="metric-card"><span>Average handle</span><strong id="metric-aht">0m</strong><small>Completed contacts only</small></article>
+      <article class="metric-card"><span>Responses sent</span><strong id="metric-replies">0</strong><small>Simulated channel replies</small></article>
+    </section>
+
+    <section class="desk-grid">
+      <aside class="panel queue-panel">
+        <div class="panel-head"><div><div class="eyebrow">INBOUND WORK</div><h2>Contact queue</h2></div><span class="count-pill" id="queue-count">0</span></div>
+        <div class="queue-tools"><input id="queue-search" type="search" placeholder="Find contact, customer or topic" aria-label="Search contact queue"><select id="queue-channel" aria-label="Filter by channel"><option value="">All channels</option><option>Voice</option><option>Email</option><option>Live chat</option><option>Social</option><option>SMS</option><option>In-app</option></select></div>
+        <div id="queue-list" class="queue-list" aria-live="polite"></div>
+        <div class="queue-foot"><span class="status-dot"></span> Synthetic training queue · no external contacts</div>
+      </aside>
+
+      <section class="panel interaction-panel">
+        <div id="contact-detail" class="contact-empty"><div class="empty-symbol">↗</div><h2>Choose a queued contact</h2><p>Start your shift, then accept an inbound contact to open the interaction workspace.</p><span>Voice · Email · Live chat · Social · SMS · In-app</span></div>
+      </section>
+
+      <aside class="right-rail">
+        <section class="panel customer-panel">
+          <div class="panel-head"><div><div class="eyebrow">CUSTOMER 360</div><h2>Customer context</h2></div><span class="mini-badge" id="customer-link-state">NOT LINKED</span></div>
+          <div id="customer-context" class="rail-content"><div class="empty-state">Accept a contact to load the linked customer profile.</div></div>
+        </section>
+        <section class="panel knowledge-panel">
+          <div class="panel-head"><div><div class="eyebrow">APPROVED GUIDANCE</div><h2>Knowledge assist</h2></div><span class="mini-badge">V5.2</span></div>
+          <div class="knowledge-search"><input id="knowledge-search" type="search" placeholder="Search published guidance" aria-label="Search knowledge articles"><button id="knowledge-search-button" class="icon-button" aria-label="Search knowledge">⌕</button></div>
+          <div id="knowledge-results" class="rail-content"><div class="empty-state">Search published articles. Drafts and expired guidance are excluded.</div></div>
+        </section>
+        <section class="panel incident-panel">
+          <div class="panel-head"><div><div class="eyebrow">SERVICE AWARENESS</div><h2>Active incidents</h2></div><span class="count-pill" id="incident-count">0</span></div>
+          <div id="incident-context" class="rail-content"><div class="empty-state">No active linked incidents.</div></div>
+        </section>
+      </aside>
+    </section>
+
+    <section class="panel completed-panel">
+      <div class="panel-head"><div><div class="eyebrow">SHIFT AUDIT</div><h2>Recent completed contacts</h2></div><span class="mini-badge">LOCAL DEMO RECORDS</span></div>
+      <div class="table-wrap"><table><thead><tr><th>Reference</th><th>Channel</th><th>Customer</th><th>Disposition</th><th>Linked case</th><th>Completed</th></tr></thead><tbody id="completed-rows"><tr><td colspan="6" class="empty-cell">No completed contacts in this workbench yet.</td></tr></tbody></table></div>
+    </section>
+  </main>
+
+  <dialog id="wrap-dialog" class="wrap-dialog">
+    <form id="wrap-form" method="dialog">
+      <div class="dialog-head"><div><div class="eyebrow">CONTACT CONTROL</div><h2>Wrap up interaction</h2></div><button type="button" id="close-wrap" class="icon-button" aria-label="Close">×</button></div>
+      <p class="dialog-intro" id="wrap-reference"></p>
+      <label class="form-label">Disposition<select id="wrap-disposition" required></select></label>
+      <label class="form-label">Outcome summary<textarea id="wrap-summary" rows="3" minlength="20" maxlength="900" required placeholder="What did you investigate, explain, agree or resolve?"></textarea></label>
+      <div class="form-row"><label class="form-label">Case action<select id="case-action"><option value="create">Create a new case</option><option value="existing">Add interaction to an open case</option><option value="note-only">Customer note only — no case required</option></select></label><label class="form-label">Priority<select id="case-priority"></select></label></div>
+      <div id="existing-case-wrap" class="conditional-field hidden"><label class="form-label">Open customer case<select id="existing-case"></select></label></div>
+      <div id="new-case-wrap" class="conditional-field"><label class="form-label">Case category<select id="case-category"></select></label><label class="form-label">Case subject<input id="case-subject" maxlength="160"></label></div>
+      <p id="wrap-feedback" class="form-feedback" aria-live="polite"></p>
+      <div class="dialog-actions"><button type="button" id="cancel-wrap" class="button button-ghost">Cancel</button><button type="submit" id="complete-contact" class="button button-primary">Save and complete contact</button></div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/customer-journey-engine.js"></script>
+  <script src="/agent-workbench-engine.js"></script>
+  <script src="/agent-workbench.js"></script>
+</body>
+</html>
