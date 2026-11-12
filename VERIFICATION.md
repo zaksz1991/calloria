@@ -1,29 +1,31 @@
-# CALLORIA v6.8 Verification
+# CALLORIA v6.9 Verification
 
 ## Automated checks
 
 | Check | Result |
 |---|---:|
-| Focused + regression tests | **109 passed, 0 failed** |
-| JavaScript syntax checks | Passed |
-| HTML duplicate-ID check | Passed — 161 IDs, no duplicates |
-| Live Floor direct selector check | Passed — 154 selectors, none missing |
-| Local HTTP asset requests | All 13 checked paths returned HTTP 200 |
+| Focused + regression tests | **136 passed, 0 failed** |
+| JavaScript syntax checks | Passed for all 8 overlay JS files |
+| HTML duplicate-ID check | Passed — 183 IDs, no duplicates |
+| Live Floor direct selector check | Passed — 173 selectors, none missing |
+| Commitment engine script order | Passed — loaded before Live Floor controller |
+| Local static HTTP smoke check | 7 of 7 overlay assets returned HTTP 200 |
 | ZIP integrity | Passed |
 
-Test coverage includes skill-profile defaults and persistence, profile isolation by employee/team, ranking by priority/SLA/age/skills, due/at-risk/breached SLA states, sorting modes, routing explanation, routing snapshot persistence, v6.5 voice controls, v6.6 Email/Live Chat and v6.7 Social/SMS/In-app regressions.
+Tests cover simulated-time scheduling, workday/weekend rollover, callback validation, due and overdue classification, employee scoping, completion, no-answer retry, further-action rescheduling, repeated-failure review, manager review identity, browser persistence, Customer 360/case interaction wiring, wrap-up selection and previous v6.5–v6.8 regressions.
 
 ## Not performed / incomplete
 
-- The headless Chromium render attempt timed out; no browser visual acceptance is claimed.
 - Full CALLORIA repository tests were not run.
 - Vite production build against the complete repository was not run.
 - Vercel deployment and live-site verification were not performed.
+- Browser visual and end-to-end acceptance were not completed.
+- Actual telephony or messaging cannot be verified because this is a synthetic simulation.
 
 ## Runtime dependencies
 
-The Live Floor page still requires the existing v6.0-v6.7 runtime engines and assets listed in `README.md`. This overlay does not include or replace the 3D models or Vite configuration.
+The Live Floor page needs the existing v6.0–v6.8 runtime engines and assets listed in `README.md`. This overlay does not include or replace the full repository, Vite configuration, Supabase configuration, 3D workplace modules or GLB assets.
 
 ## Data and integration boundaries
 
-Routing data is saved to browser local storage. Queue contacts are synthetic. This is advisory single-player routing, not a live omnichannel distributor or multi-agent assignment service.
+Commitment data is saved under `calloria.customer-commitments.v69` in browser local storage. Customer notes and linked-case outbound interactions are written to the existing Customer Journey storage key on the same origin. Nothing is synced to Supabase or shared with other employees/devices. Callback dates use the game shift clock, not real-world time. Manager review identity is entered manually and is not authenticated.

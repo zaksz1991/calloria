@@ -144,3 +144,33 @@
   .routing-profile-actions>span{text-align:left}
   .queue-filters-v68{grid-template-columns:1fr 1fr}
 }
+
+/* v6.9 customer commitment and callback control */
+.commitment-panel{border-top:1px solid #e9edf3;margin-top:4px;padding:13px 12px 12px;background:#fbfcfe}
+.commitment-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.commitment-heading h3{font-size:11px;color:#2d4261;margin:3px 0 0}
+.commitment-summary{font-size:8px;line-height:1.45;color:#8591a3;margin:8px 0}
+.commitment-list{display:grid;gap:6px;max-height:310px;overflow:auto}
+.commitment-item{width:100%;display:block;text-align:left;padding:9px 10px;background:#fff;border:1px solid #e7ebf2;border-radius:8px;cursor:pointer}
+.commitment-item:hover,.commitment-item.selected{border-color:#9ab1e5;background:#f8faff}
+.commitment-item-top{display:flex;align-items:center;justify-content:space-between;gap:7px}
+.commitment-item-top strong{font-size:9px;color:#344762}
+.commitment-status{font-size:7px;font-weight:900;letter-spacing:.04em;border-radius:5px;padding:4px 6px;background:#eef2f7;color:#65748b;white-space:nowrap}
+.commitment-status.overdue,.commitment-status.needs-review{background:#ffebe7;color:#a4352c}
+.commitment-status.due,.commitment-status.due-soon{background:#fff3d9;color:#8a5e08}
+.commitment-status.scheduled{background:#eaf1ff;color:#3157a6}
+.commitment-item p{font-size:8px;color:#65748b;line-height:1.45;margin:6px 0}
+.commitment-item small{display:block;font-size:7px;line-height:1.4;color:#8b97a8}
+.commitment-action{display:grid;gap:8px;border:1px solid #dbe5f2;border-radius:9px;padding:10px;background:#fff;margin-top:9px}
+.commitment-action-title{display:grid;gap:3px}
+.commitment-action-title strong{font-size:9px;color:#344a68}
+.commitment-action-title small{font-size:7px;color:#8491a5;line-height:1.4}
+.commitment-action label,.followup-plan-panel label{display:grid;gap:5px;font-size:8px;color:#5f6c80;font-weight:750}
+.commitment-action select,.commitment-action textarea,.followup-plan-panel input,.followup-plan-panel select{width:100%;font:inherit;font-size:9px;color:#24334c;background:#fff;border:1px solid #dfe5ed;border-radius:7px;padding:8px 9px;min-height:34px}
+.commitment-action textarea{resize:vertical;line-height:1.45}
+.commitment-action-buttons{display:flex;gap:7px;flex-wrap:wrap}
+.commitment-action-buttons .button{padding:8px 10px;font-size:8px}
+.followup-plan-panel{display:grid;gap:8px;padding:11px;border:1px solid #dce6f3;background:#f7faff;border-radius:9px}
+.followup-plan-panel h4{font-size:10px;color:#354b6b;margin:3px 0 0}
+.followup-plan-panel small{font-size:7px;color:#8491a5;line-height:1.45}
+@media(max-width:560px){.commitment-panel{padding:11px 9px}.commitment-item{padding:9px}.commitment-action-buttons{display:grid;grid-template-columns:1fr 1fr}.followup-plan-panel{padding:9px}}

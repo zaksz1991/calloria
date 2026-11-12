@@ -17,6 +17,7 @@
   <script defer src="/digital-channel-engine.js"></script>
   <script defer src="/social-messaging-engine.js"></script>
   <script defer src="/queue-routing-engine.js"></script>
+  <script defer src="/commitment-engine.js"></script>
   <script defer src="/live-floor.js"></script>
 </head>
 <body>
@@ -28,7 +29,7 @@
     <div class="topbar-right">
       <a class="office-nav-link" href="/office-floor.html">3D WORKPLACE</a>
       <span class="live-badge"><i></i> SIMULATED FLOOR</span>
-      <span class="version-label">CORE GAMEPLAY · BUILD 6.8</span>
+      <span class="version-label">CORE GAMEPLAY · BUILD 6.9</span>
     </div>
   </header>
 
@@ -112,6 +113,25 @@
           <div class="routing-profile-actions"><button id="routing-profile-reset" class="button button-secondary" type="button">Reset team defaults</button><span id="routing-profile-saved">Saved on this device</span></div>
         </details>
         <div id="queue-list" class="queue-list"><div class="empty-note">Sign in to load your shift queue.</div></div>
+        <section id="commitment-panel" class="commitment-panel" aria-labelledby="commitment-heading">
+          <div class="commitment-heading"><div><span class="eyebrow">CUSTOMER PROMISES</span><h3 id="commitment-heading">My callback commitments</h3></div><span id="commitment-count" class="count-pill">0</span></div>
+          <div id="commitment-summary" class="commitment-summary">Sign in to view promised customer callbacks and follow-ups.</div>
+          <div id="commitment-list" class="commitment-list"><div class="empty-note">No callback commitments recorded.</div></div>
+          <form id="commitment-outcome-form" class="commitment-action hidden">
+            <div class="commitment-action-title"><strong id="commitment-active-title">Record callback outcome</strong><small id="commitment-active-meta"></small></div>
+            <label>Callback result<select id="commitment-outcome"><option value="completed">Customer reached · commitment fulfilled</option><option value="no-answer">No answer · retry required</option><option value="further-action">Customer reached · further action required</option></select></label>
+            <label>Outcome record<textarea id="commitment-outcome-summary" rows="3" minlength="20" maxlength="500" placeholder="Record who was contacted, what was confirmed and the agreed next step." required></textarea></label>
+            <div id="commitment-feedback" class="form-feedback" role="alert"></div>
+            <div class="commitment-action-buttons"><button class="button button-primary" type="submit">Save callback outcome</button><button id="commitment-cancel" class="button button-secondary" type="button">Cancel</button></div>
+          </form>
+          <form id="commitment-review-form" class="commitment-action hidden">
+            <div class="commitment-action-title"><strong>Supervisor review required</strong><small id="commitment-review-meta"></small></div>
+            <label>Reviewing manager / supervisor<input id="commitment-reviewer" maxlength="100" autocomplete="off" placeholder="Enter a different employee's name" required></label>
+            <label>Review decision and next action<textarea id="commitment-review-summary" rows="3" minlength="20" maxlength="500" placeholder="Record why the repeated callback failed and how ownership will be resolved." required></textarea></label>
+            <div id="commitment-review-feedback" class="form-feedback" role="alert"></div>
+            <div class="commitment-action-buttons"><button class="button button-primary" type="submit">Close after review</button><button id="commitment-review-cancel" class="button button-secondary" type="button">Cancel</button></div>
+          </form>
+        </section>
         <div class="queue-footer"><span class="dot dot-green"></span> Synthetic queue · advisory routing · agent retains contact choice</div>
       </aside>
 
@@ -257,6 +277,12 @@
                 <label>Priority<select id="case-priority"><option>P1 - Urgent</option><option>P2 - High</option><option selected>P3 - Normal</option><option>P4 - Low</option></select></label>
               </div>
               <label id="case-subject-field">Case subject<input id="case-subject" maxlength="160"></label>
+              <section class="followup-plan-panel" aria-labelledby="followup-plan-heading">
+                <div><span class="eyebrow">CUSTOMER COMMITMENT</span><h4 id="followup-plan-heading">Schedule a promised callback</h4></div>
+                <label>Callback time<select id="followup-plan"><option value="">No additional callback required</option><option value="30-min">In 30 simulated minutes</option><option value="60-min">In 60 simulated minutes</option><option value="next-day">Next working day · 09:00</option><option value="two-days">Two working days · 10:00</option></select></label>
+                <label id="followup-commitment-field" class="hidden">What is the customer waiting for?<input id="followup-commitment" maxlength="180" placeholder="e.g. Confirm the account recovery investigation result"></label>
+                <small>Scheduled callbacks appear in your commitment queue and remain open until an outcome is recorded.</small>
+              </section>
               <div class="form-feedback" id="wrap-feedback" role="alert"></div>
               <button class="button button-primary" type="submit">Save wrap-up & return to queue</button>
             </form>
@@ -301,7 +327,7 @@
     </section>
 
     <section class="activity-strip"><span>SIMULATION LOG</span><div id="activity-log">No activity recorded.</div><button id="end-shift" class="button button-secondary" type="button" disabled>End shift</button></section>
-    <footer class="page-foot">CALLORIA v6.8 · Skill-based omnichannel routing simulation · No real customer, telephone, email or messaging connections</footer>
+    <footer class="page-foot">CALLORIA v6.9 · Customer commitment and callback management · No real customer, telephone, email or messaging connections</footer>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>

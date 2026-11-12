@@ -1,48 +1,64 @@
-# CALLORIA v6.8 — Intelligent Omnichannel Routing & SLA Control
+# CALLORIA v6.9 — Customer Commitments & Callback Management
 
 ## Purpose
 
-This upgrade improves how the existing Live Floor presents the synthetic customer queue. It adds team-aware skill profiles, explainable routing priority, SLA visibility and a recorded routing snapshot for each accepted contact. It keeps customer handling as the centre of gameplay; it does not turn CALLORIA into a finance or back-office simulator.
+This upgrade closes the service loop after the first customer interaction. Agents can schedule an explicit callback promise during wrap-up, see upcoming/due/overdue commitments on the Live Floor, record each outbound attempt, update Customer 360 and the linked case timeline, and send repeated unsuccessful callbacks to a documented review step.
 
-## New gameplay
+The release keeps the central game focused on customer care. It does not add a bank, billing, accounting or ERP gameplay system.
 
-### Explainable next-best-contact routing
-- Ranks the current queued contacts using priority, SLA pressure, time waiting and agent skill fit.
-- Highlights the recommended next contact and the reasons it is recommended.
-- Shows breached, at-risk, due-soon and within-target SLA states.
-- Displays estimated remaining or overdue response time, waiting age and channel/product skill fit.
-- Refreshes queue timing and recommendations every 30 seconds when no contact is active and the skill editor is not being used.
+## Gameplay
 
-### Team-aware skill profile
-- Loads a default skill profile from the selected team: Customer Care, Digital Support, Player Support, Technical Support, Service Recovery or General Enquiries.
-- Allows the player to adjust proficiency for all six contact channels and all seven RuffNeck products/services.
-- Skill levels: Basic, Working and Advanced.
-- Saves profiles locally per employee name and assigned team, so one player profile does not overwrite another employee's profile on the same browser.
-- Changes immediately update queue ordering and the recommendation explanation.
+### Schedule a customer promise during wrap-up
+- Optional callback plan: 30 simulated minutes, 60 simulated minutes, next working day at 09:00, or two working days at 10:00.
+- The promise description is mandatory when a callback is selected.
+- A `Callback agreed` disposition cannot be saved without a scheduled commitment.
+- Same-shift callbacks that would fall after the 16:00 close are automatically moved to the next working day at 09:00.
+- Next-working-day calculation skips Saturday and Sunday.
+- Simulated minutes are based on the in-game shift clock. They are not real-time countdowns or outbound call automation.
 
-### Queue controls
-- Smart routing (default), Priority first and Oldest waiting sorting modes.
-- Existing channel filtering is retained.
-- Skill suggestions are advisory: an agent can still choose any queued contact. The game does not lock the player out of a customer because a profile skill is low.
+### My callback commitments
+- Separate list for the signed-in employee.
+- Displays customer, originating contact, linked case, channel, commitment, due date/time and attempt count.
+- Shows Scheduled, Due soon, Due, Overdue and Needs review states.
+- Overdue and review work are sorted ahead of future commitments.
+- Open commitments remain visible across shifts in the same browser and origin.
+
+### Record callback outcomes
+- Customer reached and commitment fulfilled: closes the commitment.
+- No answer: records an internal outbound attempt and reschedules for the next working day at 10:00.
+- Further action required: records the customer-facing interaction and reschedules for the next working day at 10:00.
+- The outcome note must contain at least 20 characters.
+- Every attempt adds a note to the customer record and, when a linked case is still open, an outbound interaction to that case.
+- After two unsuccessful attempts, the commitment moves to Needs review. It cannot be closed through another normal callback outcome.
+
+### Manager review
+- Closing a Needs review item requires a named reviewer different from the callback owner and a written review outcome.
+- Review outcome is recorded as a Customer 360 internal note.
+- Reviewer names are entered in the simulation and are not authenticated against an HR identity system. This is a gameplay control, not a real approval/security boundary.
 
 ### Performance evidence
-- Captures routing mode, score, skill fit, queue wait, SLA state at acceptance, channel/product proficiency and assigned team when a contact is accepted.
-- Adds routing evidence to completed contact records and the end-of-shift report.
-- Preserves the v6.7 Voice, Email, Live Chat, Social, SMS and In-app contact workflows, including the earlier customer dynamics, career and office routine integrations.
+- Completed contact records carry the callback reference and promised due time.
+- End-of-shift report shows open, overdue and review-required customer commitments.
+- Existing queue routing, all six contact channels, voice controls, customer dynamics, career progression and 3D office links remain intact.
 
 ## Installation
 
-This is an additive overlay for the existing CALLORIA v6.7 Live Floor. Copy the following six files from the ZIP's `public/` folder into the repository's existing `public/` folder, replacing matching files:
+This is an additive overlay for the current CALLORIA v6.8 Live Floor. Copy these files from the ZIP's `public/` folder into the repository's existing `public/` folder:
 
+Replace these three matching Live Floor files:
 1. `live-floor.html`
 2. `live-floor.css`
 3. `live-floor.js`
-4. `digital-channel-engine.js` — unchanged v6.6 compatibility copy; retain your matching existing copy if locally customised.
-5. `social-messaging-engine.js` — unchanged v6.7 compatibility copy; retain your matching existing copy if locally customised.
-6. `queue-routing-engine.js` — new v6.8 engine.
 
-Keep all other Live Floor dependencies and assets already in your repository:
+Add the new engine:
+4. `commitment-engine.js`
 
+The ZIP also contains the v6.8 compatibility copies below. Preserve your own versions if they have been customised; the v6.9 Live Floor still needs them:
+- `queue-routing-engine.js`
+- `digital-channel-engine.js`
+- `social-messaging-engine.js`
+
+Keep all other existing runtime dependencies and assets already in your repository:
 - `agent-workbench-engine.js`
 - `customer-journey-engine.js`
 - `live-floor-engine.js`
@@ -50,37 +66,33 @@ Keep all other Live Floor dependencies and assets already in your repository:
 - `office-routine-engine.js`
 - `customer-dynamics-engine.js`
 - `voice-call-engine.js`
-- the existing complete `public/assets/models/` directory and 3D workplace files
+- the complete `public/assets/models/` directory and existing 3D workplace files
 
-Do not replace the Vite configuration, Supabase configuration, 3D office pages, or unrelated modules. No environment variables or external API keys are required.
+Do not replace the Vite configuration, Supabase configuration, 3D office pages or unrelated modules. No environment variables or external API keys are required.
 
 ## Route
 
-The existing Live Floor route remains:
+The existing Live Floor route remains `/live-floor.html`.
 
-`/live-floor.html`
-
-The new engine is served at:
-
-`/queue-routing-engine.js`
+New engine asset: `/commitment-engine.js`.
 
 ## Verification performed
 
-- **109 focused and regression tests passed, zero failed.** This includes the v6.5 voice regressions, v6.6 email/chat checks, v6.7 social/SMS/in-app checks, and new v6.8 routing/queue tests.
-- JavaScript syntax checks passed for all JavaScript files in the overlay.
+- **136 focused and regression tests passed, zero failed.** This includes the previous v6.5 voice, v6.6 digital, v6.7 Social/SMS/In-app and v6.8 routing tests, plus v6.9 commitment-engine and Live Floor contract checks.
+- JavaScript syntax checks passed for all JavaScript files included in the overlay.
 - HTML duplicate-ID check passed.
-- All 153 direct controller ID selectors were found in the HTML.
-- Local HTTP checks returned 200 for the Live Floor page, stylesheet, controller, new routing engine and required compatibility/runtime dependencies.
+- All 173 direct controller ID selectors were found in the HTML.
+- Commitment engine script load order check passed.
+- Local static HTTP smoke check returned HTTP 200 for all seven page/engine/style assets included in the overlay.
 - ZIP archive integrity passed.
 
-A headless Chromium page-render attempt timed out in this environment. A complete repository Vite production build, deployment to Vercel and live-site browser verification were not performed.
+A full repository Vite production build, Vercel deployment and browser visual/end-to-end acceptance were not performed. The overlay does not include the full project repository or all runtime dependencies needed for a production build.
 
 ## Boundaries
 
-- The queue remains the ten synthetic demonstration contacts supplied by the existing Live Floor engine; this is not a connection to a live ACD/omnichannel platform.
-- Routing is single-player decision support. It does not assign contacts across multiple real agents, teams or organisations.
-- SLA clocks are simulated from the timestamps on the local queue records. The rules are a game model, not a contractual service-level engine.
-- Skill profiles and routing evidence remain in browser local storage on the current browser and origin. They are not synced to Supabase or a central HR/CRM database.
-- Skill-fit and priority scores are transparent game heuristics, not a certified workforce optimisation or Erlang-C model.
-- The agent retains contact choice; a low skill match displays a suggestion instead of blocking the contact.
-- No real calls, emails, messages, AI service, external queue, microphone, or customer records are accessed. No Groq key or new third-party service is used.
+- Callback commitments are synthetic gameplay records. No real telephone call, email, SMS or message is sent.
+- Due times use the simulated shift date/minute counter. They only advance when game actions advance the shift clock; they are not real-world timers or background reminders.
+- Commitment data is stored in browser local storage, per employee name. It does not sync to Supabase, another browser, another device or a multi-user team queue.
+- Customer notes and linked case interactions write to the existing browser-local Customer 360 store on the same origin.
+- A reviewer name is typed into the simulation; it is not validated through sign-in or HR permissions.
+- The engine does not use AI, Groq, external APIs, web sockets, real telephony or any additional third-party service.

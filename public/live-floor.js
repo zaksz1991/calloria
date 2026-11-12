@@ -11,14 +11,16 @@
   const G = window.CalloriaDigitalChannelEngine;
   const S = window.CalloriaSocialMessagingEngine;
   const Q = window.CalloriaQueueRoutingEngine;
+  const B = window.CalloriaCommitmentEngine;
   const realStorage = window.localStorage;
   const toast = $('#toast');
   let toastTimer = null;
   let selectedChannel = '';
   let articleQuery = '';
+  let selectedCommitmentId = null;
 
-  if (!E || !C || !F || !P || !R || !D || !V || !G || !S || !Q) {
-    document.body.innerHTML = '<main style="max-width:700px;margin:60px auto;padding:24px;font:14px system-ui"><h1>CALLORIA Live Floor could not start</h1><p>Required simulation engine files are missing. Copy the v6.8 Intelligent Routing overlay and keep the matching v6.7 through v6.0 Live Floor dependencies in the public folder, then reload this page.</p></main>';
+  if (!E || !C || !F || !P || !R || !D || !V || !G || !S || !Q || !B) {
+    document.body.innerHTML = '<main style="max-width:700px;margin:60px auto;padding:24px;font:14px system-ui"><h1>CALLORIA Live Floor could not start</h1><p>Required simulation engine files are missing. Copy the v6.9 Commitment Management overlay and keep the matching v6.7 through v6.0 Live Floor dependencies in the public folder, then reload this page.</p></main>';
     return;
   }
 
@@ -26,6 +28,8 @@
     document.body.innerHTML = '<main style="max-width:700px;margin:60px auto;padding:24px;font:14px system-ui"><h1>CALLORIA customer dynamics could not start</h1><p>The adaptive customer engine could not connect to the live-floor engine. Restore the matching v6.3 engine dependency and reload.</p></main>';
     return;
   }
+
+  let commitmentState = B.load(realStorage);
 
   const storageProxy = {
     getItem(key) { return key === E.STORAGE_KEY ? realStorage.getItem(F.AGENT_STORAGE_KEY) : realStorage.getItem(key); },
@@ -77,7 +81,8 @@
     const agentSaved = E.save(agentState, storageProxy);
     const floorSaved = F.save(state, realStorage);
     const progressSaved = P.save(progress, realStorage);
-    if (!agentSaved || !floorSaved || !progressSaved) notify('Browser storage could not save the current shift. Check available site storage.', true);
+    const commitmentSaved = B.save(commitmentState, realStorage);
+    if (!agentSaved || !floorSaved || !progressSaved || !commitmentSaved) notify('Browser storage could not save the current shift. Check available site storage.', true);
   }
   function productLabel(productId) {
     return (E.PRODUCTS.find((item) => item.id === productId) || E.PRODUCTS[0]).name;
@@ -160,6 +165,109 @@
       </button>`;
     }).join('');
     list.querySelectorAll('[data-contact-id]').forEach((button) => button.addEventListener('click', () => acceptContact(button.dataset.contactId)));
+  }
+  function commitmentIdentity() {
+    return { name: state.shift && state.shift.agentName || $('#agent-name').value || '' };
+  }
+  function renderCommitments() {
+    const identity = commitmentIdentity();
+    const items = B.listForAgent(commitmentState, identity, state.shift);
+    const due = items.filter((item) => ['Due', 'Overdue', 'Needs review'].includes(item.timing.state)).length;
+    const overdue = items.filter((item) => item.timing.state === 'Overdue').length;
+    $('#commitment-count').textContent = String(items.length);
+    $('#commitment-summary').textContent = items.length
+      ? `${items.length} open · ${due} due for action · ${overdue} overdue. Commitments stay on your record until closed or reviewed.`
+      : identity.name ? 'No open commitments assigned to this employee.' : 'Sign in to view promised customer callbacks and follow-ups.';
+    const list = $('#commitment-list');
+    if (!items.length) {
+      list.innerHTML = '<div class="empty-note">No callback commitments recorded for this employee.</div>';
+      selectedCommitmentId = null;
+      $('#commitment-outcome-form').classList.add('hidden');
+      $('#commitment-review-form').classList.add('hidden');
+      return;
+    }
+    if (selectedCommitmentId && !items.some((item) => item.id === selectedCommitmentId)) selectedCommitmentId = null;
+    list.innerHTML = items.map((item) => {
+      const timing = item.timing.state;
+      const statusClass = timing.toLowerCase().replace(/[^a-z]+/g, '-');
+      const dueLabel = `${item.dueDate} · ${B.formatClock(item.dueMinutes)}`;
+      return `<button type="button" class="commitment-item ${selectedCommitmentId === item.id ? 'selected' : ''}" data-commitment-id="${escapeHtml(item.id)}">
+        <span class="commitment-item-top"><strong>${escapeHtml(item.customerName)} · ${escapeHtml(item.contactReference)}</strong><span class="commitment-status ${statusClass}">${escapeHtml(timing)}</span></span>
+        <p>${escapeHtml(item.commitment)}</p><small>${escapeHtml(dueLabel)} · ${escapeHtml(item.preferredChannel)} · ${item.attempts} attempt(s)</small>
+        <small>${item.caseId ? `Linked ${escapeHtml(item.caseId)}` : 'Customer note only'} · ${escapeHtml(item.team)}</small>
+      </button>`;
+    }).join('');
+    list.querySelectorAll('[data-commitment-id]').forEach((button) => button.addEventListener('click', () => {
+      selectedCommitmentId = button.dataset.commitmentId;
+      $('#commitment-outcome-summary').value = '';
+      $('#commitment-review-summary').value = '';
+      $('#commitment-reviewer').value = '';
+      $('#commitment-feedback').textContent = '';
+      $('#commitment-review-feedback').textContent = '';
+      renderCommitments();
+    }));
+    const selected = items.find((item) => item.id === selectedCommitmentId);
+    const outcomeForm = $('#commitment-outcome-form');
+    const reviewForm = $('#commitment-review-form');
+    outcomeForm.classList.toggle('hidden', !selected || selected.status === 'Needs review');
+    reviewForm.classList.toggle('hidden', !selected || selected.status !== 'Needs review');
+    if (selected) {
+      const meta = `${selected.customerName} · ${selected.contactReference} · due ${selected.dueDate} ${B.formatClock(selected.dueMinutes)} · ${selected.attempts} attempt(s)`;
+      $('#commitment-active-title').textContent = selected.commitment;
+      $('#commitment-active-meta').textContent = meta;
+      $('#commitment-review-meta').textContent = `${meta}. A second unsuccessful attempt requires a documented review before closure.`;
+    }
+  }
+  function recordCustomerCommitmentContact(item, outcome, summary, at, authorName) {
+    const customerState = C.load(realStorage);
+    const customer = C.getCustomer(customerState, item.customerId);
+    if (!customer) throw new Error('The customer profile linked to this commitment is unavailable.');
+    const reached = !['no-answer', 'supervisor-review'].includes(outcome);
+    const visibility = reached ? 'Customer-facing' : 'Internal';
+    const channel = C.CHANNELS.includes(item.preferredChannel) ? item.preferredChannel : 'Voice';
+    if (item.caseId && outcome !== 'supervisor-review') {
+      const linkedCase = C.getCase(customerState, item.caseId);
+      if (linkedCase && linkedCase.status !== 'Closed') {
+        C.addInteraction(customerState, linkedCase.id, { channel, direction: 'Outbound', visibility, agent: state.shift.agentName, summary: `Callback commitment ${item.id}: ${summary}` }, at);
+      }
+    }
+    C.addCustomerNote(customerState, item.customerId, `Callback commitment ${item.id} · ${outcome}: ${summary}`, authorName || state.shift.agentName, at);
+    if (!C.save(customerState, realStorage)) throw new Error('Customer 360 could not save the callback activity.');
+  }
+  function submitCommitmentOutcome(event) {
+    event.preventDefault();
+    if (!F.isOnShift(state) || F.dueEvent(state)) { $('#commitment-feedback').textContent = 'Start your shift and complete any due floor event before working customer callbacks.'; return; }
+    const item = B.getCommitment(commitmentState, selectedCommitmentId);
+    if (!item) { $('#commitment-feedback').textContent = 'Select an open customer commitment.'; return; }
+    const outcome = $('#commitment-outcome').value;
+    const summary = $('#commitment-outcome-summary').value;
+    try {
+      if (summary.trim().replace(/\s+/g, ' ').length < 20) throw new Error('Record at least 20 characters describing the callback outcome.');
+      recordCustomerCommitmentContact(item, outcome, summary, new Date());
+      const result = B.recordOutcome(commitmentState, item.id, { outcome, summary }, state.shift, new Date());
+      if (result.requiresReview) F.log(state, `${item.id} requires supervisor review after repeated unsuccessful callback attempts.`);
+      else if (result.item.status === 'Complete') F.log(state, `${item.id} completed. Customer commitment fulfilled.`);
+      else F.log(state, `${item.id} rescheduled for ${item.dueDate} ${B.formatClock(item.dueMinutes)}.`);
+      B.save(commitmentState, realStorage); persist();
+      selectedCommitmentId = result.item.status === 'Complete' ? null : item.id;
+      $('#commitment-outcome-summary').value = '';
+      renderAll();
+      notify(result.requiresReview ? 'Callback needs supervisor review.' : result.item.status === 'Complete' ? 'Customer callback commitment completed.' : 'Callback recorded and rescheduled.');
+    } catch (error) { $('#commitment-feedback').textContent = error.message; }
+  }
+  function submitCommitmentReview(event) {
+    event.preventDefault();
+    const item = B.getCommitment(commitmentState, selectedCommitmentId);
+    if (!item) { $('#commitment-review-feedback').textContent = 'Select a commitment requiring review.'; return; }
+    try {
+      const summary = $('#commitment-review-summary').value;
+      if (!F.isOnShift(state) || F.dueEvent(state)) throw new Error('Start your shift and complete any due floor event before recording the manager review.');
+      const reviewer = $('#commitment-reviewer').value;
+      const result = B.closeAfterReview(commitmentState, item.id, reviewer, summary, new Date(), state.shift.agentName);
+      recordCustomerCommitmentContact(result, 'supervisor-review', `Supervisor review by ${reviewer}: ${summary}`, new Date(), reviewer);
+      B.save(commitmentState, realStorage); persist(); selectedCommitmentId = null; renderAll();
+      notify('Commitment closed with a documented review outcome.');
+    } catch (error) { $('#commitment-review-feedback').textContent = error.message; }
   }
   function openCasesForCustomer(customerId) {
     const db = C.load(realStorage);
@@ -490,6 +598,14 @@
     $('#case-subject').value = contact.subject;
     $('#case-priority').value = contact.priority;
     $('#wrap-feedback').textContent = '';
+    $('#followup-plan').value = '';
+    $('#followup-commitment').value = '';
+    updateFollowupPlanVisibility();
+  }
+  function updateFollowupPlanVisibility() {
+    const selected = !!$('#followup-plan').value;
+    $('#followup-commitment-field').classList.toggle('hidden', !selected);
+    $('#followup-commitment').required = selected;
   }
   function renderCustomerDynamics(active) {
     const panel = $('#customer-dynamics');
@@ -635,7 +751,7 @@
     }
     body.innerHTML = records.map((item) => `
       <tr><td><strong>${escapeHtml(item.reference)}</strong></td><td>${escapeHtml(item.channel)}</td><td>${escapeHtml(item.subject)}</td>
-      <td class="${item.qa >= 85 ? 'score-good' : item.qa >= 65 ? 'score-mid' : 'score-low'}">${item.qa}%</td><td>${item.csat}/5</td><td>${escapeHtml(item.disposition)}</td><td>${item.voiceMetrics ? `${escapeHtml(V.formatSeconds(item.voiceMetrics.durationSeconds))} talk · ${escapeHtml(V.formatSeconds(item.voiceMetrics.holdSeconds))} hold · ${item.voiceMetrics.muteCount} mutes${item.voiceMetrics.consultCount ? ` · ${item.voiceMetrics.consultCount} consults` : ''}${item.voiceMetrics.transferred ? ` · to ${escapeHtml(item.voiceMetrics.transferDestination)}` : ''}` : item.digitalMetrics ? (item.digitalMetrics.channel === 'Email' ? `Email quality ${item.digitalMetrics.qualityScore}/100 · ${item.digitalMetrics.slaBreached ? 'SLA missed' : 'SLA met'}` : `${item.digitalMetrics.replies} chat replies · ${item.digitalMetrics.averageResponseSeconds}s avg first response`) : item.messagingMetrics ? `${item.messagingMetrics.channel} · ${item.messagingMetrics.replies} replies · ${item.messagingMetrics.averageResponseSeconds}s avg · ${item.messagingMetrics.averageQuality}/100 quality` : '—'}${item.routingMetrics ? ` · ${item.routingMetrics.mode} route · ${item.routingMetrics.waitingMinutes}m queue wait` : ''}</td></tr>`).join('');
+      <td class="${item.qa >= 85 ? 'score-good' : item.qa >= 65 ? 'score-mid' : 'score-low'}">${item.qa}%</td><td>${item.csat}/5</td><td>${escapeHtml(item.disposition)}</td><td>${item.voiceMetrics ? `${escapeHtml(V.formatSeconds(item.voiceMetrics.durationSeconds))} talk · ${escapeHtml(V.formatSeconds(item.voiceMetrics.holdSeconds))} hold · ${item.voiceMetrics.muteCount} mutes${item.voiceMetrics.consultCount ? ` · ${item.voiceMetrics.consultCount} consults` : ''}${item.voiceMetrics.transferred ? ` · to ${escapeHtml(item.voiceMetrics.transferDestination)}` : ''}` : item.digitalMetrics ? (item.digitalMetrics.channel === 'Email' ? `Email quality ${item.digitalMetrics.qualityScore}/100 · ${item.digitalMetrics.slaBreached ? 'SLA missed' : 'SLA met'}` : `${item.digitalMetrics.replies} chat replies · ${item.digitalMetrics.averageResponseSeconds}s avg first response`) : item.messagingMetrics ? `${item.messagingMetrics.channel} · ${item.messagingMetrics.replies} replies · ${item.messagingMetrics.averageResponseSeconds}s avg · ${item.messagingMetrics.averageQuality}/100 quality` : '—'}${item.routingMetrics ? ` · ${item.routingMetrics.mode} route · ${item.routingMetrics.waitingMinutes}m queue wait` : ''}${item.commitmentId ? ` · Callback ${escapeHtml(item.commitmentDue || 'scheduled')}` : ''}</td></tr>`).join('');
   }
   function renderActivity() {
     const latest = state.activity.slice(0, 3).map((item) => item.message).join(' · ');
@@ -684,6 +800,8 @@
       ['SLA breached at acceptance', routedRecords.filter((item) => item.routingMetrics.slaStateAtAcceptance === 'BREACHED').length],
       ['Average routing skill fit', routedRecords.length ? `${Math.round(routedRecords.reduce((sum, item) => sum + item.routingMetrics.skillFitPct, 0) / routedRecords.length)}%` : '—']
     );
+    const shiftCommitments = B.listForAgent(commitmentState, { name: state.shift.agentName }, state.shift);
+    items.push(['Open customer commitments', shiftCommitments.length], ['Overdue customer commitments', shiftCommitments.filter((item) => item.timing.state === 'Overdue').length], ['Commitments requiring review', shiftCommitments.filter((item) => item.timing.state === 'Needs review').length]);
     $('#report-grid').innerHTML = items.map(([label, value]) => `<div class="report-stat"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
     $('#report-note').textContent = `Briefings: morning ${report.attendedMorningBriefing ? 'attended' : 'missed'}, afternoon ${report.attendedAfternoonBriefing ? 'attended' : 'not due'}. Scheduled breaks ${report.attendedBreaks ? 'completed' : 'not both completed'}. This is a simulated performance record, not an employment decision.`;
     const summary = P.getSummary(progress, state.shift.agentName, state.shift.team);
@@ -705,7 +823,7 @@
       $('#customer-dynamics').classList.add('hidden');
       $('#knowledge-list').innerHTML = '<div class="empty-note">Accept a customer to see relevant guidance.</div>';
     }
-    renderCompleted(); renderActivity(); renderReport(); renderCareer();
+    renderCommitments(); renderCompleted(); renderActivity(); renderReport(); renderCareer();
   }
   function acceptContact(contactId) {
     try {
@@ -928,6 +1046,15 @@
       return;
     }
     const disposition = $('#wrap-disposition').value;
+    const followUpPlan = $('#followup-plan').value;
+    const followUpCommitment = $('#followup-commitment').value;
+    if (disposition === 'Callback agreed' && !followUpPlan) { $('#wrap-feedback').textContent = 'A callback-agreed disposition requires a scheduled customer commitment.'; return; }
+    if (followUpPlan) {
+      try {
+        const profile = C.getCustomer(C.load(realStorage), contact.customerId);
+        B.validateCreation({ planId: followUpPlan, customerId: contact.customerId, customerName: profile ? `${profile.firstName} ${profile.lastName}`.trim() : '', contactReference: contact.reference, commitment: followUpCommitment, owner: state.shift.agentName, team: state.shift.team }, state.shift);
+      } catch (error) { $('#wrap-feedback').textContent = error.message; return; }
+    }
     const activeContact = E.getActiveContact(agentState);
     let voiceMetrics = null;
     let voiceSessionToFinalise = null;
@@ -994,6 +1121,20 @@
       if (voiceMetrics) result.record.voiceMetrics = voiceMetrics;
       if (digitalMetrics) result.record.digitalMetrics = digitalMetrics;
       if (messagingMetrics) result.record.messagingMetrics = messagingMetrics;
+      if (followUpPlan) {
+        const customerState = C.load(realStorage);
+        const customer = C.getCustomer(customerState, contact.customerId);
+        const commitment = B.createCommitment(commitmentState, {
+          planId: followUpPlan, customerId: contact.customerId,
+          customerName: customer ? `${customer.firstName} ${customer.lastName}`.trim() : 'Customer',
+          contactReference: contact.reference, caseId: result.linkedCase && result.linkedCase.id || (caseAction === 'existing' ? $('#existing-case').value : ''),
+          subject: contact.subject, productId: contact.productId, preferredChannel: customer && customer.preferredChannel || 'Voice',
+          owner: state.shift.agentName, team: state.shift.team, commitment: followUpCommitment
+        }, state.shift, new Date());
+        result.record.commitmentId = commitment.id;
+        result.record.commitmentDue = `${commitment.dueDate} ${B.formatClock(commitment.dueMinutes)}`;
+        if (!B.save(commitmentState, realStorage)) notify('The contact was saved, but its callback could not be persisted. Check browser storage.', true);
+      }
       persist(); articleQuery = ''; $('#knowledge-query').value = '';
       renderAll();
       notify(`${result.completed.reference} saved. QA ${result.record.qa}% · CSAT ${result.record.csat}/5.`);
@@ -1092,6 +1233,11 @@
   $('#knowledge-search-button').addEventListener('click', () => { articleQuery = $('#knowledge-query').value; const contact = state.active && E.getActiveContact(agentState); if (contact) renderKnowledge(contact); });
   $('#case-action').addEventListener('change', updateCaseActionFields);
   $('#wrapup-form').addEventListener('submit', submitWrapUp);
+  $('#followup-plan').addEventListener('change', updateFollowupPlanVisibility);
+  $('#commitment-outcome-form').addEventListener('submit', submitCommitmentOutcome);
+  $('#commitment-review-form').addEventListener('submit', submitCommitmentReview);
+  $('#commitment-cancel').addEventListener('click', () => { selectedCommitmentId = null; renderCommitments(); });
+  $('#commitment-review-cancel').addEventListener('click', () => { selectedCommitmentId = null; renderCommitments(); });
   $('#voice-hold-button').addEventListener('click', placeVoiceOnHold);
   $('#voice-resume-button').addEventListener('click', resumeVoiceCall);
   $('#voice-mute-button').addEventListener('click', toggleVoiceMute);
@@ -1125,5 +1271,5 @@
     if (!state.active && !editingProfile) renderQueue();
   }, 30000);
   renderAll();
-  window.CalloriaLiveFloor = { getState: () => state, getAgentState: () => agentState, getCareerProgress: () => progress, getRoutingProfile: () => routingProfile, refresh: renderAll, engine: F, progressionEngine: P, digitalChannelEngine: G, socialMessagingEngine: S, queueRoutingEngine: Q };
+  window.CalloriaLiveFloor = { getState: () => state, getAgentState: () => agentState, getCareerProgress: () => progress, getRoutingProfile: () => routingProfile, refresh: renderAll, engine: F, progressionEngine: P, digitalChannelEngine: G, socialMessagingEngine: S, queueRoutingEngine: Q, commitmentEngine: B, getCommitments: () => commitmentState };
 })();

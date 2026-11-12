@@ -14,8 +14,8 @@ test('queue routing engine loads before the Live Floor controller', () => {
 });
 
 test('page header and footer identify the v6.8 build', () => {
-  assert.match(html, /BUILD 6\.8/);
-  assert.match(html, /CALLORIA v6\.8/);
+  assert.match(html, /BUILD 6\.9/);
+  assert.match(html, /CALLORIA v6\.9/);
 });
 
 test('queue panel exposes channel filter, sort mode, next-best-contact and profile editor', () => {
@@ -33,7 +33,7 @@ test('all Live Floor direct selectors exist and HTML IDs remain unique', () => {
 
 test('controller requires, exposes and persists the v6.8 routing engine', () => {
   assert.match(js, /const Q = window\.CalloriaQueueRoutingEngine/);
-  assert.match(js, /\|\| !Q\)/);
+  assert.match(js, /\|\| !Q(?: \|\| !B)?\)/);
   assert.match(js, /Q\.loadProfile\(realStorage, routingIdentity\)/);
   assert.match(js, /Q\.saveProfile\(realStorage, routingIdentity, routingProfile/);
   assert.match(js, /queueRoutingEngine: Q/);

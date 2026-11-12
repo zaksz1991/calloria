@@ -1,19 +1,24 @@
-# v6.8 Changelog
+# v6.9 Changelog
 
-## Intelligent Omnichannel Routing & SLA Control
+## Customer Commitments & Callback Management
 
-- Added a dedicated queue-routing engine with team-aware skill profiles.
-- Added editable channel and product proficiency levels, saved per employee/team in browser storage.
-- Added explainable Smart Routing, Priority First and Oldest Waiting queue modes.
-- Added next-best-contact panel with reasons, response SLA state and skill fit.
-- Added 30-second recommendation/queue-time refresh when safe to refresh the idle queue.
-- Added routing acceptance snapshots and completed-contact / shift-report evidence.
-- Preserved v6.7 omnichannel interactions and previous Live Floor functionality.
-- Did not add external services, AI endpoints, API keys, database migrations or Vite configuration changes.
+- Added optional callback commitment scheduling to customer-contact wrap-up.
+- Added simulated 30-minute and 60-minute promise options plus next-working-day and two-working-day options.
+- Added automatic roll-forward when a same-shift callback would fall after the 16:00 shift close.
+- Added per-employee callback commitment list with scheduled, due-soon, due, overdue and review states.
+- Added completed, no-answer and further-action callback outcomes.
+- Added automatic next-working-day rescheduling after an unsuccessful or incomplete callback.
+- Added a two-attempt limit before a commitment requires documented manager review.
+- Added separate reviewer identity and written review outcome; reviewer identity is not authenticated.
+- Added outbound attempt and outcome notes to Customer 360 and open case interaction timelines.
+- Added callback reference/due time to completed contact records and outstanding commitment counts to the shift report.
+- Preserved previous voice, digital, social, SMS, in-app, skill-routing, customer dynamics, career and office routines.
+- Did not add accounting, banking, external messaging, telephony, AI endpoints, API keys, database migrations or Vite configuration changes.
 
 ## Known boundaries
 
-- Synthetic contacts only; no live ACD or multi-agent assignment.
-- Local browser storage only; no shared server persistence.
-- Heuristic SLA/routing scores, not contractual SLA or workforce optimisation.
-- Full Vite build, Vercel deployment and browser E2E were not verified.
+- Synthetic customer commitments only; no real outbound call is made.
+- Due time advances on the simulated game clock, not a real-time background timer.
+- Browser-local persistence only; no cross-device or shared team queue.
+- Manager review names are simulation inputs, not authenticated approvals.
+- Full Vite build, Vercel deployment and browser end-to-end verification were not performed.
