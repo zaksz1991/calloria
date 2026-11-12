@@ -1,13 +1,12 @@
-# Install CALLORIA v6.35 through GitHub
+# Install CALLORIA v6.28
 
-1. Open the CALLORIA repository on GitHub.
-2. Open `build/calloria-cc0-staff-glb-bundle-plugin.mjs`.
-3. Replace the entire file with the same-path file in this ZIP.
-4. Commit the change to the `main` branch.
-5. Allow the connected Vercel deployment to run.
+Apply this patch on top of v6.27.
 
-Apply this patch over v6.34. Do not add a second copy of the plugin. No package.json, lockfile, Vite configuration, environment variable, Supabase setting, or database migration change is required.
+1. Open the CALLORIA GitHub repository.
+2. Navigate to `build/calloria-cc0-staff-glb-bundle-plugin.mjs`.
+3. Replace that file with the version at the same path in this ZIP.
+4. Commit the change to `main` and allow Vercel to build.
 
-After deployment, inspect the existing staff GLB runtime status for `eyeGazeMorphStaffPlaced` and `eyeGazeMorphTargets`. A zero count means the deployed static staff GLBs do not expose the supported per-eye eye-look morph family; it does not indicate a loader failure.
+No package manifest, lockfile, Vite configuration, Supabase setting, secret, model asset, or production-world source file is changed.
 
-The ZIP carries the regression suite. Run it with Node's built-in test runner from the extracted patch directory: `node --test tests/*.test.mjs`.
+The ZIP also includes the v6.22, v6.23, v6.27, and v6.28 regression tests and the verified runtime fixture. Copy the `tests` directory only if you want the regression suite in the repository.

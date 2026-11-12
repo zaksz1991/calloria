@@ -1,11 +1,7 @@
-# Verification — CALLORIA v6.35
+# Verification — CALLORIA v6.28
 
-## Automated checks
-- 97/97 Node regression tests passed (86 carried-forward tests and 11 v6.35 tests).
-- Replacement build plugin passed `node --check`.
-- Transformed staff runtime fixture passed `node --check` validation.
-- Tests cover supported eye-look names, static-model gating, safe morph indices and ranges, anatomical left/right mapping, occasional smooth glance timing, baseline restoration, authored-animation exclusion, runtime diagnostics, idempotence, and fail-closed source-contract handling.
-- ZIP archive integrity was checked after packaging.
-
-## Runtime limitation
-The complete CALLORIA repository was not available for a full Vite build. Vercel deployment and browser rendering were not verified. Eye gaze is available only where deployed static staff GLBs already contain the supported per-eye morph targets.
+- 29/29 regression tests passed: v6.22 transform-aware bounds, v6.23 deployment/runtime diagnostics, v6.27 articulated idle, and v6.28 adaptive idle.
+- `node --check` passed for the Vite plugin, all included test modules, and the runtime fixture.
+- The transformed staff runtime generated from the included v1.2 fixture passed `node --check`.
+- ZIP integrity was checked after packaging.
+- Full Vite build, Vercel deployment, production browser rendering, device FPS, and visual character behaviour were not verified because a complete current CALLORIA repository checkout and production browser session were not available.

@@ -11,10 +11,10 @@ const ids = ['female-agent', 'male-agent', 'gp5-woman'];
 const modes = { 'female-agent': 'static-mesh', 'male-agent': 'skinned-static-pose', 'gp5-woman': 'animated-skinned' };
 const transformed = transformStaffRuntimeIntegration(fixture, ids, modes);
 
-test('v6.29 keeps the articulated idle and adds tier-aware scheduling', () => {
+test('v6.28 keeps the v6.27 articulated idle and adds adaptive scheduling', () => {
   assert.ok(transformed.code);
   assert.match(transformed.code, new RegExp(internals.PROCEDURAL_IDLE_MARKER));
-  assert.match(transformed.code, /adaptiveIdleUpdateHz: proceduralIdleUpdateHz/);
+  assert.match(transformed.code, /adaptiveIdleUpdateHz: 30/);
   assert.match(transformed.code, /idleVisibilityAware: true/);
 });
 
@@ -23,25 +23,21 @@ test('procedural idle pauses while the document is hidden', () => {
 });
 
 test('invisible staff and staff under invisible parents are not pose-updated', () => {
-  assert.match(transformed.code, /idle\.visibilityAccumulator -= step/);
-  assert.match(transformed.code, /idle\.visibilityAccumulator = proceduralIdleVisibilityInterval/);
   assert.match(transformed.code, /for \(let node = idle\.wrapper; node; node = node\.parent\)/);
   assert.match(transformed.code, /if \(node\.visible === false\) \{ visibleInScene = false; break; \}/);
-  assert.match(transformed.code, /if \(!idle\.visibleInScene\) continue;/);
+  assert.match(transformed.code, /if \(!visibleInScene\) continue;/);
 });
 
-test('idle poses use the selected tier rate with bounded accumulated delta', () => {
+test('idle poses update at no more than 30 Hz with bounded accumulated delta', () => {
   assert.match(transformed.code, /idle\.updateAccumulator \+= step/);
-  assert.match(transformed.code, /const idleInterval = 1 \/ proceduralIdleUpdateHz/);
-  assert.match(transformed.code, /idle\.updateAccumulator < idleInterval/);
+  assert.match(transformed.code, /idle\.updateAccumulator < \(1 \/ 30\)/);
   assert.match(transformed.code, /const idleStep = Math\.min\(idle\.updateAccumulator, 0\.1\)/);
-  assert.match(transformed.code, /idle\.updateAccumulator = Math\.max\(0, idle\.updateAccumulator - idleInterval\)/);
+  assert.match(transformed.code, /idle\.updateAccumulator = 0/);
   assert.match(transformed.code, /idle\.elapsed \+= idleStep/);
 });
 
 test('controller state is initialised and released with the staff runtime', () => {
-  assert.match(transformed.code, /updateAccumulator: \(replacements\.length % 4\) \* \(1 \/ proceduralIdleUpdateHz \/ 4\)/);
-  assert.match(transformed.code, /visibilityAccumulator: 0/);
+  assert.match(transformed.code, /updateAccumulator: 0/);
   assert.match(transformed.code, /proceduralIdleControllers\.length = 0/);
 });
 

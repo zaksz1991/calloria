@@ -1,16 +1,9 @@
-Replacement:
-- build/calloria-cc0-staff-glb-bundle-plugin.mjs
+REPLACE
+build/calloria-cc0-staff-glb-bundle-plugin.mjs
 
-Regression tests carried forward:
-- tests/calloria-v622-transform-aware-bounds.test.mjs
-- tests/calloria-v623-runtime-diagnostics.test.mjs
-- tests/calloria-v627-articulated-staff-idle.test.mjs
-- tests/calloria-v628-adaptive-staff-idle.test.mjs
-- tests/calloria-v629-tier-aware-idle.test.mjs
-- tests/calloria-v630-staff-micro-gesture.test.mjs
-- tests/calloria-v631-attention-gestures.test.mjs
-- tests/calloria-v632-blink-morphs.test.mjs
-- tests/calloria-v633-static-mesh-blink.test.mjs
-- tests/calloria-v634-facial-expression-morphs.test.mjs
-- tests/calloria-v635-staff-eye-gaze-morphs.test.mjs
-- tests/fixtures/glb-world-integration-v12.fixture.js
+TESTS / FIXTURE (optional project-side regression suite)
+tests/calloria-v622-transform-aware-bounds.test.mjs
+tests/calloria-v623-runtime-diagnostics.test.mjs
+tests/calloria-v627-articulated-staff-idle.test.mjs
+tests/calloria-v628-adaptive-staff-idle.test.mjs
+tests/fixtures/glb-world-integration-v12.fixture.js

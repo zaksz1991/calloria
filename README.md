@@ -1,7 +1,5 @@
-# CALLORIA v6.35 — Staff Eye-Gaze Morph Support
+# CALLORIA v6.28 — Adaptive Staff Idle
 
-This is an incremental replacement patch for the CALLORIA staff GLB build plugin. It adds occasional, subtle eye glances to static-pose staff GLBs only when they already contain compatible per-eye eye-look morph targets.
+This patch builds on v6.27 articulated staff idle and reduces the amount of procedural pose work performed for static-pose staff. Procedural idle poses are recalculated at a maximum of 30 Hz rather than on every render frame. Controllers pause while the browser document is hidden or while the staff wrapper or any of its ancestors is invisible. Authored GLB animation clips are unaffected.
 
-The controller recognises explicit ARKit-style per-eye directions, returns inactive directions to their captured baseline, and reports how many deployed staff/morph targets support the feature. It does not create facial geometry or animation clips.
-
-No new packages, runtime pages, assets, API keys, Supabase changes, or database migrations are included. Apply over v6.34; see `INSTALL-GITHUB.md`.
+The cap applies only to the small procedural idle layer; it does not change the Three.js render loop, global frame rate, character movement, customer animation, or simulation time. The patch does not claim a measured FPS improvement; actual performance depends on the production scene and devices.

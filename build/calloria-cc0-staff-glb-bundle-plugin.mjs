@@ -394,7 +394,7 @@ function makeManifest(entries, totals, status) {
   const staticPose = models.filter((entry) => ['skinned-static-pose', 'static-mesh'].includes(entry.renderMode)).length;
   return {
     schemaVersion: 2,
-    buildIntegration: 'CALLORIA v6.29 transform-aware staff GLB validation and tier-aware articulated static-pose idle',
+    buildIntegration: 'CALLORIA v6.28 transform-aware staff GLB validation and adaptive articulated static-pose idle',
     createdAt: new Date().toISOString(),
     status,
     source: 'Gobkit CC0 character pack direct GLB files; provenance recorded per model and pack.',
@@ -525,9 +525,6 @@ function transformStaffRuntimeIntegrationBase(source, availableIds, renderModes)
 
 
 /**
- * v6.30 extends conservative bone-aware idle with low-amplitude arm, forearm
- * and hand micro-gestures for rigs exposing recognisable named bones.
- *
  * v6.27 adds conservative bone-aware idle motion to static skinned staff.
  * Named head/neck/spine/shoulder bones receive small local rotations. Models
  * without recognizable bones keep the v6.26 low-amplitude root-motion fallback.
@@ -552,102 +549,32 @@ function addProceduralStaticStaffIdle(code) {
     const proceduralIdle = !clip && ['skinned-static-pose', 'static-mesh'].includes(selectedRenderMode);
     let proceduralIdleMode = 'none';
     const idleBoneTargets = [];
-    const idleBlinkMorphTargets = [];
-    const idleExpressionMorphTargets = [];
-    if (proceduralIdle && clonedRoot?.traverse) {
+    if (proceduralIdle && selectedRenderMode === 'skinned-static-pose' && clonedRoot?.traverse) {
       clonedRoot.traverse((node) => {
-        // Static skinned and unskinned staff GLBs may expose eyelid movement
-        // as morph targets. Scan all procedural static models; bone motion is
-        // still restricted below to actual skeleton bones. Authored clips are
-        // excluded by the proceduralIdle gate above.
-        const morphDictionary = node?.morphTargetDictionary;
-        const morphInfluences = node?.morphTargetInfluences;
-        if (morphDictionary && morphInfluences && typeof morphInfluences.length === 'number') {
-          for (const [morphName, morphIndexValue] of Object.entries(morphDictionary)) {
-            const normalizedMorphName = String(morphName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-            const isBlinkMorph = /^(?:eyeblink(?:left|right|l|r)?|blink(?:left|right|l|r)?|eyesclosed|eyelidsclosed)$/.test(normalizedMorphName);
-            const morphIndex = Number(morphIndexValue);
-            if (!isBlinkMorph || !Number.isInteger(morphIndex) || morphIndex < 0 || morphIndex >= morphInfluences.length) continue;
-            const baseInfluence = Number(morphInfluences[morphIndex] || 0);
-            if (!Number.isFinite(baseInfluence)) continue;
-            idleBlinkMorphTargets.push({ mesh: node, index: morphIndex, baseInfluence: Math.max(0, Math.min(1, baseInfluence)) });
-          }
-          // Only drive existing, explicitly named positive-expression morphs.
-          // This never fabricates face geometry and deliberately avoids broad
-          // names such as "happy" that may represent a full facial pose.
-          for (const [morphName, morphIndexValue] of Object.entries(morphDictionary)) {
-            const normalizedMorphName = String(morphName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-            const isSmileMorph = /^(?:mouth)?smile(?:left|right|l|r)?$/.test(normalizedMorphName)
-              || /^mouthdimple(?:left|right|l|r)?$/.test(normalizedMorphName);
-            const isBrowRaiseMorph = /^(?:browinnerup|browouterup(?:left|right|l|r)?|browup(?:left|right|l|r)?)$/.test(normalizedMorphName);
-            const morphIndex = Number(morphIndexValue);
-            if ((!isSmileMorph && !isBrowRaiseMorph) || !Number.isInteger(morphIndex)
-                || morphIndex < 0 || morphIndex >= morphInfluences.length) continue;
-            const baseInfluence = Number(morphInfluences[morphIndex] || 0);
-            if (!Number.isFinite(baseInfluence)) continue;
-            const clampedBase = Math.max(0, Math.min(1, baseInfluence));
-            const amplitude = Math.min(isSmileMorph ? 0.12 : 0.055, 1 - clampedBase);
-            if (amplitude <= 0) continue;
-            idleExpressionMorphTargets.push({
-              mesh: node,
-              index: morphIndex,
-              kind: isSmileMorph ? 'smile' : 'brow-raise',
-              baseInfluence: clampedBase,
-              amplitude
-            });
-          }
-        }
         if (!node?.isBone || !node.quaternion?.clone) return;
         const boneName = String(node.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
         let channelSpecs = null;
         if (/^(?:mixamorig)?head$/.test(boneName)) {
           channelSpecs = [
             { axis: [0, 1, 0], amplitude: 0.026, speed: 0.42, phase: 0 },
-            { axis: [1, 0, 0], amplitude: 0.011, speed: 0.31, phase: 1.1 },
-            // Occasional, low-amplitude attention glance; deliberately slower
-            // than the continuous idle channel so staff do not look restless.
-            { axis: [0, 1, 0], amplitude: 0.018, speed: 0.15, phase: 1.7, pattern: 'attention-glance' },
-            // A brief listening nod every ~15 seconds, with the neck sharing
-            // a smaller counter-rotation to keep the movement natural.
-            { axis: [1, 0, 0], amplitude: 0.010, period: 15, phase: 0, pattern: 'attention-nod' }
+            { axis: [1, 0, 0], amplitude: 0.011, speed: 0.31, phase: 1.1 }
           ];
         } else if (/^(?:mixamorig)?neck[0-9]*$/.test(boneName)) {
-          channelSpecs = [
-            { axis: [0, 1, 0], amplitude: 0.013, speed: 0.37, phase: 0.55 },
-            { axis: [1, 0, 0], amplitude: -0.0045, period: 15, phase: 0, pattern: 'attention-counter-nod' }
-          ];
+          channelSpecs = [{ axis: [0, 1, 0], amplitude: 0.013, speed: 0.37, phase: 0.55 }];
         } else if (/^(?:mixamorig)?(?:spine[0-9]*|chest|upperchest)$/.test(boneName)) {
           channelSpecs = [{ axis: [0, 0, 1], amplitude: 0.005, speed: 0.68, phase: 1.45 }];
         } else if (/^(?:mixamorig)?(?:left|right)shoulder$/.test(boneName) || /^(?:mixamorig)?shoulder[lr]$/.test(boneName)) {
           const isRight = /right|shoulderr$/.test(boneName);
           channelSpecs = [{ axis: [0, 0, 1], amplitude: isRight ? -0.0035 : 0.0035, speed: 0.82, phase: 2.05 }];
-        } else if (/^(?:mixamorig)?leftarm$|^upperarml$|^upperarmleft$/.test(boneName)) {
-          // Upper-arm micro motion is deliberately tiny and mirrored for a relaxed stance.
-          channelSpecs = [{ axis: [0, 0, 1], amplitude: 0.012, speed: 0.53, phase: 2.0 }];
-        } else if (/^(?:mixamorig)?rightarm$|^upperarmr$|^upperarmright$/.test(boneName)) {
-          channelSpecs = [{ axis: [0, 0, 1], amplitude: -0.012, speed: 0.53, phase: 2.0 }];
-        } else if (/^(?:mixamorig)?leftforearm$|^(?:mixamorig)?leftlowerarm$|^forearml$|^lowerarml$|^forearmleft$|^lowerarmleft$/.test(boneName)) {
-          channelSpecs = [{ axis: [1, 0, 0], amplitude: 0.009, speed: 0.71, phase: 2.65 }];
-        } else if (/^(?:mixamorig)?rightforearm$|^(?:mixamorig)?rightlowerarm$|^forearmr$|^lowerarmr$|^forearmright$|^lowerarmright$/.test(boneName)) {
-          channelSpecs = [{ axis: [1, 0, 0], amplitude: -0.009, speed: 0.71, phase: 2.65 }];
-        } else if (/^(?:mixamorig)?lefthand$|^handl$|^handleft$/.test(boneName)) {
-          channelSpecs = [{ axis: [0, 1, 0], amplitude: 0.006, speed: 0.64, phase: 0.9 }];
-        } else if (/^(?:mixamorig)?righthand$|^handr$|^handright$/.test(boneName)) {
-          channelSpecs = [{ axis: [0, 1, 0], amplitude: -0.006, speed: 0.64, phase: 0.9 }];
         }
         if (!channelSpecs) return;
         idleBoneTargets.push({
           bone: node,
-          motionType: channelSpecs.some((spec) => String(spec.pattern || '').startsWith('attention-'))
-            ? 'attention'
-            : /arm|forearm|lowerarm|hand/.test(boneName) ? 'micro-gesture' : 'posture',
           baseQuaternion: node.quaternion.clone(),
           channels: channelSpecs.map((spec) => ({
             axis: new T.Vector3(spec.axis[0], spec.axis[1], spec.axis[2]),
             amplitude: spec.amplitude,
             speed: spec.speed,
-            period: spec.period || 0,
-            pattern: spec.pattern || 'sine',
             phase: spec.phase,
             deltaQuaternion: new T.Quaternion()
           }))
@@ -662,12 +589,6 @@ function addProceduralStaticStaffIdle(code) {
         baseRotationZ: wrapper.rotation.z,
         basePositionY: wrapper.position.y,
         boneTargets: idleBoneTargets,
-        blinkMorphTargets: idleBlinkMorphTargets,
-        blinkPeriod: 3.6 + ((replacements.length * 0.71) % 1.8),
-        blinkPhase: (replacements.length * 1.31) % 2.4,
-        expressionMorphTargets: idleExpressionMorphTargets,
-        expressionPeriod: 11 + ((replacements.length * 0.97) % 7),
-        expressionPhase: (replacements.length * 1.77) % 5,
         elapsed: 0,
         updateAccumulator: 0,
         phase: (replacements.length * 0.83) % (Math.PI * 2)
@@ -692,58 +613,11 @@ function addProceduralStaticStaffIdle(code) {
           idle.elapsed += idleStep;
           const breath = Math.sin(idle.elapsed * 1.15 + idle.phase);
           const sway = Math.sin(idle.elapsed * 0.72 + idle.phase);
-          // Short smooth eyelid pulses vary by character so staff do not blink
-          // in sync. Static-pose models only are eligible for this controller.
-          if (idle.blinkMorphTargets?.length) {
-            const blinkCycle = ((idle.elapsed + idle.blinkPhase) % idle.blinkPeriod) / idle.blinkPeriod;
-            const blinkWindow = 0.055;
-            const blinkWeight = blinkCycle < blinkWindow
-              ? Math.sin(Math.PI * blinkCycle / blinkWindow)
-              : 0;
-            for (const target of idle.blinkMorphTargets) {
-              const influences = target.mesh?.morphTargetInfluences;
-              if (!influences || target.index >= influences.length) continue;
-              influences[target.index] = target.baseInfluence + (1 - target.baseInfluence) * blinkWeight;
-            }
-          }
-          // A brief, infrequent conversational micro-expression uses only
-          // facial morphs already authored in the GLB. The envelope has smooth
-          // rise/hold/release phases and a per-staff offset to avoid synchrony.
-          if (idle.expressionMorphTargets?.length) {
-            const expressionCycle = ((idle.elapsed + idle.expressionPhase) % idle.expressionPeriod) / idle.expressionPeriod;
-            let expressionWeight = 0;
-            if (expressionCycle >= 0.18 && expressionCycle < 0.27) {
-              const t = (expressionCycle - 0.18) / 0.09;
-              expressionWeight = t * t * (3 - 2 * t);
-            } else if (expressionCycle >= 0.27 && expressionCycle < 0.43) {
-              expressionWeight = 1;
-            } else if (expressionCycle >= 0.43 && expressionCycle < 0.55) {
-              const t = 1 - (expressionCycle - 0.43) / 0.12;
-              expressionWeight = t * t * (3 - 2 * t);
-            }
-            for (const target of idle.expressionMorphTargets) {
-              const influences = target.mesh?.morphTargetInfluences;
-              if (!influences || target.index >= influences.length) continue;
-              influences[target.index] = Math.max(0, Math.min(1, target.baseInfluence + target.amplitude * expressionWeight));
-            }
-          }
           if (idle.boneTargets?.length) {
             for (const target of idle.boneTargets) {
               target.bone.quaternion.copy(target.baseQuaternion);
               for (const channel of target.channels) {
-                let angle;
-                if (channel.pattern === 'attention-nod' || channel.pattern === 'attention-counter-nod') {
-                  const period = Math.max(8, channel.period || 15);
-                  const cyclePosition = ((idle.elapsed + idle.phase * 1.7) % period) / period;
-                  const nodWindow = 0.12;
-                  const nodPulse = cyclePosition < nodWindow
-                    ? Math.sin(Math.PI * cyclePosition / nodWindow)
-                    : 0;
-                  angle = nodPulse * channel.amplitude;
-                } else {
-                  const phase = idle.elapsed * channel.speed + idle.phase + channel.phase;
-                  angle = Math.sin(phase) * channel.amplitude;
-                }
+                const angle = Math.sin(idle.elapsed * channel.speed + idle.phase + channel.phase) * channel.amplitude;
                 channel.deltaQuaternion.setFromAxisAngle(channel.axis, angle);
                 target.bone.quaternion.multiply(channel.deltaQuaternion);
               }
@@ -759,193 +633,23 @@ function addProceduralStaticStaffIdle(code) {
 
   next = next.replace(
     "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,",
-    "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,\n        proceduralIdlePlaced: replacements.filter((entry) => entry.proceduralIdle).length,\n        articulatedIdlePlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'articulated-bone-idle').length,\n        rootIdleFallbackPlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'root-idle-fallback').length,\n        microGestureStaffPlaced: replacements.filter((entry) => entry.proceduralIdleGestureTargets > 0).length,\n        microGestureBoneTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleGestureTargets || 0), 0),\n        attentionGestureStaffPlaced: replacements.filter((entry) => entry.proceduralIdleAttentionTargets > 0).length,\n        attentionGestureBoneTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleAttentionTargets || 0), 0),\n        blinkMorphStaffPlaced: replacements.filter((entry) => entry.proceduralIdleBlinkTargets > 0).length,\n        blinkMorphTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleBlinkTargets || 0), 0),\n        expressionMorphStaffPlaced: replacements.filter((entry) => entry.proceduralIdleExpressionTargets > 0).length,\n        expressionMorphTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleExpressionTargets || 0), 0),\n        adaptiveIdleUpdateHz: 30,\n        idleVisibilityAware: true,"
+    "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,\n        proceduralIdlePlaced: replacements.filter((entry) => entry.proceduralIdle).length,\n        articulatedIdlePlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'articulated-bone-idle').length,\n        rootIdleFallbackPlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'root-idle-fallback').length,\n        adaptiveIdleUpdateHz: 30,\n        idleVisibilityAware: true,"
   );
   const pushAnchor = 'replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip) });';
   if (next.split(pushAnchor).length - 1 !== 1) return { code: null, warnings: ['Bone-aware staff idle motion was not added: replacement record did not match the verified staff runtime.'] };
-  next = next.replace(pushAnchor, "replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip), proceduralIdle: !clip && ['skinned-static-pose', 'static-mesh'].includes(selectedRenderMode), proceduralIdleMode, proceduralIdleGestureTargets: idleBoneTargets.filter((target) => target.motionType === 'micro-gesture').length, proceduralIdleAttentionTargets: idleBoneTargets.filter((target) => target.motionType === 'attention').length, proceduralIdleBlinkTargets: idleBlinkMorphTargets.length, proceduralIdleExpressionTargets: idleExpressionMorphTargets.length });");
+  next = next.replace(pushAnchor, "replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip), proceduralIdle: !clip && ['skinned-static-pose', 'static-mesh'].includes(selectedRenderMode), proceduralIdleMode });");
   next = next.replace('mixers.length = 0;', 'mixers.length = 0;\n      proceduralIdleControllers.length = 0;');
   return { code: `/* ${PROCEDURAL_IDLE_MARKER} */\n${next}`, alreadyPatched: false };
 }
 
-/**
- * v6.29 makes procedural idle quality tier-aware and reduces visibility-query
- * churn. Low devices use 12 Hz, balanced devices 20 Hz and high devices 30 Hz.
- * Visibility in the staff hierarchy is rechecked every 250 ms instead of
- * traversing every ancestor on every rendered frame. Controllers are staggered
- * so a group of static staff does not all recalculate on the same frame.
- */
-const TIER_AWARE_IDLE_MARKER = '__CALLORIA_TIER_AWARE_STAFF_IDLE_V629__';
-function addTierAwareStaffIdleScheduler(code) {
-  const original = String(code || '').replace(/\r\n?/g, '\n');
-  if (original.includes(TIER_AWARE_IDLE_MARKER)) return { code: original, alreadyPatched: true };
-  const anchors = [
-    ['idle controller registry', 'const proceduralIdleControllers = [];'],
-    ['idle controller registration', 'updateAccumulator: 0,'],
-    ['visibility-aware scheduler block', `          let visibleInScene = true;\n          for (let node = idle.wrapper; node; node = node.parent) {\n            if (node.visible === false) { visibleInScene = false; break; }\n          }\n          if (!visibleInScene) continue;\n          idle.updateAccumulator += step;\n          if (idle.updateAccumulator < (1 / 30)) continue;\n          const idleStep = Math.min(idle.updateAccumulator, 0.1);\n          idle.updateAccumulator = 0;`],
-    ['idle runtime diagnostics', 'adaptiveIdleUpdateHz: 30,']
-  ];
-  const missing = anchors.filter(([, text]) => original.split(text).length - 1 !== 1).map(([label]) => label);
-  if (missing.length) return { code: null, warnings: [`Tier-aware staff idle scheduler was not added: ${missing.join(', ')} did not match the verified v6.28 runtime.`] };
-
-  let next = original.replace(
-    'const proceduralIdleControllers = [];',
-    `const proceduralIdleControllers = [];\n  const proceduralIdleUpdateHz = tier === 'low' ? 12 : tier === 'high' ? 30 : 20;\n  const proceduralIdleVisibilityInterval = 0.25;`
-  );
-  next = next.replace(
-    'updateAccumulator: 0,',
-    `updateAccumulator: (replacements.length % 4) * (1 / proceduralIdleUpdateHz / 4),\n        visibilityAccumulator: 0,\n        visibleInScene: true,`
-  );
-  const previousScheduler = anchors[2][1];
-  const replacementScheduler = `          // Refresh ancestor visibility at 4 Hz; hierarchy traversal is not needed\n          // on every render frame. A hidden tab still pauses the entire idle layer.\n          idle.visibilityAccumulator -= step;\n          if (idle.visibilityAccumulator <= 0) {\n            let visibleInScene = true;\n            for (let node = idle.wrapper; node; node = node.parent) {\n              if (node.visible === false) { visibleInScene = false; break; }\n            }\n            idle.visibleInScene = visibleInScene;\n            idle.visibilityAccumulator = proceduralIdleVisibilityInterval;\n          }\n          if (!idle.visibleInScene) continue;\n          idle.updateAccumulator += step;\n          const idleInterval = 1 / proceduralIdleUpdateHz;\n          if (idle.updateAccumulator < idleInterval) continue;\n          const idleStep = Math.min(idle.updateAccumulator, 0.1);\n          idle.updateAccumulator = Math.max(0, idle.updateAccumulator - idleInterval);`;
-  next = next.replace(previousScheduler, replacementScheduler);
-  next = next.replace(
-    'adaptiveIdleUpdateHz: 30,',
-    'adaptiveIdleUpdateHz: proceduralIdleUpdateHz,\n        idleVisibilityCacheMs: 250,\n        idleUpdateTier: tier,'
-  );
-  return { code: `/* ${TIER_AWARE_IDLE_MARKER} */\n${next}`, alreadyPatched: false };
-}
-
-
-
-/**
- * v6.35 adds restrained eye-gaze shifts for static-pose staff models that
- * already expose explicit ARKit-style eye-look morph targets. It does not
- * infer or fabricate face geometry, and it never touches authored clips.
- */
-const STAFF_EYE_GAZE_MORPH_MARKER = '__CALLORIA_STAFF_EYE_GAZE_MORPHS_V635__';
-function addStaffEyeGazeMorphSupport(code) {
-  const original = String(code || '').replace(/\r\n?/g, '\n');
-  if (original.includes(STAFF_EYE_GAZE_MORPH_MARKER)) {
-    return { code: original, alreadyPatched: true, warnings: [] };
-  }
-
-  const anchors = [
-    ['gaze target registry', 'const idleExpressionMorphTargets = [];'],
-    ['gaze morph discovery location', '        if (!node?.isBone || !node.quaternion?.clone) return;'],
-    ['gaze controller registration', 'expressionPhase: (replacements.length * 1.77) % 5,'],
-    ['gaze runtime update location', '          if (idle.boneTargets?.length) {'],
-    ['gaze diagnostics', 'expressionMorphTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleExpressionTargets || 0), 0),'],
-    ['gaze replacement metadata', 'proceduralIdleExpressionTargets: idleExpressionMorphTargets.length });']
-  ];
-  const missing = anchors.filter(([, anchor]) => original.split(anchor).length - 1 !== 1).map(([label]) => label);
-  if (missing.length) {
-    return { code: null, alreadyPatched: false, warnings: [`Staff eye-gaze morph support was not added: ${missing.join(', ')} did not match the verified v6.34 runtime.`] };
-  }
-
-  let next = original.replace(
-    'const idleExpressionMorphTargets = [];',
-    'const idleExpressionMorphTargets = [];\n    const idleGazeMorphTargets = [];'
-  );
-
-  const discovery = `        // Only use explicit per-eye gaze morphs. The ARKit-style naming rule
-        // avoids accidentally animating broad facial poses or unrelated targets.
-        if (morphDictionary && morphInfluences && typeof morphInfluences.length === 'number') {
-          for (const [morphName, morphIndexValue] of Object.entries(morphDictionary)) {
-            const normalizedMorphName = String(morphName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-            const gazeMatch = /^(?:eye)?look(up|down|in|out)(left|right)$/.exec(normalizedMorphName);
-            const morphIndex = Number(morphIndexValue);
-            if (!gazeMatch || !Number.isInteger(morphIndex) || morphIndex < 0 || morphIndex >= morphInfluences.length) continue;
-            const baseInfluence = Number(morphInfluences[morphIndex] || 0);
-            if (!Number.isFinite(baseInfluence)) continue;
-            const clampedBase = Math.max(0, Math.min(1, baseInfluence));
-            const amplitude = Math.min(0.075, 1 - clampedBase);
-            if (amplitude <= 0) continue;
-            idleGazeMorphTargets.push({
-              mesh: node,
-              index: morphIndex,
-              direction: gazeMatch[1],
-              side: gazeMatch[2],
-              baseInfluence: clampedBase,
-              amplitude
-            });
-          }
-        }
-`;
-  next = next.replace(
-    '        if (!node?.isBone || !node.quaternion?.clone) return;',
-    discovery + '        if (!node?.isBone || !node.quaternion?.clone) return;'
-  );
-
-  next = next.replace(
-    'expressionPhase: (replacements.length * 1.77) % 5,',
-    `expressionPhase: (replacements.length * 1.77) % 5,
-        gazeMorphTargets: idleGazeMorphTargets,
-        gazePeriod: 8.5 + ((replacements.length * 1.37) % 4.5),
-        gazePhase: (replacements.length * 1.61) % 4,`
-  );
-
-  const gazeUpdate = `          // A short, occasional glance uses only compatible eye-look morphs
-          // already authored in the model. Most of each cycle remains centred.
-          if (idle.gazeMorphTargets?.length) {
-            const gazeElapsed = idle.elapsed + idle.gazePhase;
-            const gazeCycle = (gazeElapsed % idle.gazePeriod) / idle.gazePeriod;
-            let gazeWeight = 0;
-            if (gazeCycle >= 0.61 && gazeCycle < 0.68) {
-              const t = (gazeCycle - 0.61) / 0.07;
-              gazeWeight = t * t * (3 - 2 * t);
-            } else if (gazeCycle >= 0.68 && gazeCycle < 0.77) {
-              gazeWeight = 1;
-            } else if (gazeCycle >= 0.77 && gazeCycle < 0.84) {
-              const t = 1 - (gazeCycle - 0.77) / 0.07;
-              gazeWeight = t * t * (3 - 2 * t);
-            }
-            const gazeDirections = ['up', 'left', 'right', 'down'];
-            const gazeDirection = gazeDirections[Math.floor(gazeElapsed / idle.gazePeriod) % gazeDirections.length];
-            for (const target of idle.gazeMorphTargets) {
-              const influences = target.mesh?.morphTargetInfluences;
-              if (!influences || target.index >= influences.length) continue;
-              const activeDirection = gazeDirection === target.direction
-                || (gazeDirection === 'left' && ((target.side === 'left' && target.direction === 'out') || (target.side === 'right' && target.direction === 'in')))
-                || (gazeDirection === 'right' && ((target.side === 'left' && target.direction === 'in') || (target.side === 'right' && target.direction === 'out')));
-              const weight = activeDirection ? gazeWeight : 0;
-              influences[target.index] = Math.max(0, Math.min(1, target.baseInfluence + target.amplitude * weight));
-            }
-          }
-`;
-  next = next.replace('          if (idle.boneTargets?.length) {', gazeUpdate + '          if (idle.boneTargets?.length) {');
-
-  next = next.replace(
-    'expressionMorphTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleExpressionTargets || 0), 0),',
-    `expressionMorphTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleExpressionTargets || 0), 0),
-        eyeGazeMorphStaffPlaced: replacements.filter((entry) => entry.proceduralIdleGazeTargets > 0).length,
-        eyeGazeMorphTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleGazeTargets || 0), 0),`
-  );
-
-  next = next.replace(
-    'proceduralIdleExpressionTargets: idleExpressionMorphTargets.length });',
-    'proceduralIdleExpressionTargets: idleExpressionMorphTargets.length, proceduralIdleGazeTargets: idleGazeMorphTargets.length });'
-  );
-
-  return { code: `/* ${STAFF_EYE_GAZE_MORPH_MARKER} */\n${next}`, alreadyPatched: false, warnings: [] };
-}
-
 export function transformStaffRuntimeIntegration(source, availableIds, renderModes) {
   const base = transformStaffRuntimeIntegrationBase(source, availableIds, renderModes);
-  if (!base?.code) return base;
-
-  let working = base.code;
-  let idleAdded = false;
-  if (!base.alreadyPatched) {
-    const idle = addProceduralStaticStaffIdle(working);
-    if (!idle?.code) return { ...base, code: null, warnings: idle?.warnings || ['Static staff idle transform did not produce code.'] };
-    working = idle.code;
-    idleAdded = true;
-  }
-  const scheduled = addTierAwareStaffIdleScheduler(working);
-  if (!scheduled?.code) return { ...base, code: null, warnings: scheduled?.warnings || ['Tier-aware staff idle scheduler did not produce code.'] };
-  const eyeGaze = addStaffEyeGazeMorphSupport(scheduled.code);
-  if (!eyeGaze?.code) return { ...base, code: null, warnings: eyeGaze?.warnings || ['Staff eye-gaze morph transform did not produce code.'] };
-  return {
-    ...base,
-    code: eyeGaze.code,
-    attentionGesturesAdded: true,
-    proceduralIdleAdded: idleAdded || working.includes(PROCEDURAL_IDLE_MARKER),
-    tierAwareIdleSchedulerAdded: !scheduled.alreadyPatched,
-    eyeGazeMorphSupportAdded: !eyeGaze.alreadyPatched,
-    alreadyPatched: Boolean(base.alreadyPatched && scheduled.alreadyPatched && eyeGaze.alreadyPatched)
-  };
+  if (!base?.code || base.alreadyPatched) return base;
+  const idle = addProceduralStaticStaffIdle(base.code);
+  if (!idle?.code) return { code: null, warnings: idle?.warnings || ['Static staff idle transform did not produce code.'] };
+  return { ...base, code: idle.code, proceduralIdleAdded: true };
 }
+
 /**
  * Connect the v6.13 office-asset runtime to the production-world scene.
  * This transform uses checked source anchors and fails closed if the world API
@@ -1202,7 +906,7 @@ function createCalloriaCC0StaffGLBBundlePlugin(options = {}) {
         for (const warning of warnings) this.warn?.(`CALLORIA v6.23 staff runtime integration: ${warning}`);
         return null;
       }
-      runtimeDiagnostics.staff = { status: 'patched', source: target, warnings: [], message: `Staff runtime transform enabled for ${availableIds.length} validated model(s). Static-pose standing staff use conservative named-bone idle, including small upper-arm/forearm/hand micro-gestures where recognised; otherwise root-idle fallback. Procedural idle is visibility-aware and capped by graphics tier; no source animation clip is claimed. Live scene placement still requires browser verification.` };
+      runtimeDiagnostics.staff = { status: 'patched', source: target, warnings: [], message: `Staff runtime transform enabled for ${availableIds.length} validated model(s). Static-pose standing staff use conservative named-bone idle when a usable head/neck/spine/shoulder hierarchy is present, otherwise root-idle fallback. Procedural idle is visibility-aware and capped at 30 Hz; no source animation clip is claimed. Live scene placement still requires browser verification.` };
       this.info?.(`CALLORIA v6.28 runtime integration enabled for ${availableIds.length} bundled staff GLB(s): ${Object.entries(renderModes).map(([id, mode]) => `${id}=${mode}`).join(', ')}. Static-pose staff are restricted to standing anchors and use conservative bone-aware idle when recognized rig nodes exist, with a small root-motion fallback otherwise.`);
       return { code: transformed.code, map: null };
     },
@@ -1229,7 +933,7 @@ export const __calloriaCC0StaffGLBBundleTest = Object.freeze({
   REQUIRED_ANIMATIONS: Object.freeze([]), PREFERRED_ANIMATIONS, LICENSE,
   readGlbJsonAndChunks, parseGlb, sha256, fetchWithRetry, makeManifest,
   getNodeLocalMatrix, multiplyNodeMatrices, transformNodePoint, measureSceneNodeBounds,
-  transformStaffRuntimeIntegration, transformStaffRuntimeIntegrationBase, addProceduralStaticStaffIdle, PROCEDURAL_IDLE_MARKER, addTierAwareStaffIdleScheduler, TIER_AWARE_IDLE_MARKER, transformOfficeWorldIntegration,
+  transformStaffRuntimeIntegration, transformStaffRuntimeIntegrationBase, addProceduralStaticStaffIdle, PROCEDURAL_IDLE_MARKER, transformOfficeWorldIntegration,
   makeRuntimeDiagnosticsPayload, makeRuntimeDiagnosticsHtml,
   RUNTIME_DIAGNOSTICS_JSON, RUNTIME_DIAGNOSTICS_HTML
 });

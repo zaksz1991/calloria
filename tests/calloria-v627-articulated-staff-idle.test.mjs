@@ -19,8 +19,9 @@ test('v6.27 retains the checked v1.2 staff-runtime integration and adds the new 
   assert.match(transformed.code, /assetsInUse/);
 });
 
-test('static-model morph scanning remains separate from skeleton-only bone idle collection', () => {
-  assert.match(transformed.code, /if \(proceduralIdle && clonedRoot\?\.traverse\)/);
+test('bone-aware idle is only collected for static skinned standing staff', () => {
+  assert.match(transformed.code, /proceduralIdle && selectedRenderMode === 'skinned-static-pose'/);
+  assert.match(transformed.code, /selectedRenderMode === 'skinned-static-pose' && clonedRoot\?\.traverse/);
   assert.match(transformed.code, /if \(!node\?\.isBone \|\| !node\.quaternion\?\.clone\) return;/);
   assert.match(transformed.code, /if \(!selected \|\| \(!clip && person\.seated\)\) continue;/);
 });
