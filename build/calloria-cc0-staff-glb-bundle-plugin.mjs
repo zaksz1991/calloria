@@ -394,7 +394,7 @@ function makeManifest(entries, totals, status) {
   const staticPose = models.filter((entry) => ['skinned-static-pose', 'static-mesh'].includes(entry.renderMode)).length;
   return {
     schemaVersion: 2,
-    buildIntegration: 'CALLORIA v6.28 transform-aware staff GLB validation and adaptive articulated static-pose idle',
+    buildIntegration: 'CALLORIA v6.29 transform-aware staff GLB validation and tier-aware articulated static-pose idle',
     createdAt: new Date().toISOString(),
     status,
     source: 'Gobkit CC0 character pack direct GLB files; provenance recorded per model and pack.',
@@ -642,14 +642,66 @@ function addProceduralStaticStaffIdle(code) {
   return { code: `/* ${PROCEDURAL_IDLE_MARKER} */\n${next}`, alreadyPatched: false };
 }
 
-export function transformStaffRuntimeIntegration(source, availableIds, renderModes) {
-  const base = transformStaffRuntimeIntegrationBase(source, availableIds, renderModes);
-  if (!base?.code || base.alreadyPatched) return base;
-  const idle = addProceduralStaticStaffIdle(base.code);
-  if (!idle?.code) return { code: null, warnings: idle?.warnings || ['Static staff idle transform did not produce code.'] };
-  return { ...base, code: idle.code, proceduralIdleAdded: true };
+/**
+ * v6.29 makes procedural idle quality tier-aware and reduces visibility-query
+ * churn. Low devices use 12 Hz, balanced devices 20 Hz and high devices 30 Hz.
+ * Visibility in the staff hierarchy is rechecked every 250 ms instead of
+ * traversing every ancestor on every rendered frame. Controllers are staggered
+ * so a group of static staff does not all recalculate on the same frame.
+ */
+const TIER_AWARE_IDLE_MARKER = '__CALLORIA_TIER_AWARE_STAFF_IDLE_V629__';
+function addTierAwareStaffIdleScheduler(code) {
+  const original = String(code || '').replace(/\r\n?/g, '\n');
+  if (original.includes(TIER_AWARE_IDLE_MARKER)) return { code: original, alreadyPatched: true };
+  const anchors = [
+    ['idle controller registry', 'const proceduralIdleControllers = [];'],
+    ['idle controller registration', 'updateAccumulator: 0,'],
+    ['visibility-aware scheduler block', `          let visibleInScene = true;\n          for (let node = idle.wrapper; node; node = node.parent) {\n            if (node.visible === false) { visibleInScene = false; break; }\n          }\n          if (!visibleInScene) continue;\n          idle.updateAccumulator += step;\n          if (idle.updateAccumulator < (1 / 30)) continue;\n          const idleStep = Math.min(idle.updateAccumulator, 0.1);\n          idle.updateAccumulator = 0;`],
+    ['idle runtime diagnostics', 'adaptiveIdleUpdateHz: 30,']
+  ];
+  const missing = anchors.filter(([, text]) => original.split(text).length - 1 !== 1).map(([label]) => label);
+  if (missing.length) return { code: null, warnings: [`Tier-aware staff idle scheduler was not added: ${missing.join(', ')} did not match the verified v6.28 runtime.`] };
+
+  let next = original.replace(
+    'const proceduralIdleControllers = [];',
+    `const proceduralIdleControllers = [];\n  const proceduralIdleUpdateHz = tier === 'low' ? 12 : tier === 'high' ? 30 : 20;\n  const proceduralIdleVisibilityInterval = 0.25;`
+  );
+  next = next.replace(
+    'updateAccumulator: 0,',
+    `updateAccumulator: (replacements.length % 4) * (1 / proceduralIdleUpdateHz / 4),\n        visibilityAccumulator: 0,\n        visibleInScene: true,`
+  );
+  const previousScheduler = anchors[2][1];
+  const replacementScheduler = `          // Refresh ancestor visibility at 4 Hz; hierarchy traversal is not needed\n          // on every render frame. A hidden tab still pauses the entire idle layer.\n          idle.visibilityAccumulator -= step;\n          if (idle.visibilityAccumulator <= 0) {\n            let visibleInScene = true;\n            for (let node = idle.wrapper; node; node = node.parent) {\n              if (node.visible === false) { visibleInScene = false; break; }\n            }\n            idle.visibleInScene = visibleInScene;\n            idle.visibilityAccumulator = proceduralIdleVisibilityInterval;\n          }\n          if (!idle.visibleInScene) continue;\n          idle.updateAccumulator += step;\n          const idleInterval = 1 / proceduralIdleUpdateHz;\n          if (idle.updateAccumulator < idleInterval) continue;\n          const idleStep = Math.min(idle.updateAccumulator, 0.1);\n          idle.updateAccumulator = Math.max(0, idle.updateAccumulator - idleInterval);`;
+  next = next.replace(previousScheduler, replacementScheduler);
+  next = next.replace(
+    'adaptiveIdleUpdateHz: 30,',
+    'adaptiveIdleUpdateHz: proceduralIdleUpdateHz,\n        idleVisibilityCacheMs: 250,\n        idleUpdateTier: tier,'
+  );
+  return { code: `/* ${TIER_AWARE_IDLE_MARKER} */\n${next}`, alreadyPatched: false };
 }
 
+export function transformStaffRuntimeIntegration(source, availableIds, renderModes) {
+  const base = transformStaffRuntimeIntegrationBase(source, availableIds, renderModes);
+  if (!base?.code) return base;
+
+  let working = base.code;
+  let idleAdded = false;
+  if (!base.alreadyPatched) {
+    const idle = addProceduralStaticStaffIdle(working);
+    if (!idle?.code) return { ...base, code: null, warnings: idle?.warnings || ['Static staff idle transform did not produce code.'] };
+    working = idle.code;
+    idleAdded = true;
+  }
+  const scheduled = addTierAwareStaffIdleScheduler(working);
+  if (!scheduled?.code) return { ...base, code: null, warnings: scheduled?.warnings || ['Tier-aware staff idle scheduler did not produce code.'] };
+  return {
+    ...base,
+    code: scheduled.code,
+    proceduralIdleAdded: idleAdded || working.includes(PROCEDURAL_IDLE_MARKER),
+    tierAwareIdleSchedulerAdded: !scheduled.alreadyPatched,
+    alreadyPatched: Boolean(base.alreadyPatched && scheduled.alreadyPatched)
+  };
+}
 /**
  * Connect the v6.13 office-asset runtime to the production-world scene.
  * This transform uses checked source anchors and fails closed if the world API
@@ -933,7 +985,7 @@ export const __calloriaCC0StaffGLBBundleTest = Object.freeze({
   REQUIRED_ANIMATIONS: Object.freeze([]), PREFERRED_ANIMATIONS, LICENSE,
   readGlbJsonAndChunks, parseGlb, sha256, fetchWithRetry, makeManifest,
   getNodeLocalMatrix, multiplyNodeMatrices, transformNodePoint, measureSceneNodeBounds,
-  transformStaffRuntimeIntegration, transformStaffRuntimeIntegrationBase, addProceduralStaticStaffIdle, PROCEDURAL_IDLE_MARKER, transformOfficeWorldIntegration,
+  transformStaffRuntimeIntegration, transformStaffRuntimeIntegrationBase, addProceduralStaticStaffIdle, PROCEDURAL_IDLE_MARKER, addTierAwareStaffIdleScheduler, TIER_AWARE_IDLE_MARKER, transformOfficeWorldIntegration,
   makeRuntimeDiagnosticsPayload, makeRuntimeDiagnosticsHtml,
   RUNTIME_DIAGNOSTICS_JSON, RUNTIME_DIAGNOSTICS_HTML
 });

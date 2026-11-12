@@ -1,7 +1,7 @@
-# CALLORIA v6.28 — Adaptive Staff Idle
+# v6.29 changes
 
-- Adds a 30 Hz update cap for procedural idle poses on static-pose staff models.
-- Pauses idle pose calculations when the browser tab is hidden.
-- Skips pose calculations for staff wrappers hidden directly or through an invisible ancestor.
-- Keeps rest-quaternion restoration, authored animation clips, seated-staff restrictions, and the existing render loop unchanged.
-- Adds runtime diagnostics for the idle update cap and visibility-aware scheduling.
+- Adds graphics-tier idle update rates: low 12 Hz, balanced 20 Hz, high 30 Hz.
+- Caches staff hierarchy visibility for 250 ms instead of traversing every rendered frame.
+- Staggers controller update phases to reduce simultaneous pose-update bursts.
+- Preserves authored mixer updates, existing idle channels, bounded delta and lifecycle cleanup.
+- Adds scheduler tier and visibility-cache details to runtime diagnostics.
