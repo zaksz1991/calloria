@@ -294,3 +294,7 @@ export const __calloriaCC0OfficeLobbyInternals = Object.freeze({
   hideReceptionFallbacks,
   restoreReceptionFallbacks
 });
+
+// Compatibility export required by js/production-world.js.
+// Keep both names bound to the same lifecycle implementation.
+export const integrateCalloriaCC0Lobby = integrateCalloriaCC0OfficeLobby;
