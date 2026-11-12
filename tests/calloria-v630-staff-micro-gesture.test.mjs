@@ -42,7 +42,8 @@ test('v6.30 adds low-amplitude wrist and hand motion', () => {
 });
 
 test('gesture bones retain and restore their original bind quaternion before each idle update', () => {
-  assert.match(transformed.code, /motionType: \/arm\|forearm\|lowerarm\|hand\//);
+  assert.match(transformed.code, /motionType: channelSpecs\.some/);
+  assert.match(transformed.code, /: \/arm\|forearm\|lowerarm\|hand\//);
   assert.match(transformed.code, /target\.bone\.quaternion\.copy\(target\.baseQuaternion\)/);
   assert.match(transformed.code, /baseQuaternion: node\.quaternion\.clone\(\)/);
 });

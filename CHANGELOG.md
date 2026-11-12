@@ -1,12 +1,13 @@
-# CALLORIA v6.30 — Staff Arm & Hand Micro-Gestures
+# CALLORIA v6.31 — Staff Attention Gestures
 
-Extends the existing static-pose staff idle layer with very small, mirrored upper-arm, forearm and hand movement when a compatible named bone exists in the GLB skeleton.
+## Added
+- Low-amplitude head attention glances for approved static-pose skinned staff with a recognised head bone.
+- Occasional short listening nod pulses instead of continuous head bobbing.
+- Small, synchronised neck counter-rotation so the nod is shared across the head/neck chain.
+- Separate runtime counters for staff and bone targets receiving attention gestures.
 
-- Recognises common Mixamo-style names and common left/right aliases for upper arms, forearms/lower arms and hands.
-- Keeps amplitudes deliberately low (0.006–0.012 radians) to avoid broad body motion.
-- Restores each bone's captured base quaternion before applying each idle pose, preventing cumulative rotation drift.
-- Applies only to static-pose staff already receiving procedural idle. Authored GLB clips are not modified.
-- Adds micro-gesture staff and target counts to the existing runtime status data.
-- Retains v6.29 graphics-tier update rates, visibility caching, phase staggering and hidden-tab pause behaviour.
-
-This does not create skeletal clips or guarantee that every third-party rig contains the recognised bone names. Unsupported rigs retain their existing posture/root fallback.
+## Preserved
+- Existing v6.27 articulated idle, v6.28 adaptive scheduling, v6.29 graphics-tier budgets and v6.30 arm/forearm/hand micro-gestures.
+- Original GLB animation clips remain on the existing AnimationMixer path and do not receive procedural attention gestures.
+- Original bind quaternions are restored before every local pose offset.
+- No new renderer or animation loop is added. Existing visibility checks and tier update limits remain in force.

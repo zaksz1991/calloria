@@ -560,10 +560,19 @@ function addProceduralStaticStaffIdle(code) {
         if (/^(?:mixamorig)?head$/.test(boneName)) {
           channelSpecs = [
             { axis: [0, 1, 0], amplitude: 0.026, speed: 0.42, phase: 0 },
-            { axis: [1, 0, 0], amplitude: 0.011, speed: 0.31, phase: 1.1 }
+            { axis: [1, 0, 0], amplitude: 0.011, speed: 0.31, phase: 1.1 },
+            // Occasional, low-amplitude attention glance; deliberately slower
+            // than the continuous idle channel so staff do not look restless.
+            { axis: [0, 1, 0], amplitude: 0.018, speed: 0.15, phase: 1.7, pattern: 'attention-glance' },
+            // A brief listening nod every ~15 seconds, with the neck sharing
+            // a smaller counter-rotation to keep the movement natural.
+            { axis: [1, 0, 0], amplitude: 0.010, period: 15, phase: 0, pattern: 'attention-nod' }
           ];
         } else if (/^(?:mixamorig)?neck[0-9]*$/.test(boneName)) {
-          channelSpecs = [{ axis: [0, 1, 0], amplitude: 0.013, speed: 0.37, phase: 0.55 }];
+          channelSpecs = [
+            { axis: [0, 1, 0], amplitude: 0.013, speed: 0.37, phase: 0.55 },
+            { axis: [1, 0, 0], amplitude: -0.0045, period: 15, phase: 0, pattern: 'attention-counter-nod' }
+          ];
         } else if (/^(?:mixamorig)?(?:spine[0-9]*|chest|upperchest)$/.test(boneName)) {
           channelSpecs = [{ axis: [0, 0, 1], amplitude: 0.005, speed: 0.68, phase: 1.45 }];
         } else if (/^(?:mixamorig)?(?:left|right)shoulder$/.test(boneName) || /^(?:mixamorig)?shoulder[lr]$/.test(boneName)) {
@@ -586,12 +595,16 @@ function addProceduralStaticStaffIdle(code) {
         if (!channelSpecs) return;
         idleBoneTargets.push({
           bone: node,
-          motionType: /arm|forearm|lowerarm|hand/.test(boneName) ? 'micro-gesture' : 'posture',
+          motionType: channelSpecs.some((spec) => String(spec.pattern || '').startsWith('attention-'))
+            ? 'attention'
+            : /arm|forearm|lowerarm|hand/.test(boneName) ? 'micro-gesture' : 'posture',
           baseQuaternion: node.quaternion.clone(),
           channels: channelSpecs.map((spec) => ({
             axis: new T.Vector3(spec.axis[0], spec.axis[1], spec.axis[2]),
             amplitude: spec.amplitude,
             speed: spec.speed,
+            period: spec.period || 0,
+            pattern: spec.pattern || 'sine',
             phase: spec.phase,
             deltaQuaternion: new T.Quaternion()
           }))
@@ -634,7 +647,19 @@ function addProceduralStaticStaffIdle(code) {
             for (const target of idle.boneTargets) {
               target.bone.quaternion.copy(target.baseQuaternion);
               for (const channel of target.channels) {
-                const angle = Math.sin(idle.elapsed * channel.speed + idle.phase + channel.phase) * channel.amplitude;
+                let angle;
+                if (channel.pattern === 'attention-nod' || channel.pattern === 'attention-counter-nod') {
+                  const period = Math.max(8, channel.period || 15);
+                  const cyclePosition = ((idle.elapsed + idle.phase * 1.7) % period) / period;
+                  const nodWindow = 0.12;
+                  const nodPulse = cyclePosition < nodWindow
+                    ? Math.sin(Math.PI * cyclePosition / nodWindow)
+                    : 0;
+                  angle = nodPulse * channel.amplitude;
+                } else {
+                  const phase = idle.elapsed * channel.speed + idle.phase + channel.phase;
+                  angle = Math.sin(phase) * channel.amplitude;
+                }
                 channel.deltaQuaternion.setFromAxisAngle(channel.axis, angle);
                 target.bone.quaternion.multiply(channel.deltaQuaternion);
               }
@@ -650,11 +675,11 @@ function addProceduralStaticStaffIdle(code) {
 
   next = next.replace(
     "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,",
-    "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,\n        proceduralIdlePlaced: replacements.filter((entry) => entry.proceduralIdle).length,\n        articulatedIdlePlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'articulated-bone-idle').length,\n        rootIdleFallbackPlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'root-idle-fallback').length,\n        microGestureStaffPlaced: replacements.filter((entry) => entry.proceduralIdleGestureTargets > 0).length,\n        microGestureBoneTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleGestureTargets || 0), 0),\n        adaptiveIdleUpdateHz: 30,\n        idleVisibilityAware: true,"
+    "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,\n        proceduralIdlePlaced: replacements.filter((entry) => entry.proceduralIdle).length,\n        articulatedIdlePlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'articulated-bone-idle').length,\n        rootIdleFallbackPlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'root-idle-fallback').length,\n        microGestureStaffPlaced: replacements.filter((entry) => entry.proceduralIdleGestureTargets > 0).length,\n        microGestureBoneTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleGestureTargets || 0), 0),\n        attentionGestureStaffPlaced: replacements.filter((entry) => entry.proceduralIdleAttentionTargets > 0).length,\n        attentionGestureBoneTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleAttentionTargets || 0), 0),\n        adaptiveIdleUpdateHz: 30,\n        idleVisibilityAware: true,"
   );
   const pushAnchor = 'replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip) });';
   if (next.split(pushAnchor).length - 1 !== 1) return { code: null, warnings: ['Bone-aware staff idle motion was not added: replacement record did not match the verified staff runtime.'] };
-  next = next.replace(pushAnchor, "replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip), proceduralIdle: !clip && ['skinned-static-pose', 'static-mesh'].includes(selectedRenderMode), proceduralIdleMode, proceduralIdleGestureTargets: idleBoneTargets.filter((target) => target.motionType === 'micro-gesture').length });");
+  next = next.replace(pushAnchor, "replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip), proceduralIdle: !clip && ['skinned-static-pose', 'static-mesh'].includes(selectedRenderMode), proceduralIdleMode, proceduralIdleGestureTargets: idleBoneTargets.filter((target) => target.motionType === 'micro-gesture').length, proceduralIdleAttentionTargets: idleBoneTargets.filter((target) => target.motionType === 'attention').length });");
   next = next.replace('mixers.length = 0;', 'mixers.length = 0;\n      proceduralIdleControllers.length = 0;');
   return { code: `/* ${PROCEDURAL_IDLE_MARKER} */\n${next}`, alreadyPatched: false };
 }
@@ -714,6 +739,7 @@ export function transformStaffRuntimeIntegration(source, availableIds, renderMod
   return {
     ...base,
     code: scheduled.code,
+    attentionGesturesAdded: true,
     proceduralIdleAdded: idleAdded || working.includes(PROCEDURAL_IDLE_MARKER),
     tierAwareIdleSchedulerAdded: !scheduled.alreadyPatched,
     alreadyPatched: Boolean(base.alreadyPatched && scheduled.alreadyPatched)

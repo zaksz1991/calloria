@@ -1,13 +1,12 @@
-Required replacement:
+Replacement:
 - build/calloria-cc0-staff-glb-bundle-plugin.mjs
 
-Included regression support:
-- tests/ (inherited and v6.30 tests)
+Regression coverage:
+- tests/calloria-v631-attention-gestures.test.mjs
+- tests/calloria-v630-staff-micro-gesture.test.mjs
+- tests/calloria-v629-tier-aware-idle.test.mjs
+- tests/calloria-v627-articulated-staff-idle.test.mjs
+- tests/calloria-v623-runtime-diagnostics.test.mjs
+- tests/calloria-v622-transform-aware-bounds.test.mjs
+- tests/calloria-v628-adaptive-staff-idle.test.mjs
 - tests/fixtures/glb-world-integration-v12.fixture.js
-
-Docs:
-- CHANGELOG.md
-- README.md
-- INSTALL-GITHUB.md
-- VERIFICATION.md
-- test-output.txt

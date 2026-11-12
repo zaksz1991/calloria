@@ -1,12 +1,13 @@
-# Install CALLORIA v6.30
+# Installation — CALLORIA v6.31
 
-Apply this patch on top of v6.29.
+Apply this patch on top of CALLORIA v6.30.
 
-1. Open the CALLORIA GitHub repository.
-2. Open `build/calloria-cc0-staff-glb-bundle-plugin.mjs`.
-3. Replace it with the file at the same path in this ZIP.
-4. Commit the replacement to `main` and let Vercel run its normal production build.
+In GitHub, open this existing file:
 
-No package manifest, lockfile, Vite configuration, production-world module, Supabase setting, API key, GLB asset or existing user data is changed.
+`build/calloria-cc0-staff-glb-bundle-plugin.mjs`
 
-The ZIP also carries the inherited regression suite and checked v1.2 staff-runtime fixture. The tests are optional repository files; only the build plugin replacement is needed for the upgrade.
+Replace its complete contents with the file at the same path in this ZIP, then commit to `main`.
+
+No package.json, lockfile, Vite config, Supabase setting, API key, database migration or public asset needs to be changed.
+
+The patch keeps the previous v6.27–v6.30 staff GLB runtime work and adds head-attention glance and listening-nod behaviour. Deploy through the existing Vercel GitHub integration. The ZIP does not represent a full repository build or a confirmed production render.
