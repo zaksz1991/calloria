@@ -93,3 +93,14 @@
 .digital-disclaimer{margin:10px 0 0;padding-top:8px;border-top:1px solid #dfe7f0;color:#8795a8;font-size:7px;font-weight:900;letter-spacing:.09em}
 @media(max-width:680px){.digital-channel-panel{padding:12px}.digital-sla-strip{grid-template-columns:1fr 1fr}.digital-sla-strip>div:last-child{grid-column:1/-1}.digital-chat-topline{grid-template-columns:1fr 1fr}.digital-chat-topline>div:last-child{grid-column:1/-1}.digital-email-actions{display:grid;grid-template-columns:1fr}.digital-email-actions .button,.digital-chat-actions .button{width:100%}.digital-quality ul{grid-template-columns:1fr}}
 .sla-good{color:#176b49!important}.sla-breached{color:#a63232!important}
+
+
+/* v6.7 Social, SMS and In-app response workspace */
+.social-messaging-workspace{margin-top:12px;padding:12px;border:1px solid #dce5f1;border-radius:10px;background:rgba(255,255,255,.72)}
+.social-message-topline{margin-bottom:10px}
+.social-messaging-workspace label{display:grid;gap:5px;margin:9px 0 5px;color:#61738b;font-size:9px;font-weight:850;letter-spacing:.03em}
+.social-messaging-workspace textarea{display:block;width:100%;min-height:104px;padding:9px 10px;border:1px solid #d5dfeb;border-radius:8px;background:#fff;color:#20334e;font:inherit;font-size:11px;line-height:1.5;outline:none;resize:vertical}
+.social-messaging-workspace textarea:focus{border-color:#87a5df;box-shadow:0 0 0 3px rgba(45,91,209,.09)}
+.social-messaging-workspace textarea:disabled{background:#f5f7fa;color:#66778e}
+.social-messaging-workspace .digital-chat-actions>span{font-variant-numeric:tabular-nums}
+@media(max-width:680px){.social-messaging-workspace{padding:9px}.social-message-topline{grid-template-columns:1fr 1fr}.social-message-topline>div:last-child{grid-column:1/-1}.social-messaging-workspace .digital-chat-actions{display:grid;grid-template-columns:1fr}.social-messaging-workspace .digital-chat-actions .button{width:100%}}

@@ -70,8 +70,8 @@ test('voice controls have responsive mobile layouts and explicit simulation disc
   assert.match(html, /No real microphone, telephone network/);
 });
 
-test('completed contact table includes a voice handling evidence column', () => {
-  assert.match(html, /<th>Voice handling<\/th>/);
+test('completed contact table includes a channel handling evidence column', () => {
+  assert.match(html, /<th>Channel handling<\/th>/);
   assert.match(js, /item\.voiceMetrics\.durationSeconds/);
   assert.match(js, /item\.voiceMetrics\.holdSeconds/);
 });

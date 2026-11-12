@@ -2,381 +2,507 @@ TAP version 13
 # Subtest: engine exports the expected v6.6 contract
 ok 1 - engine exports the expected v6.6 contract
   ---
-  duration_ms: 0.965384
+  duration_ms: 0.984175
   type: 'test'
   ...
 # Subtest: only Email and Live chat create channel sessions
 ok 2 - only Email and Live chat create channel sessions
   ---
-  duration_ms: 2.277991
+  duration_ms: 1.761514
   type: 'test'
   ...
 # Subtest: email priority determines the simulated response target
 ok 3 - email priority determines the simulated response target
   ---
-  duration_ms: 0.326071
+  duration_ms: 0.219555
   type: 'test'
   ...
 # Subtest: email quality review checks the response standards and placeholder control
 ok 4 - email quality review checks the response standards and placeholder control
   ---
-  duration_ms: 1.033335
+  duration_ms: 0.970614
   type: 'test'
   ...
 # Subtest: email response with missing next step does not pass the quality gate
 ok 5 - email response with missing next step does not pass the quality gate
   ---
-  duration_ms: 0.716457
+  duration_ms: 0.525797
   type: 'test'
   ...
 # Subtest: email response scaffold cannot be sent while bracketed placeholders remain
 ok 6 - email response scaffold cannot be sent while bracketed placeholders remain
   ---
-  duration_ms: 0.518916
+  duration_ms: 0.312122
   type: 'test'
   ...
 # Subtest: email body preserves paragraph breaks for the interaction transcript
 ok 7 - email body preserves paragraph breaks for the interaction transcript
   ---
-  duration_ms: 0.208458
+  duration_ms: 0.176171
   type: 'test'
   ...
 # Subtest: email review blocks unsafe requests for passwords and one-time codes
 ok 8 - email review blocks unsafe requests for passwords and one-time codes
   ---
-  duration_ms: 0.492917
+  duration_ms: 0.350438
   type: 'test'
   ...
 # Subtest: email review does not mistake a customer-safety warning for a credential request
 ok 9 - email review does not mistake a customer-safety warning for a credential request
   ---
-  duration_ms: 0.593376
+  duration_ms: 0.335777
   type: 'test'
   ...
 # Subtest: email response requires a valid subject and complete draft
 ok 10 - email response requires a valid subject and complete draft
   ---
-  duration_ms: 1.069448
+  duration_ms: 0.833231
   type: 'test'
   ...
 # Subtest: email send records quality, time and SLA status
 ok 11 - email send records quality, time and SLA status
   ---
-  duration_ms: 0.482181
+  duration_ms: 0.323648
   type: 'test'
   ...
 # Subtest: email SLA miss is recorded and cannot be hidden after the reply is sent
 ok 12 - email SLA miss is recorded and cannot be hidden after the reply is sent
   ---
-  duration_ms: 0.255627
+  duration_ms: 0.288136
   type: 'test'
   ...
 # Subtest: email finalise returns a compact audit record
 ok 13 - email finalise returns a compact audit record
   ---
-  duration_ms: 0.742446
+  duration_ms: 0.289498
   type: 'test'
   ...
 # Subtest: chat requires a useful message before a service action can be committed
 ok 14 - chat requires a useful message before a service action can be committed
   ---
-  duration_ms: 0.32542
+  duration_ms: 0.315617
   type: 'test'
   ...
 # Subtest: chat prevents a password or one-time-code request
 ok 15 - chat prevents a password or one-time-code request
   ---
-  duration_ms: 0.239934
+  duration_ms: 0.231873
   type: 'test'
   ...
 # Subtest: chat reply can be committed once per stage with response timing
 ok 16 - chat reply can be committed once per stage with response timing
   ---
-  duration_ms: 0.195218
+  duration_ms: 0.19587
   type: 'test'
   ...
 # Subtest: chat advances to a fresh response window after each service decision
 ok 17 - chat advances to a fresh response window after each service decision
   ---
-  duration_ms: 1.242273
+  duration_ms: 0.275437
   type: 'test'
   ...
 # Subtest: chat session normalisation preserves drafts and sent turns
 ok 18 - chat session normalisation preserves drafts and sent turns
   ---
-  duration_ms: 0.279752
+  duration_ms: 0.935413
   type: 'test'
   ...
 # Subtest: a digital session cannot be reused by a different contact
 ok 19 - a digital session cannot be reused by a different contact
   ---
-  duration_ms: 0.105205
+  duration_ms: 0.122161
   type: 'test'
   ...
 # Subtest: voice-call engine loads before live-floor controller
 ok 20 - voice-call engine loads before live-floor controller
   ---
-  duration_ms: 1.100744
+  duration_ms: 0.829967
   type: 'test'
   ...
 # Subtest: voice control panel contains all required controls and accessible status outputs
 ok 21 - voice control panel contains all required controls and accessible status outputs
   ---
-  duration_ms: 0.853789
+  duration_ms: 0.571114
   type: 'test'
   ...
 # Subtest: every live-floor controller ID selector exists in the page
 ok 22 - every live-floor controller ID selector exists in the page
   ---
-  duration_ms: 0.970281
+  duration_ms: 1.506837
   type: 'test'
   ...
 # Subtest: HTML IDs are unique
 ok 23 - HTML IDs are unique
   ---
-  duration_ms: 0.353752
+  duration_ms: 0.321025
   type: 'test'
   ...
 # Subtest: voice state persists with the active contact and blocks decisions while not connected
 ok 24 - voice state persists with the active contact and blocks decisions while not connected
   ---
-  duration_ms: 0.250069
+  duration_ms: 0.276678
   type: 'test'
   ...
 # Subtest: warm transfer is locked until triage completion and requires specialist wrap-up
 ok 25 - warm transfer is locked until triage completion and requires specialist wrap-up
   ---
-  duration_ms: 0.12851
+  duration_ms: 0.163862
   type: 'test'
   ...
 # Subtest: call controls write consultation and transfer notes into the active interaction
 ok 26 - call controls write consultation and transfer notes into the active interaction
   ---
-  duration_ms: 0.185774
+  duration_ms: 1.436333
   type: 'test'
   ...
 # Subtest: voice timer updates without rebuilding the full agent workstation
 ok 27 - voice timer updates without rebuilding the full agent workstation
   ---
-  duration_ms: 1.126452
+  duration_ms: 0.164864
   type: 'test'
   ...
 # Subtest: voice controls have responsive mobile layouts and explicit simulation disclaimer
 ok 28 - voice controls have responsive mobile layouts and explicit simulation disclaimer
   ---
-  duration_ms: 0.347683
+  duration_ms: 0.301976
   type: 'test'
   ...
-# Subtest: completed contact table includes a voice handling evidence column
-ok 29 - completed contact table includes a voice handling evidence column
+# Subtest: completed contact table includes a channel handling evidence column
+ok 29 - completed contact table includes a channel handling evidence column
   ---
-  duration_ms: 0.321395
+  duration_ms: 0.56891
   type: 'test'
   ...
-# Subtest: digital engine is loaded before the live floor controller
-ok 30 - digital engine is loaded before the live floor controller
+# Subtest: Social messaging engine loads before the Live Floor controller
+ok 30 - Social messaging engine loads before the Live Floor controller
   ---
-  duration_ms: 1.28056
+  duration_ms: 1.683449
   type: 'test'
   ...
-# Subtest: page identifies itself as CALLORIA v6.6
-ok 31 - page identifies itself as CALLORIA v6.6
+# Subtest: page version and footer identify v6.7
+ok 31 - page version and footer identify v6.7
   ---
-  duration_ms: 0.432067
+  duration_ms: 0.264901
   type: 'test'
   ...
-# Subtest: digital panel provides distinct email and chat workspaces
-ok 32 - digital panel provides distinct email and chat workspaces
+# Subtest: all three channel workspace controls exist in HTML
+ok 32 - all three channel workspace controls exist in HTML
   ---
-  duration_ms: 1.510929
+  duration_ms: 0.276649
   type: 'test'
   ...
-# Subtest: page contains no duplicate static ids
-ok 33 - page contains no duplicate static ids
+# Subtest: HTML has no duplicate IDs
+ok 33 - HTML has no duplicate IDs
   ---
-  duration_ms: 0.870825
+  duration_ms: 0.585625
   type: 'test'
   ...
-# Subtest: every static controller selector exists in the Live Floor HTML
-ok 34 - every static controller selector exists in the Live Floor HTML
+# Subtest: all direct Live Floor selectors have matching HTML IDs
+ok 34 - all direct Live Floor selectors have matching HTML IDs
   ---
-  duration_ms: 0.343918
+  duration_ms: 0.33832
   type: 'test'
   ...
-# Subtest: controller requires the digital channel engine at startup
-ok 35 - controller requires the digital channel engine at startup
+# Subtest: controller requires and exposes the v6.7 engine
+ok 35 - controller requires and exposes the v6.7 engine
   ---
-  duration_ms: 0.099607
+  duration_ms: 0.115961
   type: 'test'
   ...
-# Subtest: email contacts create persistent email sessions and require a sent reply
-ok 36 - email contacts create persistent email sessions and require a sent reply
+# Subtest: Social, SMS and In-app contacts create and restore their own sessions
+ok 36 - Social, SMS and In-app contacts create and restore their own sessions
   ---
-  duration_ms: 0.312591
+  duration_ms: 0.282648
   type: 'test'
   ...
-# Subtest: live chat cannot select service decisions until a reply is prepared
-ok 37 - live chat cannot select service decisions until a reply is prepared
+# Subtest: customer decision selection is blocked until the reply is prepared
+ok 37 - customer decision selection is blocked until the reply is prepared
   ---
-  duration_ms: 0.135901
+  duration_ms: 0.198654
   type: 'test'
   ...
-# Subtest: email triage steps suppress placeholder outbound and customer messages until the final email
-ok 38 - email triage steps suppress placeholder outbound and customer messages until the final email
+# Subtest: prepared channel response replaces generic placeholder transcript text
+ok 38 - prepared channel response replaces generic placeholder transcript text
   ---
-  duration_ms: 0.384297
+  duration_ms: 0.266113
   type: 'test'
   ...
-# Subtest: chat transcript records the agent-authored reply rather than the scenario placeholder
-ok 39 - chat transcript records the agent-authored reply rather than the scenario placeholder
+# Subtest: channel responses are mandatory before contact wrap-up and saved as metrics
+ok 39 - channel responses are mandatory before contact wrap-up and saved as metrics
   ---
-  duration_ms: 0.441662
+  duration_ms: 0.541981
   type: 'test'
   ...
-# Subtest: email send uses the quality gate and adds a transcript entry
-ok 40 - email send uses the quality gate and adds a transcript entry
+# Subtest: shift report includes Social, SMS and In-app channel measures
+ok 40 - shift report includes Social, SMS and In-app channel measures
   ---
-  duration_ms: 0.209769
+  duration_ms: 0.868745
   type: 'test'
   ...
-# Subtest: completed contact record stores digital channel metrics
-ok 41 - completed contact record stores digital channel metrics
-  ---
-  duration_ms: 0.090424
-  type: 'test'
-  ...
-# Subtest: shift report exposes email SLA and live chat response measures
-ok 42 - shift report exposes email SLA and live chat response measures
+# Subtest: mobile layout rules cover the new channel workspace
+ok 41 - mobile layout rules cover the new channel workspace
   ---
   duration_ms: 0.139356
   type: 'test'
   ...
-# Subtest: mobile layout rules are included for the digital composer
-ok 43 - mobile layout rules are included for the digital composer
+# Subtest: v6.6 Email and Live Chat workspaces remain present
+ok 42 - v6.6 Email and Live Chat workspaces remain present
   ---
-  duration_ms: 0.116172
+  duration_ms: 0.143312
   type: 'test'
   ...
-# Subtest: digital engine contains no live email, chat, telephony or external API connection
-ok 44 - digital engine contains no live email, chat, telephony or external API connection
+# Subtest: Social messaging engine does not invoke external services or AI endpoints
+ok 43 - Social messaging engine does not invoke external services or AI endpoints
   ---
-  duration_ms: 0.277419
+  duration_ms: 0.320424
+  type: 'test'
+  ...
+# Subtest: engine exports v6.7 channel-handling contract
+ok 44 - engine exports v6.7 channel-handling contract
+  ---
+  duration_ms: 10.216411
+  type: 'test'
+  ...
+# Subtest: only Social, SMS and In-app create messaging sessions
+ok 45 - only Social, SMS and In-app create messaging sessions
+  ---
+  duration_ms: 1.89368
+  type: 'test'
+  ...
+# Subtest: channel aliases normalise to the correct workspace
+ok 46 - channel aliases normalise to the correct workspace
+  ---
+  duration_ms: 0.451117
+  type: 'test'
+  ...
+# Subtest: Social first response is public and later stages are private
+ok 47 - Social first response is public and later stages are private
+  ---
+  duration_ms: 0.637993
+  type: 'test'
+  ...
+# Subtest: public social replies block email addresses, phone numbers and case references
+ok 48 - public social replies block email addresses, phone numbers and case references
+  ---
+  duration_ms: 3.833656
+  type: 'test'
+  ...
+# Subtest: safe public social acknowledgment can be prepared before internal service decision
+ok 49 - safe public social acknowledgment can be prepared before internal service decision
+  ---
+  duration_ms: 0.637322
+  type: 'test'
+  ...
+# Subtest: social private follow-up supports longer response without exposing public identifiers
+ok 50 - social private follow-up supports longer response without exposing public identifiers
+  ---
+  duration_ms: 0.294746
+  type: 'test'
+  ...
+# Subtest: credential requests are critical failures for all channel types
+ok 51 - credential requests are critical failures for all channel types
+  ---
+  duration_ms: 2.538502
+  type: 'test'
+  ...
+# Subtest: SMS support response is limited to service handling and estimated segments
+ok 52 - SMS support response is limited to service handling and estimated segments
+  ---
+  duration_ms: 0.620637
+  type: 'test'
+  ...
+# Subtest: SMS uses Unicode segment estimates when non-GSM symbols are present
+ok 53 - SMS uses Unicode segment estimates when non-GSM symbols are present
+  ---
+  duration_ms: 0.542582
+  type: 'test'
+  ...
+# Subtest: promotional SMS is blocked without explicit verified marketing consent
+ok 54 - promotional SMS is blocked without explicit verified marketing consent
+  ---
+  duration_ms: 0.237511
+  type: 'test'
+  ...
+# Subtest: an SMS session only treats explicit consent as verified
+ok 55 - an SMS session only treats explicit consent as verified
+  ---
+  duration_ms: 0.187858
+  type: 'test'
+  ...
+# Subtest: In-app response requires clear in-product action after the opening stage
+ok 56 - In-app response requires clear in-product action after the opening stage
+  ---
+  duration_ms: 0.283789
+  type: 'test'
+  ...
+# Subtest: short, empty or over-limit responses cannot be prepared
+ok 57 - short, empty or over-limit responses cannot be prepared
+  ---
+  duration_ms: 0.184573
+  type: 'test'
+  ...
+# Subtest: unsent drafts persist but cannot unlock the service decision
+ok 58 - unsent drafts persist but cannot unlock the service decision
+  ---
+  duration_ms: 0.324129
+  type: 'test'
+  ...
+# Subtest: a response can be committed only once per stage
+ok 59 - a response can be committed only once per stage
+  ---
+  duration_ms: 1.46764
+  type: 'test'
+  ...
+# Subtest: stage advancement requires the preceding reply to be recorded
+ok 60 - stage advancement requires the preceding reply to be recorded
+  ---
+  duration_ms: 0.163671
+  type: 'test'
+  ...
+# Subtest: all three Social replies finalise with visibility and quality measures
+ok 61 - all three Social replies finalise with visibility and quality measures
+  ---
+  duration_ms: 0.383507
+  type: 'test'
+  ...
+# Subtest: all three SMS replies finalise with segment totals
+ok 62 - all three SMS replies finalise with segment totals
+  ---
+  duration_ms: 0.359642
+  type: 'test'
+  ...
+# Subtest: all three In-app replies finalise with recorded response timings
+ok 63 - all three In-app replies finalise with recorded response timings
+  ---
+  duration_ms: 0.4529
+  type: 'test'
+  ...
+# Subtest: finalisation is blocked until every channel response has been recorded
+ok 64 - finalisation is blocked until every channel response has been recorded
+  ---
+  duration_ms: 0.173867
+  type: 'test'
+  ...
+# Subtest: session restoration rejects another contact and preserves valid prepared state
+ok 65 - session restoration rejects another contact and preserves valid prepared state
+  ---
+  duration_ms: 0.183631
   type: 'test'
   ...
 # Subtest: only voice contacts create voice call sessions
-ok 45 - only voice contacts create voice call sessions
+ok 66 - only voice contacts create voice call sessions
   ---
-  duration_ms: 1.460224
+  duration_ms: 1.796205
   type: 'test'
   ...
 # Subtest: hold requires a reason and moves the call out of connected state
-ok 46 - hold requires a reason and moves the call out of connected state
+ok 67 - hold requires a reason and moves the call out of connected state
   ---
-  duration_ms: 0.8403
+  duration_ms: 0.92646
   type: 'test'
   ...
 # Subtest: resume accumulates hold duration without counting it as connected talk time
-ok 47 - resume accumulates hold duration without counting it as connected talk time
+ok 68 - resume accumulates hold duration without counting it as connected talk time
   ---
-  duration_ms: 1.137839
+  duration_ms: 1.507699
   type: 'test'
   ...
 # Subtest: microphone mute toggles and counts mute activations only
-ok 48 - microphone mute toggles and counts mute activations only
+ok 69 - microphone mute toggles and counts mute activations only
   ---
-  duration_ms: 0.139255
+  duration_ms: 0.194638
   type: 'test'
   ...
 # Subtest: supervisor consultation validates context and holds the caller
-ok 49 - supervisor consultation validates context and holds the caller
+ok 70 - supervisor consultation validates context and holds the caller
   ---
-  duration_ms: 0.500318
+  duration_ms: 0.492708
   type: 'test'
   ...
 # Subtest: completed supervisor consultation resumes the customer and records guidance
-ok 50 - completed supervisor consultation resumes the customer and records guidance
+ok 71 - completed supervisor consultation resumes the customer and records guidance
   ---
-  duration_ms: 2.435694
+  duration_ms: 0.312893
   type: 'test'
   ...
 # Subtest: consult completion cannot be called without an active consultation
-ok 51 - consult completion cannot be called without an active consultation
+ok 72 - consult completion cannot be called without an active consultation
   ---
-  duration_ms: 0.189299
+  duration_ms: 0.260655
   type: 'test'
   ...
 # Subtest: warm transfer validates destination, reason and handover detail
-ok 52 - warm transfer validates destination, reason and handover detail
+ok 73 - warm transfer validates destination, reason and handover detail
   ---
-  duration_ms: 0.221838
+  duration_ms: 0.335366
   type: 'test'
   ...
 # Subtest: warm transfer closes the simulated agent call and records the destination
-ok 53 - warm transfer closes the simulated agent call and records the destination
+ok 74 - warm transfer closes the simulated agent call and records the destination
   ---
-  duration_ms: 0.414732
+  duration_ms: 0.68316
   type: 'test'
   ...
 # Subtest: warm transfer cannot occur while a call is held or in consultation
-ok 54 - warm transfer cannot occur while a call is held or in consultation
+ok 75 - warm transfer cannot occur while a call is held or in consultation
   ---
-  duration_ms: 0.366581
+  duration_ms: 0.774775
   type: 'test'
   ...
 # Subtest: persisted voice sessions restore counters, state and log
-ok 55 - persisted voice sessions restore counters, state and log
+ok 76 - persisted voice sessions restore counters, state and log
   ---
-  duration_ms: 1.387608
+  duration_ms: 0.464456
   type: 'test'
   ...
 # Subtest: finalising a held call is blocked until the customer is resumed
-ok 56 - finalising a held call is blocked until the customer is resumed
+ok 77 - finalising a held call is blocked until the customer is resumed
   ---
-  duration_ms: 0.308195
+  duration_ms: 0.394844
   type: 'test'
   ...
 # Subtest: formatSeconds handles minute, hour and invalid inputs
-ok 57 - formatSeconds handles minute, hour and invalid inputs
+ok 78 - formatSeconds handles minute, hour and invalid inputs
   ---
-  duration_ms: 0.110893
+  duration_ms: 0.194528
   type: 'test'
   ...
 # Subtest: live hold timer updates before the call is resumed
-ok 58 - live hold timer updates before the call is resumed
+ok 79 - live hold timer updates before the call is resumed
   ---
-  duration_ms: 0.096642
+  duration_ms: 0.163292
   type: 'test'
   ...
 # Subtest: transferred calls cannot be muted, held or resumed again
-ok 59 - transferred calls cannot be muted, held or resumed again
+ok 80 - transferred calls cannot be muted, held or resumed again
   ---
-  duration_ms: 0.207527
+  duration_ms: 0.34493
   type: 'test'
   ...
 # Subtest: finalising a transferred call preserves the warm handoff evidence
-ok 60 - finalising a transferred call preserves the warm handoff evidence
+ok 81 - finalising a transferred call preserves the warm handoff evidence
   ---
-  duration_ms: 0.161138
+  duration_ms: 0.233975
   type: 'test'
   ...
 # Subtest: normalising an unrelated or obsolete session creates a fresh matching voice session
-ok 61 - normalising an unrelated or obsolete session creates a fresh matching voice session
+ok 82 - normalising an unrelated or obsolete session creates a fresh matching voice session
   ---
-  duration_ms: 0.097924
+  duration_ms: 0.283949
   type: 'test'
   ...
 # Subtest: policy consultation guidance avoids promising an unapproved exception
-ok 62 - policy consultation guidance avoids promising an unapproved exception
+ok 83 - policy consultation guidance avoids promising an unapproved exception
   ---
-  duration_ms: 0.07442
+  duration_ms: 0.136292
   type: 'test'
   ...
-1..62
-# tests 62
+1..83
+# tests 83
 # suites 0
-# pass 62
+# pass 83
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 281.646016
+# duration_ms 322.394418

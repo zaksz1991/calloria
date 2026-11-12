@@ -15,6 +15,7 @@
   <script defer src="/office-routine-engine.js"></script>
   <script defer src="/voice-call-engine.js"></script>
   <script defer src="/digital-channel-engine.js"></script>
+  <script defer src="/social-messaging-engine.js"></script>
   <script defer src="/live-floor.js"></script>
 </head>
 <body>
@@ -26,7 +27,7 @@
     <div class="topbar-right">
       <a class="office-nav-link" href="/office-floor.html">3D WORKPLACE</a>
       <span class="live-badge"><i></i> SIMULATED FLOOR</span>
-      <span class="version-label">CORE GAMEPLAY · BUILD 6.6</span>
+      <span class="version-label">CORE GAMEPLAY · BUILD 6.7</span>
     </div>
   </header>
 
@@ -177,7 +178,7 @@
             </div>
           </section>
           <div class="conversation" id="conversation" aria-live="polite"></div>
-          <section id="digital-channel-panel" class="digital-channel-panel hidden" aria-label="Email and live chat handling tools">
+          <section id="digital-channel-panel" class="digital-channel-panel hidden" aria-label="Digital customer contact handling tools">
             <div class="digital-panel-heading">
               <div><span class="eyebrow" id="digital-channel-eyebrow">DIGITAL CONTACT</span><h3 id="digital-channel-title">Digital response workspace</h3></div>
               <span id="digital-channel-status" class="digital-status">ACTIVE</span>
@@ -209,6 +210,19 @@
               <div class="digital-chat-actions"><span id="digital-chat-character-count">0 / 700 characters</span><button id="digital-chat-prepare" class="button button-primary" type="button">Prepare chat response</button></div>
               <div id="digital-chat-quality" class="digital-quality" role="status" aria-live="polite">A reply is required before selecting the service action.</div>
               <p class="digital-disclaimer">SIMULATED LIVE CHAT · Customer follow-ups are scripted. No live chat visitor or external messaging connection is present.</p>
+            </div>
+            <div id="social-messaging-workspace" class="social-messaging-workspace hidden">
+              <div class="digital-chat-topline social-message-topline">
+                <div><span>RESPONSE STAGE</span><strong id="social-message-stage">1 OF 3</strong></div>
+                <div><span>REPLY ROUTE</span><strong id="social-message-visibility">PUBLIC REPLY</strong></div>
+                <div><span>MESSAGES RECORDED</span><strong id="social-message-sent">0 / 3</strong></div>
+              </div>
+              <p id="social-message-guidance" class="digital-instruction">Prepare a customer-facing response for this stage before selecting the service action.</p>
+              <label id="social-message-label" for="social-message-body">Your customer-facing response</label>
+              <textarea id="social-message-body" rows="4" maxlength="900" placeholder="Acknowledge the customer, explain the next step and keep sensitive details private..."></textarea>
+              <div class="digital-chat-actions"><span id="social-message-character-count">0 / 280 characters</span><button id="social-message-prepare" class="button button-primary" type="button">Prepare public reply</button></div>
+              <div id="social-message-quality" class="digital-quality" role="status" aria-live="polite">A safe channel-specific response is required before continuing.</div>
+              <p class="digital-disclaimer">SIMULATED SOCIAL / SMS / IN-APP CONTACT · Public replies, private messages and app guidance are recorded in this practice shift only. Nothing is sent to an external platform.</p>
             </div>
           </section>
           <div class="decision-area" id="decision-area">
@@ -264,7 +278,7 @@
 
     <section class="panel completed-panel">
       <div class="panel-heading"><div><div class="eyebrow">SHIFT RECORD</div><h2>Completed customer contacts</h2></div><span id="completed-count" class="count-pill">0</span></div>
-      <div class="table-scroll"><table><thead><tr><th>Reference</th><th>Channel</th><th>Customer issue</th><th>QA</th><th>CSAT</th><th>Outcome</th><th>Voice handling</th></tr></thead><tbody id="completed-table"><tr><td colspan="7" class="empty-table">No customer contacts completed yet.</td></tr></tbody></table></div>
+      <div class="table-scroll"><table><thead><tr><th>Reference</th><th>Channel</th><th>Customer issue</th><th>QA</th><th>CSAT</th><th>Outcome</th><th>Channel handling</th></tr></thead><tbody id="completed-table"><tr><td colspan="7" class="empty-table">No customer contacts completed yet.</td></tr></tbody></table></div>
     </section>
 
     <section id="shift-report" class="panel report-panel hidden">
@@ -275,7 +289,7 @@
     </section>
 
     <section class="activity-strip"><span>SIMULATION LOG</span><div id="activity-log">No activity recorded.</div><button id="end-shift" class="button button-secondary" type="button" disabled>End shift</button></section>
-    <footer class="page-foot">CALLORIA v6.6 · Digital contact handling simulation · No real customer, telephone, email or messaging connections</footer>
+    <footer class="page-foot">CALLORIA v6.7 · Omnichannel customer contact simulation · No real customer, telephone, email or messaging connections</footer>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>

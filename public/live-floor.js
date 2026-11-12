@@ -9,14 +9,15 @@
   const D = window.CalloriaCustomerDynamics;
   const V = window.CalloriaVoiceCallEngine;
   const G = window.CalloriaDigitalChannelEngine;
+  const S = window.CalloriaSocialMessagingEngine;
   const realStorage = window.localStorage;
   const toast = $('#toast');
   let toastTimer = null;
   let selectedChannel = '';
   let articleQuery = '';
 
-  if (!E || !C || !F || !P || !R || !D || !V || !G) {
-    document.body.innerHTML = '<main style="max-width:700px;margin:60px auto;padding:24px;font:14px system-ui"><h1>CALLORIA Live Floor could not start</h1><p>Required simulation engine files are missing. Copy the v6.6 Digital Contact Handling overlay and keep the matching v6.5, v6.4, v6.3 and v6.1 dependencies in the public folder, then reload this page.</p></main>';
+  if (!E || !C || !F || !P || !R || !D || !V || !G || !S) {
+    document.body.innerHTML = '<main style="max-width:700px;margin:60px auto;padding:24px;font:14px system-ui"><h1>CALLORIA Live Floor could not start</h1><p>Required simulation engine files are missing. Copy the v6.7 Omnichannel Contact Handling overlay and keep the matching v6.5, v6.4, v6.3 and v6.1 dependencies in the public folder, then reload this page.</p></main>';
     return;
   }
 
@@ -44,6 +45,9 @@
     }
     if (restoredContact && G.isDigital(restoredContact)) {
       state.active.digitalSession = G.normaliseSession(state.active.digitalSession, restoredContact, state.shift.minutes, new Date());
+    }
+    if (restoredContact && S.isSupported(restoredContact)) {
+      state.active.socialMessagingSession = S.normaliseSession(state.active.socialMessagingSession, restoredContact, new Date());
     }
   }
   E.save(agentState, storageProxy);
@@ -280,11 +284,52 @@
     const panel = $('#digital-channel-panel');
     const active = state.active;
     const digital = active && active.digitalSession;
+    const messaging = active && active.socialMessagingSession;
+    if (contact && messaging && S.isSupported(contact)) {
+      panel.classList.remove('hidden');
+      $('#digital-channel-eyebrow').textContent = S.channelOf(contact).toUpperCase() + ' CONTACT';
+      $('#digital-channel-title').textContent = S.channelOf(contact) === 'Social' ? 'Social response & privacy workspace' : S.channelOf(contact) === 'SMS' ? 'SMS service-response workspace' : 'In-app guided-support workspace';
+      $('#digital-channel-status').textContent = active.stageIndex >= 3 ? 'READY TO WRAP' : 'CUSTOMER RESPONSE REQUIRED';
+      $('#digital-email-workspace').classList.add('hidden');
+      $('#digital-chat-workspace').classList.add('hidden');
+      $('#social-messaging-workspace').classList.remove('hidden');
+      const stage = active.stageIndex;
+      const prepared = stage < 3 && S.hasPreparedReply(messaging, stage);
+      const visibility = S.visibilityFor(messaging.channel, stage);
+      const limit = S.characterLimit(messaging.channel, stage, messaging.stageDrafts[stage] || '');
+      const sentCount = Object.keys(messaging.stageSentAt || {}).length;
+      const body = $('#social-message-body');
+      $('#social-message-stage').textContent = stage >= 3 ? 'COMPLETE' : `${stage + 1} OF 3${prepared ? ' · PREPARED' : ''}`;
+      $('#social-message-visibility').textContent = visibility === 'PUBLIC' ? 'PUBLIC REPLY' : visibility === 'PRIVATE' ? 'PRIVATE FOLLOW-UP' : visibility === 'SMS' ? 'SERVICE SMS' : 'IN-APP RESPONSE';
+      $('#social-message-sent').textContent = `${sentCount} / 3`;
+      $('#social-message-label').textContent = messaging.channel === 'Social'
+        ? (visibility === 'PUBLIC' ? 'Public social reply' : 'Private social follow-up')
+        : messaging.channel === 'SMS' ? 'Customer service SMS' : 'In-app guided-support response';
+      $('#social-message-guidance').textContent = stage >= 3
+        ? 'All three customer-facing channel responses are recorded. Complete the contact wrap-up.'
+        : messaging.channel === 'Social'
+          ? visibility === 'PUBLIC'
+            ? 'This first reply is public. Acknowledge the issue without exposing names, phone numbers, email addresses, account details or case references. Move account-specific checks to a private message.'
+            : 'Continue privately. Confirm only the minimum details needed through the platform’s private support route; never request passwords, PINs or one-time codes.'
+          : messaging.channel === 'SMS'
+            ? `Keep this to the customer's service request. Limit: ${limit} characters. Multiple SMS segments may be counted; promotional messages are blocked unless marketing consent is verified.`
+            : 'Give clear steps the customer can follow inside the product. Use a menu path or action, then explain what result to report. Avoid asking for passwords or one-time codes.';
+      if (document.activeElement !== body) body.value = stage < 3 ? (messaging.stageDrafts[stage] || '') : '';
+      body.maxLength = limit;
+      body.disabled = stage >= 3 || prepared;
+      $('#social-message-character-count').textContent = `${body.value.length} / ${limit} characters`;
+      $('#social-message-prepare').disabled = stage >= 3 || prepared;
+      $('#social-message-prepare').textContent = prepared ? 'Response prepared' : messaging.channel === 'Social' ? (visibility === 'PUBLIC' ? 'Prepare public reply' : 'Prepare private follow-up') : messaging.channel === 'SMS' ? 'Prepare service SMS' : 'Prepare in-app response';
+      const review = messaging.stageReviews && messaging.stageReviews[stage];
+      renderDigitalQuality($('#social-message-quality'), prepared && review ? { ...review, canSend: true, feedback: 'Prepared. Select the service action to record this reply.' } : review, stage >= 3 ? 'All channel responses are recorded.' : 'Prepare a safe customer-facing response before choosing the service action.');
+      return;
+    }
     if (!contact || !digital || !G.isDigital(contact)) {
       panel.classList.add('hidden');
       return;
     }
     panel.classList.remove('hidden');
+    $('#social-messaging-workspace').classList.add('hidden');
     $('#digital-channel-eyebrow').textContent = digital.channel.toUpperCase() + ' CONTACT';
     $('#digital-channel-title').textContent = digital.channel === 'Email' ? 'Email response workspace' : 'Live chat response workspace';
     $('#digital-channel-status').textContent = digital.channel === 'Live chat' && active.stageIndex >= 3 ? 'READY TO WRAP' : String(digital.status || 'ACTIVE').replace(/_/g, ' ');
@@ -452,6 +497,7 @@
     if (!active) {
       $('#customer-card').innerHTML = '<div class="empty-note">Customer information appears when a contact is accepted.</div>';
       $('#customer-dynamics').classList.add('hidden');
+      $('#digital-channel-panel').classList.add('hidden');
       $('#knowledge-list').innerHTML = '<div class="empty-note">Accept a customer to see relevant guidance.</div>';
       return;
     }
@@ -477,7 +523,9 @@
       ? 'Select the internal service action; your prepared chat message is the customer-facing reply.'
       : state.active.digitalSession && state.active.digitalSession.channel === 'Email'
         ? 'Select the investigation or resolution action. Send one complete email after all checks are finished.'
-        : 'Select the response you would deliver to the customer.';
+        : state.active.socialMessagingSession
+          ? 'Select the internal service action; your prepared Social, SMS or In-app message is the customer-facing reply.'
+          : 'Select the response you would deliver to the customer.';
     $('#decision-options').innerHTML = stage.options.map((option, index) => `
       <button type="button" class="decision-option" data-choice-id="${escapeHtml(option.id)}">
         <span class="option-index">${String.fromCharCode(65 + index)}</span><span><strong>${escapeHtml(option.label)}</strong><small>${escapeHtml(decisionHint)}</small></span>
@@ -493,6 +541,11 @@
       $('#decision-options').querySelectorAll('button').forEach((button) => { button.disabled = true; });
       $('#decision-prompt').textContent = `${stage.prompt} Prepare a customer-facing chat reply in the workspace above before selecting your service action.`;
     }
+    const messaging = state.active.socialMessagingSession;
+    if (messaging && !S.hasPreparedReply(messaging, state.active.stageIndex)) {
+      $('#decision-options').querySelectorAll('button').forEach((button) => { button.disabled = true; });
+      $('#decision-prompt').textContent = `${stage.prompt} Prepare a safe ${messaging.channel} customer response in the workspace above before selecting your service action.`;
+    }
   }
   function renderCompleted() {
     const records = state.completedContacts;
@@ -504,7 +557,7 @@
     }
     body.innerHTML = records.map((item) => `
       <tr><td><strong>${escapeHtml(item.reference)}</strong></td><td>${escapeHtml(item.channel)}</td><td>${escapeHtml(item.subject)}</td>
-      <td class="${item.qa >= 85 ? 'score-good' : item.qa >= 65 ? 'score-mid' : 'score-low'}">${item.qa}%</td><td>${item.csat}/5</td><td>${escapeHtml(item.disposition)}</td><td>${item.voiceMetrics ? `${escapeHtml(V.formatSeconds(item.voiceMetrics.durationSeconds))} talk · ${escapeHtml(V.formatSeconds(item.voiceMetrics.holdSeconds))} hold · ${item.voiceMetrics.muteCount} mutes${item.voiceMetrics.consultCount ? ` · ${item.voiceMetrics.consultCount} consults` : ''}${item.voiceMetrics.transferred ? ` · to ${escapeHtml(item.voiceMetrics.transferDestination)}` : ''}` : item.digitalMetrics ? (item.digitalMetrics.channel === 'Email' ? `Email quality ${item.digitalMetrics.qualityScore}/100 · ${item.digitalMetrics.slaBreached ? 'SLA missed' : 'SLA met'}` : `${item.digitalMetrics.replies} chat replies · ${item.digitalMetrics.averageResponseSeconds}s avg first response`) : '—'}</td></tr>`).join('');
+      <td class="${item.qa >= 85 ? 'score-good' : item.qa >= 65 ? 'score-mid' : 'score-low'}">${item.qa}%</td><td>${item.csat}/5</td><td>${escapeHtml(item.disposition)}</td><td>${item.voiceMetrics ? `${escapeHtml(V.formatSeconds(item.voiceMetrics.durationSeconds))} talk · ${escapeHtml(V.formatSeconds(item.voiceMetrics.holdSeconds))} hold · ${item.voiceMetrics.muteCount} mutes${item.voiceMetrics.consultCount ? ` · ${item.voiceMetrics.consultCount} consults` : ''}${item.voiceMetrics.transferred ? ` · to ${escapeHtml(item.voiceMetrics.transferDestination)}` : ''}` : item.digitalMetrics ? (item.digitalMetrics.channel === 'Email' ? `Email quality ${item.digitalMetrics.qualityScore}/100 · ${item.digitalMetrics.slaBreached ? 'SLA missed' : 'SLA met'}` : `${item.digitalMetrics.replies} chat replies · ${item.digitalMetrics.averageResponseSeconds}s avg first response`) : item.messagingMetrics ? `${item.messagingMetrics.channel} · ${item.messagingMetrics.replies} replies · ${item.messagingMetrics.averageResponseSeconds}s avg · ${item.messagingMetrics.averageQuality}/100 quality` : '—'}</td></tr>`).join('');
   }
   function renderActivity() {
     const latest = state.activity.slice(0, 3).map((item) => item.message).join(' · ');
@@ -528,12 +581,22 @@
     const totalChatReplies = chatRecords.reduce((sum, item) => sum + item.digitalMetrics.replies, 0);
     const chatTimes = chatRecords.flatMap((item) => item.digitalMetrics.responseSeconds || []);
     const avgChatResponse = chatTimes.length ? Math.round(chatTimes.reduce((sum, value) => sum + value, 0) / chatTimes.length) : 0;
+    const messagingRecords = state.completedContacts.filter((item) => item.messagingMetrics);
+    const messagingReplies = messagingRecords.reduce((sum, item) => sum + item.messagingMetrics.replies, 0);
+    const messagingTimes = messagingRecords.flatMap((item) => item.messagingMetrics.responseSeconds || []);
+    const avgMessagingResponse = messagingTimes.length ? Math.round(messagingTimes.reduce((sum, value) => sum + value, 0) / messagingTimes.length) : 0;
+    const socialRecords = messagingRecords.filter((item) => item.messagingMetrics.channel === 'Social');
+    const smsRecords = messagingRecords.filter((item) => item.messagingMetrics.channel === 'SMS');
+    const inAppRecords = messagingRecords.filter((item) => item.messagingMetrics.channel === 'In-app');
     const items = [
       ['Contacts handled', report.completed], ['Overall shift score', `${report.score}%`], ['Average QA', `${report.averageQa}%`], ['Average CSAT', `${report.averageCsat}/5`],
       ['First contact resolution', `${report.fcrRate}%`], ['Compliance breaches', report.complianceBreaches], ['Knowledge references', report.knowledgeUses], ['Average handle time', `${report.averageHandleMinutes} min`],
       ['Voice calls handled', voiceRecords.length], ['Average voice talk time', voiceRecords.length ? V.formatSeconds(avgVoiceSeconds) : '—'], ['Total voice hold time', V.formatSeconds(totalHoldSeconds)], ['Warm transfers', warmTransfers], ['Mute activations', muteActivations], ['Supervisor consultations', consultCount],
       ['Email replies sent', emailRecords.length], ['Average email quality', emailRecords.length ? `${avgEmailQuality}/100` : '—'], ['Email SLA misses', emailRecords.filter((item) => item.digitalMetrics.slaBreached).length],
-      ['Live chats handled', chatRecords.length], ['Live chat replies', totalChatReplies], ['Average chat reply time', chatTimes.length ? `${avgChatResponse}s` : '—']
+      ['Live chats handled', chatRecords.length], ['Live chat replies', totalChatReplies], ['Average chat reply time', chatTimes.length ? `${avgChatResponse}s` : '—'],
+      ['Social contacts handled', socialRecords.length], ['SMS contacts handled', smsRecords.length], ['In-app contacts handled', inAppRecords.length],
+      ['Social / SMS / In-app replies', messagingReplies], ['Average messaging response time', messagingTimes.length ? `${avgMessagingResponse}s` : '—'],
+      ['SMS segments used', smsRecords.reduce((sum, item) => sum + (item.messagingMetrics.smsSegments || 0), 0)]
     ];
     $('#report-grid').innerHTML = items.map(([label, value]) => `<div class="report-stat"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
     $('#report-note').textContent = `Briefings: morning ${report.attendedMorningBriefing ? 'attended' : 'missed'}, afternoon ${report.attendedAfternoonBriefing ? 'attended' : 'not due'}. Scheduled breaks ${report.attendedBreaks ? 'completed' : 'not both completed'}. This is a simulated performance record, not an employment decision.`;
@@ -564,7 +627,8 @@
       const contact = F.beginContact(state, agentState, E, contactId, new Date());
       if (String(contact.channel || '').toLowerCase() === 'voice') state.active.voiceSession = V.createSession(contact, new Date());
       if (G.isDigital(contact)) state.active.digitalSession = G.createSession(contact, state.shift.minutes, new Date());
-      persist(); renderAll(); notify(String(contact.channel).toLowerCase() === 'voice' ? 'Voice call connected. Use hold, mute and supervisor consultation controls as needed.' : G.isDigital(contact) ? `${G.canonicalChannel(contact)} workspace opened. Follow the channel-specific response steps.` : 'Customer contact accepted. Begin with the first service decision.');
+      if (S.isSupported(contact)) state.active.socialMessagingSession = S.createSession(contact, new Date());
+      persist(); renderAll(); notify(String(contact.channel).toLowerCase() === 'voice' ? 'Voice call connected. Use hold, mute and supervisor consultation controls as needed.' : G.isDigital(contact) ? `${G.canonicalChannel(contact)} workspace opened. Follow the channel-specific response steps.` : S.isSupported(contact) ? `${S.channelOf(contact)} workspace opened. Prepare a safe customer-facing response before choosing each service action.` : 'Customer contact accepted. Begin with the first service decision.');
     } catch (error) { notify(error.message, true); }
   }
   function chooseDecision(choiceId) {
@@ -575,9 +639,12 @@
       const digital = state.active && state.active.digitalSession;
       const digitalStage = state.active ? state.active.stageIndex : -1;
       if (digital && digital.channel === 'Live chat' && !G.hasPreparedChatReply(digital, digitalStage)) throw new Error('Prepare a customer-facing chat response before selecting the service action.');
+      const messaging = state.active && state.active.socialMessagingSession;
+      if (messaging && !S.hasPreparedReply(messaging, digitalStage)) throw new Error(`Prepare a safe ${messaging.channel} response before selecting the service action.`);
       const messageStart = activeContact && Array.isArray(activeContact.messages) ? activeContact.messages.length : 0;
       const simulatedRepliesBefore = activeContact ? (Number(activeContact.simulatedReplies) || 0) : 0;
       const chatBody = digital && digital.channel === 'Live chat' ? digital.stageDrafts[digitalStage] : null;
+      const messagingBody = messaging ? messaging.stageDrafts[digitalStage] : null;
       const result = F.chooseResponse(state, agentState, E, choiceId, new Date());
       if (digital && digital.channel === 'Email') {
         const generatedMessages = activeContact.messages.slice(messageStart);
@@ -595,6 +662,17 @@
         scriptedOutbound.simulatedDigitalReply = true;
         G.commitChatReply(digital, digitalStage, new Date());
         if (state.active.stageIndex < 3) G.advanceChatStage(digital, state.active.stageIndex, new Date());
+      }
+      if (messaging) {
+        const newlyAdded = activeContact.messages.slice(messageStart);
+        const scriptedOutbound = newlyAdded.find((message) => message.direction === 'Outbound');
+        if (!scriptedOutbound) throw new Error('The channel reply could not be written to the interaction transcript.');
+        const committed = S.commitReply(messaging, digitalStage, new Date());
+        scriptedOutbound.body = messagingBody;
+        scriptedOutbound.simulatedDigitalReply = true;
+        scriptedOutbound.messagingVisibility = committed.visibility;
+        scriptedOutbound.socialMessagingChannel = messaging.channel;
+        if (state.active.stageIndex < 3) S.advanceStage(messaging, state.active.stageIndex, new Date());
       }
       const feedback = $('#decision-feedback');
       feedback.classList.remove('hidden', 'bad');
@@ -618,6 +696,24 @@
       const activeScenario = F.getActiveScenario(state, agentState, E);
       if (activeScenario) $('#decision-prompt').textContent = `${activeScenario.stage.prompt} Your response is prepared. Select the service action that best resolves the customer's issue.`;
       notify(`Chat response prepared (${result.characterCount} characters). Select the service action to send it.`);
+    } catch (error) { notify(error.message, true); }
+  }
+  function prepareSocialMessagingReply() {
+    const contact = E.getActiveContact(agentState);
+    const messaging = state.active && state.active.socialMessagingSession;
+    if (!contact || !messaging || !S.isSupported(contact)) return;
+    try {
+      const stage = state.active.stageIndex;
+      const result = S.prepareReply(messaging, stage, $('#social-message-body').value, new Date());
+      persist(); renderDigitalPanel(contact);
+      if (!result.canSend) {
+        notify(result.feedback, true);
+        return;
+      }
+      $('#decision-options').querySelectorAll('button').forEach((button) => { button.disabled = false; });
+      const activeScenario = F.getActiveScenario(state, agentState, E);
+      if (activeScenario) $('#decision-prompt').textContent = `${activeScenario.stage.prompt} Your ${messaging.channel} reply is prepared. Select the service action that best resolves the customer's issue.`;
+      notify(`${messaging.channel} response prepared (${result.characterCount} characters). Select the service action to record it.`);
     } catch (error) { notify(error.message, true); }
   }
   function reviewEmailDraft() {
@@ -778,12 +874,19 @@
       $('#wrap-feedback').textContent = 'All three live-chat customer responses must be recorded before wrap-up.';
       return;
     }
+    const messagingSession = state.active && state.active.socialMessagingSession;
+    if (messagingSession && Object.keys(messagingSession.stageSentAt || {}).length !== 3) {
+      $('#wrap-feedback').textContent = `All three ${messagingSession.channel} customer responses must be recorded before wrap-up.`;
+      return;
+    }
     try {
       const digitalMetrics = digitalSession ? G.finalise(digitalSession, state.shift.minutes, new Date()) : null;
+      const messagingMetrics = messagingSession ? S.finalise(messagingSession, new Date()) : null;
       const result = F.finishContact(state, agentState, E, C, realStorage, input, new Date());
       if (voiceSessionToFinalise) voiceMetrics = V.finalise(voiceSessionToFinalise, new Date());
       if (voiceMetrics) result.record.voiceMetrics = voiceMetrics;
       if (digitalMetrics) result.record.digitalMetrics = digitalMetrics;
+      if (messagingMetrics) result.record.messagingMetrics = messagingMetrics;
       persist(); articleQuery = ''; $('#knowledge-query').value = '';
       renderAll();
       notify(`${result.completed.reference} saved. QA ${result.record.qa}% · CSAT ${result.record.csat}/5.`);
@@ -871,6 +974,19 @@
   $('#voice-transfer-button').addEventListener('click', completeVoiceTransfer);
   $('#digital-chat-prepare').addEventListener('click', prepareLiveChatReply);
   $('#digital-chat-body').addEventListener('input', () => { $('#digital-chat-character-count').textContent = `${$('#digital-chat-body').value.length} / 700 characters`; });
+  $('#social-message-prepare').addEventListener('click', prepareSocialMessagingReply);
+  $('#social-message-body').addEventListener('input', () => {
+    const contact = E.getActiveContact(agentState);
+    const messaging = state.active && state.active.socialMessagingSession;
+    if (!contact || !messaging) return;
+    try {
+      const stage = state.active.stageIndex;
+      const saved = S.saveDraft(messaging, stage, $('#social-message-body').value);
+      $('#social-message-body').maxLength = saved.limit;
+      $('#social-message-character-count').textContent = `${saved.characterCount} / ${saved.limit} characters`;
+      persist();
+    } catch (_) { /* a prepared/sent stage is locked; renderDigitalPanel restores the saved response */ }
+  });
   $('#digital-email-body').addEventListener('input', () => { const digital = state.active && state.active.digitalSession; if (digital) { digital.draftBody = $('#digital-email-body').value; digital.draftReview = null; persist(); } $('#digital-email-send').disabled = true; });
   $('#digital-email-subject').addEventListener('input', () => { const digital = state.active && state.active.digitalSession; if (digital) { digital.draftSubject = $('#digital-email-subject').value; digital.draftReview = null; persist(); } $('#digital-email-send').disabled = true; });
   $('#digital-email-scaffold').addEventListener('click', insertEmailScaffold);
@@ -878,5 +994,5 @@
   $('#digital-email-send').addEventListener('click', sendEmailReply);
   setInterval(updateVoiceClock, 1000);
   renderAll();
-  window.CalloriaLiveFloor = { getState: () => state, getAgentState: () => agentState, getCareerProgress: () => progress, refresh: renderAll, engine: F, progressionEngine: P, digitalChannelEngine: G };
+  window.CalloriaLiveFloor = { getState: () => state, getAgentState: () => agentState, getCareerProgress: () => progress, refresh: renderAll, engine: F, progressionEngine: P, digitalChannelEngine: G, socialMessagingEngine: S };
 })();
