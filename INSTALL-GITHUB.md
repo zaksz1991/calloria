@@ -1,11 +1,14 @@
-# GitHub installation — CALLORIA v6.14
+# GitHub installation — CALLORIA v6.15
 
-1. Open `github.com/zaksz1991/calloria`.
-2. Open `build/calloria-cc0-staff-glb-bundle-plugin.mjs`.
-3. Replace the complete file with the same-path file from this ZIP.
-4. Commit the replacement to `main`.
-5. Keep the existing `vite.config.js` and plugin registration unchanged.
+In `github.com/zaksz1991/calloria`, make only these changes:
 
-Optional: merge the ZIP's `tests/` folder into the repository's `tests/` folder. Keep `tests/fixtures/glb-world-integration-v12.fixture.js` under tests only; do not copy it into `public/`.
+| Repository path | Action |
+|---|---|
+| `js/glb-office-world-integration.js` | Replace with this package's file |
+| `js/glb-office-draco-policy.js` | Add this file |
 
-Do not replace package manifests, the mobile repair files, recruitment/assessment files, `js/main.js`, `js/production-world.js`, `js/world-player-avatar.js` or any GLB assets for this release.
+Do not replace `package.json`, `package-lock.json`, `vite.config.js`, `build/calloria-glb-world-plugin.js`, `js/production-world.js`, `js/glb-office-asset-policy.js`, the v6.14 staff bundle plugin, or any GLB assets.
+
+The default decoder is loaded from the pinned Google-hosted DRACO 1.5.7 decoder path only when the loader encounters Draco-compressed geometry. If the application later self-hosts those decoder files, set `window.CALLORIA_DRACO_DECODER_PATH` to that folder before the 3D world is initialized.
+
+After deployment, open the 3D workplace and inspect the GLB status panel. Failed models now include a category and retain their registry path and URL. Check `assetDetails` in the `calloria:office-glb-status` event for exact per-model results.

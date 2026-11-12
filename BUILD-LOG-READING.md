@@ -1,14 +1,14 @@
-# Reading the next Vercel build log — v6.14
+# Reading the next CALLORIA build and runtime result
 
-Check both records:
+This release changes browser-side decoding, not the build-time staff model validator. The existing `4/5 structurally compatible` staff count is unaffected.
 
-1. **Bundle result** — `N/5 structurally compatible`, plus animated/static-pose counts. This is build-time validation only.
-2. **Runtime transform result** — `runtime integration enabled for N bundled staff GLB(s)`. This confirms that the browser staff-integration source was transformed.
+For office assets, look at the runtime `calloria:office-glb-status` report:
 
-If the bundle count is `0/5`, inspect per-model warnings and verify the real files or network download. If it is `4/5`, the rejected model is named in the log; the other four may still be activated.
+- `errorCategory: draco-decoder`: decoder script/WASM could not load or the Draco extension could not be decoded.
+- `errorCategory: http-or-network`: registry URL, response, network or CORS problem.
+- `errorCategory: glb-parse`: GLB/chunk/extension parse problem.
+- `errorCategory: validation`: loaded model did not meet the office geometry or texture policy.
+- `errorCategory: placement`: validated model could not be fitted/placed in the scene.
+- `placementStatus: placed` with `placementCount`: actual visible Three.js object additions.
 
-If a `Runtime integration source was not modified` warning appears, the current `js/glb-world-integration.js` no longer matches the captured v1.2+ transform contract. The build intentionally skips that transform rather than failing. The source then needs a targeted anchor reconciliation.
-
-If both build records report success, inspect the deployed GLB status panel. It must report model IDs actually placed, not merely downloaded. Static-pose models should appear at standing support positions and will remain still.
-
-The separate `GLB OFFICE OBJECTS` count is not changed by v6.14. This package does not claim to repair office props.
+A successful npm/Vite build only confirms that the modules bundle. It does not prove browser assets loaded. The panel/event must show non-zero `officeObjectsPlaced` and per-model `placementStatus: placed` to claim runtime placement.

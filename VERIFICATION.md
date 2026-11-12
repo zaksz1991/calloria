@@ -1,18 +1,20 @@
-# CALLORIA v6.14 verification
+# v6.15 verification
 
-## Performed
+Executed locally against the files in this package:
 
-- Focused compatibility and runtime transform tests: 17 passed, 0 failed.
-- Node syntax check for the replacement Vite plugin: passed.
-- Node syntax checks for both tests and the runtime fixture: passed.
+- Focused Node tests: **14 passed, 0 failed**.
+- JavaScript syntax checks: passed for both runtime modules and the test file.
+- Meshopt + Draco loader configuration checks: passed.
+- DRACO decoder path normalization tests: passed.
+- Load-error classification tests: passed.
+- Existing office asset plan and v2.9/Vite transform-anchor regression checks: passed.
 - ZIP integrity: passed.
-- Confirmed the Vite factory export, existing plugin registration name, manifest path and five registry IDs are preserved by regression tests.
 
-## Not performed
+Not executed:
 
-- Full Vite production build against the latest GitHub repository.
+- Full CALLORIA Vite production build.
 - Vercel deployment.
-- Runtime execution against the five actual GLB files.
-- Visual placement inspection on desktop or Android.
+- Actual HTTP fetch of office GLB assets or the Google DRACO CDN.
+- Browser Three.js rendering or Android visual QA.
 
-A passing focused test suite is not evidence that real GLB models have rendered in the deployed office.
+The real office GLB files were not available in this workspace, so this release does not claim the assets have loaded or rendered successfully.

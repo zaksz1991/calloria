@@ -8,9 +8,11 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLB_ASSET_REGISTRY } from './glb-asset-registry.js';
 import { disposeGLTFResources } from './glb-asset-loader.js';
 import { validateOfficeAssetMetrics } from './glb-office-asset-policy.js';
+import { classifyOfficeLoadError, getOfficeDracoDecoderPath } from './glb-office-draco-policy.js';
 
 const TARGETS = Object.freeze({
   desk: Object.freeze({ x: 2.60, y: 0.98, z: 1.28 }),
@@ -185,6 +187,14 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
   const plan = getOfficeAssetPlan(tier, stations.length);
   const loader = new GLTFLoader();
   loader.setMeshoptDecoder(MeshoptDecoder);
+  const dracoLoader = new DRACOLoader();
+  const configuredDracoPath = typeof window !== 'undefined'
+    ? window.CALLORIA_DRACO_DECODER_PATH
+    : null;
+  const dracoDecoderPath = getOfficeDracoDecoderPath(configuredDracoPath);
+  dracoLoader.setDecoderPath(dracoDecoderPath);
+  dracoLoader.setDecoderConfig({ type: 'wasm' });
+  loader.setDRACOLoader(dracoLoader);
   const loaded = new Map();
   const loadPromises = new Map();
   const placed = [];
@@ -197,7 +207,17 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
     if (loadPromises.has(id)) return loadPromises.get(id);
     const promise = (async () => {
       const asset = getAsset(id);
-      const gltf = await loader.loadAsync(asset.url);
+      let gltf;
+      try {
+        gltf = await loader.loadAsync(asset.url);
+      } catch (error) {
+        const failure = new Error(`${asset.name} could not be loaded from ${asset.url}: ${String(error?.message || error)}`);
+        failure.cause = error;
+        failure.assetId = id;
+        failure.assetPath = asset.path;
+        failure.errorCategory = classifyOfficeLoadError(error);
+        throw failure;
+      }
       if (disposed) {
         disposeGLTFResources(gltf);
         throw new Error('World was disposed while the GLB was loading.');
@@ -234,8 +254,21 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
     } catch (error) {
       loadPromises.delete(id);
       const message = String(error?.message || error);
-      if (!assetDetails.some((entry) => entry.id === id && entry.status === 'load-failed')) {
-        assetDetails.push({ id, name: id, path: null, status: 'load-failed', reasons: [message] });
+      const existingDetail = assetDetails.find((entry) => entry.id === id);
+      if (existingDetail) {
+        existingDetail.loadError = message;
+        existingDetail.errorCategory = error?.errorCategory || classifyOfficeLoadError(error);
+      } else {
+        const asset = GLB_ASSET_REGISTRY.find((entry) => entry.id === id);
+        assetDetails.push({
+          id,
+          name: asset?.name || id,
+          path: asset?.path || null,
+          url: asset?.url || null,
+          status: 'load-failed',
+          errorCategory: error?.errorCategory || classifyOfficeLoadError(error),
+          reasons: [message]
+        });
       }
       throw error;
     }
@@ -353,6 +386,12 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
     failedAssetIds: [...new Set(errors.map((entry) => entry.assetId))],
     tier: plan.tier,
     stationCount: stations.length,
+    decoders: {
+      meshopt: true,
+      draco: true,
+      dracoPath: dracoDecoderPath,
+      dracoMode: 'wasm'
+    },
     deskStations: loaded.has('office-desk') ? deskStationIndexes.map((index) => stations[index]?.id).filter(Boolean) : [],
     planned: {
       deskStations: [...deskStationIndexes],
@@ -383,6 +422,7 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
       }
       placed.length = 0;
       for (const entry of loaded.values()) disposeGLTFResources(entry.gltf);
+      dracoLoader.dispose();
       loaded.clear();
       loadPromises.clear();
       if (ACTIVE_LAYERS.get(scene) === layer) ACTIVE_LAYERS.delete(scene);
@@ -393,9 +433,11 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
   return layer;
 }
 
-export const __calloriaOfficeGLBRuntimeV613 = Object.freeze({
+export const __calloriaOfficeGLBRuntimeV615 = Object.freeze({
   inspectModel,
   cloneAndFit,
   hideInstancedEntries,
-  TARGETS
+  TARGETS,
+  classifyOfficeLoadError,
+  getOfficeDracoDecoderPath
 });

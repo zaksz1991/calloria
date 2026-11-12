@@ -1,45 +1,34 @@
-# CALLORIA v6.14 — Staff GLB Runtime Activation & Placement
+# CALLORIA v6.15 — Draco-compressed Office GLB Support
 
-This release takes the staff models accepted by the v6.12 compatibility validator and enables their use in the existing browser-side staff integration. It is a focused upgrade to the 3D office, not a new renderer or a replacement for the current world.
+This release targets a likely runtime gap in the existing office GLB loader. The v6.13 office integration configured `GLTFLoader` with `MeshoptDecoder`, but did not configure `DRACOLoader`. If an office model uses `KHR_draco_mesh_compression`, Three.js cannot decode its geometry without a DRACO loader. That can leave office objects at zero even when the GLB exists and its path is correct.
 
-## What it changes
+## Changes
 
-- Carries the v6.12 build-validated staff manifest into the existing `js/glb-world-integration.js` transform.
-- Supports both runtime candidate-array names: `PRIMARY_CANDIDATES` and `CANDIDATE_IDS`.
-- Uses only staff GLBs validated and copied into the deployment by the existing build plugin.
-- Uses the validated candidates by default when the GLB Inspector has no saved choice; explicit non-empty Inspector approvals still narrow the list.
-- Supports four recorded modes: animated skinned, animated node-transform, skinned static pose and static mesh.
-- Places static-pose models only at non-seated staff positions. They are not forced into chairs and no animation is invented.
-- Uses the existing scene, renderer, animation loop and disposal path. No second renderer or animation loop is created.
-- Adds actual placement IDs and placement-mode counts to the existing runtime readiness status.
-- If the repository's runtime source no longer matches the checked transform contract, the build logs a warning and leaves that source untouched instead of failing Vite.
+- Adds Three.js `DRACOLoader` to the office GLB runtime.
+- Keeps Meshopt decoding enabled; these are independent compression extensions.
+- Uses the pinned DRACO 1.5.7 WASM decoder from Google's public decoder CDN by default.
+- Allows a same-origin or alternate decoder folder to be configured before the 3D world starts with `window.CALLORIA_DRACO_DECODER_PATH` (the folder must contain the standard `draco_wasm_wrapper.js` and `draco_decoder.wasm` files).
+- Disposes DRACO workers when the office scene is disposed.
+- Preserves all v6.13 office model validation, workstation placement, fallback visibility and v2.9/Vite transform anchors.
+- Improves failed-model records so the diagnostics retain the model's path and URL and classify DRACO, network/HTTP, GLB parse, validation and placement failures.
+- Does not hide procedural fallback furniture until its corresponding GLB is actually placed.
 
-## Install
+## Files
 
-Replace one production file:
+Replace:
 
-`build/calloria-cc0-staff-glb-bundle-plugin.mjs`
+- `js/glb-office-world-integration.js`
 
-Keep `vite.config.js` unchanged. The replacement preserves the existing factory export, registered plugin name, candidate model catalogue, public manifest path and asset destinations.
+Add:
 
-For extra regression coverage, merge the included `tests/` folder into the repository's `tests/` folder. The JS fixture belongs only under `tests/fixtures/`; it is not a production runtime asset.
+- `js/glb-office-draco-policy.js`
 
-Do not replace `package.json`, `package-lock.json`, `js/main.js`, `js/production-world.js`, `js/world-player-avatar.js`, recruitment/assessment files, mobile CSS or `public/assets/models/` for this release.
+The package deliberately does not include `package.json`, `package-lock.json`, `vite.config.js`, `production-world.js`, any build plugin, or GLB files.
 
-## What to look for in Vercel
+## Installation
 
-The build plugin should emit two distinct records:
+Use the same two file paths shown in `INSTALL-GITHUB.md`. Preserve all other files, especially the v6.14 staff plugin, the v6.11 mobile/avatar changes, the v6.13 office asset policy, and `public/assets/models/`.
 
-1. `CALLORIA v6.14 staff GLB runtime bundle: N/5 structurally compatible ...` — build-time model validation.
-2. `CALLORIA v6.14 runtime integration enabled for N bundled staff GLB(s): ...` — confirmation that the browser runtime source was transformed.
+## What this does not prove
 
-If a `Runtime integration source was not modified` warning appears, the `js/glb-world-integration.js` anchors have changed; the build can still finish, but the runtime activation has been skipped safely.
-
-A successful transform is not proof of visual placement. After deployment, the GLB status panel should report `assetsInUse` / placed models. Static-pose assets remain still, and are only eligible for standing anchors.
-
-## Limits
-
-- The five real GLB files were not present in the authoring workspace. This package cannot certify their final proportions, visual quality, cultural suitability or actual live placement.
-- The regression tests use synthetic GLB containers and a captured source contract.
-- This release does not fix office-object loading (`GLB OFFICE OBJECTS 0`); that is a separate runtime and asset catalogue.
-- Full current-repository Vite build, Vercel deployment and Android browser testing have not been performed.
+The repository's office GLBs were not available for inspection in this workspace. The patch enables the missing decoder path if a model uses Draco; it does not prove that any specific deployed office GLB is Draco-compressed, present, reachable, or visually well-positioned. The next deployed runtime status should show per-asset load and placement diagnostics. Full Vite build, Vercel deployment and Android rendering have not been run here.
