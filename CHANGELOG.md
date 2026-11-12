@@ -1,7 +1,8 @@
-# CALLORIA v6.26 — Static Staff Idle Motion
+# CALLORIA v6.27 — Articulated Staff Idle
 
-- Adds subtle root-level procedural idle movement to approved static-pose staff GLBs on standing staff anchors.
-- Keeps animated GLBs on their original named animation clips.
-- Explicitly distinguishes procedural root motion from skeletal animation; no bones or source clips are fabricated.
-- Exposes `proceduralIdlePlaced` in the existing staff runtime status.
-- Keeps the existing staff replacement limits, local fallback restoration, office integration, and deployment audit intact.
+- Replaces single-root idle movement for skinned static-pose staff with restrained local rotations on recognised head, neck, spine/chest and shoulder bones.
+- Captures each bone rest quaternion and reapplies it before every procedural offset to prevent cumulative drift.
+- Keeps static-mesh and unrecognised-rig models on the existing low-amplitude root-idle fallback.
+- Leaves embedded animation clips untouched and never fabricates an AnimationClip.
+- Exposes separate articulated-idle and root-fallback placement counts in staff runtime status.
+- Retains standing-anchor restrictions, the existing render loop, and local avatar/shadow restoration on cleanup.

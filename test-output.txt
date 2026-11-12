@@ -2,118 +2,135 @@ TAP version 13
 # Subtest: measures world dimensions after a giant local mesh is scaled by its scene node
 ok 1 - measures world dimensions after a giant local mesh is scaled by its scene node
   ---
-  duration_ms: 3.440795
+  duration_ms: 2.982321
   type: 'test'
   ...
 # Subtest: applies parent scale to a small child model through the scene hierarchy
 ok 2 - applies parent scale to a small child model through the scene hierarchy
   ---
-  duration_ms: 0.921614
+  duration_ms: 1.096528
   type: 'test'
   ...
 # Subtest: supports glTF matrix transforms and ignores unreachable mesh geometry for character bounds
 ok 3 - supports glTF matrix transforms and ignores unreachable mesh geometry for character bounds
   ---
-  duration_ms: 3.317367
+  duration_ms: 2.355698
   type: 'test'
   ...
 # Subtest: rejects cyclic scene hierarchies instead of looping during validation
 ok 4 - rejects cyclic scene hierarchies instead of looping during validation
   ---
-  duration_ms: 1.116566
+  duration_ms: 0.927684
   type: 'test'
   ...
 # Subtest: does not loosen the final world-space human proportion limits
 ok 5 - does not loosen the final world-space human proportion limits
   ---
-  duration_ms: 0.687901
+  duration_ms: 0.546832
   type: 'test'
   ...
 # Subtest: applies quaternion rotation when computing scene-space extents
 ok 6 - applies quaternion rotation when computing scene-space extents
   ---
-  duration_ms: 0.559886
+  duration_ms: 0.582994
   type: 'test'
   ...
 # Subtest: runtime report distinguishes unavailable assets from bundled assets
 ok 7 - runtime report distinguishes unavailable assets from bundled assets
   ---
-  duration_ms: 1.950597
+  duration_ms: 1.476599
   type: 'test'
   ...
 # Subtest: diagnostics page performs a bounded GLB range probe and avoids claiming scene rendering
 ok 8 - diagnostics page performs a bounded GLB range probe and avoids claiming scene rendering
   ---
-  duration_ms: 0.375594
+  duration_ms: 0.354839
   type: 'test'
   ...
 # Subtest: Vite plugin emits deployment JSON and HTML with observed integration failures
 ok 9 - Vite plugin emits deployment JSON and HTML with observed integration failures
   ---
-  duration_ms: 1.381802
+  duration_ms: 1.318257
   type: 'test'
   ...
 # Subtest: existing v1.2 staff integration source still transforms with the v6.23 diagnostic build
 ok 10 - existing v1.2 staff integration source still transforms with the v6.23 diagnostic build
   ---
-  duration_ms: 4.313432
+  duration_ms: 2.359005
   type: 'test'
   ...
-# Subtest: v6.26 upgrades the existing v6.22 staff transform without replacing the runtime contract
-ok 11 - v6.26 upgrades the existing v6.22 staff transform without replacing the runtime contract
+# Subtest: v6.27 retains the checked v1.2 staff-runtime integration and adds the new idle marker
+ok 11 - v6.27 retains the checked v1.2 staff-runtime integration and adds the new idle marker
   ---
-  duration_ms: 1.17343
+  duration_ms: 1.878269
   type: 'test'
   ...
-# Subtest: procedural idle is assigned only to approved static-pose models on standing anchors
-ok 12 - procedural idle is assigned only to approved static-pose models on standing anchors
+# Subtest: bone-aware idle is only collected for static skinned standing staff
+ok 12 - bone-aware idle is only collected for static skinned standing staff
   ---
-  duration_ms: 0.401326
+  duration_ms: 0.174724
   type: 'test'
   ...
-# Subtest: static-pose idle uses deliberately small, root-level movement and does not fabricate a source clip
-ok 13 - static-pose idle uses deliberately small, root-level movement and does not fabricate a source clip
+# Subtest: recognized head, neck, spine and shoulder names receive bounded local rotation channels
+ok 13 - recognized head, neck, spine and shoulder names receive bounded local rotation channels
   ---
-  duration_ms: 0.25551
+  duration_ms: 0.45245
   type: 'test'
   ...
-# Subtest: animated GLBs retain their real named clip and are not routed through procedural idle
-ok 14 - animated GLBs retain their real named clip and are not routed through procedural idle
+# Subtest: runtime motion restores rest quaternions before applying local bone offsets
+ok 14 - runtime motion restores rest quaternions before applying local bone offsets
   ---
-  duration_ms: 0.14867
+  duration_ms: 0.2514
   type: 'test'
   ...
-# Subtest: the idle update clamps frame delta and performs no additional render loop
-ok 15 - the idle update clamps frame delta and performs no additional render loop
+# Subtest: static meshes and unrecognised rigs retain the low-amplitude root fallback
+ok 15 - static meshes and unrecognised rigs retain the low-amplitude root fallback
   ---
-  duration_ms: 0.328769
+  duration_ms: 0.176402
   type: 'test'
   ...
-# Subtest: cleanup clears idle controllers and retains the existing local-avatar restoration
-ok 16 - cleanup clears idle controllers and retains the existing local-avatar restoration
+# Subtest: animated GLBs retain their authored clips and do not receive procedural idle
+ok 16 - animated GLBs retain their authored clips and do not receive procedural idle
   ---
-  duration_ms: 0.285177
+  duration_ms: 0.346924
   type: 'test'
   ...
-# Subtest: transform is idempotent for repeated Vite transform passes
-ok 17 - transform is idempotent for repeated Vite transform passes
+# Subtest: frame delta remains clamped and no second render loop is introduced
+ok 17 - frame delta remains clamped and no second render loop is introduced
   ---
-  duration_ms: 0.238887
+  duration_ms: 0.168519
   type: 'test'
   ...
-# Subtest: unknown source signatures fail closed instead of breaking Vite compilation
-ok 18 - unknown source signatures fail closed instead of breaking Vite compilation
+# Subtest: cleanup releases the controllers and restores hidden local staff
+ok 18 - cleanup releases the controllers and restores hidden local staff
   ---
-  duration_ms: 0.189717
+  duration_ms: 0.103046
   type: 'test'
   ...
-1..18
-# tests 18
+# Subtest: replacement status separates articulated and root-fallback idle counts
+ok 19 - replacement status separates articulated and root-fallback idle counts
+  ---
+  duration_ms: 0.420905
+  type: 'test'
+  ...
+# Subtest: transform is idempotent when Vite revisits the same module
+ok 20 - transform is idempotent when Vite revisits the same module
+  ---
+  duration_ms: 0.848223
+  type: 'test'
+  ...
+# Subtest: unknown source signatures fail closed
+ok 21 - unknown source signatures fail closed
+  ---
+  duration_ms: 0.621308
+  type: 'test'
+  ...
+1..21
+# tests 21
 # suites 0
-# pass 18
+# pass 21
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 402.121044
-
+# duration_ms 311.398279

@@ -1,6 +1,7 @@
 # Verification
 
-- Regression suite includes transform-aware GLB bounds and deployment diagnostics from the preceding plugin.
-- New tests verify static-only idle assignment, real-clip preservation, delta clamping, idempotence and cleanup.
-- JavaScript syntax and ZIP integrity are checked before delivery.
-- Full repository Vite build, Vercel deployment, and in-world visual appearance are not verified because the complete current repository snapshot is not available in this patch workspace.
+- Regression tests: see `test-output.txt` (all included v6.22, v6.23, and v6.27 tests passed).
+- `node --check build/calloria-cc0-staff-glb-bundle-plugin.mjs`: passed.
+- `node --check` on all included `.mjs` / `.js` test fixture files: passed.
+- ZIP integrity: verified after packaging.
+- Full Vite build, Vercel deployment, and real production-browser animation were not run because a complete current CALLORIA repository checkout is not available in this workspace.

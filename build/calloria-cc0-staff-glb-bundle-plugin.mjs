@@ -394,7 +394,7 @@ function makeManifest(entries, totals, status) {
   const staticPose = models.filter((entry) => ['skinned-static-pose', 'static-mesh'].includes(entry.renderMode)).length;
   return {
     schemaVersion: 2,
-    buildIntegration: 'CALLORIA v6.22 transform-aware staff GLB validation and runtime placement',
+    buildIntegration: 'CALLORIA v6.27 transform-aware staff GLB validation and articulated static-pose idle',
     createdAt: new Date().toISOString(),
     status,
     source: 'Gobkit CC0 character pack direct GLB files; provenance recorded per model and pack.',
@@ -525,11 +525,12 @@ function transformStaffRuntimeIntegrationBase(source, availableIds, renderModes)
 
 
 /**
- * v6.26 adds a restrained root-level idle loop for approved static-pose GLBs.
- * It is deliberately not represented as skeletal or source-authored animation:
- * a static mesh cannot acquire articulated motion without a usable rig/clip.
+ * v6.27 adds conservative bone-aware idle motion to static skinned staff.
+ * Named head/neck/spine/shoulder bones receive small local rotations. Models
+ * without recognizable bones keep the v6.26 low-amplitude root-motion fallback.
+ * No animation clips are fabricated and no extra renderer/update loop is added.
  */
-const PROCEDURAL_IDLE_MARKER = '__CALLORIA_STATIC_STAFF_IDLE_V626__';
+const PROCEDURAL_IDLE_MARKER = '__CALLORIA_BONE_AWARE_STAFF_IDLE_V627__';
 function addProceduralStaticStaffIdle(code) {
   const original = String(code || '').replace(/\r\n?/g, '\n');
   if (original.includes(PROCEDURAL_IDLE_MARKER)) return { code: original, alreadyPatched: true };
@@ -541,35 +542,84 @@ function addProceduralStaticStaffIdle(code) {
     ['replacement disposal', 'mixers.length = 0;']
   ];
   const missing = anchors.filter(([, text]) => original.split(text).length - 1 !== 1).map(([label]) => label);
-  if (missing.length) return { code: null, warnings: [`Static staff idle motion was not added: ${missing.join(', ')} did not match the verified staff runtime.`] };
+  if (missing.length) return { code: null, warnings: [`Bone-aware staff idle motion was not added: ${missing.join(', ')} did not match the verified staff runtime.`] };
 
   let next = original.replace('const mixers = [];', 'const mixers = [];\n  const proceduralIdleControllers = [];');
   next = next.replace('scene.add(wrapper);', `scene.add(wrapper);
     const proceduralIdle = !clip && ['skinned-static-pose', 'static-mesh'].includes(selectedRenderMode);
+    let proceduralIdleMode = 'none';
+    const idleBoneTargets = [];
+    if (proceduralIdle && selectedRenderMode === 'skinned-static-pose' && clonedRoot?.traverse) {
+      clonedRoot.traverse((node) => {
+        if (!node?.isBone || !node.quaternion?.clone) return;
+        const boneName = String(node.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        let channelSpecs = null;
+        if (/^(?:mixamorig)?head$/.test(boneName)) {
+          channelSpecs = [
+            { axis: [0, 1, 0], amplitude: 0.026, speed: 0.42, phase: 0 },
+            { axis: [1, 0, 0], amplitude: 0.011, speed: 0.31, phase: 1.1 }
+          ];
+        } else if (/^(?:mixamorig)?neck[0-9]*$/.test(boneName)) {
+          channelSpecs = [{ axis: [0, 1, 0], amplitude: 0.013, speed: 0.37, phase: 0.55 }];
+        } else if (/^(?:mixamorig)?(?:spine[0-9]*|chest|upperchest)$/.test(boneName)) {
+          channelSpecs = [{ axis: [0, 0, 1], amplitude: 0.005, speed: 0.68, phase: 1.45 }];
+        } else if (/^(?:mixamorig)?(?:left|right)shoulder$/.test(boneName) || /^(?:mixamorig)?shoulder[lr]$/.test(boneName)) {
+          const isRight = /right|shoulderr$/.test(boneName);
+          channelSpecs = [{ axis: [0, 0, 1], amplitude: isRight ? -0.0035 : 0.0035, speed: 0.82, phase: 2.05 }];
+        }
+        if (!channelSpecs) return;
+        idleBoneTargets.push({
+          bone: node,
+          baseQuaternion: node.quaternion.clone(),
+          channels: channelSpecs.map((spec) => ({
+            axis: new T.Vector3(spec.axis[0], spec.axis[1], spec.axis[2]),
+            amplitude: spec.amplitude,
+            speed: spec.speed,
+            phase: spec.phase,
+            deltaQuaternion: new T.Quaternion()
+          }))
+        });
+      });
+    }
     if (proceduralIdle) {
+      proceduralIdleMode = idleBoneTargets.length ? 'articulated-bone-idle' : 'root-idle-fallback';
       proceduralIdleControllers.push({
         wrapper,
         baseRotationY: wrapper.rotation.y,
         baseRotationZ: wrapper.rotation.z,
         basePositionY: wrapper.position.y,
+        boneTargets: idleBoneTargets,
         elapsed: 0,
         phase: (replacements.length * 0.83) % (Math.PI * 2)
       });
     }`);
+
   next = next.replace('for (const mixer of mixers) mixer.update(step);', `for (const mixer of mixers) mixer.update(step);
       for (const idle of proceduralIdleControllers) {
         idle.elapsed += step;
-        const breath = Math.sin(idle.elapsed * 1.25 + idle.phase);
+        const breath = Math.sin(idle.elapsed * 1.15 + idle.phase);
         const sway = Math.sin(idle.elapsed * 0.72 + idle.phase);
-        // Small root-level motion only; no fabricated bone animation or clip.
-        idle.wrapper.rotation.y = idle.baseRotationY + sway * 0.006;
-        idle.wrapper.rotation.z = idle.baseRotationZ + Math.sin(idle.elapsed * 0.55 + idle.phase) * 0.0025;
-        idle.wrapper.position.y = idle.basePositionY + breath * 0.0025;
+        if (idle.boneTargets?.length) {
+          for (const target of idle.boneTargets) {
+            target.bone.quaternion.copy(target.baseQuaternion);
+            for (const channel of target.channels) {
+              const angle = Math.sin(idle.elapsed * channel.speed + idle.phase + channel.phase) * channel.amplitude;
+              channel.deltaQuaternion.setFromAxisAngle(channel.axis, angle);
+              target.bone.quaternion.multiply(channel.deltaQuaternion);
+            }
+          }
+        } else {
+          // Static meshes or rigs without known bone names retain restrained root idle.
+          idle.wrapper.rotation.y = idle.baseRotationY + sway * 0.006;
+          idle.wrapper.rotation.z = idle.baseRotationZ + Math.sin(idle.elapsed * 0.55 + idle.phase) * 0.0025;
+          idle.wrapper.position.y = idle.basePositionY + breath * 0.0025;
+        }
       }`);
-  next = next.replace("animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,", "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,\n        proceduralIdlePlaced: replacements.filter((entry) => ['skinned-static-pose', 'static-mesh'].includes(entry.renderMode) && entry.proceduralIdle).length,");
+
+  next = next.replace("animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,", "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,\n        proceduralIdlePlaced: replacements.filter((entry) => entry.proceduralIdle).length,\n        articulatedIdlePlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'articulated-bone-idle').length,\n        rootIdleFallbackPlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'root-idle-fallback').length,");
   const pushAnchor = 'replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip) });';
-  if (next.split(pushAnchor).length - 1 !== 1) return { code: null, warnings: ['Static staff idle motion was not added: replacement record did not match the verified staff runtime.'] };
-  next = next.replace(pushAnchor, 'replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip), proceduralIdle: !clip && [\'skinned-static-pose\', \'static-mesh\'].includes(selectedRenderMode) });');
+  if (next.split(pushAnchor).length - 1 !== 1) return { code: null, warnings: ['Bone-aware staff idle motion was not added: replacement record did not match the verified staff runtime.'] };
+  next = next.replace(pushAnchor, "replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip), proceduralIdle: !clip && ['skinned-static-pose', 'static-mesh'].includes(selectedRenderMode), proceduralIdleMode });");
   next = next.replace('mixers.length = 0;', 'mixers.length = 0;\n      proceduralIdleControllers.length = 0;');
   return { code: `/* ${PROCEDURAL_IDLE_MARKER} */\n${next}`, alreadyPatched: false };
 }
@@ -838,15 +888,15 @@ function createCalloriaCC0StaffGLBBundlePlugin(options = {}) {
         for (const warning of warnings) this.warn?.(`CALLORIA v6.23 staff runtime integration: ${warning}`);
         return null;
       }
-      runtimeDiagnostics.staff = { status: 'patched', source: target, warnings: [], message: `Staff runtime transform enabled for ${availableIds.length} validated model(s). Static-pose models on standing anchors receive subtle root-level idle motion; this is not skeletal animation. Live scene placement still requires browser verification.` };
-      this.info?.(`CALLORIA v6.26 runtime integration enabled for ${availableIds.length} bundled staff GLB(s): ${Object.entries(renderModes).map(([id, mode]) => `${id}=${mode}`).join(', ')}. Static-pose models are restricted to standing staff anchors and receive subtle root-level procedural idle motion (not skeletal animation).`);
+      runtimeDiagnostics.staff = { status: 'patched', source: target, warnings: [], message: `Staff runtime transform enabled for ${availableIds.length} validated model(s). Static-pose standing staff use conservative named-bone idle when a usable head/neck/spine/shoulder hierarchy is present, otherwise root-idle fallback; no source animation clip is claimed. Live scene placement still requires browser verification.` };
+      this.info?.(`CALLORIA v6.27 runtime integration enabled for ${availableIds.length} bundled staff GLB(s): ${Object.entries(renderModes).map(([id, mode]) => `${id}=${mode}`).join(', ')}. Static-pose staff are restricted to standing anchors and use conservative bone-aware idle when recognized rig nodes exist, with a small root-motion fallback otherwise.`);
       return { code: transformed.code, map: null };
     },
     generateBundle() {
       const payload = makeRuntimeDiagnosticsPayload({ entries: buildEntries, runtime: runtimeDiagnostics });
       this.emitFile?.({ type: 'asset', fileName: RUNTIME_DIAGNOSTICS_JSON, source: `${JSON.stringify(payload, null, 2)}\n` });
       this.emitFile?.({ type: 'asset', fileName: RUNTIME_DIAGNOSTICS_HTML, source: makeRuntimeDiagnosticsHtml() });
-      this.info?.(`CALLORIA v6.26 deployment audit emitted: /${RUNTIME_DIAGNOSTICS_HTML} and /${RUNTIME_DIAGNOSTICS_JSON}. The report distinguishes validated files from runtime scene placement.`);
+      this.info?.(`CALLORIA v6.27 deployment audit emitted: /${RUNTIME_DIAGNOSTICS_HTML} and /${RUNTIME_DIAGNOSTICS_JSON}. The report distinguishes validated files from runtime scene placement.`);
     },
     api: {
       getAvailableStaffIds() { return [...availableIds]; },
