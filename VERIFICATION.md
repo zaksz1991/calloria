@@ -1,14 +1,27 @@
-# v6.11 Verification
+# Verification — CALLORIA v6.12
 
-| Check | Result |
-|---|---:|
-| Focused Node tests | 8 passed, 0 failed |
-| JavaScript syntax checks | Passed |
-| Desktop player GLB/work/talk module | Passed syntax and clip-mapping checks |
-| CSS structural checks (PostCSS) | Passed |
-| v2.5 avatar + v6.11 final-transform chain | Passed |
-| Required v2.5 avatar anchors | 4/4 present exactly once |
-| HTML transform idempotence | Passed |
-| ZIP integrity | Passed |
+## Executed checks
 
-Not run: full repository Vite build, Vercel deployment, Android Chrome end-to-end test, or GLB validation against the production asset directory.
+- `node --check build/calloria-cc0-staff-glb-bundle-plugin.mjs` — passed.
+- Focused v6.12 tests — 9 passed, 0 failed.
+- v6.11 mobile/avatar regression tests — 8 passed, 0 failed.
+- Combined focused checks — 17 passed, 0 failed.
+- ZIP integrity — checked after packaging.
+
+The v6.12 fixtures cover:
+
+- fully animated, 18-joint skinned character;
+- skinned static-pose character with 13 joints and no clips;
+- unskinned static-pose mesh;
+- rejection of malformed GLB containers, external dependencies, implausible bounds and excess geometry;
+- preservation of valid existing local assets without a network request;
+- candidate-list filtering, manifest output and non-fatal offline download behaviour.
+
+## Not executed
+
+- Full CALLORIA Vite build against the latest GitHub `main` branch.
+- Vercel deployment.
+- Browser test of the five actual GLB files.
+- Confirmation that the live 3D scene places each staff model.
+
+The current repository source and the five actual GLB files were not available in this workspace. This release is a focused build-plugin repair, not a verified production deployment.

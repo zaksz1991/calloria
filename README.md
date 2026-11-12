@@ -1,55 +1,48 @@
-# CALLORIA v6.11 — Mobile Interaction Hardening
+# CALLORIA v6.12 — Staff GLB Compatibility Repair
 
-This release builds on the v6.10 mobile repair and the v6.10.1 avatar-transform compatibility repair. It targets the two problems visible in the phone screenshots: the oversized player avatar obstructing the 3D camera and the recruitment Continue/Submit action being difficult to reach or tap above the fixed navigation.
+This is an additive build-pipeline repair for the staff-model problem reported in the Vercel build log. The v3.9 validator was treating animation clips and a 15-joint skeleton as hard requirements for every visible staff model. The log showed local models with 13 joints and no embedded animation clips, plus a receptionist model without a skin. They were therefore rejected before the browser could attempt to display them.
 
-## What this release changes
+## What changes
 
-### Assessment navigation
-- Adds a dedicated, fixed mobile assessment action bar above the bottom navigation.
-- Mirrors the real `assessment-next` or `practical-next` button's enabled state and label.
-- When tapped, the floating action bar clicks the original application button. Existing recruitment answer scoring and progression remain the application's responsibility.
-- Hides the original footer visually only while the mobile proxy is active, preventing duplicate visible controls.
-- Rebuilds the proxy after the assessment page re-renders each time an answer is selected.
-- Accounts for browser chrome movement, orientation changes and safe-area insets.
+The replacement keeps the existing Vite plugin API and file location, but validates whether a GLB is safe and useful to render rather than requiring every character to be fully animated.
 
-### Mobile layout
-- Further constrains assessment cards, grids, headings and answer rows to the viewport width.
-- Keeps question text and answers readable without horizontal overflow.
-- Provides a 52px action target for Continue/Submit.
-- Reserves room for the persistent bottom navigation and fixed assessment action bar.
-- Adds a compact landscape-phone arrangement.
+Supported manifest render modes:
 
-### Player camera
-- Restores the complete avatar source module containing all four exact transformation anchors required by the v2.5 workstation plugin. This addresses the build failure in the provided Vercel log.
-- The final v6.11 Vite transform makes player presentation device-aware: phones use a first-person adapter and do not load the player body; desktop devices can still load the real agent GLB and v2.5 sitting/working/talking clips. NPC and office GLB loading remains separate.
-- The touch camera guard is tolerant of whitespace changes in the v2.5 camera branch and warns rather than failing the build if the optional camera source anchor changes.
+- `animated-skinned`: a skinned mesh with embedded animation clips.
+- `animated-node-transforms`: animation clips that animate scene-node transforms without a skinned mesh.
+- `skinned-static-pose`: a valid skinned mesh with no embedded animation clips.
+- `static-mesh`: a valid unskinned character mesh in its authored pose.
 
-## Files and destinations
+The validator still checks the GLB v2 container, scene nodes, mesh primitives, POSITION accessors, triangle budget, primitive budget, skin attribute consistency, embedded dependencies and required extensions. It continues to reject malformed files, external binary/image dependencies, invalid skin references, unsupported primitive modes, excessive geometry and implausible character bounds when bounds are available.
 
-| ZIP file | Repository path | Action |
-|---|---|---|
-| `js/world-player-avatar.js` | `/js/world-player-avatar.js` | Replace; restores v2.5-required source anchors. |
-| `js/world-player-avatar-desktop.js` | `/js/world-player-avatar-desktop.js` | Add; desktop-only real GLB avatar implementation with workstation motions. |
-| `build/calloria-mobile-responsive-repair-v6-10.mjs` | `/build/calloria-mobile-responsive-repair-v6-10.mjs` | Replace; same exported function and filename used by the installed Vite config. |
-| `public/calloria-mobile-responsive-v6-10.css` | `/public/calloria-mobile-responsive-v6-10.css` | Replace with v6.11 mobile layout rules. |
-| `public/js/calloria-mobile-ui-guard-v6-10.js` | `/public/js/calloria-mobile-ui-guard-v6-10.js` | Replace with the floating assessment action proxy. |
-
-No `vite.config.js` change is required. The existing config already imports `calloriaMobileResponsiveRepairPlugin` from the plugin file shown above. Do not replace `vite.config.js`, `js/main.js`, `js/production-world.js`, GLB/OJT runtimes, `styles.css`, Supabase files, or `public/assets/models/` for this release.
+A 13-joint rig is no longer rejected solely because it has fewer than 15 joints. Missing `Idle`/`Walk` clips no longer makes a structurally valid staff model unusable. The manifest reports animation and rig capability rather than pretending that clips exist. No skeleton or animation is fabricated.
 
 ## Installation
 
-In GitHub, replace the four existing files and add `js/world-player-avatar-desktop.js` at the exact paths in the table. Keep the surrounding folders and all other project files intact. The patch is an overlay, not a complete repository ZIP.
+Replace only this file in the existing GitHub repository:
 
-## Verification performed here
+`build/calloria-cc0-staff-glb-bundle-plugin.mjs`
 
-- Focused Node tests: 8 passed, 0 failed.
-- JavaScript syntax checks: passed for the four JavaScript modules.
-- CSS structural checks (PostCSS): passed.
-- v2.5 avatar transform followed by the final v6.11 transform: passed.
-- ZIP integrity: passed.
+Keep the existing `vite.config.js`. The replacement exports the same `calloriaCC0StaffGLBBundlePlugin()` factory, retains the existing plugin name and writes the existing manifest path:
 
-## Not verified
+`public/assets/models/calloria-cc0-staff-manifest.json`
 
-The complete production repository is not present in this workspace, so a full Vite build against the latest GitHub commit, Vercel deployment, and physical Android browser interaction were not run. The Vercel error's four missing v2.5 anchors are present in the included source file, but only the next actual Vercel build can confirm the full chain passes.
+Keep the v6.11 `js/world-player-avatar.js`, `js/world-player-avatar-desktop.js`, and all v2.5 workstation/mobile plugin files unchanged. This repair does not replace those files or alter their four required source anchors.
 
-The separate staff asset issue from the supplied build log remains: the v3.9 bundle reported 0/5 validated staff GLBs. This release does not relax model-validation rules or claim those staff/office GLBs are loading. The asset pipeline needs a separate model compatibility repair based on the actual GLB files and runtime checks.
+## Expected build behaviour
+
+For an existing local model that passes the new structural checks, the build preserves that file instead of refreshing it simply because it has 13 joints or lacks animation clips. Models that fail structural checks still fall back to the pinned download attempt. Network/download failures remain non-fatal and are recorded in the manifest, with unavailable models excluded from the `PRIMARY_CANDIDATES` list.
+
+The Vercel log should now distinguish structurally compatible models from animated models, for example:
+
+`CALLORIA v6.12 staff GLB compatibility bundle: N/5 structurally compatible, A animated, S static-pose, ...`
+
+The exact counts depend on the actual files in the repository. Do not assume 5/5 until the next build log confirms it.
+
+## Important limits
+
+- No GLB files are included in this patch. It re-validates the existing five files at the same public asset paths.
+- A static-pose model is visible but does not gain walking, typing or talking animation.
+- A manifest entry and a bundled candidate do not, by themselves, prove that the browser runtime placed the model into the scene. Runtime placement still needs to be confirmed from the actual Vercel build and the in-game GLB status panel.
+- This workspace did not contain the full current CALLORIA repository or the five real GLB files. The tests use synthetic GLB fixtures that reproduce the logged compatibility cases; they do not certify the actual asset downloads.
+- No Groq, Supabase, recruitment, gameplay, camera or CSS files are changed.
