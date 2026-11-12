@@ -1,11 +1,11 @@
-# Verification — CALLORIA v6.33
+# Verification — CALLORIA v6.34
 
 ## Automated checks
-- The full carried-forward Node regression suite plus v6.33 tests passed.
+- Carried-forward Node regression suite plus v6.34 facial-expression tests passed.
 - Replacement build plugin passed `node --check`.
-- The transformed v1.2 staff-runtime fixture passed syntax validation.
-- Tests verify the generalized static-model traversal gate, morph scan ordering, unskinned static-mesh support, animated-model exclusion, morph-index guards, tier scheduling, idempotence and fail-closed behaviour.
+- Transformed staff runtime fixture passed syntax validation.
+- Tests cover the static-model gate, strict smile/dimple and brow allow-lists, morph-index and influence bounds, asynchronous expression envelope, authored-animation exclusion, diagnostics, idempotence, and fail-closed contract handling.
 - ZIP archive integrity was checked after packaging.
 
 ## Runtime limitation
-The complete CALLORIA repository was not available for a full Vite build. Browser rendering and deployed Vercel behaviour were not verified. The update activates morph targets already present in GLBs; it does not add facial geometry.
+The complete CALLORIA repository was not available for a full Vite build. Vercel deployment and browser rendering were not verified. Facial movement is available only where deployed staff GLBs already contain supported morph targets.

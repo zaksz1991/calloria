@@ -553,6 +553,7 @@ function addProceduralStaticStaffIdle(code) {
     let proceduralIdleMode = 'none';
     const idleBoneTargets = [];
     const idleBlinkMorphTargets = [];
+    const idleExpressionMorphTargets = [];
     if (proceduralIdle && clonedRoot?.traverse) {
       clonedRoot.traverse((node) => {
         // Static skinned and unskinned staff GLBs may expose eyelid movement
@@ -570,6 +571,30 @@ function addProceduralStaticStaffIdle(code) {
             const baseInfluence = Number(morphInfluences[morphIndex] || 0);
             if (!Number.isFinite(baseInfluence)) continue;
             idleBlinkMorphTargets.push({ mesh: node, index: morphIndex, baseInfluence: Math.max(0, Math.min(1, baseInfluence)) });
+          }
+          // Only drive existing, explicitly named positive-expression morphs.
+          // This never fabricates face geometry and deliberately avoids broad
+          // names such as "happy" that may represent a full facial pose.
+          for (const [morphName, morphIndexValue] of Object.entries(morphDictionary)) {
+            const normalizedMorphName = String(morphName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const isSmileMorph = /^(?:mouth)?smile(?:left|right|l|r)?$/.test(normalizedMorphName)
+              || /^mouthdimple(?:left|right|l|r)?$/.test(normalizedMorphName);
+            const isBrowRaiseMorph = /^(?:browinnerup|browouterup(?:left|right|l|r)?|browup(?:left|right|l|r)?)$/.test(normalizedMorphName);
+            const morphIndex = Number(morphIndexValue);
+            if ((!isSmileMorph && !isBrowRaiseMorph) || !Number.isInteger(morphIndex)
+                || morphIndex < 0 || morphIndex >= morphInfluences.length) continue;
+            const baseInfluence = Number(morphInfluences[morphIndex] || 0);
+            if (!Number.isFinite(baseInfluence)) continue;
+            const clampedBase = Math.max(0, Math.min(1, baseInfluence));
+            const amplitude = Math.min(isSmileMorph ? 0.12 : 0.055, 1 - clampedBase);
+            if (amplitude <= 0) continue;
+            idleExpressionMorphTargets.push({
+              mesh: node,
+              index: morphIndex,
+              kind: isSmileMorph ? 'smile' : 'brow-raise',
+              baseInfluence: clampedBase,
+              amplitude
+            });
           }
         }
         if (!node?.isBone || !node.quaternion?.clone) return;
@@ -640,6 +665,9 @@ function addProceduralStaticStaffIdle(code) {
         blinkMorphTargets: idleBlinkMorphTargets,
         blinkPeriod: 3.6 + ((replacements.length * 0.71) % 1.8),
         blinkPhase: (replacements.length * 1.31) % 2.4,
+        expressionMorphTargets: idleExpressionMorphTargets,
+        expressionPeriod: 11 + ((replacements.length * 0.97) % 7),
+        expressionPhase: (replacements.length * 1.77) % 5,
         elapsed: 0,
         updateAccumulator: 0,
         phase: (replacements.length * 0.83) % (Math.PI * 2)
@@ -678,6 +706,27 @@ function addProceduralStaticStaffIdle(code) {
               influences[target.index] = target.baseInfluence + (1 - target.baseInfluence) * blinkWeight;
             }
           }
+          // A brief, infrequent conversational micro-expression uses only
+          // facial morphs already authored in the GLB. The envelope has smooth
+          // rise/hold/release phases and a per-staff offset to avoid synchrony.
+          if (idle.expressionMorphTargets?.length) {
+            const expressionCycle = ((idle.elapsed + idle.expressionPhase) % idle.expressionPeriod) / idle.expressionPeriod;
+            let expressionWeight = 0;
+            if (expressionCycle >= 0.18 && expressionCycle < 0.27) {
+              const t = (expressionCycle - 0.18) / 0.09;
+              expressionWeight = t * t * (3 - 2 * t);
+            } else if (expressionCycle >= 0.27 && expressionCycle < 0.43) {
+              expressionWeight = 1;
+            } else if (expressionCycle >= 0.43 && expressionCycle < 0.55) {
+              const t = 1 - (expressionCycle - 0.43) / 0.12;
+              expressionWeight = t * t * (3 - 2 * t);
+            }
+            for (const target of idle.expressionMorphTargets) {
+              const influences = target.mesh?.morphTargetInfluences;
+              if (!influences || target.index >= influences.length) continue;
+              influences[target.index] = Math.max(0, Math.min(1, target.baseInfluence + target.amplitude * expressionWeight));
+            }
+          }
           if (idle.boneTargets?.length) {
             for (const target of idle.boneTargets) {
               target.bone.quaternion.copy(target.baseQuaternion);
@@ -710,11 +759,11 @@ function addProceduralStaticStaffIdle(code) {
 
   next = next.replace(
     "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,",
-    "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,\n        proceduralIdlePlaced: replacements.filter((entry) => entry.proceduralIdle).length,\n        articulatedIdlePlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'articulated-bone-idle').length,\n        rootIdleFallbackPlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'root-idle-fallback').length,\n        microGestureStaffPlaced: replacements.filter((entry) => entry.proceduralIdleGestureTargets > 0).length,\n        microGestureBoneTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleGestureTargets || 0), 0),\n        attentionGestureStaffPlaced: replacements.filter((entry) => entry.proceduralIdleAttentionTargets > 0).length,\n        attentionGestureBoneTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleAttentionTargets || 0), 0),\n        blinkMorphStaffPlaced: replacements.filter((entry) => entry.proceduralIdleBlinkTargets > 0).length,\n        blinkMorphTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleBlinkTargets || 0), 0),\n        adaptiveIdleUpdateHz: 30,\n        idleVisibilityAware: true,"
+    "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,\n        proceduralIdlePlaced: replacements.filter((entry) => entry.proceduralIdle).length,\n        articulatedIdlePlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'articulated-bone-idle').length,\n        rootIdleFallbackPlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'root-idle-fallback').length,\n        microGestureStaffPlaced: replacements.filter((entry) => entry.proceduralIdleGestureTargets > 0).length,\n        microGestureBoneTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleGestureTargets || 0), 0),\n        attentionGestureStaffPlaced: replacements.filter((entry) => entry.proceduralIdleAttentionTargets > 0).length,\n        attentionGestureBoneTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleAttentionTargets || 0), 0),\n        blinkMorphStaffPlaced: replacements.filter((entry) => entry.proceduralIdleBlinkTargets > 0).length,\n        blinkMorphTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleBlinkTargets || 0), 0),\n        expressionMorphStaffPlaced: replacements.filter((entry) => entry.proceduralIdleExpressionTargets > 0).length,\n        expressionMorphTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleExpressionTargets || 0), 0),\n        adaptiveIdleUpdateHz: 30,\n        idleVisibilityAware: true,"
   );
   const pushAnchor = 'replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip) });';
   if (next.split(pushAnchor).length - 1 !== 1) return { code: null, warnings: ['Bone-aware staff idle motion was not added: replacement record did not match the verified staff runtime.'] };
-  next = next.replace(pushAnchor, "replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip), proceduralIdle: !clip && ['skinned-static-pose', 'static-mesh'].includes(selectedRenderMode), proceduralIdleMode, proceduralIdleGestureTargets: idleBoneTargets.filter((target) => target.motionType === 'micro-gesture').length, proceduralIdleAttentionTargets: idleBoneTargets.filter((target) => target.motionType === 'attention').length, proceduralIdleBlinkTargets: idleBlinkMorphTargets.length });");
+  next = next.replace(pushAnchor, "replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip), proceduralIdle: !clip && ['skinned-static-pose', 'static-mesh'].includes(selectedRenderMode), proceduralIdleMode, proceduralIdleGestureTargets: idleBoneTargets.filter((target) => target.motionType === 'micro-gesture').length, proceduralIdleAttentionTargets: idleBoneTargets.filter((target) => target.motionType === 'attention').length, proceduralIdleBlinkTargets: idleBlinkMorphTargets.length, proceduralIdleExpressionTargets: idleExpressionMorphTargets.length });");
   next = next.replace('mixers.length = 0;', 'mixers.length = 0;\n      proceduralIdleControllers.length = 0;');
   return { code: `/* ${PROCEDURAL_IDLE_MARKER} */\n${next}`, alreadyPatched: false };
 }
