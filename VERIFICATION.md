@@ -1,27 +1,17 @@
-# Verification — CALLORIA v6.12
+# v6.13 verification
 
-## Executed checks
+Executed locally against the supplied package files:
 
-- `node --check build/calloria-cc0-staff-glb-bundle-plugin.mjs` — passed.
-- Focused v6.12 tests — 9 passed, 0 failed.
-- v6.11 mobile/avatar regression tests — 8 passed, 0 failed.
-- Combined focused checks — 17 passed, 0 failed.
-- ZIP integrity — checked after packaging.
+- Focused Node tests: 8 passed, 0 failed.
+- JavaScript syntax: passed for both runtime modules.
+- Vite office transform anchor contract: passed for all five expected anchors.
+- ZIP integrity: passed.
 
-The v6.12 fixtures cover:
+Not executed:
 
-- fully animated, 18-joint skinned character;
-- skinned static-pose character with 13 joints and no clips;
-- unskinned static-pose mesh;
-- rejection of malformed GLB containers, external dependencies, implausible bounds and excess geometry;
-- preservation of valid existing local assets without a network request;
-- candidate-list filtering, manifest output and non-fatal offline download behaviour.
-
-## Not executed
-
-- Full CALLORIA Vite build against the latest GitHub `main` branch.
+- Full CALLORIA Vite production build.
 - Vercel deployment.
-- Browser test of the five actual GLB files.
-- Confirmation that the live 3D scene places each staff model.
+- HTTP verification of the repository's four office GLB URLs.
+- Three.js browser rendering or Android visual QA.
 
-The current repository source and the five actual GLB files were not available in this workspace. This release is a focused build-plugin repair, not a verified production deployment.
+The actual office GLB files were not present in this workspace. The patch improves failure visibility and placement logic; it does not prove that the repository currently contains valid models or that the deployed site can fetch them.

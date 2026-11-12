@@ -1,48 +1,51 @@
-# CALLORIA v6.12 — Staff GLB Compatibility Repair
+# CALLORIA v6.13 — Office GLB Runtime Repair & Asset Diagnostics
 
-This is an additive build-pipeline repair for the staff-model problem reported in the Vercel build log. The v3.9 validator was treating animation clips and a 15-joint skeleton as hard requirements for every visible staff model. The log showed local models with 13 joints and no embedded animation clips, plus a receptionist model without a skin. They were therefore rejected before the browser could attempt to display them.
+This patch repairs the office-model runtime path used by `production-world.js`. It focuses on the real workstation models already listed in `js/glb-asset-registry.js`:
+
+- `office/desks/office_desk.glb`
+- `office/equipment/office_computer.glb`
+- `accessories/headsets/model.glb`
+- `office/reception/reception-desk.glb`
 
 ## What changes
 
-The replacement keeps the existing Vite plugin API and file location, but validates whether a GLB is safe and useful to render rather than requiring every character to be fully animated.
+- Keeps the existing `integrateCalloriaGLBOfficeAssets()` public API.
+- Preserves the exact v2.9 workstation-plan and v3.8 Meshopt/Draco transform anchors.
+- Uses tier-specific geometry budgets; increases the permitted mesh-part count for complex furniture while keeping lower-tier limits tighter.
+- Loads desk, computer, headset and reception assets independently. One unavailable GLB no longer prevents other asset categories from appearing.
+- Keeps primitive/instanced fallbacks visible until a real GLB has passed validation and has actually been placed.
+- Reports loaded asset IDs, placement counts, model dimensions, triangle counts, HTTP/loader failures, validation failures and placement failures.
+- Emits `calloria:office-glb-status` with the same detailed report shown through the production-world callback.
+- Prevents duplicate office asset layers when the same scene is initialized more than once.
+- Fits each loaded model inside its target workstation dimensions and keeps mesh shadows disabled for predictable mobile performance.
 
-Supported manifest render modes:
-
-- `animated-skinned`: a skinned mesh with embedded animation clips.
-- `animated-node-transforms`: animation clips that animate scene-node transforms without a skinned mesh.
-- `skinned-static-pose`: a valid skinned mesh with no embedded animation clips.
-- `static-mesh`: a valid unskinned character mesh in its authored pose.
-
-The validator still checks the GLB v2 container, scene nodes, mesh primitives, POSITION accessors, triangle budget, primitive budget, skin attribute consistency, embedded dependencies and required extensions. It continues to reject malformed files, external binary/image dependencies, invalid skin references, unsupported primitive modes, excessive geometry and implausible character bounds when bounds are available.
-
-A 13-joint rig is no longer rejected solely because it has fewer than 15 joints. Missing `Idle`/`Walk` clips no longer makes a structurally valid staff model unusable. The manifest reports animation and rig capability rather than pretending that clips exist. No skeleton or animation is fabricated.
+This patch does not add substitute models, fabricate textures, create animation clips, or claim that a model loaded when it did not.
 
 ## Installation
 
-Replace only this file in the existing GitHub repository:
+Copy these two files into the repository:
 
-`build/calloria-cc0-staff-glb-bundle-plugin.mjs`
+1. Replace `js/glb-office-world-integration.js` with the file in this package.
+2. Add `js/glb-office-asset-policy.js`.
 
-Keep the existing `vite.config.js`. The replacement exports the same `calloriaCC0StaffGLBBundlePlugin()` factory, retains the existing plugin name and writes the existing manifest path:
+Do not replace `vite.config.js`, `js/production-world.js`, the GLB registry, or the mobile/avatar repair files. Preserve the existing `public/assets/models/` directory.
 
-`public/assets/models/calloria-cc0-staff-manifest.json`
+The existing page routes remain unchanged. The office model layer is loaded from the 3D workplace route.
 
-Keep the v6.11 `js/world-player-avatar.js`, `js/world-player-avatar-desktop.js`, and all v2.5 workstation/mobile plugin files unchanged. This repair does not replace those files or alter their four required source anchors.
+## Expected diagnostics
 
-## Expected build behaviour
+The existing world callback receives:
 
-For an existing local model that passes the new structural checks, the build preserves that file instead of refreshing it simply because it has 13 joints or lacks animation clips. Models that fail structural checks still fall back to the pinned download attempt. Network/download failures remain non-fatal and are recorded in the manifest, with unavailable models excluded from the `PRIMARY_CANDIDATES` list.
+- `placed` / `officeObjectsPlaced`: actual GLB object instances added to the scene.
+- `assets` / `loadedAssetIds`: model IDs that actually loaded.
+- `failedAssetIds`: models that failed to load or validate.
+- `assetDetails`: per-model URL/path, dimensions, mesh/triangle/texture counts and placement status.
+- `errors`: exact loader, validation or placement messages.
 
-The Vercel log should now distinguish structurally compatible models from animated models, for example:
+A missing GLB now reports its concrete path/loader error instead of the generic message that no compatible placement was reported. Primitive fallback pieces are not hidden on failed loads.
 
-`CALLORIA v6.12 staff GLB compatibility bundle: N/5 structurally compatible, A animated, S static-pose, ...`
+## Scope and integration boundary
 
-The exact counts depend on the actual files in the repository. Do not assume 5/5 until the next build log confirms it.
-
-## Important limits
-
-- No GLB files are included in this patch. It re-validates the existing five files at the same public asset paths.
-- A static-pose model is visible but does not gain walking, typing or talking animation.
-- A manifest entry and a bundled candidate do not, by themselves, prove that the browser runtime placed the model into the scene. Runtime placement still needs to be confirmed from the actual Vercel build and the in-game GLB status panel.
-- This workspace did not contain the full current CALLORIA repository or the five real GLB files. The tests use synthetic GLB fixtures that reproduce the logged compatibility cases; they do not certify the actual asset downloads.
-- No Groq, Supabase, recruitment, gameplay, camera or CSS files are changed.
+- Staff character loading remains separate and is handled by v6.12 plus the existing staff runtime transform.
+- This patch does not change player avatar visibility or the first-person mobile camera.
+- The files in your GitHub repository were not available for direct visual inspection here. Actual office GLBs, deployed HTTP paths, Vercel build, and Android rendering still require verification in your repository and deployed site.

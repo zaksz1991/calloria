@@ -1,24 +1,5 @@
 {
-  "name": "calloria-contact-centre-simulator",
-  "version": "0.3.0",
+  "name": "calloria-v6-13-office-glb-runtime-repair",
   "private": true,
-  "type": "module",
-  "description": "CALLORIA contact-centre career and operations simulator with GLB inspection infrastructure",
-  "engines": {
-    "node": ">=22.12.0"
-  },
-  "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 5173 --strictPort",
-    "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0 --port 4173 --strictPort",
-    "test": "node --test tests/*.test.mjs",
-    "check": "node --check js/main.js && node --check js/production-world.js && node --check js/glb-asset-registry.js && node --check js/glb-asset-loader.js && node --check js/glb-asset-inspector.js"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "2.119.0",
-    "three": "0.170.0"
-  },
-  "devDependencies": {
-    "vite": "6.4.5"
-  }
+  "type": "module"
 }
