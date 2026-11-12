@@ -1,11 +1,7 @@
-# CALLORIA v6.17.1 — Reception Lobby Export Repair
+# CALLORIA v6.18 — Reception Lobby Greenery Runtime Activation
 
-Fixes the exact Rollup error from the Vercel build: `production-world.js` imports `integrateCalloriaCC0Lobby`, while the v6.17 module exported the implementation under the longer name `integrateCalloriaCC0OfficeLobby` only.
+Activates the existing CC0 greenery integration against the current v6.17.1 lobby lifecycle instead of relying on brittle string anchors from the legacy v3.2 Vite transform.
 
-The implementation is unchanged. A backwards-compatible named export now aliases the existing implementation, preserving its arguments, status events, fallback visibility, and disposal lifecycle.
+The patch preserves the required `integrateCalloriaCC0Lobby` compatibility export, loads greenery before lobby geometry batching, reports a dedicated greenery-ready event, and disposes the greenery lease with the lobby scene. The Vite plugin's import and invocation remain valid but its old transform is disabled.
 
-## Install
-Replace only `js/cc0-office-lobby-integration.js` with the file in this package. Keep all other v6.17 files and existing repository files unchanged.
-
-## Verification
-Focused export-contract tests and JavaScript syntax check are included. This is a targeted repair; the full repository Vite build and deployed browser rendering have not been run here.
+Plant placement remains intentionally conservative: only named, dimension-validated planter nodes in the lobby GLB are used. No synthetic coordinates or arbitrary placements are introduced.

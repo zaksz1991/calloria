@@ -1,9 +1,7 @@
-# v6.17 Changelog
+# Changelog — v6.18
 
-- Activated the full CC0 reception lobby inside the existing production office GLB runtime.
-- Added geometry validation and safe material/attribute batching.
-- Added device-tier gating: low skips the full lobby; balanced/high attempt it.
-- Added full-lobby → standalone reception-desk GLB → procedural reception fallback order.
-- Added diagnostics for actual lobby load, validation, batching, placement and licence.
-- Added disposal that restores existing reception meshes and releases generated geometry.
-- Preserved v6.16 workstation furniture, ergonomic chairs, Draco and Meshopt loader configuration.
+- Activated the CC0 lobby greenery integration directly in the v6.17.1 lobby GLB lifecycle.
+- Kept the `integrateCalloriaCC0Lobby` export required by `production-world.js`.
+- Removed reliance on legacy Vite transform anchors that no longer matched the active lobby implementation.
+- Added lifecycle cleanup for plant GLB resources and a `calloria:glb-greenery-ready` event.
+- Kept authored-planter-only placement and the original lobby fallback behavior.

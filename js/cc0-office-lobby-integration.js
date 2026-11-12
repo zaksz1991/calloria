@@ -10,6 +10,7 @@
  */
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { disposeGLTFResources } from './glb-asset-loader.js';
+import { addCalloriaLobbyGreenery } from './cc0-lobby-greenery-integration.js';
 import {
   CC0_OFFICE_LOBBY_ASSET,
   CC0_OFFICE_LOBBY_LIMITS,
@@ -186,13 +187,17 @@ export async function integrateCalloriaCC0OfficeLobby({
   let placedRoot = null;
   let generatedGeometries = [];
   let hiddenFallbacks = [];
+  let greeneryLease = null;
   const release = () => {
     if (disposed) return;
     disposed = true;
     if (placedRoot) scene.remove(placedRoot);
+    greeneryLease?.dispose?.();
+    greeneryLease = null;
     for (const geometry of generatedGeometries) geometry.dispose();
     restoreReceptionFallbacks(hiddenFallbacks);
     if (gltf) disposeGLTFResources(gltf);
+    gltf = null;
     generatedGeometries = [];
     hiddenFallbacks = [];
     placedRoot = null;
@@ -212,6 +217,20 @@ export async function integrateCalloriaCC0OfficeLobby({
     const metrics = inspectCC0OfficeLobby(gltf, THREE);
     const validation = validateCC0OfficeLobby(metrics);
     if (!validation.valid) throw new Error(validation.errors.join('; '));
+
+    // Populate only planter anchors authored in the lobby GLB. The integration
+    // returns a no-op lease when no safe, named anchors are present.
+    greeneryLease = await addCalloriaLobbyGreenery(gltf, { isActive: () => !disposed && isActive() });
+    if (disposed || !isActive()) {
+      greeneryLease?.dispose?.();
+      greeneryLease = null;
+      if (gltf) disposeGLTFResources(gltf);
+      gltf = null;
+      return {
+        status: { loaded: false, attempted: true, reason: 'world disposed during lobby greenery integration' },
+        update() {}, dispose: release
+      };
+    }
 
     const rendered = createCC0OfficeLobbyRenderRoot(gltf, THREE);
     placedRoot = new THREE.Group();
@@ -252,19 +271,25 @@ export async function integrateCalloriaCC0OfficeLobby({
       drawCalls: rendered.drawCalls,
       mergeReason: rendered.mergeReason,
       fallbacksHidden: hiddenFallbacks.length,
+      greenery: greeneryLease?.status || { loaded: false, reason: 'greenery integration returned no status' },
       tier,
       scale: CC0_OFFICE_LOBBY_LIMITS.placedScale,
       placement: { ...CC0_OFFICE_LOBBY_LIMITS.position }
     });
     if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
       window.dispatchEvent(new CustomEvent('calloria:glb-lobby-ready', { detail: status }));
+      window.dispatchEvent(new CustomEvent('calloria:glb-greenery-ready', { detail: status.greenery }));
     }
     return { status, update() {}, dispose: release };
   } catch (error) {
+    const greeneryFailureStatus = { ...(greeneryLease?.status || {}), loaded: false, reason: String(error?.message || error) };
+    greeneryLease?.dispose?.();
+    greeneryLease = null;
     if (placedRoot) scene.remove(placedRoot);
     for (const geometry of generatedGeometries) geometry.dispose();
     restoreReceptionFallbacks(hiddenFallbacks);
     if (gltf) disposeGLTFResources(gltf);
+    gltf = null;
     generatedGeometries = [];
     hiddenFallbacks = [];
     placedRoot = null;
@@ -284,6 +309,7 @@ export async function integrateCalloriaCC0OfficeLobby({
     };
     if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
       window.dispatchEvent(new CustomEvent('calloria:glb-lobby-ready', { detail: status }));
+      window.dispatchEvent(new CustomEvent('calloria:glb-greenery-ready', { detail: greeneryFailureStatus }));
     }
     return { status, update() {}, dispose() {} };
   }

@@ -1,7 +1,15 @@
-# Verification — v6.17.1
+# Verification — CALLORIA v6.18
 
-- JavaScript syntax check: run against patched integration file.
-- Focused contract tests: verify both exports, single implementation, no additional render loop, and fallback restoration.
-- ZIP integrity: checked.
-- Full Vite/Vercel production build: not run because the full repository at commit `bc82398` is not present in this workspace.
-- Live browser/Android GLB rendering: not verified.
+Verified locally:
+
+- Focused Node contract tests pass.
+- JavaScript syntax checks pass for both runtime modules and the Vite plugin.
+- The v6.17.1 `integrateCalloriaCC0Lobby` compatibility export is preserved.
+- Existing Vite plugin import/call contract is preserved; the obsolete text-anchor transform is disabled.
+- ZIP archive integrity passes.
+
+Not verified:
+
+- Full Vite production build against the user's complete current repository.
+- Vercel deployment.
+- Browser rendering or whether the deployed reception GLB contains planter nodes that satisfy the geometry/name filters.
