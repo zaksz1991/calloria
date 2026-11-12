@@ -1,34 +1,43 @@
-# CALLORIA v6.15 — Draco-compressed Office GLB Support
+# CALLORIA v6.16 — CC0 Ergonomic Workstation Chair Activation
 
-This release targets a likely runtime gap in the existing office GLB loader. The v6.13 office integration configured `GLTFLoader` with `MeshoptDecoder`, but did not configure `DRACOLoader`. If an office model uses `KHR_draco_mesh_compression`, Three.js cannot decode its geometry without a DRACO loader. That can leave office objects at zero even when the GLB exists and its path is correct.
+## Purpose
 
-## Changes
+The v6.15 office runtime already loads real desks, monitors/computers, headsets and the reception desk. The remaining workstation seating still uses the original instanced geometric chairs. v6.16 activates a real CC0 office task-chair GLB in the same production office runtime.
 
-- Adds Three.js `DRACOLoader` to the office GLB runtime.
-- Keeps Meshopt decoding enabled; these are independent compression extensions.
-- Uses the pinned DRACO 1.5.7 WASM decoder from Google's public decoder CDN by default.
-- Allows a same-origin or alternate decoder folder to be configured before the 3D world starts with `window.CALLORIA_DRACO_DECODER_PATH` (the folder must contain the standard `draco_wasm_wrapper.js` and `draco_decoder.wasm` files).
-- Disposes DRACO workers when the office scene is disposed.
-- Preserves all v6.13 office model validation, workstation placement, fallback visibility and v2.9/Vite transform anchors.
-- Improves failed-model records so the diagnostics retain the model's path and URL and classify DRACO, network/HTTP, GLB parse, validation and placement failures.
-- Does not hide procedural fallback furniture until its corresponding GLB is actually placed.
+## What changes
 
-## Files
+- Loads the CC0 task-chair GLB from `cdn.3dassets.dev` with Three.js `GLTFLoader` and anonymous CORS.
+- Validates model dimensions, triangle count, mesh count, material count, texture dimensions and floor origin before placement.
+- Places chairs at the existing CALLORIA workstation coordinates and facing direction.
+- Device-tier coverage: low = stations 10–11; balanced = stations 9–12; high = stations 5–12.
+- Merges compatible chair meshes into material/attribute batches to keep the draw-call count low.
+- Hides only the corresponding legacy chair instances after the replacement chair batch has been added successfully.
+- Keeps the legacy chair instances visible if download, CORS, validation or placement fails.
+- Restores those original chair instances and disposes generated geometry when the office world is disposed.
+- Reports chair source, CC0 license, selected station IDs, model metrics, placement count and failure category in the existing `calloria:office-glb-status` event.
+- Preserves the v6.15 Draco and Meshopt office loader setup and current v2.9/v3.8 build-transform anchors.
 
-Replace:
+## Model source and licence
 
-- `js/glb-office-world-integration.js`
+- Model: Office task chair — Police Station and Detective Office.
+- Source page: <https://3dassets.dev/assets/police-station-and-detective-office-office-chair-task-fea6fec9>
+- Runtime model URL: <https://cdn.3dassets.dev/assets/29956/v1/model.glb>
+- Licence: CC0 1.0 Universal.
 
-Add:
+The model is fetched by the player's browser at runtime. It is not bundled into the repository. The source server must remain reachable and allow CORS for the chair replacement to appear. The existing chair geometry remains visible otherwise.
 
-- `js/glb-office-draco-policy.js`
+## Expected rendering budget
 
-The package deliberately does not include `package.json`, `package-lock.json`, `vite.config.js`, `production-world.js`, any build plugin, or GLB files.
+The asset metadata used by the prior v3.1 integration reports approximately 2,408 triangles per chair. Eight high-tier chairs therefore use approximately 19,264 triangles, below the 32,000-triangle chair placement cap. The runtime still measures the downloaded model and rejects it if the actual model exceeds the configured budget.
 
-## Installation
+## What is not changed
 
-Use the same two file paths shown in `INSTALL-GITHUB.md`. Preserve all other files, especially the v6.14 staff plugin, the v6.11 mobile/avatar changes, the v6.13 office asset policy, and `public/assets/models/`.
+- No `vite.config.js`, `package.json` or `package-lock.json` changes.
+- No staff GLB build plugin changes.
+- No mobile camera, assessment controls, recruitment or customer-service logic changes.
+- No replacement of the existing renderer or animation loop.
+- No change to the fallback workstation chairs on stations not selected for GLB replacement.
 
-## What this does not prove
+## Verification boundary
 
-The repository's office GLBs were not available for inspection in this workspace. The patch enables the missing decoder path if a model uses Draco; it does not prove that any specific deployed office GLB is Draco-compressed, present, reachable, or visually well-positioned. The next deployed runtime status should show per-asset load and placement diagnostics. Full Vite build, Vercel deployment and Android rendering have not been run here.
+The included tests cover the pure chair policy, tier mapping, geometry budgets, fallback safety, batching contracts, status reporting and v6.15 Draco/Meshopt regressions. They do not fetch the live GLB or prove Android rendering. A full Vite production build and Vercel deployment have not been run in this workspace.

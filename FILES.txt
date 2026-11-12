@@ -1,2 +1,8 @@
-Replace: js/glb-office-world-integration.js
-Add:     js/glb-office-draco-policy.js
+Replace:
+  js/glb-office-world-integration.js
+
+Add:
+  js/cc0-office-chair-integration.js
+  js/office-chair-policy.js
+
+No other application or build files are changed.

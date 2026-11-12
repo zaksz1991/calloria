@@ -1,20 +1,20 @@
-# v6.15 verification
+# v6.16 verification
 
-Executed locally against the files in this package:
+| Check | Result |
+|---|---:|
+| Focused policy / runtime / regression tests | 21 passed, 0 failed |
+| JavaScript syntax (`node --check`) | Passed for all shipped runtime and test modules |
+| Chair tier selection | Passed |
+| Geometry and total-triangle budgets | Passed |
+| Fallback visibility / restoration contracts | Passed |
+| Draw-call batching contract | Passed |
+| v6.15 Draco + Meshopt regression contracts | Passed |
+| ZIP integrity | Passed |
 
-- Focused Node tests: **14 passed, 0 failed**.
-- JavaScript syntax checks: passed for both runtime modules and the test file.
-- Meshopt + Draco loader configuration checks: passed.
-- DRACO decoder path normalization tests: passed.
-- Load-error classification tests: passed.
-- Existing office asset plan and v2.9/Vite transform-anchor regression checks: passed.
-- ZIP integrity: passed.
+## Not verified
 
-Not executed:
+- A full Vite production build against the current GitHub `main` branch.
+- Runtime download of the 3DAssets.dev GLB from a deployed browser.
+- Actual 3D placement and Android rendering.
 
-- Full CALLORIA Vite production build.
-- Vercel deployment.
-- Actual HTTP fetch of office GLB assets or the Google DRACO CDN.
-- Browser Three.js rendering or Android visual QA.
-
-The real office GLB files were not available in this workspace, so this release does not claim the assets have loaded or rendered successfully.
+The source GLB was not downloaded in this workspace. The implementation retains existing fallback chair geometry if the external GLB cannot be fetched or fails validation. The 21 tests are focused policy and source-contract tests, not a complete browser integration suite.

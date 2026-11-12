@@ -1,8 +1,10 @@
-# v6.15 changelog
+# v6.16 — Office Chair GLB Activation
 
-- Added DRACOLoader to the office GLB runtime while retaining Meshopt support.
-- Pinned the default DRACO WASM decoder URL to version 1.5.7.
-- Added an optional runtime override for self-hosted decoder assets.
-- Improved per-asset load error category, model path and URL diagnostics.
-- Added decoder disposal to scene teardown.
-- Kept existing office placement plan and fallback handling unchanged.
+- Integrated a CC0 ergonomic task-chair model into the existing office GLB runtime.
+- Added tier-aware chair placement for 2 / 4 / 8 workstation positions.
+- Added geometry, material, texture, floor-origin and total-triangle validation.
+- Batched compatible chair geometry to limit draw calls.
+- Kept original chair instances visible until validated replacements are placed.
+- Added cleanup and fallback restoration during world disposal.
+- Added per-chair source, licence, placement and failure diagnostics.
+- Preserved v6.15 Draco and Meshopt configuration and existing Vite source anchors.

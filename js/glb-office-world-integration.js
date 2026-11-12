@@ -1,5 +1,5 @@
 /**
- * CALLORIA v6.13 — production office GLB runtime.
+ * CALLORIA v6.16 — production office GLB runtime with CC0 task-chair activation.
  *
  * Keeps the v2.1 public API used by production-world.js and the exact v2.9/v3.8
  * Vite transform anchors. Real GLBs replace only the corresponding visible
@@ -13,6 +13,7 @@ import { GLB_ASSET_REGISTRY } from './glb-asset-registry.js';
 import { disposeGLTFResources } from './glb-asset-loader.js';
 import { validateOfficeAssetMetrics } from './glb-office-asset-policy.js';
 import { classifyOfficeLoadError, getOfficeDracoDecoderPath } from './glb-office-draco-policy.js';
+import { integrateCalloriaCC0OfficeChairs } from './cc0-office-chair-integration.js';
 
 const TARGETS = Object.freeze({
   desk: Object.freeze({ x: 2.60, y: 0.98, z: 1.28 }),
@@ -200,6 +201,8 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
   const placed = [];
   const errors = [];
   const assetDetails = [];
+  let chairLayer = null;
+  let chairFurnitureStatus = { loaded: false, attempted: false, chairsPlaced: 0, reason: 'Chair activation has not completed.' };
   let disposed = false;
 
   async function loadAsset(id) {
@@ -311,6 +314,26 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
   // another valid desk, computer, headset or reception model from appearing.
   const jobs = [];
 
+  // Task chairs use a separately validated CC0 model. Its failure is isolated:
+  // the existing instanced chairs remain visible unless a batched GLB layer is placed.
+  jobs.push((async () => {
+    try {
+      chairLayer = await integrateCalloriaCC0OfficeChairs({
+        scene, stations, tier: plan.tier, isActive: () => !disposed
+      });
+      chairFurnitureStatus = chairLayer?.status || {
+        loaded: false, attempted: true, chairsPlaced: 0, reason: 'Chair runtime returned no status.'
+      };
+    } catch (error) {
+      chairFurnitureStatus = {
+        loaded: false, attempted: true, chairsPlaced: 0,
+        assetId: '3dassets-office-task-chair',
+        reason: String(error?.message || error),
+        errorCategory: /HTTP|fetch|network|CORS/i.test(String(error?.message || error)) ? 'http-or-network' : 'load-or-placement'
+      };
+    }
+  })());
+
   if (deskStationIndexes.length) {
     jobs.push((async () => {
       const result = await placeAsset('office-desk', (record) => deskStationIndexes.flatMap((index) => {
@@ -378,12 +401,30 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
   await Promise.allSettled(jobs);
 
   const placedIds = [...new Set(placed.map((entry) => entry.children?.[0]?.userData?.calloriaSourceAsset).filter(Boolean))];
+  const chairCount = Math.max(0, Math.floor(Number(chairFurnitureStatus.chairsPlaced) || 0));
+  if (chairCount > 0) placedIds.push('3dassets-office-task-chair');
+  const officePlacedCount = placed.length + chairCount;
+  const chairAssetDetail = {
+    id: '3dassets-office-task-chair',
+    name: 'CC0 ergonomic workstation task chair',
+    path: null,
+    url: chairFurnitureStatus.assetUrl || null,
+    sourceUrl: chairFurnitureStatus.sourceUrl || null,
+    license: chairFurnitureStatus.license || 'CC0 1.0 Universal',
+    status: chairFurnitureStatus.loaded ? 'validated-and-placed' : chairFurnitureStatus.attempted ? 'load-failed-or-rejected' : 'not-attempted',
+    placementStatus: chairCount > 0 ? 'placed' : 'fallback-retained',
+    placementCount: chairCount,
+    reasons: chairFurnitureStatus.reason ? [chairFurnitureStatus.reason] : []
+  };
+  const failedIds = errors.map((entry) => entry.assetId);
+  if (chairFurnitureStatus.attempted && !chairFurnitureStatus.loaded) failedIds.push('3dassets-office-task-chair');
   const status = Object.freeze({
-    placed: placed.length,
-    officeObjectsPlaced: placed.length,
+    placed: officePlacedCount,
+    officeObjectsPlaced: officePlacedCount,
     assets: placedIds,
-    loadedAssetIds: [...loaded.keys()],
-    failedAssetIds: [...new Set(errors.map((entry) => entry.assetId))],
+    loadedAssetIds: [...loaded.keys(), ...(chairFurnitureStatus.loaded ? ['3dassets-office-task-chair'] : [])],
+    failedAssetIds: [...new Set(failedIds)],
+    chairFurniture: { ...chairFurnitureStatus },
     tier: plan.tier,
     stationCount: stations.length,
     decoders: {
@@ -399,10 +440,10 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
       headsetStations: [...headsetStationIndexes],
       includeReceptionDesk
     },
-    assetDetails: assetDetails.map((entry) => ({ ...entry, reasons: [...(entry.reasons || [])] })),
+    assetDetails: [...assetDetails.map((entry) => ({ ...entry, reasons: [...(entry.reasons || [])] })), chairAssetDetail],
     errors: errors.map((entry) => ({ ...entry })),
-    reason: placed.length
-      ? `${placed.length} real office GLB placement(s) are visible.`
+    reason: officePlacedCount
+      ? `${officePlacedCount} real office GLB placement(s), including ${chairCount} task chair(s), are visible.`
       : jobs.length
         ? 'No office GLB was placed. Review the per-asset HTTP, geometry and placement diagnostics.'
         : 'No office placements were planned for the current device tier or station count.'
@@ -416,6 +457,8 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
       if (disposed) return;
       disposed = true;
       this.disposed = true;
+      chairLayer?.dispose?.();
+      chairLayer = null;
       for (const object of placed) {
         scene.remove(object);
         object.clear?.();
@@ -433,7 +476,7 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
   return layer;
 }
 
-export const __calloriaOfficeGLBRuntimeV615 = Object.freeze({
+export const __calloriaOfficeGLBRuntimeV616 = Object.freeze({
   inspectModel,
   cloneAndFit,
   hideInstancedEntries,
