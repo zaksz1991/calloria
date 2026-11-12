@@ -40,9 +40,10 @@ test('blink pulse is a short smooth eyelid closure, not continuous facial moveme
   assert.match(transformed.code, /blinkCycle < blinkWindow/);
 });
 
-test('only static-pose skinned staff receive the procedural morph controller', () => {
+test('procedural morph scanning is gated to static staff and does not depend on a skin', () => {
   assert.match(transformed.code, /const proceduralIdle = !clip && \['skinned-static-pose', 'static-mesh'\]\.includes\(selectedRenderMode\)/);
-  assert.match(transformed.code, /if \(proceduralIdle && selectedRenderMode === 'skinned-static-pose' && clonedRoot\?\.traverse\)/);
+  assert.match(transformed.code, /if \(proceduralIdle && clonedRoot\?\.traverse\)/);
+  assert.doesNotMatch(transformed.code, /proceduralIdle && selectedRenderMode === 'skinned-static-pose'/);
 });
 
 test('authored animated GLBs remain on the AnimationMixer path', () => {

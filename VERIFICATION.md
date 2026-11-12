@@ -1,12 +1,11 @@
-# Verification — CALLORIA v6.32
+# Verification — CALLORIA v6.33
 
 ## Automated checks
-- 69/69 Node regression tests passed across all carried-forward staff GLB tests and the new v6.32 eye-blink tests.
+- The full carried-forward Node regression suite plus v6.33 tests passed.
 - Replacement build plugin passed `node --check`.
-- A transformed v1.2 staff-runtime fixture passed `node --check` after the new morph-target integration was generated.
-- Tests cover morph-name matching, index guards, neutral influence preservation, staggered timing, authored-animation isolation, diagnostics, tier scheduling, idempotence and fail-closed behaviour.
-- No additional renderer or animation loop introduced.
-- ZIP archive integrity checked after packaging.
+- The transformed v1.2 staff-runtime fixture passed syntax validation.
+- Tests verify the generalized static-model traversal gate, morph scan ordering, unskinned static-mesh support, animated-model exclusion, morph-index guards, tier scheduling, idempotence and fail-closed behaviour.
+- ZIP archive integrity was checked after packaging.
 
 ## Runtime limitation
-The complete CALLORIA repository and production Vercel deployment were not available for a full Vite build in this patch operation. Browser rendering was not performed. Blink motion is conditional on the deployed GLB containing a recognised eye-blink morph target; diagnostics expose the number of targets actually bound.
+The complete CALLORIA repository was not available for a full Vite build. Browser rendering and deployed Vercel behaviour were not verified. The update activates morph targets already present in GLBs; it does not add facial geometry.

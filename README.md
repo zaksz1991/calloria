@@ -1,9 +1,7 @@
-# CALLORIA v6.32 — Staff Eye-Blink Morph Support
+# CALLORIA v6.33 — Static-Mesh Blink Morph Support
 
-This incremental patch extends the staff GLB runtime so supported static-pose characters can blink using morph targets already embedded in their GLB files.
+This patch fixes a coverage gap in v6.32: its blink-morph discovery was nested under a skinned-character check. Some unskinned GLB characters can still carry morph targets, so their existing eyelid morphs were never discovered.
 
-The runtime recognises narrowly defined eye-blink morph names, keeps their original neutral influence, and applies an occasional short closure pulse with per-character timing variation. It does not alter authored animation clips or facial expression channels that do not clearly identify an eye blink.
+The updated traversal scans both `skinned-static-pose` and `static-mesh` staff models. It only applies procedural blinking to models without authored animation clips and only when an existing morph target has a recognised eye-blink name. Actual bone motion remains restricted to skeleton bones.
 
-A model only receives this effect when it exposes one or more compatible blink morph targets. Models without them continue using the existing idle behaviour.
-
-See `INSTALL-GITHUB.md` for the single-file replacement path and `VERIFICATION.md` for the checks performed.
+See `INSTALL-GITHUB.md` for the single-file replacement path and `VERIFICATION.md` for test results.

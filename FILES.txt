@@ -2,6 +2,7 @@ Replacement:
 - build/calloria-cc0-staff-glb-bundle-plugin.mjs
 
 Regression tests:
+- tests/calloria-v633-static-mesh-blink.test.mjs
 - tests/calloria-v632-blink-morphs.test.mjs
 - tests/calloria-v631-attention-gestures.test.mjs
 - tests/calloria-v630-staff-micro-gesture.test.mjs
@@ -12,5 +13,5 @@ Regression tests:
 - tests/calloria-v628-adaptive-staff-idle.test.mjs
 - tests/fixtures/glb-world-integration-v12.fixture.js
 
-Run tests in the repository's Node environment with:
+Run in the repository's Node environment:
 node --test tests/*.test.mjs

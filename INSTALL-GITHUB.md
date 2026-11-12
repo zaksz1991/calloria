@@ -1,13 +1,13 @@
-# Installation — CALLORIA v6.32
+# Installation — CALLORIA v6.33
 
-Apply this patch on top of CALLORIA v6.31.
+Apply this patch over v6.32.
 
-In GitHub, open the existing file:
+In GitHub, open:
 
 `build/calloria-cc0-staff-glb-bundle-plugin.mjs`
 
 Replace its complete contents with the file at the same path in this ZIP, then commit to `main`.
 
-No other application file needs to be replaced. No package manifest, lockfile, Vite configuration, Supabase setting, API key, database migration or public asset is changed.
+No other application file needs to be replaced. Do not replace `package.json`, the lockfile, Vite configuration, Supabase settings or API keys.
 
-The update adds procedural eyelid movement only to static-pose skinned GLBs that already contain recognised eye-blink morph targets. Authored animated GLBs are unchanged. A deployed Vercel build and actual browser rendering must still be confirmed in the project.
+The change extends blink-morph discovery to unskinned static-mesh staff GLBs. Authored animated GLBs remain on their existing AnimationMixer path. Actual blink behaviour still depends on the GLB containing compatible eye-blink morph targets.

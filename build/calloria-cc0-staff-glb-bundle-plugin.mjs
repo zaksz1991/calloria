@@ -553,10 +553,12 @@ function addProceduralStaticStaffIdle(code) {
     let proceduralIdleMode = 'none';
     const idleBoneTargets = [];
     const idleBlinkMorphTargets = [];
-    if (proceduralIdle && selectedRenderMode === 'skinned-static-pose' && clonedRoot?.traverse) {
+    if (proceduralIdle && clonedRoot?.traverse) {
       clonedRoot.traverse((node) => {
-        // Some static staff GLBs expose eye blinking as morph targets rather
-        // than eyelid bones. Match common Blender/ARKit names, not expressions.
+        // Static skinned and unskinned staff GLBs may expose eyelid movement
+        // as morph targets. Scan all procedural static models; bone motion is
+        // still restricted below to actual skeleton bones. Authored clips are
+        // excluded by the proceduralIdle gate above.
         const morphDictionary = node?.morphTargetDictionary;
         const morphInfluences = node?.morphTargetInfluences;
         if (morphDictionary && morphInfluences && typeof morphInfluences.length === 'number') {
