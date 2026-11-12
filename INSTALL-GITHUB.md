@@ -1,32 +1,25 @@
-# CALLORIA v6.18 — Lobby Greenery Runtime Activation
+# Install CALLORIA v6.19 — GitHub web interface
 
-This is a four-file overlay. It does not replace the package manifest, lockfile, Vite configuration, production-world module, or any shared service credentials.
+Prerequisite: CALLORIA v6.18 Lobby Greenery Runtime Activation must already be installed. Apply this ZIP as an overlay on the repository's `main` branch.
 
-## Replace these existing files
+## Replace these files
 
-- `js/cc0-office-lobby-integration.js`
-- `build/calloria-cc0-lobby-greenery-plugin.mjs`
+1. `js/cc0-office-lobby-integration.js`
+2. `build/calloria-glazed-department-partitions-plugin.mjs`
 
-## Add or replace this asset integration file
+## Add or replace this file
 
-- `js/cc0-lobby-greenery-integration.js`
+3. `js/cc0-glazed-department-partitions.js`
 
-## Add this verification file
+## Preserve all other files
 
-- `tests/lobby-greenery-runtime.test.mjs`
+Do not replace `vite.config.js`, `package.json`, `package-lock.json`, `js/production-world.js`, `js/cc0-lobby-greenery-integration.js`, `js/glb-asset-loader.js`, Supabase settings, Groq keys, or any GLB assets.
 
-## Preserve the rest of the repository
+## GitHub steps
 
-Do not replace `vite.config.js`, `package.json`, `package-lock.json`, `js/production-world.js`, `js/glb-office-world-integration.js`, the staff GLB files, or the shared Supabase/Groq configuration.
+1. Open the CALLORIA repository on GitHub.
+2. Open each listed path and use the edit/upload controls to replace the file with the matching file from this ZIP. Create the `js/cc0-glazed-department-partitions.js` file if it does not already exist.
+3. Commit the three-file overlay to `main`.
+4. Allow Vercel to deploy the commit.
 
-The existing Vite config still imports and invokes `calloriaCC0LobbyGreeneryPlugin()`. The replacement plugin deliberately returns no transform because greenery is now called directly inside the current lobby GLB lifecycle. This removes the obsolete v3.2 source-anchor transformation that previously skipped the updated lobby integration.
-
-## Runtime behavior
-
-- Uses the documented CC0 bird-of-paradise GLB.
-- Plants are added only to named planter anchors found and validated in the loaded reception-lobby GLB. It does not invent placement coordinates.
-- If no qualifying planter anchors exist, or the external asset fails validation/loading, the lobby remains intact and its greenery status reports the reason.
-- Greenery resources are released with the lobby layer; the existing lobby fallback and disposal behavior are retained.
-- The integration emits `calloria:glb-greenery-ready` and includes a `greenery` status object in the lobby status payload.
-
-This package was tested with focused Node contract tests and syntax checks. It was not tested with the full repository's Vite production build or a deployed browser session.
+This package intentionally leaves `vite.config.js` untouched. Its existing plugin import remains valid; the plugin no longer rewrites `production-world.js` using stale text anchors.

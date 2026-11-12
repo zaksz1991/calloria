@@ -11,6 +11,7 @@
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { disposeGLTFResources } from './glb-asset-loader.js';
 import { addCalloriaLobbyGreenery } from './cc0-lobby-greenery-integration.js';
+import { integrateCalloriaGlazedDepartmentPartitions } from './cc0-glazed-department-partitions.js';
 import {
   CC0_OFFICE_LOBBY_ASSET,
   CC0_OFFICE_LOBBY_LIMITS,
@@ -188,12 +189,52 @@ export async function integrateCalloriaCC0OfficeLobby({
   let generatedGeometries = [];
   let hiddenFallbacks = [];
   let greeneryLease = null;
+  let partitionLease = null;
+  let partitionLoad = null;
+  const partitionStatus = { loaded: false, attempted: true, reason: 'department glass integration pending' };
+  const emitPartitionStatus = () => {
+    if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('calloria:glazed-partitions-ready', { detail: partitionStatus }));
+    }
+  };
+  const startPartitionIntegration = () => {
+    if (partitionLoad) return partitionLoad;
+    partitionLoad = integrateCalloriaGlazedDepartmentPartitions(scene, {
+      tier,
+      isActive: () => !disposed && isActive()
+    }).then((lease) => {
+      if (disposed || !isActive()) {
+        lease?.dispose?.();
+        return null;
+      }
+      partitionLease = lease || null;
+      Object.assign(partitionStatus, lease?.status || {
+        loaded: false,
+        attempted: true,
+        reason: 'department glass integration returned no status'
+      });
+      emitPartitionStatus();
+      return partitionLease;
+    }).catch((error) => {
+      if (disposed || !isActive()) return null;
+      Object.assign(partitionStatus, {
+        loaded: false,
+        attempted: true,
+        reason: String(error?.message || error)
+      });
+      emitPartitionStatus();
+      return null;
+    });
+    return partitionLoad;
+  };
   const release = () => {
     if (disposed) return;
     disposed = true;
-    if (placedRoot) scene.remove(placedRoot);
+    partitionLease?.dispose?.();
+    partitionLease = null;
     greeneryLease?.dispose?.();
     greeneryLease = null;
+    if (placedRoot) scene.remove(placedRoot);
     for (const geometry of generatedGeometries) geometry.dispose();
     restoreReceptionFallbacks(hiddenFallbacks);
     if (gltf) disposeGLTFResources(gltf);
@@ -204,6 +245,9 @@ export async function integrateCalloriaCC0OfficeLobby({
   };
 
   try {
+    // Start department glass independently of the reception GLB request. This
+    // uses the active production scene and waits briefly for its named panes.
+    void startPartitionIntegration();
     gltf = await loader.loadAsync(CC0_OFFICE_LOBBY_ASSET.url);
     if (disposed || !isActive()) {
       disposeGLTFResources(gltf);
@@ -272,6 +316,7 @@ export async function integrateCalloriaCC0OfficeLobby({
       mergeReason: rendered.mergeReason,
       fallbacksHidden: hiddenFallbacks.length,
       greenery: greeneryLease?.status || { loaded: false, reason: 'greenery integration returned no status' },
+      partitions: partitionStatus,
       tier,
       scale: CC0_OFFICE_LOBBY_LIMITS.placedScale,
       placement: { ...CC0_OFFICE_LOBBY_LIMITS.position }
@@ -293,7 +338,6 @@ export async function integrateCalloriaCC0OfficeLobby({
     generatedGeometries = [];
     hiddenFallbacks = [];
     placedRoot = null;
-    disposed = true;
     const reason = String(error?.message || error);
     const status = {
       loaded: false,
@@ -311,7 +355,7 @@ export async function integrateCalloriaCC0OfficeLobby({
       window.dispatchEvent(new CustomEvent('calloria:glb-lobby-ready', { detail: status }));
       window.dispatchEvent(new CustomEvent('calloria:glb-greenery-ready', { detail: greeneryFailureStatus }));
     }
-    return { status, update() {}, dispose() {} };
+    return { status, update() {}, dispose: release };
   }
 }
 

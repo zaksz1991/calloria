@@ -1,15 +1,16 @@
-# Verification — CALLORIA v6.18
+# Verification — CALLORIA v6.19
 
-Verified locally:
+Locally verified:
 
-- Focused Node contract tests pass.
-- JavaScript syntax checks pass for both runtime modules and the Vite plugin.
-- The v6.17.1 `integrateCalloriaCC0Lobby` compatibility export is preserved.
-- Existing Vite plugin import/call contract is preserved; the obsolete text-anchor transform is disabled.
+- Four focused Node contract tests pass.
+- `node --check` passes for the department partition runtime, reception lifecycle integration, and Vite compatibility plugin.
+- The existing lobby alias export is preserved.
+- The old Vite plugin export remains callable and its stale source transform is disabled.
 - ZIP archive integrity passes.
 
 Not verified:
 
-- Full Vite production build against the user's complete current repository.
+- Full Vite production build against the complete current CALLORIA repository.
 - Vercel deployment.
-- Browser rendering or whether the deployed reception GLB contains planter nodes that satisfy the geometry/name filters.
+- Live browser rendering or successful external CC0 asset retrieval.
+- Whether the current production scene contains all three expected authored pane anchors with the published dimensions. The runtime will report missing or invalid anchors and leave original panes visible.

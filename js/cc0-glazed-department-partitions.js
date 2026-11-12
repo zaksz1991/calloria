@@ -177,6 +177,28 @@ function selectedPanelSpecs(tier) {
 }
 
 /**
+ * Wait briefly for the authored placeholder panes to enter the production
+ * scene. The 3D world can create these objects after the lobby lifecycle has
+ * started; polling is bounded and never creates replacement anchor geometry.
+ */
+export async function waitForCC0GlazedPartitionAnchors(
+  scene,
+  specs,
+  { isActive = () => true, timeoutMs = 7000, intervalMs = 200 } = {}
+) {
+  const startedAt = Date.now();
+  let missing = specs.map((spec) => spec.name);
+  while (isActive()) {
+    const anchors = specs.map((spec) => ({ spec, anchor: scene?.getObjectByName?.(spec.name) || null }));
+    missing = anchors.filter((entry) => !entry.anchor).map((entry) => entry.spec.name);
+    if (!missing.length) return { anchors, missing: [] };
+    if (Date.now() - startedAt >= timeoutMs) break;
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  return { anchors: null, missing, cancelled: !isActive() };
+}
+
+/**
  * Replaces the existing flat QA/supervisor room glass only after the GLB has
  * loaded, validated, and all clone placements have been prepared. No new
  * openings, collision rules, room boundaries or guessed coordinates are added.
@@ -201,9 +223,14 @@ export async function integrateCalloriaGlazedDepartmentPartitions(scene, { tier 
     if (!isActive()) return noOp('world disposed before partition integration');
 
     const specs = selectedPanelSpecs(tier);
-    const anchors = specs.map((spec) => {
-      const anchor = scene.getObjectByName(spec.name);
-      if (!anchor) throw new Error(`required authored panel anchor is missing: ${spec.name}`);
+    const anchorResult = await waitForCC0GlazedPartitionAnchors(scene, specs, { isActive });
+    if (!anchorResult.anchors) {
+      const reason = anchorResult.cancelled
+        ? 'world disposed while waiting for department glass anchors'
+        : `authored department glass anchors were not available: ${anchorResult.missing.join(', ')}`;
+      return noOp(reason, { tier, missingAnchors: anchorResult.missing });
+    }
+    const anchors = anchorResult.anchors.map(({ spec, anchor }) => {
       const error = validateAnchor(anchor, spec);
       if (error) throw new Error(`${spec.name}: ${error}`);
       return { spec, anchor };
@@ -276,4 +303,4 @@ export async function integrateCalloriaGlazedDepartmentPartitions(scene, { tier 
   }
 }
 
-export const __departmentPartitionTest = Object.freeze({ LIMITS, PANEL_SPECS, selectedPanelSpecs });
+export const __departmentPartitionTest = Object.freeze({ LIMITS, PANEL_SPECS, selectedPanelSpecs, waitForCC0GlazedPartitionAnchors });
