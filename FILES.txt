@@ -1,8 +1,8 @@
 Replace:
-  js/glb-office-world-integration.js
+- js/glb-office-world-integration.js
 
 Add:
-  js/cc0-office-chair-integration.js
-  js/office-chair-policy.js
+- js/cc0-office-lobby-integration.js
+- js/cc0-office-lobby-policy.js
 
-No other application or build files are changed.
+Preserve all other repository files.

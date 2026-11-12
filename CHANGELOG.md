@@ -1,10 +1,9 @@
-# v6.16 — Office Chair GLB Activation
+# v6.17 Changelog
 
-- Integrated a CC0 ergonomic task-chair model into the existing office GLB runtime.
-- Added tier-aware chair placement for 2 / 4 / 8 workstation positions.
-- Added geometry, material, texture, floor-origin and total-triangle validation.
-- Batched compatible chair geometry to limit draw calls.
-- Kept original chair instances visible until validated replacements are placed.
-- Added cleanup and fallback restoration during world disposal.
-- Added per-chair source, licence, placement and failure diagnostics.
-- Preserved v6.15 Draco and Meshopt configuration and existing Vite source anchors.
+- Activated the full CC0 reception lobby inside the existing production office GLB runtime.
+- Added geometry validation and safe material/attribute batching.
+- Added device-tier gating: low skips the full lobby; balanced/high attempt it.
+- Added full-lobby → standalone reception-desk GLB → procedural reception fallback order.
+- Added diagnostics for actual lobby load, validation, batching, placement and licence.
+- Added disposal that restores existing reception meshes and releases generated geometry.
+- Preserved v6.16 workstation furniture, ergonomic chairs, Draco and Meshopt loader configuration.

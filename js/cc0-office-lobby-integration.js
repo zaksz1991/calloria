@@ -1,88 +1,62 @@
 /**
- * CALLORIA v3.0 — Real CC0 reception and office-lobby scene.
+ * CALLORIA v6.17 — complete reception-lobby GLB integration.
  *
- * Source asset: 3DAssets.dev, Office Lobby and Building Facilities starter scene.
- * Licence: CC0 1.0 Universal. Static GLB, metres, +Y up.
- * The asset is loaded lazily from its permanent CORS-enabled CDN URL. If the
- * network or validation fails, existing CALLORIA reception geometry remains.
+ * Loads the publisher's static CC0 lobby scene through the already configured
+ * office GLTFLoader. It validates and batches compatible meshes before adding
+ * the lobby. Existing reception objects are hidden only after placement; all
+ * original visibility is restored when the world is disposed. On any failure,
+ * the procedural reception and the existing reception-desk GLB fallback stay
+ * available.
  */
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { disposeGLTFResources } from './glb-asset-loader.js';
+import {
+  CC0_OFFICE_LOBBY_ASSET,
+  CC0_OFFICE_LOBBY_LIMITS,
+  CC0_OFFICE_LOBBY_FALLBACK_OBJECTS,
+  validateCC0OfficeLobby
+} from './cc0-office-lobby-policy.js';
 
-export const CC0_OFFICE_LOBBY_ASSET = Object.freeze({
-  id: '3dassets-office-lobby-starter-scene',
-  name: 'Office Lobby and Building Facilities — starter scene',
-  url: 'https://cdn.3dassets.dev/assets/26326/v1/model.glb',
-  source: 'https://3dassets.dev/packs/office-lobby-and-facilities',
-  license: 'CC0 1.0 Universal',
-  licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/',
-  expected: Object.freeze({
-    triangles: 32204,
-    meshes: 99,
-    materials: 7,
-    vertices: 68648,
-    sizeMeters: Object.freeze([12.707, 3.672, 8.895]),
-    fileBytes: 1303620
-  })
-});
+function getTextureMetrics(root) {
+  const textures = new Set();
+  const slots = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'aoMap'];
+  root.traverse((object) => {
+    if (!(object.isMesh || object.isSkinnedMesh || object.isInstancedMesh)) return;
+    const list = Array.isArray(object.material) ? object.material : object.material ? [object.material] : [];
+    for (const material of list) for (const slot of slots) {
+      if (material?.[slot]?.isTexture) textures.add(material[slot]);
+    }
+  });
+  let maxTextureEdge = 0;
+  for (const texture of textures) {
+    const image = texture.source?.data || texture.image;
+    maxTextureEdge = Math.max(maxTextureEdge, Number(image?.width || 0), Number(image?.height || 0));
+  }
+  return { textures, maxTextureEdge };
+}
 
-const LIMITS = Object.freeze({
-  triangles: 42000,
-  meshes: 125,
-  materials: 12,
-  maxDimension: 14.5,
-  maxHeight: 4.25
-});
-
-const HIDDEN_LEGACY_OBJECTS = Object.freeze([
-  'reception-counter-top',
-  'reception-counter-front',
-  'reception-counter-accent',
-  'reception-checkin-screen',
-  'reception-access-posts',
-  'reception-waiting-seats',
-  'reception-waiting-seat-backs',
-  'reception-waiting-seat-legs',
-  'reception-access-control-readers',
-  'reception-access-reader-indicators',
-  'calloria-glb-reception-desk'
-]);
-
-export function inspectCC0Lobby(gltf) {
+export function inspectCC0OfficeLobby(gltf, THREE) {
   const root = gltf?.scene;
-  if (!root) throw new Error('The CC0 lobby GLB has no default scene.');
+  if (!root) throw new Error('Lobby GLB has no default scene.');
   root.updateMatrixWorld(true);
   const bounds = new THREE.Box3().setFromObject(root);
   const size = bounds.getSize(new THREE.Vector3());
   const materials = new Set();
-  const textures = new Set();
   let meshes = 0;
   let triangles = 0;
   let vertices = 0;
-  const textureSlots = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'aoMap'];
-
   root.traverse((object) => {
     if (!(object.isMesh || object.isSkinnedMesh || object.isInstancedMesh)) return;
     meshes += 1;
-    const geometry = object.geometry;
-    const positions = geometry?.getAttribute?.('position');
-    const count = geometry?.index?.count ?? positions?.count ?? 0;
-    triangles += Math.floor(count / 3) * (object.isInstancedMesh ? Math.max(1, object.count) : 1);
-    vertices += (positions?.count || 0) * (object.isInstancedMesh ? Math.max(1, object.count) : 1);
+    const positions = object.geometry?.getAttribute?.('position');
+    const count = object.geometry?.index?.count ?? positions?.count ?? 0;
+    const instanceFactor = object.isInstancedMesh ? Math.max(1, object.count) : 1;
+    triangles += Math.floor(count / 3) * instanceFactor;
+    vertices += (positions?.count || 0) * instanceFactor;
     const list = Array.isArray(object.material) ? object.material : object.material ? [object.material] : [];
-    for (const material of list) {
-      materials.add(material);
-      for (const slot of textureSlots) if (material[slot]?.isTexture) textures.add(material[slot]);
-    }
+    for (const material of list) materials.add(material);
   });
-
-  const maxTextureEdge = [...textures].reduce((max, texture) => {
-    const image = texture.source?.data || texture.image;
-    return Math.max(max, Number(image?.width || 0), Number(image?.height || 0));
-  }, 0);
-
+  const textureMetrics = getTextureMetrics(root);
   return {
     bounds,
     size: { x: size.x, y: size.y, z: size.z },
@@ -90,99 +64,73 @@ export function inspectCC0Lobby(gltf) {
     triangles,
     vertices,
     materials: materials.size,
-    textures: textures.size,
-    maxTextureEdge
+    textures: textureMetrics.textures.size,
+    maxTextureEdge: textureMetrics.maxTextureEdge
   };
 }
 
-export function validateCC0Lobby(metrics) {
-  const errors = [];
-  if (!metrics || !metrics.size) return { valid: false, errors: ['missing geometry metrics'] };
-  if (metrics.triangles <= 0 || metrics.triangles > LIMITS.triangles) {
-    errors.push(`triangle budget exceeded (${LIMITS.triangles.toLocaleString()})`);
-  }
-  if (metrics.meshes <= 0 || metrics.meshes > LIMITS.meshes) {
-    errors.push(`mesh count outside supported range (${LIMITS.meshes})`);
-  }
-  if (metrics.materials <= 0 || metrics.materials > LIMITS.materials) {
-    errors.push(`material count outside supported range (${LIMITS.materials})`);
-  }
-  if (metrics.size.x > LIMITS.maxDimension || metrics.size.z > LIMITS.maxDimension || metrics.size.y > LIMITS.maxHeight) {
-    errors.push('model dimensions exceed the CALLORIA lobby envelope');
-  }
-  if (metrics.size.x < 8 || metrics.size.z < 6 || metrics.size.y < 2) {
-    errors.push('model dimensions are too small for the lobby envelope');
-  }
-  if (metrics.maxTextureEdge > 4096) errors.push('texture exceeds 4096 pixels');
-  return { valid: errors.length === 0, errors };
-}
-
-function attributeSignature(geometry) {
+function geometryAttributeSignature(geometry) {
   return Object.entries(geometry.attributes)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([name, attribute]) => `${name}:${attribute.itemSize}:${attribute.normalized ? 1 : 0}:${attribute.array?.constructor?.name || 'unknown'}`)
     .join('|');
 }
 
-function disposeGeometryList(buckets) {
-  for (const materialGroups of buckets.values()) {
-    for (const geometries of materialGroups.values()) {
-      for (const geometry of geometries) geometry.dispose();
-    }
+function disposeGeometryBuckets(buckets) {
+  for (const bySignature of buckets.values()) {
+    for (const geometries of bySignature.values()) for (const geometry of geometries) geometry.dispose();
   }
 }
 
 /**
- * The starter scene contains 99 static meshes and 7 materials. Merge compatible
- * meshes by material/attribute layout to reduce mobile draw calls. If any mesh
- * cannot be safely merged, keep the original authored scene rather than
- * dropping geometry or materials.
+ * Batch the static source meshes by shared material and matching attributes.
+ * If any mesh cannot safely be merged, preserve the complete authored scene.
  */
-export function createLobbyRenderRoot(gltf) {
-  const root = gltf.scene;
-  root.updateMatrixWorld(true);
+export function createCC0OfficeLobbyRenderRoot(gltf, THREE) {
+  const sourceRoot = gltf.scene;
+  sourceRoot.updateMatrixWorld(true);
   const buckets = new Map();
-  let unsupportedMeshes = 0;
   let sourceMeshes = 0;
+  let unsupportedMeshes = 0;
 
-  root.traverse((object) => {
+  sourceRoot.traverse((object) => {
     if (!(object.isMesh || object.isSkinnedMesh || object.isInstancedMesh)) return;
     sourceMeshes += 1;
-    if (!object.isMesh || object.isSkinnedMesh || object.isInstancedMesh || Array.isArray(object.material) || object.morphTargetInfluences?.length) {
-      unsupportedMeshes += 1;
-      return;
-    }
-    if (!object.geometry || !object.material) {
+    if (
+      !object.isMesh || object.isSkinnedMesh || object.isInstancedMesh
+      || Array.isArray(object.material) || object.morphTargetInfluences?.length
+      || !object.geometry || !object.material
+    ) {
       unsupportedMeshes += 1;
       return;
     }
     const geometry = object.geometry.clone();
     geometry.applyMatrix4(object.matrixWorld);
-    const signature = attributeSignature(geometry);
+    const signature = geometryAttributeSignature(geometry);
     let bySignature = buckets.get(object.material);
-    if (!bySignature) {
-      bySignature = new Map();
-      buckets.set(object.material, bySignature);
-    }
-    const list = bySignature.get(signature) || [];
-    list.push(geometry);
-    bySignature.set(signature, list);
+    if (!bySignature) { bySignature = new Map(); buckets.set(object.material, bySignature); }
+    const geometries = bySignature.get(signature) || [];
+    geometries.push(geometry);
+    bySignature.set(signature, geometries);
   });
 
-  if (unsupportedMeshes > 0 || !buckets.size) {
-    disposeGeometryList(buckets);
-    return { root: root.clone(true), merged: false, drawCalls: sourceMeshes, mergeReason: 'asset contains meshes that are not safe to merge' };
+  if (unsupportedMeshes || !buckets.size) {
+    disposeGeometryBuckets(buckets);
+    return {
+      root: sourceRoot.clone(true), merged: false, drawCalls: sourceMeshes,
+      mergeReason: unsupportedMeshes ? 'source includes unsupported mesh types or material layouts' : 'no mergeable meshes'
+    };
   }
 
   const mergedRoot = new THREE.Group();
-  mergedRoot.name = 'calloria-cc0-office-lobby-batched';
+  mergedRoot.name = 'calloria-cc0-office-lobby-batches';
+  const generatedGeometries = [];
   let drawCalls = 0;
-  const generated = [];
   try {
     for (const [material, bySignature] of buckets) {
       for (const [signature, geometries] of bySignature) {
         const merged = geometries.length === 1 ? geometries[0] : mergeGeometries(geometries, false);
-        if (!merged) throw new Error(`Could not merge lobby geometry attributes: ${signature}`);
+        if (!merged) throw new Error(`Could not merge lobby vertex attributes: ${signature}`);
         if (geometries.length > 1) for (const geometry of geometries) geometry.dispose();
         merged.computeBoundingBox();
         merged.computeBoundingSphere();
@@ -192,130 +140,157 @@ export function createLobbyRenderRoot(gltf) {
         mesh.receiveShadow = false;
         mesh.frustumCulled = true;
         mergedRoot.add(mesh);
-        generated.push(merged);
+        generatedGeometries.push(merged);
         drawCalls += 1;
       }
     }
-    return { root: mergedRoot, merged: true, drawCalls, mergeReason: null };
+    return { root: mergedRoot, merged: true, drawCalls, generatedGeometries, mergeReason: null };
   } catch (error) {
-    for (const geometry of generated) geometry.dispose();
-    disposeGeometryList(buckets);
+    for (const geometry of generatedGeometries) geometry.dispose();
+    disposeGeometryBuckets(buckets);
     return {
-      root: root.clone(true),
-      merged: false,
-      drawCalls: sourceMeshes,
-      mergeReason: String(error?.message || error)
+      root: sourceRoot.clone(true), merged: false, drawCalls: sourceMeshes,
+      generatedGeometries: [], mergeReason: String(error?.message || error)
     };
   }
 }
 
-function hideLegacyReceptionObjects(scene) {
+function hideReceptionFallbacks(scene) {
   const changed = [];
-  for (const name of HIDDEN_LEGACY_OBJECTS) {
+  for (const name of CC0_OFFICE_LOBBY_FALLBACK_OBJECTS) {
     const object = scene.getObjectByName(name);
-    if (object && object.visible) {
-      object.visible = false;
-      changed.push(object);
-    }
+    if (!object || !object.visible) continue;
+    changed.push({ object, visible: object.visible });
+    object.visible = false;
   }
   return changed;
 }
 
-export async function integrateCalloriaCC0Lobby({ scene, tier = 'balanced', isActive = () => true } = {}) {
-  if (!scene?.add || !scene?.getObjectByName) {
-    throw new TypeError('CALLORIA CC0 lobby integration requires the active Three.js scene.');
+function restoreReceptionFallbacks(changed) {
+  for (const entry of changed) entry.object.visible = entry.visible;
+}
+
+export async function integrateCalloriaCC0OfficeLobby({
+  THREE,
+  scene,
+  loader,
+  tier = 'balanced',
+  isActive = () => true
+} = {}) {
+  if (!THREE?.Group || !scene?.add || !scene?.getObjectByName || !loader?.loadAsync) {
+    throw new TypeError('CALLORIA reception lobby requires the active Three.js scene and configured GLTFLoader.');
   }
 
-  const loader = new GLTFLoader();
-  loader.setCrossOrigin('anonymous');
   let disposed = false;
   let gltf = null;
   let placedRoot = null;
-  let mergedGeometries = [];
-  let hiddenLegacy = [];
+  let generatedGeometries = [];
+  let hiddenFallbacks = [];
+  const release = () => {
+    if (disposed) return;
+    disposed = true;
+    if (placedRoot) scene.remove(placedRoot);
+    for (const geometry of generatedGeometries) geometry.dispose();
+    restoreReceptionFallbacks(hiddenFallbacks);
+    if (gltf) disposeGLTFResources(gltf);
+    generatedGeometries = [];
+    hiddenFallbacks = [];
+    placedRoot = null;
+  };
 
   try {
     gltf = await loader.loadAsync(CC0_OFFICE_LOBBY_ASSET.url);
     if (disposed || !isActive()) {
       disposeGLTFResources(gltf);
-      return { status: { loaded: false, reason: 'world disposed during model load' }, update() {}, dispose() {} };
+      gltf = null;
+      return {
+        status: { loaded: false, attempted: true, reason: 'world disposed while lobby was loading' },
+        update() {}, dispose: release
+      };
     }
 
-    const metrics = inspectCC0Lobby(gltf);
-    const validation = validateCC0Lobby(metrics);
+    const metrics = inspectCC0OfficeLobby(gltf, THREE);
+    const validation = validateCC0OfficeLobby(metrics);
     if (!validation.valid) throw new Error(validation.errors.join('; '));
 
-    const renderRoot = createLobbyRenderRoot(gltf);
+    const rendered = createCC0OfficeLobbyRenderRoot(gltf, THREE);
     placedRoot = new THREE.Group();
     placedRoot.name = 'calloria-cc0-office-lobby';
-    // Authored size is approximately 12.7 × 3.67 × 8.9 metres. Scale to 80%
-    // and place in the front-left reception footprint so the lobby stays clear
-    // of the first agent row and perimeter columns.
-    const centre = metrics.bounds.getCenter(new THREE.Vector3());
-    placedRoot.scale.setScalar(0.8);
-    placedRoot.position.set(-14.0, 0, 10.2);
-    // Add the centring offset instead of overwriting any root transform authored
-    // by the asset. The GLB currently has an identity root, but this remains safe
-    // if the upstream source changes its scene root transform.
-    renderRoot.root.position.add(new THREE.Vector3(-centre.x, -metrics.bounds.min.y, -centre.z));
-    renderRoot.root.updateMatrixWorld(true);
-    placedRoot.add(renderRoot.root);
+    placedRoot.scale.setScalar(CC0_OFFICE_LOBBY_LIMITS.placedScale);
+    placedRoot.position.set(
+      CC0_OFFICE_LOBBY_LIMITS.position.x,
+      CC0_OFFICE_LOBBY_LIMITS.position.y,
+      CC0_OFFICE_LOBBY_LIMITS.position.z
+    );
+    const center = metrics.bounds.getCenter(new THREE.Vector3());
+    rendered.root.position.add(new THREE.Vector3(-center.x, -metrics.bounds.min.y, -center.z));
+    rendered.root.updateMatrixWorld(true);
+    placedRoot.add(rendered.root);
+
+    // The replacement must be in the scene before any existing reception mesh
+    // is hidden. This order guarantees a visible fallback on all failure paths.
+    generatedGeometries = rendered.generatedGeometries || [];
     scene.add(placedRoot);
+    hiddenFallbacks = hideReceptionFallbacks(scene);
 
-    if (renderRoot.merged) {
-      renderRoot.root.traverse((object) => {
-        if (object.isMesh && object.geometry) mergedGeometries.push(object.geometry);
-      });
-      // The source scene's geometries are no longer needed after static batching.
-      gltf.scene.traverse((object) => {
-        if (object.isMesh && object.geometry) object.geometry.dispose();
-      });
+    const status = Object.freeze({
+      loaded: true,
+      attempted: true,
+      id: CC0_OFFICE_LOBBY_ASSET.id,
+      name: CC0_OFFICE_LOBBY_ASSET.name,
+      url: CC0_OFFICE_LOBBY_ASSET.url,
+      sourceUrl: CC0_OFFICE_LOBBY_ASSET.sourceUrl,
+      license: CC0_OFFICE_LOBBY_ASSET.license,
+      licenseUrl: CC0_OFFICE_LOBBY_ASSET.licenseUrl,
+      triangles: metrics.triangles,
+      meshes: metrics.meshes,
+      vertices: metrics.vertices,
+      materials: metrics.materials,
+      textures: metrics.textures,
+      maxTextureEdge: metrics.maxTextureEdge,
+      merged: rendered.merged,
+      drawCalls: rendered.drawCalls,
+      mergeReason: rendered.mergeReason,
+      fallbacksHidden: hiddenFallbacks.length,
+      tier,
+      scale: CC0_OFFICE_LOBBY_LIMITS.placedScale,
+      placement: { ...CC0_OFFICE_LOBBY_LIMITS.position }
+    });
+    if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('calloria:glb-lobby-ready', { detail: status }));
     }
-
-    hiddenLegacy = hideLegacyReceptionObjects(scene);
-
-    return {
-      status: {
-        loaded: true,
-        source: CC0_OFFICE_LOBBY_ASSET.name,
-        sourceUrl: CC0_OFFICE_LOBBY_ASSET.source,
-        license: CC0_OFFICE_LOBBY_ASSET.license,
-        triangles: metrics.triangles,
-        sourceMeshes: metrics.meshes,
-        mergedDrawCalls: renderRoot.drawCalls,
-        materials: metrics.materials,
-        textures: metrics.textures,
-        tier,
-        merged: renderRoot.merged,
-        mergeNote: renderRoot.mergeReason
-      },
-      update() {},
-      dispose() {
-        if (disposed) return;
-        disposed = true;
-        if (placedRoot) scene.remove(placedRoot);
-        for (const geometry of mergedGeometries) geometry.dispose();
-        for (const object of hiddenLegacy) object.visible = true;
-        if (gltf) disposeGLTFResources(gltf);
-        mergedGeometries = [];
-        hiddenLegacy = [];
-        placedRoot = null;
-      }
-    };
+    return { status, update() {}, dispose: release };
   } catch (error) {
     if (placedRoot) scene.remove(placedRoot);
+    for (const geometry of generatedGeometries) geometry.dispose();
+    restoreReceptionFallbacks(hiddenFallbacks);
     if (gltf) disposeGLTFResources(gltf);
-    // No original reception geometry is hidden on failure; the existing floor
-    // remains playable if the external CC0 CDN is unreachable or validation fails.
-    return {
-      status: {
-        loaded: false,
-        source: CC0_OFFICE_LOBBY_ASSET.name,
-        license: CC0_OFFICE_LOBBY_ASSET.license,
-        reason: String(error?.message || error)
-      },
-      update() {},
-      dispose() { disposed = true; }
+    generatedGeometries = [];
+    hiddenFallbacks = [];
+    placedRoot = null;
+    disposed = true;
+    const reason = String(error?.message || error);
+    const status = {
+      loaded: false,
+      attempted: true,
+      id: CC0_OFFICE_LOBBY_ASSET.id,
+      name: CC0_OFFICE_LOBBY_ASSET.name,
+      url: CC0_OFFICE_LOBBY_ASSET.url,
+      sourceUrl: CC0_OFFICE_LOBBY_ASSET.sourceUrl,
+      license: CC0_OFFICE_LOBBY_ASSET.license,
+      errorCategory: /HTTP|fetch|network|CORS|Load failed/i.test(reason) ? 'http-or-network' : /triangle|dimension|mesh count|material count|texture/i.test(reason) ? 'validation' : 'load-or-placement',
+      reason,
+      tier
     };
+    if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('calloria:glb-lobby-ready', { detail: status }));
+    }
+    return { status, update() {}, dispose() {} };
   }
 }
+
+export const __calloriaCC0OfficeLobbyInternals = Object.freeze({
+  geometryAttributeSignature,
+  hideReceptionFallbacks,
+  restoreReceptionFallbacks
+});

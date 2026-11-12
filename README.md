@@ -1,43 +1,56 @@
-# CALLORIA v6.16 — CC0 Ergonomic Workstation Chair Activation
+# CALLORIA v6.17 — Reception Lobby GLB Activation
 
 ## Purpose
 
-The v6.15 office runtime already loads real desks, monitors/computers, headsets and the reception desk. The remaining workstation seating still uses the original instanced geometric chairs. v6.16 activates a real CC0 office task-chair GLB in the same production office runtime.
+Activate the existing CC0 reception-lobby scene inside the production CALLORIA Three.js office. This is an extension of the v6.16 office runtime, not a second office scene or renderer.
 
 ## What changes
 
-- Loads the CC0 task-chair GLB from `cdn.3dassets.dev` with Three.js `GLTFLoader` and anonymous CORS.
-- Validates model dimensions, triangle count, mesh count, material count, texture dimensions and floor origin before placement.
-- Places chairs at the existing CALLORIA workstation coordinates and facing direction.
-- Device-tier coverage: low = stations 10–11; balanced = stations 9–12; high = stations 5–12.
-- Merges compatible chair meshes into material/attribute batches to keep the draw-call count low.
-- Hides only the corresponding legacy chair instances after the replacement chair batch has been added successfully.
-- Keeps the legacy chair instances visible if download, CORS, validation or placement fails.
-- Restores those original chair instances and disposes generated geometry when the office world is disposed.
-- Reports chair source, CC0 license, selected station IDs, model metrics, placement count and failure category in the existing `calloria:office-glb-status` event.
-- Preserves the v6.15 Draco and Meshopt office loader setup and current v2.9/v3.8 build-transform anchors.
+- Adds the complete Office Lobby and Building Facilities GLB from 3DAssets.dev.
+- Uses the same configured Three.js `GLTFLoader` already used for office assets, including the existing Draco and Meshopt setup.
+- Sets anonymous cross-origin loading for the publisher CDN.
+- Validates dimensions, triangles, mesh count, material count and texture edge before placement.
+- Batches compatible static meshes by material and vertex-attribute signature. If safe batching is not possible, it keeps the authored model intact instead of dropping meshes.
+- Places the lobby in the front-left reception footprint at 80% scale.
+- Replaces the procedural reception counter, check-in screen, waiting seats and access-control props only after the complete lobby has loaded, passed validation and entered the scene.
+- Retains a second fallback: if the full lobby cannot load, CALLORIA tries the existing standalone reception-desk GLB. If that also fails, the original procedural reception remains visible.
+- Restores hidden reception objects and disposes generated geometry when the 3D world is disposed.
+- Adds lobby status to `calloria:office-glb-status` and emits `calloria:glb-lobby-ready` with the model diagnostics.
+- Keeps the existing desks, computers, headsets, ergonomic task-chair activation, staff runtime, mobile camera, controls and animation loop intact.
 
-## Model source and licence
+## Device tiers
 
-- Model: Office task chair — Police Station and Detective Office.
-- Source page: <https://3dassets.dev/assets/police-station-and-detective-office-office-chair-task-fea6fec9>
-- Runtime model URL: <https://cdn.3dassets.dev/assets/29956/v1/model.glb>
-- Licence: CC0 1.0 Universal.
+| Graphics tier | Lobby behaviour |
+|---|---|
+| Low | Skips the 1.3 MB lobby GLB; keeps the procedural reception |
+| Balanced | Loads and validates the lobby GLB |
+| High | Loads and validates the lobby GLB |
 
-The model is fetched by the player's browser at runtime. It is not bundled into the repository. The source server must remain reachable and allow CORS for the chair replacement to appear. The existing chair geometry remains visible otherwise.
+The source model is about 32,204 triangles, 99 meshes and 7 materials. Compatible geometry is reduced to material/attribute batches; if the source changes or batching is unsafe, the runtime retains the original meshes.
 
-## Expected rendering budget
+## Asset and licence
 
-The asset metadata used by the prior v3.1 integration reports approximately 2,408 triangles per chair. Eight high-tier chairs therefore use approximately 19,264 triangles, below the 32,000-triangle chair placement cap. The runtime still measures the downloaded model and rejects it if the actual model exceeds the configured budget.
+- Model: Office Lobby and Building Facilities — starter scene
+- Source page: `https://3dassets.dev/packs/office-lobby-and-facilities`
+- Runtime file: `https://cdn.3dassets.dev/assets/26326/v1/model.glb`
+- Licence: CC0 1.0 Universal
+- Licence text: `https://creativecommons.org/publicdomain/zero/1.0/`
+
+The GLB is fetched by the browser at runtime; it is not bundled into this ZIP or copied into GitHub. The publisher's CDN must remain reachable and permit CORS. When it is unavailable, existing reception geometry is retained.
+
+## Files in this patch
+
+- `js/glb-office-world-integration.js` — complete v6.16 office runtime with the new lobby integration added.
+- `js/cc0-office-lobby-integration.js` — lobby loading, validation, batching, placement and cleanup.
+- `js/cc0-office-lobby-policy.js` — Three.js-free asset metadata, tier rules, fallback names and geometry limits.
 
 ## What is not changed
 
 - No `vite.config.js`, `package.json` or `package-lock.json` changes.
 - No staff GLB build plugin changes.
-- No mobile camera, assessment controls, recruitment or customer-service logic changes.
-- No replacement of the existing renderer or animation loop.
-- No change to the fallback workstation chairs on stations not selected for GLB replacement.
+- No `production-world.js`, renderer, camera, player controls, recruitment or assessment changes.
+- No changes to agent customer-contact workflows, QA, CRM or career progression.
 
 ## Verification boundary
 
-The included tests cover the pure chair policy, tier mapping, geometry budgets, fallback safety, batching contracts, status reporting and v6.15 Draco/Meshopt regressions. They do not fetch the live GLB or prove Android rendering. A full Vite production build and Vercel deployment have not been run in this workspace.
+The focused suite tests the geometry policy, tier rules, fallback ordering, cleanup contract, status aggregation and retained v6.16 desk/computer/headset/chair and Draco/Meshopt integration paths. It does not download the live lobby GLB, prove CDN availability, run a full Vite build, deploy to Vercel or verify Android rendering.

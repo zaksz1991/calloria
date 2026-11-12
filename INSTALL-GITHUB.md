@@ -1,48 +1,47 @@
-# GitHub installation — CALLORIA v6.16
+# CALLORIA v6.17 — GitHub Installation
 
-Make exactly three production-file changes on the `main` branch.
+This package is a three-file overlay. It does not contain a replacement Vite configuration or package manifest.
 
-| Repository path | Action |
-|---|---|
-| `js/glb-office-world-integration.js` | Replace with the v6.16 file |
-| `js/cc0-office-chair-integration.js` | Add new file |
-| `js/office-chair-policy.js` | Add new file |
+## Replace one file
 
-Do not replace `vite.config.js`, `package.json`, `package-lock.json`, `production-world.js`, the v6.14 staff GLB plugin or any v6.10–v6.15 mobile/assessment files.
+In the `zaksz1991/calloria` GitHub repository, replace the existing file:
 
-Keep these existing runtime dependencies unchanged:
+`js/glb-office-world-integration.js`
 
-- `js/glb-asset-registry.js`
-- `js/glb-asset-loader.js`
+Use the file at the same path inside this ZIP.
+
+## Add two files
+
+Add these new files at the exact repository paths:
+
+`js/cc0-office-lobby-integration.js`
+
+`js/cc0-office-lobby-policy.js`
+
+## Preserve everything else
+
+Do not replace or delete:
+
+- `vite.config.js`
+- `package.json` or `package-lock.json`
+- `build/calloria-cc0-staff-glb-bundle-plugin.mjs`
+- `js/production-world.js`
+- `js/cc0-office-chair-integration.js`
+- `js/office-chair-policy.js`
 - `js/glb-office-asset-policy.js`
 - `js/glb-office-draco-policy.js`
-- `js/glb-world-integration.js`
-- `js/production-world.js`
-- `build/calloria-cc0-staff-glb-bundle-plugin.mjs`
+- `js/glb-asset-loader.js`
+- `js/glb-asset-registry.js`
 - `public/assets/models/`
+- the mobile/assessment repair files
 
-## GitHub web interface
+After the three file changes are saved to `main`, Vercel should run the existing `npm run build` command. The package does not change build scripts or dependencies.
 
-1. Open `github.com/zaksz1991/calloria` and select the `main` branch.
-2. Open `js/glb-office-world-integration.js`, choose **Edit**, replace its contents with the matching v6.16 file, then save the change.
-3. Use **Add file → Create new file** to add `js/cc0-office-chair-integration.js` with the matching file contents.
-4. Repeat to add `js/office-chair-policy.js`.
-5. Keep the three changes on `main`. No Vite configuration edit is needed.
+## Expected runtime behaviour
 
-## Deployment checks
+- Low graphics: uses existing procedural reception.
+- Balanced/high: asynchronously loads the complete lobby GLB.
+- If the full lobby fails: tries the existing reception-desk GLB.
+- If both fail: keeps the original procedural reception visible.
 
-After Vercel finishes building, open:
-
-`https://calloria.vercel.app/office-floor.html`
-
-The existing office status event should now include `chairFurniture` with:
-
-- `loaded: true`
-- `chairsPlaced: 2`, `4` or `8`, depending on graphics tier
-- `stationIds`
-- `mergedDrawCalls`
-- `license: CC0 1.0 Universal`
-
-The main office status should also include `3dassets-office-task-chair` under `assets` and `loadedAssetIds` when successful.
-
-If the external model cannot load, `chairFurniture.reason` identifies the failure and the original workstation chairs remain visible. Do not interpret a build success alone as proof that the chair GLB rendered.
+The lobby is downloaded at runtime from the documented CC0 CDN. This patch does not bundle the GLB binary.

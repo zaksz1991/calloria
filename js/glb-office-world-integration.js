@@ -1,5 +1,5 @@
 /**
- * CALLORIA v6.16 — production office GLB runtime with CC0 task-chair activation.
+ * CALLORIA v6.17 — production office GLB runtime with chair and lobby activation.
  *
  * Keeps the v2.1 public API used by production-world.js and the exact v2.9/v3.8
  * Vite transform anchors. Real GLBs replace only the corresponding visible
@@ -14,6 +14,8 @@ import { disposeGLTFResources } from './glb-asset-loader.js';
 import { validateOfficeAssetMetrics } from './glb-office-asset-policy.js';
 import { classifyOfficeLoadError, getOfficeDracoDecoderPath } from './glb-office-draco-policy.js';
 import { integrateCalloriaCC0OfficeChairs } from './cc0-office-chair-integration.js';
+import { integrateCalloriaCC0OfficeLobby } from './cc0-office-lobby-integration.js';
+import { CC0_OFFICE_LOBBY_ASSET, shouldLoadCC0OfficeLobby } from './cc0-office-lobby-policy.js';
 
 const TARGETS = Object.freeze({
   desk: Object.freeze({ x: 2.60, y: 0.98, z: 1.28 }),
@@ -187,6 +189,7 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
 
   const plan = getOfficeAssetPlan(tier, stations.length);
   const loader = new GLTFLoader();
+  loader.setCrossOrigin('anonymous');
   loader.setMeshoptDecoder(MeshoptDecoder);
   const dracoLoader = new DRACOLoader();
   const configuredDracoPath = typeof window !== 'undefined'
@@ -203,6 +206,8 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
   const assetDetails = [];
   let chairLayer = null;
   let chairFurnitureStatus = { loaded: false, attempted: false, chairsPlaced: 0, reason: 'Chair activation has not completed.' };
+  let lobbyLayer = null;
+  let lobbyStatus = { loaded: false, attempted: false, reason: plan.tier === 'low' ? 'Lobby GLB skipped on low graphics tier; procedural reception retained.' : 'Lobby activation has not completed.' };
   let disposed = false;
 
   async function loadAsset(id) {
@@ -388,13 +393,43 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
     }).filter(Boolean)));
   }
 
-  if (includeReceptionDesk) {
+  if (includeReceptionDesk && shouldLoadCC0OfficeLobby(plan.tier)) {
     jobs.push((async () => {
-      const result = await placeAsset('reception-desk', (record) => [addFittedInstance(
-        scene, record, 'calloria-glb-reception-desk',
-        { x: -15.0, z: 11.85 }, TARGETS.reception, { alignLongAxis: true }, T
-      )]);
-      if (result?.length) hideNamedObjects(scene, ['reception-counter-top', 'reception-counter-front', 'reception-counter-accent']);
+      try {
+        lobbyLayer = await integrateCalloriaCC0OfficeLobby({
+          THREE: T,
+          scene,
+          loader,
+          tier: plan.tier,
+          isActive: () => !disposed
+        });
+        lobbyStatus = lobbyLayer?.status || {
+          loaded: false, attempted: true, reason: 'Lobby integration returned no status.'
+        };
+      } catch (error) {
+        lobbyStatus = {
+          loaded: false,
+          attempted: true,
+          id: CC0_OFFICE_LOBBY_ASSET.id,
+          name: CC0_OFFICE_LOBBY_ASSET.name,
+          url: CC0_OFFICE_LOBBY_ASSET.url,
+          sourceUrl: CC0_OFFICE_LOBBY_ASSET.sourceUrl,
+          license: CC0_OFFICE_LOBBY_ASSET.license,
+          reason: String(error?.message || error),
+          errorCategory: 'load-or-placement'
+        };
+      }
+
+      // The complete lobby includes the reception counter, seating and access
+      // gates. Only if it fails do we try the previous standalone reception
+      // desk GLB. If that also fails, original procedural furniture remains.
+      if (!disposed && !lobbyStatus.loaded) {
+        const fallback = await placeAsset('reception-desk', (record) => [addFittedInstance(
+          scene, record, 'calloria-glb-reception-desk',
+          { x: -15.0, z: 11.85 }, TARGETS.reception, { alignLongAxis: true }, T
+        )]);
+        if (fallback?.length) hideNamedObjects(scene, ['reception-counter-top', 'reception-counter-front', 'reception-counter-accent']);
+      }
     })());
   }
 
@@ -403,7 +438,9 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
   const placedIds = [...new Set(placed.map((entry) => entry.children?.[0]?.userData?.calloriaSourceAsset).filter(Boolean))];
   const chairCount = Math.max(0, Math.floor(Number(chairFurnitureStatus.chairsPlaced) || 0));
   if (chairCount > 0) placedIds.push('3dassets-office-task-chair');
-  const officePlacedCount = placed.length + chairCount;
+  const lobbyCount = lobbyStatus.loaded ? 1 : 0;
+  if (lobbyCount > 0) placedIds.push(CC0_OFFICE_LOBBY_ASSET.id);
+  const officePlacedCount = placed.length + chairCount + lobbyCount;
   const chairAssetDetail = {
     id: '3dassets-office-task-chair',
     name: 'CC0 ergonomic workstation task chair',
@@ -416,15 +453,34 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
     placementCount: chairCount,
     reasons: chairFurnitureStatus.reason ? [chairFurnitureStatus.reason] : []
   };
+  const lobbyAssetDetail = {
+    id: CC0_OFFICE_LOBBY_ASSET.id,
+    name: CC0_OFFICE_LOBBY_ASSET.name,
+    path: null,
+    url: lobbyStatus.url || CC0_OFFICE_LOBBY_ASSET.url,
+    sourceUrl: lobbyStatus.sourceUrl || CC0_OFFICE_LOBBY_ASSET.sourceUrl,
+    license: CC0_OFFICE_LOBBY_ASSET.license,
+    licenseUrl: CC0_OFFICE_LOBBY_ASSET.licenseUrl,
+    status: lobbyStatus.loaded ? 'validated-and-placed' : lobbyStatus.attempted ? 'load-failed-or-rejected' : 'not-attempted',
+    placementStatus: lobbyStatus.loaded ? 'placed' : lobbyStatus.attempted ? 'fallback-retained' : 'not-selected-for-device-tier',
+    placementCount: lobbyCount,
+    triangles: lobbyStatus.triangles || null,
+    sourceMeshes: lobbyStatus.meshes || null,
+    drawCalls: lobbyStatus.drawCalls || null,
+    merged: lobbyStatus.merged ?? null,
+    reasons: lobbyStatus.reason ? [lobbyStatus.reason] : []
+  };
   const failedIds = errors.map((entry) => entry.assetId);
   if (chairFurnitureStatus.attempted && !chairFurnitureStatus.loaded) failedIds.push('3dassets-office-task-chair');
+  if (lobbyStatus.attempted && !lobbyStatus.loaded) failedIds.push(CC0_OFFICE_LOBBY_ASSET.id);
   const status = Object.freeze({
     placed: officePlacedCount,
     officeObjectsPlaced: officePlacedCount,
     assets: placedIds,
-    loadedAssetIds: [...loaded.keys(), ...(chairFurnitureStatus.loaded ? ['3dassets-office-task-chair'] : [])],
+    loadedAssetIds: [...loaded.keys(), ...(chairFurnitureStatus.loaded ? ['3dassets-office-task-chair'] : []), ...(lobbyStatus.loaded ? [CC0_OFFICE_LOBBY_ASSET.id] : [])],
     failedAssetIds: [...new Set(failedIds)],
     chairFurniture: { ...chairFurnitureStatus },
+    receptionLobby: { ...lobbyStatus },
     tier: plan.tier,
     stationCount: stations.length,
     decoders: {
@@ -440,10 +496,10 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
       headsetStations: [...headsetStationIndexes],
       includeReceptionDesk
     },
-    assetDetails: [...assetDetails.map((entry) => ({ ...entry, reasons: [...(entry.reasons || [])] })), chairAssetDetail],
+    assetDetails: [...assetDetails.map((entry) => ({ ...entry, reasons: [...(entry.reasons || [])] })), chairAssetDetail, lobbyAssetDetail],
     errors: errors.map((entry) => ({ ...entry })),
     reason: officePlacedCount
-      ? `${officePlacedCount} real office GLB placement(s), including ${chairCount} task chair(s), are visible.`
+      ? `${officePlacedCount} real office GLB placement(s), including ${chairCount} task chair(s) and ${lobbyCount} complete reception lobby, are visible.`
       : jobs.length
         ? 'No office GLB was placed. Review the per-asset HTTP, geometry and placement diagnostics.'
         : 'No office placements were planned for the current device tier or station count.'
@@ -457,6 +513,8 @@ export async function integrateCalloriaGLBOfficeAssets({ THREE: suppliedThree, s
       if (disposed) return;
       disposed = true;
       this.disposed = true;
+      lobbyLayer?.dispose?.();
+      lobbyLayer = null;
       chairLayer?.dispose?.();
       chairLayer = null;
       for (const object of placed) {
@@ -482,5 +540,7 @@ export const __calloriaOfficeGLBRuntimeV616 = Object.freeze({
   hideInstancedEntries,
   TARGETS,
   classifyOfficeLoadError,
-  getOfficeDracoDecoderPath
+  getOfficeDracoDecoderPath,
+  CC0_OFFICE_LOBBY_ASSET,
+  shouldLoadCC0OfficeLobby
 });
