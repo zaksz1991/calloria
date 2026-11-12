@@ -13,6 +13,7 @@
   <script defer src="/customer-dynamics-engine.js"></script>
   <script defer src="/career-progression-engine.js"></script>
   <script defer src="/office-routine-engine.js"></script>
+  <script defer src="/voice-call-engine.js"></script>
   <script defer src="/live-floor.js"></script>
 </head>
 <body>
@@ -24,7 +25,7 @@
     <div class="topbar-right">
       <a class="office-nav-link" href="/office-floor.html">3D WORKPLACE</a>
       <span class="live-badge"><i></i> SIMULATED FLOOR</span>
-      <span class="version-label">CORE GAMEPLAY · BUILD 6.4</span>
+      <span class="version-label">CORE GAMEPLAY · BUILD 6.5</span>
     </div>
   </header>
 
@@ -117,6 +118,44 @@
           </div>
           <h3 id="contact-subject">Customer issue</h3>
           <p class="contact-focus" id="contact-focus"></p>
+          <section id="voice-call-panel" class="voice-call-panel hidden" aria-label="Simulated voice call controls">
+            <div class="voice-call-topline">
+              <div><span class="eyebrow">VOICE CONTACT CONTROLS</span><strong id="voice-call-state" class="voice-call-state">CONNECTED</strong></div>
+              <div class="voice-timers"><strong id="voice-call-duration">00:00</strong><small>CONNECTED TIME</small><span id="voice-hold-duration">Hold 00:00</span></div>
+            </div>
+            <div class="voice-call-toolbar">
+              <button id="voice-hold-button" class="button button-secondary" type="button">Place customer on hold</button>
+              <button id="voice-resume-button" class="button button-secondary hidden" type="button">Resume customer</button>
+              <button id="voice-mute-button" class="button button-secondary" type="button">Mute microphone</button>
+            </div>
+            <div class="voice-call-controls-grid">
+              <label>Hold reason
+                <select id="voice-hold-reason"><option value="Checking approved product guidance">Checking approved product guidance</option><option value="Reviewing the existing customer case">Reviewing the existing customer case</option><option value="Consulting a specialist">Consulting a specialist</option><option value="Completing a necessary system check">Completing a necessary system check</option></select>
+              </label>
+              <label>Supervisor consultation reason
+                <select id="voice-consult-reason"><option>Policy or approval guidance</option><option>Escalating complaint</option><option>Product or technical guidance</option><option>Security or privacy concern</option><option>Customer requests supervisor</option></select>
+              </label>
+            </div>
+            <div class="voice-consult-box">
+              <label for="voice-consult-context">Customer-safe summary for supervisor consultation</label>
+              <textarea id="voice-consult-context" rows="2" maxlength="600" placeholder="Summarise the issue and what decision or guidance is needed."></textarea>
+              <div class="voice-consult-actions"><button id="voice-consult-start" class="button button-secondary" type="button">Start supervisor consultation</button><button id="voice-consult-complete" class="button button-primary hidden" type="button">Complete consultation & resume</button></div>
+              <p id="voice-consult-guidance" class="voice-call-feedback" role="status">The customer is not connected to a real supervisor. This is a scripted consultation exercise.</p>
+            </div>
+            <details id="voice-transfer-details" class="voice-transfer-box">
+              <summary>Specialist warm transfer <span id="voice-transfer-status">Available at wrap-up</span></summary>
+              <p>Complete the customer triage first. A warm transfer requires a destination, reason and concise handover so the customer does not have to repeat the issue.</p>
+              <div class="voice-call-controls-grid">
+                <label>Specialist destination<select id="voice-transfer-destination"><option>Technical Support</option><option>Digital Support</option><option>Player Support</option><option>Service Recovery</option><option>Customer Care Specialist</option><option>Partnerships & Sales</option></select></label>
+                <label>Transfer reason<select id="voice-transfer-reason"><option>Specialist investigation required</option><option>Customer complaint needs specialist ownership</option><option>Product access or technical issue</option><option>Policy approval required</option><option>Customer needs a different service team</option></select></label>
+              </div>
+              <label for="voice-transfer-handover">Warm handover summary</label>
+              <textarea id="voice-transfer-handover" rows="3" maxlength="700" placeholder="State the customer's issue, checks completed, evidence gathered and next action for the receiving team."></textarea>
+              <button id="voice-transfer-button" class="button button-primary" type="button" disabled>Complete simulated warm transfer</button>
+              <p id="voice-transfer-feedback" class="voice-call-feedback" role="status">Warm transfer becomes available after the three service decisions are complete.</p>
+            </details>
+            <div class="voice-call-disclaimer">SIMULATED TELEPHONY · No real microphone, telephone network, recording or external supervisor connection.</div>
+          </section>
           <section id="customer-dynamics" class="customer-dynamics hidden" aria-label="Live customer behaviour signals">
             <div class="dynamics-heading">
               <div><span class="eyebrow">LIVE CUSTOMER RESPONSE</span><strong id="dynamics-profile">Customer profile</strong></div>
@@ -190,7 +229,7 @@
 
     <section class="panel completed-panel">
       <div class="panel-heading"><div><div class="eyebrow">SHIFT RECORD</div><h2>Completed customer contacts</h2></div><span id="completed-count" class="count-pill">0</span></div>
-      <div class="table-scroll"><table><thead><tr><th>Reference</th><th>Channel</th><th>Customer issue</th><th>QA</th><th>CSAT</th><th>Outcome</th></tr></thead><tbody id="completed-table"><tr><td colspan="6" class="empty-table">No customer contacts completed yet.</td></tr></tbody></table></div>
+      <div class="table-scroll"><table><thead><tr><th>Reference</th><th>Channel</th><th>Customer issue</th><th>QA</th><th>CSAT</th><th>Outcome</th><th>Voice handling</th></tr></thead><tbody id="completed-table"><tr><td colspan="7" class="empty-table">No customer contacts completed yet.</td></tr></tbody></table></div>
     </section>
 
     <section id="shift-report" class="panel report-panel hidden">
@@ -201,7 +240,7 @@
     </section>
 
     <section class="activity-strip"><span>SIMULATION LOG</span><div id="activity-log">No activity recorded.</div><button id="end-shift" class="button button-secondary" type="button" disabled>End shift</button></section>
-    <footer class="page-foot">CALLORIA v6.4 · Adaptive synthetic customer behaviour · No real customer, telephone, email or messaging connections</footer>
+    <footer class="page-foot">CALLORIA v6.5 · Voice-call handling simulation · No real customer, telephone, email or messaging connections</footer>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>

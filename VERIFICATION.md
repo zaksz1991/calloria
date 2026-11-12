@@ -1,25 +1,23 @@
-# Verification — CALLORIA v6.4
+# Verification — CALLORIA v6.5
 
-## Passed
+## Checks performed
 
-- `node --check public/customer-dynamics-engine.js`
-- `node --check public/live-floor.js`
-- Focused unit and integration suite: **15 passed, 0 failed**.
-- Full contact-flow integration exercised the existing base shift, agent, customer journey and live-floor engines.
-- Supervisor-support evidence was verified in the completed contact record.
-- Duplicate HTML IDs: **none** (97 static IDs checked).
-- Live Floor controller selector contract: **91 selectors checked, 0 missing**.
-- HTML script load order checked: base live-floor engine → customer dynamics extension → live-floor controller.
-- ZIP archive integrity checked after packaging.
+- `node --check public/voice-call-engine.js` — passed.
+- `node --check public/live-floor.js` — passed.
+- Focused Node test suite — **28 passed, 0 failed**.
+- Voice-control element IDs and controller selectors — passed.
+- Duplicate static HTML IDs — none found.
+- Voice state, hold/resume, mute, supervisor consultation, warm transfer, persistence and wrap-up rules — covered by focused tests.
+- ZIP archive integrity — checked after packaging.
 
 ## Not verified
 
 - Full CALLORIA repository test suite.
 - Full Vite production build.
-- Vercel deployment or production URL behaviour.
-- Browser visual/end-to-end testing on desktop or mobile.
-- Real multi-user supervisor notification or Supabase synchronisation.
+- Vercel deployment or live route behaviour.
+- Actual GLB/3D rendering.
+- End-to-end browser interaction. A local headless Chromium smoke attempt timed out in this environment, so browser rendering is not claimed as verified.
 
-## Test scope
+## Test boundary
 
-The included integration fixtures reproduce the v6.0-compatible engines retained by the v6.3 stack. They verify the v6.4 extension contract and a complete synthetic contact flow. They do not prove that the current GitHub repository or deployed website has been updated.
+The 28 tests cover the new voice-call engine and static integration contracts for the Live Floor. They do not establish that the entire CALLORIA repository builds or that the patch is compatible with every locally modified copy of the required prior-version dependencies.

@@ -1,16 +1,20 @@
-# Changelog — v6.4
+# Changelog — CALLORIA v6.5
 
-## Adaptive Customer Behaviour & Service Interaction
+## Added
+- Voice-only simulated call-control panel on the Live Floor.
+- Connected and hold timers, reason-coded hold/resume and microphone mute tracking.
+- Supervisor consultation lifecycle with required context and scripted guidance.
+- Specialist warm-transfer workflow with required destination, reason and customer-safe handover summary.
+- Wrap-up validation linking completed transfers to the `Escalated to specialist` disposition.
+- Persistent voice session metadata and per-contact voice handling evidence.
+- Shift report totals for voice calls, connected talk time, hold time, mute activations, consultations and warm transfers.
+- Responsive mobile styling and accessible control/status labels.
 
-- Added deterministic customer profile mapping from the existing customer tone values.
-- Added rapport, patience, trust and emotional-state tracking to each active contact.
-- Added responsive customer reaction lines to simulated transcripts.
-- Added contextual agent coaching cues.
-- Added end-of-contact customer experience adjustment while keeping QA separate.
-- Preserved zero-score handling for critical compliance breaches.
-- Added optional supervisor-support request recording with a mandatory reason.
-- Added completed-contact customer experience evidence.
-- Added lazy migration for already-active v6.3 interactions.
-- Updated Live Floor presentation and mobile-responsive customer dynamics panel.
+## Preserved
+- v6.4 adaptive customer dynamics and service decision flow.
+- v6.3 3D office attendance and shift routine bridge.
+- v6.1 career progression and v6.0 customer shift foundation.
+- Existing non-voice channel interaction flow.
 
-No banking, billing, finance, real-time messaging, external AI or 3D scene changes were introduced.
+## Not included
+- Live telephony, voice audio, microphone access, call recording, real supervisor connection, real transfer routing or shared server storage.

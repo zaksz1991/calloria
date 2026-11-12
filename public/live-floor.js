@@ -7,14 +7,15 @@
   const P = window.CalloriaCareerProgressionEngine;
   const R = window.CalloriaOfficeRoutineEngine;
   const D = window.CalloriaCustomerDynamics;
+  const V = window.CalloriaVoiceCallEngine;
   const realStorage = window.localStorage;
   const toast = $('#toast');
   let toastTimer = null;
   let selectedChannel = '';
   let articleQuery = '';
 
-  if (!E || !C || !F || !P || !R || !D) {
-    document.body.innerHTML = '<main style="max-width:700px;margin:60px auto;padding:24px;font:14px system-ui"><h1>CALLORIA Live Floor could not start</h1><p>Required simulation engine files are missing. Copy the full v6.4 overlay and its v6.3/v6.1 dependencies into the public folder, then reload this page.</p></main>';
+  if (!E || !C || !F || !P || !R || !D || !V) {
+    document.body.innerHTML = '<main style="max-width:700px;margin:60px auto;padding:24px;font:14px system-ui"><h1>CALLORIA Live Floor could not start</h1><p>Required simulation engine files are missing. Copy the full v6.5 overlay and keep its v6.4, v6.3 and v6.1 dependencies in the public folder, then reload this page.</p></main>';
     return;
   }
 
@@ -35,6 +36,12 @@
   }
   let progress = P.load(realStorage);
   let agentState = E.load(storageProxy);
+  if (state.active) {
+    const restoredContact = E.getActiveContact(agentState);
+    if (restoredContact && String(restoredContact.channel).toLowerCase() === 'voice') {
+      state.active.voiceSession = V.normaliseSession(state.active.voiceSession, restoredContact);
+    }
+  }
   E.save(agentState, storageProxy);
   F.save(state, realStorage);
   P.syncFromFloor(progress, state);
@@ -308,6 +315,56 @@
       : 'Use this when a complaint is escalating, policy guidance is needed or the customer asks for a supervisor.';
   }
 
+  function activeVoiceSession(contact) {
+    if (!contact || String(contact.channel || '').toLowerCase() !== 'voice' || !state.active) return null;
+    if (!state.active.voiceSession) state.active.voiceSession = V.createSession(contact, state.active.startedAt || new Date());
+    else state.active.voiceSession = V.normaliseSession(state.active.voiceSession, contact);
+    return state.active.voiceSession;
+  }
+  function renderVoicePanel(contact) {
+    const panel = $('#voice-call-panel');
+    const isVoice = !!(contact && String(contact.channel || '').toLowerCase() === 'voice');
+    panel.classList.toggle('hidden', !isVoice);
+    if (!isVoice) return;
+    const session = activeVoiceSession(contact);
+    const snap = V.snapshot(session, new Date());
+    $('#voice-call-state').textContent = snap.status;
+    $('#voice-call-state').className = `voice-call-state ${snap.status.toLowerCase().replace(/[^a-z]+/g, '-')}`;
+    $('#voice-call-duration').textContent = V.formatSeconds(snap.durationSeconds);
+    $('#voice-hold-duration').textContent = `Hold ${V.formatSeconds(snap.holdSeconds)} · ${snap.holdCount} hold${snap.holdCount === 1 ? '' : 's'}`;
+    $('#voice-hold-button').classList.toggle('hidden', snap.status !== V.STATES.CONNECTED);
+    $('#voice-resume-button').classList.toggle('hidden', ![V.STATES.ON_HOLD, V.STATES.CONSULTING].includes(snap.status));
+    $('#voice-mute-button').classList.toggle('hidden', snap.status !== V.STATES.CONNECTED);
+    $('#voice-mute-button').textContent = snap.muted ? 'Unmute microphone' : 'Mute microphone';
+    $('#voice-mute-button').classList.toggle('is-muted', snap.muted);
+    $('#voice-consult-start').classList.toggle('hidden', snap.status !== V.STATES.CONNECTED);
+    $('#voice-consult-complete').classList.toggle('hidden', snap.status !== V.STATES.CONSULTING);
+    $('#voice-consult-start').disabled = snap.status !== V.STATES.CONNECTED;
+    if (session.consult) {
+      $('#voice-consult-guidance').textContent = `${session.consult.status}: ${session.consult.guidance}`;
+    } else {
+      $('#voice-consult-guidance').textContent = 'The customer is not connected to a real supervisor. This is a scripted consultation exercise.';
+    }
+    const transferred = snap.status === V.STATES.TRANSFERRED;
+    $('#voice-transfer-status').textContent = transferred ? `Transferred to ${session.transfer.destination}` : state.active.readyToWrap ? 'Ready' : 'Available at wrap-up';
+    $('#voice-transfer-button').disabled = !state.active.readyToWrap || snap.status !== V.STATES.CONNECTED || transferred;
+    $('#voice-transfer-button').textContent = transferred ? 'Warm transfer completed' : 'Complete simulated warm transfer';
+    $('#voice-transfer-feedback').textContent = transferred
+      ? `Handover completed to ${session.transfer.destination}. Set the wrap-up disposition to “Escalated to specialist” and document the agreed next step.`
+      : state.active.readyToWrap
+        ? 'The customer triage is complete. Provide a clear handover before routing the call.'
+        : 'Warm transfer becomes available after the three service decisions are complete.';
+    if (transferred) $('#voice-transfer-details').open = true;
+  }
+  function updateVoiceClock() {
+    if (!state.active) return;
+    const contact = E.getActiveContact(agentState);
+    if (!contact || String(contact.channel || '').toLowerCase() !== 'voice' || !state.active.voiceSession) return;
+    const snap = V.snapshot(state.active.voiceSession, new Date());
+    $('#voice-call-duration').textContent = V.formatSeconds(snap.durationSeconds);
+    $('#voice-hold-duration').textContent = `Hold ${V.formatSeconds(snap.holdSeconds)} · ${snap.holdCount} hold${snap.holdCount === 1 ? '' : 's'}`;
+  }
+
   function renderActive() {
     const active = F.getActiveScenario(state, agentState, E);
     if (!active) {
@@ -323,6 +380,7 @@
     $('#contact-priority').className = `priority-chip ${priorityClass(contact.priority)}`;
     $('#contact-subject').textContent = contact.subject;
     $('#contact-focus').textContent = `${scenario.focus} · ${contact.customerTone || 'Customer'} customer`;
+    renderVoicePanel(contact);
     renderCustomerDynamics(state.active);
     renderConversation(contact);
     renderCustomer(contact);
@@ -337,18 +395,23 @@
         <span class="option-index">${String.fromCharCode(65 + index)}</span><span><strong>${escapeHtml(option.label)}</strong><small>Select the response you would deliver to the customer.</small></span>
       </button>`).join('');
     $('#decision-options').querySelectorAll('[data-choice-id]').forEach((button) => button.addEventListener('click', () => chooseDecision(button.dataset.choiceId)));
+    const voiceSession = activeVoiceSession(contact);
+    if (voiceSession && voiceSession.status !== V.STATES.CONNECTED) {
+      $('#decision-options').querySelectorAll('button').forEach((button) => { button.disabled = true; });
+      $('#decision-prompt').textContent = `${stage.prompt} Resume the voice call before selecting a customer response.`;
+    }
   }
   function renderCompleted() {
     const records = state.completedContacts;
     $('#completed-count').textContent = String(records.length);
     const body = $('#completed-table');
     if (!records.length) {
-      body.innerHTML = '<tr><td colspan="6" class="empty-table">No customer contacts completed yet.</td></tr>';
+      body.innerHTML = '<tr><td colspan="7" class="empty-table">No customer contacts completed yet.</td></tr>';
       return;
     }
     body.innerHTML = records.map((item) => `
       <tr><td><strong>${escapeHtml(item.reference)}</strong></td><td>${escapeHtml(item.channel)}</td><td>${escapeHtml(item.subject)}</td>
-      <td class="${item.qa >= 85 ? 'score-good' : item.qa >= 65 ? 'score-mid' : 'score-low'}">${item.qa}%</td><td>${item.csat}/5</td><td>${escapeHtml(item.disposition)}</td></tr>`).join('');
+      <td class="${item.qa >= 85 ? 'score-good' : item.qa >= 65 ? 'score-mid' : 'score-low'}">${item.qa}%</td><td>${item.csat}/5</td><td>${escapeHtml(item.disposition)}</td><td>${item.voiceMetrics ? `${escapeHtml(V.formatSeconds(item.voiceMetrics.durationSeconds))} talk · ${escapeHtml(V.formatSeconds(item.voiceMetrics.holdSeconds))} hold · ${item.voiceMetrics.muteCount} mutes${item.voiceMetrics.consultCount ? ` · ${item.voiceMetrics.consultCount} consults` : ''}${item.voiceMetrics.transferred ? ` · to ${escapeHtml(item.voiceMetrics.transferDestination)}` : ''}` : '—'}</td></tr>`).join('');
   }
   function renderActivity() {
     const latest = state.activity.slice(0, 3).map((item) => item.message).join(' · ');
@@ -359,9 +422,16 @@
     $('#shift-report').classList.toggle('hidden', !show);
     if (!show) return;
     const report = F.getShiftReport(state);
+    const voiceRecords = state.completedContacts.filter((item) => item.voiceMetrics);
+    const avgVoiceSeconds = voiceRecords.length ? Math.round(voiceRecords.reduce((sum, item) => sum + item.voiceMetrics.durationSeconds, 0) / voiceRecords.length) : 0;
+    const totalHoldSeconds = voiceRecords.reduce((sum, item) => sum + item.voiceMetrics.holdSeconds, 0);
+    const warmTransfers = voiceRecords.filter((item) => item.voiceMetrics.transferred).length;
+    const muteActivations = voiceRecords.reduce((sum, item) => sum + item.voiceMetrics.muteCount, 0);
+    const consultCount = voiceRecords.reduce((sum, item) => sum + item.voiceMetrics.consultCount, 0);
     const items = [
       ['Contacts handled', report.completed], ['Overall shift score', `${report.score}%`], ['Average QA', `${report.averageQa}%`], ['Average CSAT', `${report.averageCsat}/5`],
-      ['First contact resolution', `${report.fcrRate}%`], ['Compliance breaches', report.complianceBreaches], ['Knowledge references', report.knowledgeUses], ['Average handle time', `${report.averageHandleMinutes} min`]
+      ['First contact resolution', `${report.fcrRate}%`], ['Compliance breaches', report.complianceBreaches], ['Knowledge references', report.knowledgeUses], ['Average handle time', `${report.averageHandleMinutes} min`],
+      ['Voice calls handled', voiceRecords.length], ['Average voice talk time', voiceRecords.length ? V.formatSeconds(avgVoiceSeconds) : '—'], ['Total voice hold time', V.formatSeconds(totalHoldSeconds)], ['Warm transfers', warmTransfers], ['Mute activations', muteActivations], ['Supervisor consultations', consultCount]
     ];
     $('#report-grid').innerHTML = items.map(([label, value]) => `<div class="report-stat"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
     $('#report-note').textContent = `Briefings: morning ${report.attendedMorningBriefing ? 'attended' : 'missed'}, afternoon ${report.attendedAfternoonBriefing ? 'attended' : 'not due'}. Scheduled breaks ${report.attendedBreaks ? 'completed' : 'not both completed'}. This is a simulated performance record, not an employment decision.`;
@@ -389,12 +459,16 @@
   function acceptContact(contactId) {
     try {
       $('#decision-feedback').classList.add('hidden');
-      F.beginContact(state, agentState, E, contactId, new Date());
-      persist(); renderAll(); notify('Customer contact accepted. Begin with the first service decision.');
+      const contact = F.beginContact(state, agentState, E, contactId, new Date());
+      if (String(contact.channel || '').toLowerCase() === 'voice') state.active.voiceSession = V.createSession(contact, new Date());
+      persist(); renderAll(); notify(String(contact.channel).toLowerCase() === 'voice' ? 'Voice call connected. Use hold, mute and supervisor consultation controls as needed.' : 'Customer contact accepted. Begin with the first service decision.');
     } catch (error) { notify(error.message, true); }
   }
   function chooseDecision(choiceId) {
     try {
+      const activeContact = E.getActiveContact(agentState);
+      const voice = activeContact && String(activeContact.channel || '').toLowerCase() === 'voice' ? activeVoiceSession(activeContact) : null;
+      if (voice && voice.status !== V.STATES.CONNECTED) throw new Error('Resume the customer call before selecting the next service response.');
       const result = F.chooseResponse(state, agentState, E, choiceId, new Date());
       const feedback = $('#decision-feedback');
       feedback.classList.remove('hidden', 'bad');
@@ -416,6 +490,67 @@
     if (action === 'existing' && !$('#existing-case').value) $('#wrap-feedback').textContent = 'Select an open case for this customer, or choose create a new case.';
     else $('#wrap-feedback').textContent = '';
   }
+  function withActiveVoice(action) {
+    const contact = E.getActiveContact(agentState);
+    const session = activeVoiceSession(contact);
+    if (!session) throw new Error('There is no active voice call.');
+    const result = action(session, contact);
+    persist(); renderAll();
+    return result;
+  }
+  function placeVoiceOnHold() {
+    try {
+      withActiveVoice((session) => V.placeOnHold(session, $('#voice-hold-reason').value, new Date()));
+      notify('Customer placed on hold. Resume the call before continuing the conversation.');
+    } catch (error) { notify(error.message, true); }
+  }
+  function resumeVoiceCall() {
+    try {
+      withActiveVoice((session) => V.resume(session, new Date()));
+      notify('Customer call resumed.');
+    } catch (error) { notify(error.message, true); }
+  }
+  function toggleVoiceMute() {
+    try {
+      const muted = withActiveVoice((session) => V.toggleMute(session, new Date()));
+      notify(muted ? 'Microphone muted in the simulation.' : 'Microphone unmuted in the simulation.');
+    } catch (error) { notify(error.message, true); }
+  }
+  function startVoiceConsult() {
+    try {
+      const context = $('#voice-consult-context').value;
+      const consult = withActiveVoice((session) => V.beginConsult(session, { reason: $('#voice-consult-reason').value, context }, new Date()));
+      const contact = E.getActiveContact(agentState);
+      if (contact) E.addInternalNote(agentState, contact.id, `Simulated supervisor consultation started: ${consult.reason}. ${context}`, new Date());
+      persist(); renderAll();
+      notify('Customer held while the simulated supervisor consultation is in progress.');
+    } catch (error) { notify(error.message, true); }
+  }
+  function completeVoiceConsult() {
+    try {
+      const result = withActiveVoice((session) => V.completeConsult(session, new Date()));
+      const contact = E.getActiveContact(agentState);
+      if (contact) E.addInternalNote(agentState, contact.id, `Simulated supervisor guidance: ${result.guidance}`, new Date());
+      persist(); renderAll();
+      notify('Consultation recorded. Customer call resumed.');
+    } catch (error) { notify(error.message, true); }
+  }
+  function completeVoiceTransfer() {
+    try {
+      if (!state.active || !state.active.readyToWrap) throw new Error('Complete the three customer-care decisions before transferring the call.');
+      const input = {
+        destination: $('#voice-transfer-destination').value,
+        reason: $('#voice-transfer-reason').value,
+        handover: $('#voice-transfer-handover').value
+      };
+      const transfer = withActiveVoice((session) => V.warmTransfer(session, input, new Date()));
+      const contact = E.getActiveContact(agentState);
+      if (contact) E.addInternalNote(agentState, contact.id, `Simulated warm transfer completed to ${transfer.destination}. Reason: ${transfer.reason}. Handover: ${transfer.handover}`, new Date());
+      persist(); renderAll();
+      notify(`Simulated warm handoff completed to ${transfer.destination}. Finish the case wrap-up.`);
+    } catch (error) { notify(error.message, true); }
+  }
+
   function submitWrapUp(event) {
     event.preventDefault();
     const contact = E.getActiveContact(agentState);
@@ -426,6 +561,26 @@
       return;
     }
     const disposition = $('#wrap-disposition').value;
+    const activeContact = E.getActiveContact(agentState);
+    let voiceMetrics = null;
+    let voiceSessionToFinalise = null;
+    const voiceSession = activeContact && String(activeContact.channel || '').toLowerCase() === 'voice' ? activeVoiceSession(activeContact) : null;
+    if (voiceSession) {
+      if ([V.STATES.ON_HOLD, V.STATES.CONSULTING].includes(voiceSession.status)) {
+        $('#wrap-feedback').textContent = 'Resume the customer before saving the voice contact wrap-up.';
+        return;
+      }
+      if (disposition === 'Escalated to specialist' && voiceSession.status !== V.STATES.TRANSFERRED) {
+        $('#wrap-feedback').textContent = 'Complete the simulated warm transfer before using the Escalated to specialist disposition.';
+        return;
+      }
+      if (voiceSession.status === V.STATES.TRANSFERRED && disposition !== 'Escalated to specialist') {
+        $('#wrap-feedback').textContent = 'The call was transferred. Use Escalated to specialist as the wrap-up disposition.';
+        return;
+      }
+      try { voiceMetrics = V.snapshot(voiceSession, new Date()); voiceSessionToFinalise = voiceSession; }
+      catch (error) { $('#wrap-feedback').textContent = error.message; return; }
+    }
     if (disposition === 'Case created' && !['create', 'existing'].includes(caseAction)) {
       $('#wrap-feedback').textContent = 'A case-created disposition requires a linked case.';
       return;
@@ -441,6 +596,8 @@
     };
     try {
       const result = F.finishContact(state, agentState, E, C, realStorage, input, new Date());
+      if (voiceSessionToFinalise) voiceMetrics = V.finalise(voiceSessionToFinalise, new Date());
+      if (voiceMetrics) result.record.voiceMetrics = voiceMetrics;
       persist(); articleQuery = ''; $('#knowledge-query').value = '';
       renderAll();
       notify(`${result.completed.reference} saved. QA ${result.record.qa}% · CSAT ${result.record.csat}/5.`);
@@ -520,6 +677,13 @@
   $('#knowledge-search-button').addEventListener('click', () => { articleQuery = $('#knowledge-query').value; const contact = state.active && E.getActiveContact(agentState); if (contact) renderKnowledge(contact); });
   $('#case-action').addEventListener('change', updateCaseActionFields);
   $('#wrapup-form').addEventListener('submit', submitWrapUp);
+  $('#voice-hold-button').addEventListener('click', placeVoiceOnHold);
+  $('#voice-resume-button').addEventListener('click', resumeVoiceCall);
+  $('#voice-mute-button').addEventListener('click', toggleVoiceMute);
+  $('#voice-consult-start').addEventListener('click', startVoiceConsult);
+  $('#voice-consult-complete').addEventListener('click', completeVoiceConsult);
+  $('#voice-transfer-button').addEventListener('click', completeVoiceTransfer);
+  setInterval(updateVoiceClock, 1000);
   renderAll();
   window.CalloriaLiveFloor = { getState: () => state, getAgentState: () => agentState, getCareerProgress: () => progress, refresh: renderAll, engine: F, progressionEngine: P };
 })();
