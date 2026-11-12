@@ -552,8 +552,24 @@ function addProceduralStaticStaffIdle(code) {
     const proceduralIdle = !clip && ['skinned-static-pose', 'static-mesh'].includes(selectedRenderMode);
     let proceduralIdleMode = 'none';
     const idleBoneTargets = [];
+    const idleBlinkMorphTargets = [];
     if (proceduralIdle && selectedRenderMode === 'skinned-static-pose' && clonedRoot?.traverse) {
       clonedRoot.traverse((node) => {
+        // Some static staff GLBs expose eye blinking as morph targets rather
+        // than eyelid bones. Match common Blender/ARKit names, not expressions.
+        const morphDictionary = node?.morphTargetDictionary;
+        const morphInfluences = node?.morphTargetInfluences;
+        if (morphDictionary && morphInfluences && typeof morphInfluences.length === 'number') {
+          for (const [morphName, morphIndexValue] of Object.entries(morphDictionary)) {
+            const normalizedMorphName = String(morphName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const isBlinkMorph = /^(?:eyeblink(?:left|right|l|r)?|blink(?:left|right|l|r)?|eyesclosed|eyelidsclosed)$/.test(normalizedMorphName);
+            const morphIndex = Number(morphIndexValue);
+            if (!isBlinkMorph || !Number.isInteger(morphIndex) || morphIndex < 0 || morphIndex >= morphInfluences.length) continue;
+            const baseInfluence = Number(morphInfluences[morphIndex] || 0);
+            if (!Number.isFinite(baseInfluence)) continue;
+            idleBlinkMorphTargets.push({ mesh: node, index: morphIndex, baseInfluence: Math.max(0, Math.min(1, baseInfluence)) });
+          }
+        }
         if (!node?.isBone || !node.quaternion?.clone) return;
         const boneName = String(node.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
         let channelSpecs = null;
@@ -619,6 +635,9 @@ function addProceduralStaticStaffIdle(code) {
         baseRotationZ: wrapper.rotation.z,
         basePositionY: wrapper.position.y,
         boneTargets: idleBoneTargets,
+        blinkMorphTargets: idleBlinkMorphTargets,
+        blinkPeriod: 3.6 + ((replacements.length * 0.71) % 1.8),
+        blinkPhase: (replacements.length * 1.31) % 2.4,
         elapsed: 0,
         updateAccumulator: 0,
         phase: (replacements.length * 0.83) % (Math.PI * 2)
@@ -643,6 +662,20 @@ function addProceduralStaticStaffIdle(code) {
           idle.elapsed += idleStep;
           const breath = Math.sin(idle.elapsed * 1.15 + idle.phase);
           const sway = Math.sin(idle.elapsed * 0.72 + idle.phase);
+          // Short smooth eyelid pulses vary by character so staff do not blink
+          // in sync. Static-pose models only are eligible for this controller.
+          if (idle.blinkMorphTargets?.length) {
+            const blinkCycle = ((idle.elapsed + idle.blinkPhase) % idle.blinkPeriod) / idle.blinkPeriod;
+            const blinkWindow = 0.055;
+            const blinkWeight = blinkCycle < blinkWindow
+              ? Math.sin(Math.PI * blinkCycle / blinkWindow)
+              : 0;
+            for (const target of idle.blinkMorphTargets) {
+              const influences = target.mesh?.morphTargetInfluences;
+              if (!influences || target.index >= influences.length) continue;
+              influences[target.index] = target.baseInfluence + (1 - target.baseInfluence) * blinkWeight;
+            }
+          }
           if (idle.boneTargets?.length) {
             for (const target of idle.boneTargets) {
               target.bone.quaternion.copy(target.baseQuaternion);
@@ -675,11 +708,11 @@ function addProceduralStaticStaffIdle(code) {
 
   next = next.replace(
     "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,",
-    "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,\n        proceduralIdlePlaced: replacements.filter((entry) => entry.proceduralIdle).length,\n        articulatedIdlePlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'articulated-bone-idle').length,\n        rootIdleFallbackPlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'root-idle-fallback').length,\n        microGestureStaffPlaced: replacements.filter((entry) => entry.proceduralIdleGestureTargets > 0).length,\n        microGestureBoneTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleGestureTargets || 0), 0),\n        attentionGestureStaffPlaced: replacements.filter((entry) => entry.proceduralIdleAttentionTargets > 0).length,\n        attentionGestureBoneTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleAttentionTargets || 0), 0),\n        adaptiveIdleUpdateHz: 30,\n        idleVisibilityAware: true,"
+    "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,\n        proceduralIdlePlaced: replacements.filter((entry) => entry.proceduralIdle).length,\n        articulatedIdlePlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'articulated-bone-idle').length,\n        rootIdleFallbackPlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'root-idle-fallback').length,\n        microGestureStaffPlaced: replacements.filter((entry) => entry.proceduralIdleGestureTargets > 0).length,\n        microGestureBoneTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleGestureTargets || 0), 0),\n        attentionGestureStaffPlaced: replacements.filter((entry) => entry.proceduralIdleAttentionTargets > 0).length,\n        attentionGestureBoneTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleAttentionTargets || 0), 0),\n        blinkMorphStaffPlaced: replacements.filter((entry) => entry.proceduralIdleBlinkTargets > 0).length,\n        blinkMorphTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleBlinkTargets || 0), 0),\n        adaptiveIdleUpdateHz: 30,\n        idleVisibilityAware: true,"
   );
   const pushAnchor = 'replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip) });';
   if (next.split(pushAnchor).length - 1 !== 1) return { code: null, warnings: ['Bone-aware staff idle motion was not added: replacement record did not match the verified staff runtime.'] };
-  next = next.replace(pushAnchor, "replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip), proceduralIdle: !clip && ['skinned-static-pose', 'static-mesh'].includes(selectedRenderMode), proceduralIdleMode, proceduralIdleGestureTargets: idleBoneTargets.filter((target) => target.motionType === 'micro-gesture').length, proceduralIdleAttentionTargets: idleBoneTargets.filter((target) => target.motionType === 'attention').length });");
+  next = next.replace(pushAnchor, "replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip), proceduralIdle: !clip && ['skinned-static-pose', 'static-mesh'].includes(selectedRenderMode), proceduralIdleMode, proceduralIdleGestureTargets: idleBoneTargets.filter((target) => target.motionType === 'micro-gesture').length, proceduralIdleAttentionTargets: idleBoneTargets.filter((target) => target.motionType === 'attention').length, proceduralIdleBlinkTargets: idleBlinkMorphTargets.length });");
   next = next.replace('mixers.length = 0;', 'mixers.length = 0;\n      proceduralIdleControllers.length = 0;');
   return { code: `/* ${PROCEDURAL_IDLE_MARKER} */\n${next}`, alreadyPatched: false };
 }

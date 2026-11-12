@@ -1,7 +1,8 @@
 Replacement:
 - build/calloria-cc0-staff-glb-bundle-plugin.mjs
 
-Regression coverage:
+Regression tests:
+- tests/calloria-v632-blink-morphs.test.mjs
 - tests/calloria-v631-attention-gestures.test.mjs
 - tests/calloria-v630-staff-micro-gesture.test.mjs
 - tests/calloria-v629-tier-aware-idle.test.mjs
@@ -10,3 +11,6 @@ Regression coverage:
 - tests/calloria-v622-transform-aware-bounds.test.mjs
 - tests/calloria-v628-adaptive-staff-idle.test.mjs
 - tests/fixtures/glb-world-integration-v12.fixture.js
+
+Run tests in the repository's Node environment with:
+node --test tests/*.test.mjs

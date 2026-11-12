@@ -1,13 +1,17 @@
-# CALLORIA v6.31 — Staff Attention Gestures
+# CALLORIA v6.32 — Staff Eye-Blink Morph Support
 
 ## Added
-- Low-amplitude head attention glances for approved static-pose skinned staff with a recognised head bone.
-- Occasional short listening nod pulses instead of continuous head bobbing.
-- Small, synchronised neck counter-rotation so the nod is shared across the head/neck chain.
-- Separate runtime counters for staff and bone targets receiving attention gestures.
+- Subtle procedural eyelid blinks for static-pose skinned staff GLBs that expose recognised eye-blink morph targets.
+- Supports common Blender/ARKit-style names including `Blink`, `Blink_L`, `Blink_R`, `eyeBlinkLeft`, `eyeBlinkRight`, `EyesClosed` and related normalised variants.
+- Per-character blink period and phase offsets prevent groups of staff from blinking in synchrony.
+- Preserves each morph target's original neutral influence and validates indices before writing.
+- Adds separate runtime diagnostics for staff with blink morphs and total blink morph targets.
 
 ## Preserved
-- Existing v6.27 articulated idle, v6.28 adaptive scheduling, v6.29 graphics-tier budgets and v6.30 arm/forearm/hand micro-gestures.
-- Original GLB animation clips remain on the existing AnimationMixer path and do not receive procedural attention gestures.
-- Original bind quaternions are restored before every local pose offset.
-- No new renderer or animation loop is added. Existing visibility checks and tier update limits remain in force.
+- Authored GLB animation clips remain on their original `AnimationMixer` path and are not given procedural blink updates.
+- Static-pose staff without recognised blink morphs retain their existing bone-aware or root-idle behaviour.
+- Existing attention, listening-nod, articulated idle, arm/hand micro-gesture and graphics-tier scheduling remain intact.
+- No extra renderer, animation loop, dependency, API key, database migration or public asset is added.
+
+## Limitation
+Only staff GLBs that actually contain compatible eye-blink morph targets can blink. This patch does not fabricate facial geometry or claim that models without blink morphs are animated at the eyelids.

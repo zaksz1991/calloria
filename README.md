@@ -1,12 +1,9 @@
-# CALLORIA v6.31 — Staff Attention Gestures
+# CALLORIA v6.32 — Staff Eye-Blink Morph Support
 
-This patch makes compatible static-pose staff look more attentive during idle workplace scenes.
+This incremental patch extends the staff GLB runtime so supported static-pose characters can blink using morph targets already embedded in their GLB files.
 
-### Behaviour
-- Recognised head bones receive a very small, slow glance variation.
-- A brief listening nod occurs approximately every 15 seconds, with a small synchronised neck counter-rotation.
-- Arm, forearm, hand and existing posture micro-movements from v6.30 remain active.
-- Only validated static-pose skinned staff are given these procedural gestures. Staff with authored GLB clips continue using those clips unchanged.
-- The existing low/balanced/high idle scheduler, hidden-tab pause and visibility cache remain in effect.
+The runtime recognises narrowly defined eye-blink morph names, keeps their original neutral influence, and applies an occasional short closure pulse with per-character timing variation. It does not alter authored animation clips or facial expression channels that do not clearly identify an eye blink.
 
-The nod is an additive local quaternion offset from the captured bind pose. It is not represented as a new authored animation clip.
+A model only receives this effect when it exposes one or more compatible blink morph targets. Models without them continue using the existing idle behaviour.
+
+See `INSTALL-GITHUB.md` for the single-file replacement path and `VERIFICATION.md` for the checks performed.

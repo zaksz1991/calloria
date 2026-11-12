@@ -1,11 +1,12 @@
-# Verification — CALLORIA v6.31
+# Verification — CALLORIA v6.32
 
-- Node regression suite: 58/58 tests passed.
-- Plugin JavaScript syntax: passed (`node --check`).
-- Transformed staff runtime JavaScript syntax: passed (`node --check` on output generated from the v1.2 fixture).
-- Transform idempotence: covered by regression tests.
-- Unknown runtime source: fails closed in regression tests.
-- Authored GLB animation path: preserved in regression tests.
-- ZIP integrity: checked after packaging.
+## Automated checks
+- 69/69 Node regression tests passed across all carried-forward staff GLB tests and the new v6.32 eye-blink tests.
+- Replacement build plugin passed `node --check`.
+- A transformed v1.2 staff-runtime fixture passed `node --check` after the new morph-target integration was generated.
+- Tests cover morph-name matching, index guards, neutral influence preservation, staggered timing, authored-animation isolation, diagnostics, tier scheduling, idempotence and fail-closed behaviour.
+- No additional renderer or animation loop introduced.
+- ZIP archive integrity checked after packaging.
 
-Not verified: full Vite build against the current repository, Vercel deployment, live browser rendering, or whether every production GLB uses the recognised head/neck bone names. Actual scene output must be confirmed in the deployed game.
+## Runtime limitation
+The complete CALLORIA repository and production Vercel deployment were not available for a full Vite build in this patch operation. Browser rendering was not performed. Blink motion is conditional on the deployed GLB containing a recognised eye-blink morph target; diagnostics expose the number of targets actually bound.
