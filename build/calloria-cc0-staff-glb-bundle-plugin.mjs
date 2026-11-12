@@ -525,6 +525,9 @@ function transformStaffRuntimeIntegrationBase(source, availableIds, renderModes)
 
 
 /**
+ * v6.30 extends conservative bone-aware idle with low-amplitude arm, forearm
+ * and hand micro-gestures for rigs exposing recognisable named bones.
+ *
  * v6.27 adds conservative bone-aware idle motion to static skinned staff.
  * Named head/neck/spine/shoulder bones receive small local rotations. Models
  * without recognizable bones keep the v6.26 low-amplitude root-motion fallback.
@@ -566,10 +569,24 @@ function addProceduralStaticStaffIdle(code) {
         } else if (/^(?:mixamorig)?(?:left|right)shoulder$/.test(boneName) || /^(?:mixamorig)?shoulder[lr]$/.test(boneName)) {
           const isRight = /right|shoulderr$/.test(boneName);
           channelSpecs = [{ axis: [0, 0, 1], amplitude: isRight ? -0.0035 : 0.0035, speed: 0.82, phase: 2.05 }];
+        } else if (/^(?:mixamorig)?leftarm$|^upperarml$|^upperarmleft$/.test(boneName)) {
+          // Upper-arm micro motion is deliberately tiny and mirrored for a relaxed stance.
+          channelSpecs = [{ axis: [0, 0, 1], amplitude: 0.012, speed: 0.53, phase: 2.0 }];
+        } else if (/^(?:mixamorig)?rightarm$|^upperarmr$|^upperarmright$/.test(boneName)) {
+          channelSpecs = [{ axis: [0, 0, 1], amplitude: -0.012, speed: 0.53, phase: 2.0 }];
+        } else if (/^(?:mixamorig)?leftforearm$|^(?:mixamorig)?leftlowerarm$|^forearml$|^lowerarml$|^forearmleft$|^lowerarmleft$/.test(boneName)) {
+          channelSpecs = [{ axis: [1, 0, 0], amplitude: 0.009, speed: 0.71, phase: 2.65 }];
+        } else if (/^(?:mixamorig)?rightforearm$|^(?:mixamorig)?rightlowerarm$|^forearmr$|^lowerarmr$|^forearmright$|^lowerarmright$/.test(boneName)) {
+          channelSpecs = [{ axis: [1, 0, 0], amplitude: -0.009, speed: 0.71, phase: 2.65 }];
+        } else if (/^(?:mixamorig)?lefthand$|^handl$|^handleft$/.test(boneName)) {
+          channelSpecs = [{ axis: [0, 1, 0], amplitude: 0.006, speed: 0.64, phase: 0.9 }];
+        } else if (/^(?:mixamorig)?righthand$|^handr$|^handright$/.test(boneName)) {
+          channelSpecs = [{ axis: [0, 1, 0], amplitude: -0.006, speed: 0.64, phase: 0.9 }];
         }
         if (!channelSpecs) return;
         idleBoneTargets.push({
           bone: node,
+          motionType: /arm|forearm|lowerarm|hand/.test(boneName) ? 'micro-gesture' : 'posture',
           baseQuaternion: node.quaternion.clone(),
           channels: channelSpecs.map((spec) => ({
             axis: new T.Vector3(spec.axis[0], spec.axis[1], spec.axis[2]),
@@ -633,11 +650,11 @@ function addProceduralStaticStaffIdle(code) {
 
   next = next.replace(
     "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,",
-    "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,\n        proceduralIdlePlaced: replacements.filter((entry) => entry.proceduralIdle).length,\n        articulatedIdlePlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'articulated-bone-idle').length,\n        rootIdleFallbackPlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'root-idle-fallback').length,\n        adaptiveIdleUpdateHz: 30,\n        idleVisibilityAware: true,"
+    "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,\n        proceduralIdlePlaced: replacements.filter((entry) => entry.proceduralIdle).length,\n        articulatedIdlePlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'articulated-bone-idle').length,\n        rootIdleFallbackPlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'root-idle-fallback').length,\n        microGestureStaffPlaced: replacements.filter((entry) => entry.proceduralIdleGestureTargets > 0).length,\n        microGestureBoneTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleGestureTargets || 0), 0),\n        adaptiveIdleUpdateHz: 30,\n        idleVisibilityAware: true,"
   );
   const pushAnchor = 'replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip) });';
   if (next.split(pushAnchor).length - 1 !== 1) return { code: null, warnings: ['Bone-aware staff idle motion was not added: replacement record did not match the verified staff runtime.'] };
-  next = next.replace(pushAnchor, "replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip), proceduralIdle: !clip && ['skinned-static-pose', 'static-mesh'].includes(selectedRenderMode), proceduralIdleMode });");
+  next = next.replace(pushAnchor, "replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip), proceduralIdle: !clip && ['skinned-static-pose', 'static-mesh'].includes(selectedRenderMode), proceduralIdleMode, proceduralIdleGestureTargets: idleBoneTargets.filter((target) => target.motionType === 'micro-gesture').length });");
   next = next.replace('mixers.length = 0;', 'mixers.length = 0;\n      proceduralIdleControllers.length = 0;');
   return { code: `/* ${PROCEDURAL_IDLE_MARKER} */\n${next}`, alreadyPatched: false };
 }
@@ -958,7 +975,7 @@ function createCalloriaCC0StaffGLBBundlePlugin(options = {}) {
         for (const warning of warnings) this.warn?.(`CALLORIA v6.23 staff runtime integration: ${warning}`);
         return null;
       }
-      runtimeDiagnostics.staff = { status: 'patched', source: target, warnings: [], message: `Staff runtime transform enabled for ${availableIds.length} validated model(s). Static-pose standing staff use conservative named-bone idle when a usable head/neck/spine/shoulder hierarchy is present, otherwise root-idle fallback. Procedural idle is visibility-aware and capped at 30 Hz; no source animation clip is claimed. Live scene placement still requires browser verification.` };
+      runtimeDiagnostics.staff = { status: 'patched', source: target, warnings: [], message: `Staff runtime transform enabled for ${availableIds.length} validated model(s). Static-pose standing staff use conservative named-bone idle, including small upper-arm/forearm/hand micro-gestures where recognised; otherwise root-idle fallback. Procedural idle is visibility-aware and capped by graphics tier; no source animation clip is claimed. Live scene placement still requires browser verification.` };
       this.info?.(`CALLORIA v6.28 runtime integration enabled for ${availableIds.length} bundled staff GLB(s): ${Object.entries(renderModes).map(([id, mode]) => `${id}=${mode}`).join(', ')}. Static-pose staff are restricted to standing anchors and use conservative bone-aware idle when recognized rig nodes exist, with a small root-motion fallback otherwise.`);
       return { code: transformed.code, map: null };
     },

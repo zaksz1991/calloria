@@ -1,298 +1,304 @@
---- calloria-v622-transform-aware-bounds.test.mjs ---
 TAP version 13
 # Subtest: measures world dimensions after a giant local mesh is scaled by its scene node
 ok 1 - measures world dimensions after a giant local mesh is scaled by its scene node
   ---
-  duration_ms: 1.846804
+  duration_ms: 1.853264
   type: 'test'
   ...
 # Subtest: applies parent scale to a small child model through the scene hierarchy
 ok 2 - applies parent scale to a small child model through the scene hierarchy
   ---
-  duration_ms: 0.490242
+  duration_ms: 0.464472
   type: 'test'
   ...
 # Subtest: supports glTF matrix transforms and ignores unreachable mesh geometry for character bounds
 ok 3 - supports glTF matrix transforms and ignores unreachable mesh geometry for character bounds
   ---
-  duration_ms: 0.274455
+  duration_ms: 0.273384
   type: 'test'
   ...
 # Subtest: rejects cyclic scene hierarchies instead of looping during validation
 ok 4 - rejects cyclic scene hierarchies instead of looping during validation
   ---
-  duration_ms: 0.658687
+  duration_ms: 0.617384
   type: 'test'
   ...
 # Subtest: does not loosen the final world-space human proportion limits
 ok 5 - does not loosen the final world-space human proportion limits
   ---
-  duration_ms: 0.347987
+  duration_ms: 0.462069
   type: 'test'
   ...
 # Subtest: applies quaternion rotation when computing scene-space extents
 ok 6 - applies quaternion rotation when computing scene-space extents
   ---
-  duration_ms: 0.332643
+  duration_ms: 0.375037
   type: 'test'
   ...
-1..6
-# tests 6
-# suites 0
-# pass 6
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 189.638796
-
-
---- calloria-v623-runtime-diagnostics.test.mjs ---
-TAP version 13
 # Subtest: runtime report distinguishes unavailable assets from bundled assets
-ok 1 - runtime report distinguishes unavailable assets from bundled assets
+ok 7 - runtime report distinguishes unavailable assets from bundled assets
   ---
-  duration_ms: 0.960764
+  duration_ms: 0.903367
   type: 'test'
   ...
 # Subtest: diagnostics page performs a bounded GLB range probe and avoids claiming scene rendering
-ok 2 - diagnostics page performs a bounded GLB range probe and avoids claiming scene rendering
+ok 8 - diagnostics page performs a bounded GLB range probe and avoids claiming scene rendering
   ---
-  duration_ms: 0.248837
+  duration_ms: 0.247094
   type: 'test'
   ...
 # Subtest: Vite plugin emits deployment JSON and HTML with observed integration failures
-ok 3 - Vite plugin emits deployment JSON and HTML with observed integration failures
+ok 9 - Vite plugin emits deployment JSON and HTML with observed integration failures
   ---
-  duration_ms: 1.306777
+  duration_ms: 0.979983
   type: 'test'
   ...
 # Subtest: existing v1.2 staff integration source still transforms with the v6.23 diagnostic build
-ok 4 - existing v1.2 staff integration source still transforms with the v6.23 diagnostic build
+ok 10 - existing v1.2 staff integration source still transforms with the v6.23 diagnostic build
   ---
-  duration_ms: 2.102331
+  duration_ms: 1.484636
   type: 'test'
   ...
-1..4
-# tests 4
-# suites 0
-# pass 4
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 77.014259
-
-
---- calloria-v627-articulated-staff-idle.test.mjs ---
-TAP version 13
 # Subtest: v6.27 retains the checked v1.2 staff-runtime integration and adds the new idle marker
-ok 1 - v6.27 retains the checked v1.2 staff-runtime integration and adds the new idle marker
+ok 11 - v6.27 retains the checked v1.2 staff-runtime integration and adds the new idle marker
   ---
-  duration_ms: 1.257423
+  duration_ms: 0.822684
   type: 'test'
   ...
 # Subtest: bone-aware idle is only collected for static skinned standing staff
-ok 2 - bone-aware idle is only collected for static skinned standing staff
+ok 12 - bone-aware idle is only collected for static skinned standing staff
   ---
-  duration_ms: 0.170248
+  duration_ms: 0.120322
   type: 'test'
   ...
 # Subtest: recognized head, neck, spine and shoulder names receive bounded local rotation channels
-ok 3 - recognized head, neck, spine and shoulder names receive bounded local rotation channels
+ok 13 - recognized head, neck, spine and shoulder names receive bounded local rotation channels
   ---
-  duration_ms: 0.201425
+  duration_ms: 0.167013
   type: 'test'
   ...
 # Subtest: runtime motion restores rest quaternions before applying local bone offsets
-ok 4 - runtime motion restores rest quaternions before applying local bone offsets
+ok 14 - runtime motion restores rest quaternions before applying local bone offsets
   ---
-  duration_ms: 0.110257
+  duration_ms: 0.104017
   type: 'test'
   ...
 # Subtest: static meshes and unrecognised rigs retain the low-amplitude root fallback
-ok 5 - static meshes and unrecognised rigs retain the low-amplitude root fallback
+ok 15 - static meshes and unrecognised rigs retain the low-amplitude root fallback
   ---
-  duration_ms: 0.229878
+  duration_ms: 0.236578
   type: 'test'
   ...
 # Subtest: animated GLBs retain their authored clips and do not receive procedural idle
-ok 6 - animated GLBs retain their authored clips and do not receive procedural idle
+ok 16 - animated GLBs retain their authored clips and do not receive procedural idle
   ---
-  duration_ms: 0.108775
+  duration_ms: 0.114153
   type: 'test'
   ...
 # Subtest: frame delta remains clamped and no second render loop is introduced
-ok 7 - frame delta remains clamped and no second render loop is introduced
+ok 17 - frame delta remains clamped and no second render loop is introduced
   ---
-  duration_ms: 0.132971
+  duration_ms: 0.159672
   type: 'test'
   ...
 # Subtest: cleanup releases the controllers and restores hidden local staff
-ok 8 - cleanup releases the controllers and restores hidden local staff
+ok 18 - cleanup releases the controllers and restores hidden local staff
   ---
-  duration_ms: 0.089966
+  duration_ms: 0.094123
   type: 'test'
   ...
 # Subtest: replacement status separates articulated and root-fallback idle counts
-ok 9 - replacement status separates articulated and root-fallback idle counts
+ok 19 - replacement status separates articulated and root-fallback idle counts
   ---
-  duration_ms: 0.296239
+  duration_ms: 0.252592
   type: 'test'
   ...
 # Subtest: transform is idempotent when Vite revisits the same module
-ok 10 - transform is idempotent when Vite revisits the same module
+ok 20 - transform is idempotent when Vite revisits the same module
   ---
-  duration_ms: 0.425974
+  duration_ms: 0.346635
   type: 'test'
   ...
 # Subtest: unknown source signatures fail closed
-ok 11 - unknown source signatures fail closed
+ok 21 - unknown source signatures fail closed
   ---
-  duration_ms: 0.39624
+  duration_ms: 0.170167
   type: 'test'
   ...
-1..11
-# tests 11
-# suites 0
-# pass 11
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 86.836773
-
-
---- calloria-v628-adaptive-staff-idle.test.mjs ---
-TAP version 13
 # Subtest: v6.29 keeps the articulated idle and adds tier-aware scheduling
-ok 1 - v6.29 keeps the articulated idle and adds tier-aware scheduling
+ok 22 - v6.29 keeps the articulated idle and adds tier-aware scheduling
   ---
-  duration_ms: 1.639642
+  duration_ms: 1.111703
   type: 'test'
   ...
 # Subtest: procedural idle pauses while the document is hidden
-ok 2 - procedural idle pauses while the document is hidden
+ok 23 - procedural idle pauses while the document is hidden
   ---
-  duration_ms: 0.156977
+  duration_ms: 0.140613
   type: 'test'
   ...
 # Subtest: invisible staff and staff under invisible parents are not pose-updated
-ok 3 - invisible staff and staff under invisible parents are not pose-updated
+ok 24 - invisible staff and staff under invisible parents are not pose-updated
   ---
-  duration_ms: 0.11252
+  duration_ms: 0.173963
   type: 'test'
   ...
 # Subtest: idle poses use the selected tier rate with bounded accumulated delta
-ok 4 - idle poses use the selected tier rate with bounded accumulated delta
+ok 25 - idle poses use the selected tier rate with bounded accumulated delta
   ---
-  duration_ms: 0.120392
+  duration_ms: 0.12528
   type: 'test'
   ...
 # Subtest: controller state is initialised and released with the staff runtime
-ok 5 - controller state is initialised and released with the staff runtime
+ok 26 - controller state is initialised and released with the staff runtime
   ---
-  duration_ms: 0.196978
+  duration_ms: 0.152611
   type: 'test'
   ...
 # Subtest: rest quaternions are still restored before local pose offsets
-ok 6 - rest quaternions are still restored before local pose offsets
+ok 27 - rest quaternions are still restored before local pose offsets
   ---
-  duration_ms: 0.086651
+  duration_ms: 0.080812
   type: 'test'
   ...
 # Subtest: no second animation frame loop is added
-ok 7 - no second animation frame loop is added
+ok 28 - no second animation frame loop is added
   ---
-  duration_ms: 0.189537
+  duration_ms: 0.168955
   type: 'test'
   ...
 # Subtest: transform remains idempotent and fails closed on unknown source signatures
-ok 8 - transform remains idempotent and fails closed on unknown source signatures
+ok 29 - transform remains idempotent and fails closed on unknown source signatures
   ---
-  duration_ms: 0.162476
+  duration_ms: 0.266673
   type: 'test'
   ...
-1..8
-# tests 8
-# suites 0
-# pass 8
-# fail 0
-# cancelled 0
-# skipped 0
-# todo 0
-# duration_ms 70.850662
-
-
---- calloria-v629-tier-aware-idle.test.mjs ---
-TAP version 13
 # Subtest: v6.29 defines separate low, balanced and high idle budgets
-ok 1 - v6.29 defines separate low, balanced and high idle budgets
+ok 30 - v6.29 defines separate low, balanced and high idle budgets
   ---
-  duration_ms: 0.816816
+  duration_ms: 0.859581
   type: 'test'
   ...
 # Subtest: visibility hierarchy is checked at four times per second, not every render frame
-ok 2 - visibility hierarchy is checked at four times per second, not every render frame
+ok 31 - visibility hierarchy is checked at four times per second, not every render frame
   ---
-  duration_ms: 0.122255
+  duration_ms: 0.124459
   type: 'test'
   ...
 # Subtest: idle controllers are phase-staggered to avoid a same-frame update burst
-ok 3 - idle controllers are phase-staggered to avoid a same-frame update burst
+ok 32 - idle controllers are phase-staggered to avoid a same-frame update burst
   ---
-  duration_ms: 0.115054
+  duration_ms: 0.121654
   type: 'test'
   ...
 # Subtest: scheduler preserves accumulated time rather than discarding interval remainder
-ok 4 - scheduler preserves accumulated time rather than discarding interval remainder
+ok 33 - scheduler preserves accumulated time rather than discarding interval remainder
   ---
-  duration_ms: 0.100382
+  duration_ms: 0.107132
   type: 'test'
   ...
 # Subtest: hidden documents still pause all procedural staff-idle work
-ok 5 - hidden documents still pause all procedural staff-idle work
+ok 34 - hidden documents still pause all procedural staff-idle work
   ---
-  duration_ms: 0.196066
+  duration_ms: 0.13243
   type: 'test'
   ...
 # Subtest: authored animation mixers continue to update through the original mixer path
-ok 6 - authored animation mixers continue to update through the original mixer path
+ok 35 - authored animation mixers continue to update through the original mixer path
   ---
-  duration_ms: 0.096106
+  duration_ms: 0.086501
   type: 'test'
   ...
 # Subtest: scheduler status reports the active tier and visibility-cache interval
-ok 7 - scheduler status reports the active tier and visibility-cache interval
+ok 36 - scheduler status reports the active tier and visibility-cache interval
   ---
-  duration_ms: 0.126271
+  duration_ms: 0.122305
   type: 'test'
   ...
 # Subtest: no new animation frame loop or renderer is introduced
-ok 8 - no new animation frame loop or renderer is introduced
+ok 37 - no new animation frame loop or renderer is introduced
   ---
-  duration_ms: 0.13854
+  duration_ms: 0.164138
   type: 'test'
   ...
 # Subtest: v6.29 transform stays idempotent and fails closed for unknown runtime signatures
-ok 9 - v6.29 transform stays idempotent and fails closed for unknown runtime signatures
+ok 38 - v6.29 transform stays idempotent and fails closed for unknown runtime signatures
   ---
-  duration_ms: 0.340555
+  duration_ms: 0.3365
   type: 'test'
   ...
 # Subtest: standalone scheduler transform is idempotent
-ok 10 - standalone scheduler transform is idempotent
+ok 39 - standalone scheduler transform is idempotent
   ---
-  duration_ms: 0.311361
+  duration_ms: 0.282718
   type: 'test'
   ...
-1..10
-# tests 10
+# Subtest: v6.30 adds upper-arm micro movement for recognised Mixamo and common rig names
+ok 40 - v6.30 adds upper-arm micro movement for recognised Mixamo and common rig names
+  ---
+  duration_ms: 0.955616
+  type: 'test'
+  ...
+# Subtest: v6.30 adds restrained forearm and lower-arm motion
+ok 41 - v6.30 adds restrained forearm and lower-arm motion
+  ---
+  duration_ms: 0.211369
+  type: 'test'
+  ...
+# Subtest: v6.30 adds low-amplitude wrist and hand motion
+ok 42 - v6.30 adds low-amplitude wrist and hand motion
+  ---
+  duration_ms: 0.116326
+  type: 'test'
+  ...
+# Subtest: gesture bones retain and restore their original bind quaternion before each idle update
+ok 43 - gesture bones retain and restore their original bind quaternion before each idle update
+  ---
+  duration_ms: 0.093091
+  type: 'test'
+  ...
+# Subtest: gesture target counts are exposed in replacement and runtime status data
+ok 44 - gesture target counts are exposed in replacement and runtime status data
+  ---
+  duration_ms: 0.095805
+  type: 'test'
+  ...
+# Subtest: static-pose idle is extended while authored GLB animation remains on its original mixer path
+ok 45 - static-pose idle is extended while authored GLB animation remains on its original mixer path
+  ---
+  duration_ms: 0.098329
+  type: 'test'
+  ...
+# Subtest: all additional gestures remain under the existing tier-aware idle scheduler
+ok 46 - all additional gestures remain under the existing tier-aware idle scheduler
+  ---
+  duration_ms: 0.093542
+  type: 'test'
+  ...
+# Subtest: v6.30 remains idempotent and rejects unrecognised runtime source layouts
+ok 47 - v6.30 remains idempotent and rejects unrecognised runtime source layouts
+  ---
+  duration_ms: 0.251019
+  type: 'test'
+  ...
+# Subtest: v6.30 keeps a single renderer and animation loop
+ok 48 - v6.30 keeps a single renderer and animation loop
+  ---
+  duration_ms: 0.275016
+  type: 'test'
+  ...
+# Subtest: v6.30 plugin exposes stable named transform helpers for regression inspection
+ok 49 - v6.30 plugin exposes stable named transform helpers for regression inspection
+  ---
+  duration_ms: 0.276338
+  type: 'test'
+  ...
+1..49
+# tests 49
 # suites 0
-# pass 10
+# pass 49
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 73.887529
-
+# duration_ms 329.46879
