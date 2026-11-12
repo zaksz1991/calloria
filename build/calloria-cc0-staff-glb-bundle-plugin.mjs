@@ -426,7 +426,7 @@ function makeManifest(entries, totals, status) {
  * runtime candidate array (PRIMARY_CANDIDATES and CANDIDATE_IDS). Unknown
  * source shapes are reported as a warning by the plugin and left untouched.
  */
-export function transformStaffRuntimeIntegration(source, availableIds, renderModes) {
+function transformStaffRuntimeIntegrationBase(source, availableIds, renderModes) {
   const original = String(source || '').replace(/\r\n?/g, '\n');
   if (original.includes(MARKER)) return { code: original, map: null, alreadyPatched: true };
   if (!Array.isArray(availableIds) || !availableIds.length) return null;
@@ -521,6 +521,65 @@ export function transformStaffRuntimeIntegration(source, availableIds, renderMod
   }
 
   return { code: `/* ${MARKER} */\n${code}`, map: null, alreadyPatched: false };
+}
+
+
+/**
+ * v6.26 adds a restrained root-level idle loop for approved static-pose GLBs.
+ * It is deliberately not represented as skeletal or source-authored animation:
+ * a static mesh cannot acquire articulated motion without a usable rig/clip.
+ */
+const PROCEDURAL_IDLE_MARKER = '__CALLORIA_STATIC_STAFF_IDLE_V626__';
+function addProceduralStaticStaffIdle(code) {
+  const original = String(code || '').replace(/\r\n?/g, '\n');
+  if (original.includes(PROCEDURAL_IDLE_MARKER)) return { code: original, alreadyPatched: true };
+  const anchors = [
+    ['mixer registry', 'const mixers = [];'],
+    ['wrapper scene insertion', 'scene.add(wrapper);'],
+    ['animation update loop', 'for (const mixer of mixers) mixer.update(step);'],
+    ['replacement status detail', "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,"],
+    ['replacement disposal', 'mixers.length = 0;']
+  ];
+  const missing = anchors.filter(([, text]) => original.split(text).length - 1 !== 1).map(([label]) => label);
+  if (missing.length) return { code: null, warnings: [`Static staff idle motion was not added: ${missing.join(', ')} did not match the verified staff runtime.`] };
+
+  let next = original.replace('const mixers = [];', 'const mixers = [];\n  const proceduralIdleControllers = [];');
+  next = next.replace('scene.add(wrapper);', `scene.add(wrapper);
+    const proceduralIdle = !clip && ['skinned-static-pose', 'static-mesh'].includes(selectedRenderMode);
+    if (proceduralIdle) {
+      proceduralIdleControllers.push({
+        wrapper,
+        baseRotationY: wrapper.rotation.y,
+        baseRotationZ: wrapper.rotation.z,
+        basePositionY: wrapper.position.y,
+        elapsed: 0,
+        phase: (replacements.length * 0.83) % (Math.PI * 2)
+      });
+    }`);
+  next = next.replace('for (const mixer of mixers) mixer.update(step);', `for (const mixer of mixers) mixer.update(step);
+      for (const idle of proceduralIdleControllers) {
+        idle.elapsed += step;
+        const breath = Math.sin(idle.elapsed * 1.25 + idle.phase);
+        const sway = Math.sin(idle.elapsed * 0.72 + idle.phase);
+        // Small root-level motion only; no fabricated bone animation or clip.
+        idle.wrapper.rotation.y = idle.baseRotationY + sway * 0.006;
+        idle.wrapper.rotation.z = idle.baseRotationZ + Math.sin(idle.elapsed * 0.55 + idle.phase) * 0.0025;
+        idle.wrapper.position.y = idle.basePositionY + breath * 0.0025;
+      }`);
+  next = next.replace("animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,", "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,\n        proceduralIdlePlaced: replacements.filter((entry) => ['skinned-static-pose', 'static-mesh'].includes(entry.renderMode) && entry.proceduralIdle).length,");
+  const pushAnchor = 'replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip) });';
+  if (next.split(pushAnchor).length - 1 !== 1) return { code: null, warnings: ['Static staff idle motion was not added: replacement record did not match the verified staff runtime.'] };
+  next = next.replace(pushAnchor, 'replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip), proceduralIdle: !clip && [\'skinned-static-pose\', \'static-mesh\'].includes(selectedRenderMode) });');
+  next = next.replace('mixers.length = 0;', 'mixers.length = 0;\n      proceduralIdleControllers.length = 0;');
+  return { code: `/* ${PROCEDURAL_IDLE_MARKER} */\n${next}`, alreadyPatched: false };
+}
+
+export function transformStaffRuntimeIntegration(source, availableIds, renderModes) {
+  const base = transformStaffRuntimeIntegrationBase(source, availableIds, renderModes);
+  if (!base?.code || base.alreadyPatched) return base;
+  const idle = addProceduralStaticStaffIdle(base.code);
+  if (!idle?.code) return { code: null, warnings: idle?.warnings || ['Static staff idle transform did not produce code.'] };
+  return { ...base, code: idle.code, proceduralIdleAdded: true };
 }
 
 /**
@@ -779,15 +838,15 @@ function createCalloriaCC0StaffGLBBundlePlugin(options = {}) {
         for (const warning of warnings) this.warn?.(`CALLORIA v6.23 staff runtime integration: ${warning}`);
         return null;
       }
-      runtimeDiagnostics.staff = { status: 'patched', source: target, warnings: [], message: `Staff runtime transform enabled for ${availableIds.length} validated model(s). Live scene placement still requires browser verification.` };
-      this.info?.(`CALLORIA v6.23 runtime integration enabled for ${availableIds.length} bundled staff GLB(s): ${Object.entries(renderModes).map(([id, mode]) => `${id}=${mode}`).join(', ')}. Static-pose models are restricted to standing staff anchors.`);
+      runtimeDiagnostics.staff = { status: 'patched', source: target, warnings: [], message: `Staff runtime transform enabled for ${availableIds.length} validated model(s). Static-pose models on standing anchors receive subtle root-level idle motion; this is not skeletal animation. Live scene placement still requires browser verification.` };
+      this.info?.(`CALLORIA v6.26 runtime integration enabled for ${availableIds.length} bundled staff GLB(s): ${Object.entries(renderModes).map(([id, mode]) => `${id}=${mode}`).join(', ')}. Static-pose models are restricted to standing staff anchors and receive subtle root-level procedural idle motion (not skeletal animation).`);
       return { code: transformed.code, map: null };
     },
     generateBundle() {
       const payload = makeRuntimeDiagnosticsPayload({ entries: buildEntries, runtime: runtimeDiagnostics });
       this.emitFile?.({ type: 'asset', fileName: RUNTIME_DIAGNOSTICS_JSON, source: `${JSON.stringify(payload, null, 2)}\n` });
       this.emitFile?.({ type: 'asset', fileName: RUNTIME_DIAGNOSTICS_HTML, source: makeRuntimeDiagnosticsHtml() });
-      this.info?.(`CALLORIA v6.23 deployment audit emitted: /${RUNTIME_DIAGNOSTICS_HTML} and /${RUNTIME_DIAGNOSTICS_JSON}. The report distinguishes validated files from runtime scene placement.`);
+      this.info?.(`CALLORIA v6.26 deployment audit emitted: /${RUNTIME_DIAGNOSTICS_HTML} and /${RUNTIME_DIAGNOSTICS_JSON}. The report distinguishes validated files from runtime scene placement.`);
     },
     api: {
       getAvailableStaffIds() { return [...availableIds]; },
@@ -806,7 +865,7 @@ export const __calloriaCC0StaffGLBBundleTest = Object.freeze({
   REQUIRED_ANIMATIONS: Object.freeze([]), PREFERRED_ANIMATIONS, LICENSE,
   readGlbJsonAndChunks, parseGlb, sha256, fetchWithRetry, makeManifest,
   getNodeLocalMatrix, multiplyNodeMatrices, transformNodePoint, measureSceneNodeBounds,
-  transformStaffRuntimeIntegration, transformOfficeWorldIntegration,
+  transformStaffRuntimeIntegration, transformStaffRuntimeIntegrationBase, addProceduralStaticStaffIdle, PROCEDURAL_IDLE_MARKER, transformOfficeWorldIntegration,
   makeRuntimeDiagnosticsPayload, makeRuntimeDiagnosticsHtml,
   RUNTIME_DIAGNOSTICS_JSON, RUNTIME_DIAGNOSTICS_HTML
 });

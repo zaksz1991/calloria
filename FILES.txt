@@ -1,7 +1,5 @@
-public/glb-asset-lab.html
-js/calloria-glb-performance-audit.js
-tests/calloria-v625-mobile-glb-audit.test.mjs
-README.md
-CHANGELOG.md
-INSTALL-GITHUB.md
-VERIFICATION.md
+build/calloria-cc0-staff-glb-bundle-plugin.mjs — complete replacement
+tests/calloria-v626-static-staff-idle.test.mjs — new regression tests
+tests/calloria-v622-transform-aware-bounds.test.mjs — previous validation regression
+tests/calloria-v623-runtime-diagnostics.test.mjs — previous deployment audit regression
+tests/fixtures/glb-world-integration-v12.fixture.js — checked runtime fixture

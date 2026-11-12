@@ -1,0 +1,119 @@
+TAP version 13
+# Subtest: measures world dimensions after a giant local mesh is scaled by its scene node
+ok 1 - measures world dimensions after a giant local mesh is scaled by its scene node
+  ---
+  duration_ms: 3.440795
+  type: 'test'
+  ...
+# Subtest: applies parent scale to a small child model through the scene hierarchy
+ok 2 - applies parent scale to a small child model through the scene hierarchy
+  ---
+  duration_ms: 0.921614
+  type: 'test'
+  ...
+# Subtest: supports glTF matrix transforms and ignores unreachable mesh geometry for character bounds
+ok 3 - supports glTF matrix transforms and ignores unreachable mesh geometry for character bounds
+  ---
+  duration_ms: 3.317367
+  type: 'test'
+  ...
+# Subtest: rejects cyclic scene hierarchies instead of looping during validation
+ok 4 - rejects cyclic scene hierarchies instead of looping during validation
+  ---
+  duration_ms: 1.116566
+  type: 'test'
+  ...
+# Subtest: does not loosen the final world-space human proportion limits
+ok 5 - does not loosen the final world-space human proportion limits
+  ---
+  duration_ms: 0.687901
+  type: 'test'
+  ...
+# Subtest: applies quaternion rotation when computing scene-space extents
+ok 6 - applies quaternion rotation when computing scene-space extents
+  ---
+  duration_ms: 0.559886
+  type: 'test'
+  ...
+# Subtest: runtime report distinguishes unavailable assets from bundled assets
+ok 7 - runtime report distinguishes unavailable assets from bundled assets
+  ---
+  duration_ms: 1.950597
+  type: 'test'
+  ...
+# Subtest: diagnostics page performs a bounded GLB range probe and avoids claiming scene rendering
+ok 8 - diagnostics page performs a bounded GLB range probe and avoids claiming scene rendering
+  ---
+  duration_ms: 0.375594
+  type: 'test'
+  ...
+# Subtest: Vite plugin emits deployment JSON and HTML with observed integration failures
+ok 9 - Vite plugin emits deployment JSON and HTML with observed integration failures
+  ---
+  duration_ms: 1.381802
+  type: 'test'
+  ...
+# Subtest: existing v1.2 staff integration source still transforms with the v6.23 diagnostic build
+ok 10 - existing v1.2 staff integration source still transforms with the v6.23 diagnostic build
+  ---
+  duration_ms: 4.313432
+  type: 'test'
+  ...
+# Subtest: v6.26 upgrades the existing v6.22 staff transform without replacing the runtime contract
+ok 11 - v6.26 upgrades the existing v6.22 staff transform without replacing the runtime contract
+  ---
+  duration_ms: 1.17343
+  type: 'test'
+  ...
+# Subtest: procedural idle is assigned only to approved static-pose models on standing anchors
+ok 12 - procedural idle is assigned only to approved static-pose models on standing anchors
+  ---
+  duration_ms: 0.401326
+  type: 'test'
+  ...
+# Subtest: static-pose idle uses deliberately small, root-level movement and does not fabricate a source clip
+ok 13 - static-pose idle uses deliberately small, root-level movement and does not fabricate a source clip
+  ---
+  duration_ms: 0.25551
+  type: 'test'
+  ...
+# Subtest: animated GLBs retain their real named clip and are not routed through procedural idle
+ok 14 - animated GLBs retain their real named clip and are not routed through procedural idle
+  ---
+  duration_ms: 0.14867
+  type: 'test'
+  ...
+# Subtest: the idle update clamps frame delta and performs no additional render loop
+ok 15 - the idle update clamps frame delta and performs no additional render loop
+  ---
+  duration_ms: 0.328769
+  type: 'test'
+  ...
+# Subtest: cleanup clears idle controllers and retains the existing local-avatar restoration
+ok 16 - cleanup clears idle controllers and retains the existing local-avatar restoration
+  ---
+  duration_ms: 0.285177
+  type: 'test'
+  ...
+# Subtest: transform is idempotent for repeated Vite transform passes
+ok 17 - transform is idempotent for repeated Vite transform passes
+  ---
+  duration_ms: 0.238887
+  type: 'test'
+  ...
+# Subtest: unknown source signatures fail closed instead of breaking Vite compilation
+ok 18 - unknown source signatures fail closed instead of breaking Vite compilation
+  ---
+  duration_ms: 0.189717
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 402.121044
+

@@ -1,7 +1,7 @@
-# v6.25 change log
+# CALLORIA v6.26 — Static Staff Idle Motion
 
-- Added batch decoding and performance scoring for deployed staff and office GLBs.
-- Added mobile, balanced and high-end asset budgets.
-- Added geometry/texture memory estimates, triangle and draw-call counts, rig and animation reporting.
-- Added JSON audit export.
-- Kept the existing single-asset visual preview and its gameplay-independent behavior unchanged.
+- Adds subtle root-level procedural idle movement to approved static-pose staff GLBs on standing staff anchors.
+- Keeps animated GLBs on their original named animation clips.
+- Explicitly distinguishes procedural root motion from skeletal animation; no bones or source clips are fabricated.
+- Exposes `proceduralIdlePlaced` in the existing staff runtime status.
+- Keeps the existing staff replacement limits, local fallback restoration, office integration, and deployment audit intact.
