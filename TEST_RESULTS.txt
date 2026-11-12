@@ -1,158 +1,158 @@
 TAP version 13
-# Subtest: rank thresholds progress in the intended order
-ok 1 - rank thresholds progress in the intended order
+# Subtest: v6.2 engine reports its version and reads the v6.0/v6.1 storage keys
+ok 1 - v6.2 engine reports its version and reads the v6.0/v6.1 storage keys
   ---
-  duration_ms: 0.958927
+  duration_ms: 1.758563
   type: 'test'
   ...
-# Subtest: rank progress exposes percentage and remaining XP
-ok 2 - rank progress exposes percentage and remaining XP
+# Subtest: five GLB asset roles have ordered, local asset candidates
+ok 2 - five GLB asset roles have ordered, local asset candidates
   ---
-  duration_ms: 0.119877
+  duration_ms: 0.314574
   type: 'test'
   ...
-# Subtest: shift XP rewards contacts, service results, knowledge and shift discipline
-ok 3 - shift XP rewards contacts, service results, knowledge and shift discipline
+# Subtest: asset path lookup rejects unknown roles
+ok 3 - asset path lookup rejects unknown roles
   ---
-  duration_ms: 0.30463
+  duration_ms: 3.643723
   type: 'test'
   ...
-# Subtest: no completed contacts earn no career XP
-ok 4 - no completed contacts earn no career XP
+# Subtest: workplace directory has four distinct customer-care stations
+ok 4 - workplace directory has four distinct customer-care stations
   ---
-  duration_ms: 0.099146
+  duration_ms: 0.279082
   type: 'test'
   ...
-# Subtest: a critical compliance breach blocks all career XP for the shift
-ok 5 - a critical compliance breach blocks all career XP for the shift
+# Subtest: station coordinates remain inside the floor walking boundary
+ok 5 - station coordinates remain inside the floor walking boundary
   ---
-  duration_ms: 0.165664
+  duration_ms: 0.113598
   type: 'test'
   ...
-# Subtest: achievement bonuses unlock only once
-ok 6 - achievement bonuses unlock only once
+# Subtest: empty browser storage returns a safe guest snapshot
+ok 6 - empty browser storage returns a safe guest snapshot
   ---
-  duration_ms: 8.362461
+  duration_ms: 0.386209
   type: 'test'
   ...
-# Subtest: strong shift awards first-contact, five-served, quality, CSAT, safety, routine and FCR badges
-ok 7 - strong shift awards first-contact, five-served, quality, CSAT, safety, routine and FCR badges
+# Subtest: stored v6.0 shift is read without modifying the source record
+ok 7 - stored v6.0 shift is read without modifying the source record
   ---
-  duration_ms: 0.550294
+  duration_ms: 0.581547
   type: 'test'
   ...
-# Subtest: knowledge seeker badge uses cumulative approved-knowledge references
-ok 8 - knowledge seeker badge uses cumulative approved-knowledge references
+# Subtest: malformed shift JSON is handled without throwing
+ok 8 - malformed shift JSON is handled without throwing
   ---
-  duration_ms: 0.299914
+  duration_ms: 0.222508
   type: 'test'
   ...
-# Subtest: compliance breach prevents performance badges while retaining the shift record
-ok 9 - compliance breach prevents performance badges while retaining the shift record
+# Subtest: career rank is matched to the current employee and team profile
+ok 9 - career rank is matched to the current employee and team profile
   ---
-  duration_ms: 0.355094
+  duration_ms: 0.97014
   type: 'test'
   ...
-# Subtest: shift history imports in chronological order even if source history is newest first
-ok 10 - shift history imports in chronological order even if source history is newest first
+# Subtest: a profile from another employee does not leak into the current floor HUD
+ok 10 - a profile from another employee does not leak into the current floor HUD
   ---
-  duration_ms: 0.666375
+  duration_ms: 0.738829
   type: 'test'
   ...
-# Subtest: current ended shift is imported and its report is calculated from live-floor state
-ok 11 - current ended shift is imported and its report is calculated from live-floor state
+# Subtest: active customer interaction is reflected in the office HUD snapshot
+ok 11 - active customer interaction is reflected in the office HUD snapshot
   ---
-  duration_ms: 0.31101
+  duration_ms: 0.307093
   type: 'test'
   ...
-# Subtest: archived shifts keep separate employee profiles by employee and team
-ok 12 - archived shifts keep separate employee profiles by employee and team
+# Subtest: rank calculation handles top rank and XP below zero
+ok 12 - rank calculation handles top rank and XP below zero
   ---
-  duration_ms: 1.138924
+  duration_ms: 0.100268
   type: 'test'
   ...
-# Subtest: shift identity is stable across current and archived shift representations
-ok 13 - shift identity is stable across current and archived shift representations
+# Subtest: nearest workstation is selected only inside the interaction radius
+ok 13 - nearest workstation is selected only inside the interaction radius
   ---
-  duration_ms: 0.185535
+  duration_ms: 0.156321
   type: 'test'
   ...
-# Subtest: shift objectives show live progress and blocked compliance
-ok 14 - shift objectives show live progress and blocked compliance
+# Subtest: nearest workstation returns distance and selects the closest of two
+ok 14 - nearest workstation returns distance and selects the closest of two
   ---
-  duration_ms: 0.431488
+  duration_ms: 0.122971
   type: 'test'
   ...
-# Subtest: profile identifiers are normalised and HTML characters are stripped from display names
-ok 15 - profile identifiers are normalised and HTML characters are stripped from display names
+# Subtest: XZ distance ignores camera height
+ok 15 - XZ distance ignores camera height
   ---
-  duration_ms: 0.143171
+  duration_ms: 0.113007
   type: 'test'
   ...
-# Subtest: browser storage round-trip preserves progression without touching live-floor storage keys
-ok 16 - browser storage round-trip preserves progression without touching live-floor storage keys
+# Subtest: workstation cannot open without both physical desk and computer GLBs
+ok 16 - workstation cannot open without both physical desk and computer GLBs
   ---
-  duration_ms: 0.795146
+  duration_ms: 0.198292
   type: 'test'
   ...
-# Subtest: corrupt progression storage safely falls back to a clean state
-ok 17 - corrupt progression storage safely falls back to a clean state
+# Subtest: asset summary counts only confirmed loaded models
+ok 17 - asset summary counts only confirmed loaded models
   ---
-  duration_ms: 0.330078
+  duration_ms: 0.239162
   type: 'test'
   ...
-# Subtest: progression state caps archived records and badge catalogue is fixed
-ok 18 - progression state caps archived records and badge catalogue is fixed
+# Subtest: office page pins the Three.js version and uses GLTFLoader plus skeleton-safe cloning
+ok 18 - office page pins the Three.js version and uses GLTFLoader plus skeleton-safe cloning
   ---
-  duration_ms: 0.314384
+  duration_ms: 0.149431
   type: 'test'
   ...
-# Subtest: live-floor archives prior shift identity and career progression imports it on the next sign-in
-ok 19 - live-floor archives prior shift identity and career progression imports it on the next sign-in
+# Subtest: office page links to the playable Live Floor route
+ok 19 - office page links to the playable Live Floor route
   ---
-  duration_ms: 2.300741
+  duration_ms: 0.062341
   type: 'test'
   ...
-# Subtest: v6.1 live floor HTML has unique IDs
-ok 20 - v6.1 live floor HTML has unique IDs
+# Subtest: Live Floor provides a return route to the 3D workplace
+ok 20 - Live Floor provides a return route to the 3D workplace
   ---
-  duration_ms: 0.851949
+  duration_ms: 0.051396
   type: 'test'
   ...
-# Subtest: all literal controller selectors exist in the live-floor page
-ok 21 - all literal controller selectors exist in the live-floor page
+# Subtest: Live Floor preselects the team supplied by the workstation
+ok 21 - Live Floor preselects the team supplied by the workstation
   ---
-  duration_ms: 0.794394
+  duration_ms: 0.07433
   type: 'test'
   ...
-# Subtest: career progression engine is loaded after the live-floor engine and before the controller
-ok 22 - career progression engine is loaded after the live-floor engine and before the controller
+# Subtest: office floor does not create primitive human placeholder characters
+ok 22 - office floor does not create primitive human placeholder characters
   ---
-  duration_ms: 0.219705
+  duration_ms: 0.248346
   type: 'test'
   ...
-# Subtest: career dashboard includes rank, XP, progress, objectives and achievements
-ok 23 - career dashboard includes rank, XP, progress, objectives and achievements
+# Subtest: workstation access is blocked if the required GLB furniture failed to load
+ok 23 - workstation access is blocked if the required GLB furniture failed to load
   ---
-  duration_ms: 0.228538
+  duration_ms: 0.078276
   type: 'test'
   ...
-# Subtest: end-of-shift report contains the career reward panel
-ok 24 - end-of-shift report contains the career reward panel
+# Subtest: desktop and mobile movement controls are provided
+ok 24 - desktop and mobile movement controls are provided
   ---
-  duration_ms: 0.3112
+  duration_ms: 0.076513
   type: 'test'
   ...
-# Subtest: game progression is described separately from formal promotion
-ok 25 - game progression is described separately from formal promotion
+# Subtest: office page references the new CSS and renderer modules
+ok 25 - office page references the new CSS and renderer modules
   ---
-  duration_ms: 0.102541
+  duration_ms: 0.058606
   type: 'test'
   ...
-# Subtest: the page remains responsive on tablet and mobile screens
-ok 26 - the page remains responsive on tablet and mobile screens
+# Subtest: both updated HTML pages have unique element IDs
+ok 26 - both updated HTML pages have unique element IDs
   ---
-  duration_ms: 0.092096
+  duration_ms: 0.391748
   type: 'test'
   ...
 1..26
@@ -163,4 +163,4 @@ ok 26 - the page remains responsive on tablet and mobile screens
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 164.351094
+# duration_ms 112.28215

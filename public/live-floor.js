@@ -421,6 +421,19 @@
     } catch (error) { notify(error.message, true); }
   }
 
+  const officeParams = new URLSearchParams(window.location.search);
+  if (officeParams.get('fromOffice') === '1') {
+    const requestedTeam = officeParams.get('team');
+    const teamSelect = $('#agent-team');
+    if (requestedTeam && Array.from(teamSelect.options).some((option) => option.value === requestedTeam || option.textContent === requestedTeam)) {
+      teamSelect.value = requestedTeam;
+    }
+    const previousShift = F.load(realStorage);
+    if (previousShift.shift && previousShift.shift.agentName && previousShift.shift.agentName !== 'Agent Trainee') {
+      $('#agent-name').value = previousShift.shift.agentName;
+    }
+  }
+
   $('#start-form').addEventListener('submit', (event) => {
     event.preventDefault();
     try {

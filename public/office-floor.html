@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#091321">
+  <meta name="description" content="Walk the CALLORIA contact-centre workplace, inspect GLB furniture and staff assets, and enter an agent workstation.">
+  <title>CALLORIA · 3D Workplace</title>
+  <link rel="stylesheet" href="/office-floor.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="/office-floor.js"></script>
+</head>
+<body>
+  <main class="office-app">
+    <header class="office-topbar">
+      <a class="brand" href="/" aria-label="CALLORIA home"><span class="brand-mark">C</span><span><strong>CALLORIA</strong><small>CONTACT CENTRE CAREER SIMULATOR</small></span></a>
+      <div class="top-actions">
+        <span class="floor-live"><i></i> 3D WORKPLACE</span>
+        <a class="shift-link" href="/live-floor.html">OPEN CUSTOMER SHIFT</a>
+      </div>
+    </header>
+
+    <section class="world-stage" aria-label="Interactive three-dimensional contact centre">
+      <div id="world-root" class="world-root"></div>
+      <div class="world-vignette" aria-hidden="true"></div>
+
+      <section class="hud hud-left">
+        <div class="hud-label">OPERATIONS FLOOR</div>
+        <h1>Contact Centre</h1>
+        <p class="hud-subtitle">Walk to a staffed workstation to begin your customer shift.</p>
+        <div class="player-card">
+          <div class="player-avatar">AG</div>
+          <div><strong id="player-name">Guest employee</strong><small id="player-team">Not signed in</small></div>
+        </div>
+        <div class="hud-stats">
+          <div><span>SHIFT</span><strong id="hud-shift">OFF DUTY</strong></div>
+          <div><span>GAME RANK</span><strong id="hud-rank">NEW STARTER</strong></div>
+          <div><span>CAREER XP</span><strong id="hud-xp">0</strong></div>
+        </div>
+      </section>
+
+      <section class="hud hud-right">
+        <div class="hud-label">FLOOR DIRECTORY</div>
+        <h2>Workstations</h2>
+        <div id="station-directory" class="station-directory">
+          <div class="directory-item"><span class="directory-dot"></span><span><strong>Customer Care</strong><small>Voice & general enquiries</small></span><b>CC-01</b></div>
+          <div class="directory-item"><span class="directory-dot"></span><span><strong>Digital Support</strong><small>Email & live chat</small></span><b>DS-02</b></div>
+          <div class="directory-item"><span class="directory-dot"></span><span><strong>Product Support</strong><small>Product & technical</small></span><b>PS-03</b></div>
+          <div class="directory-item"><span class="directory-dot"></span><span><strong>Service Recovery</strong><small>Complaints & escalations</small></span><b>SR-04</b></div>
+        </div>
+        <div class="asset-status" id="asset-status">
+          <div class="asset-status-head"><span>GLB ASSET CHECK</span><b id="asset-count">0 / 5</b></div>
+          <div class="asset-track"><i id="asset-progress"></i></div>
+          <details><summary>Inspect loaded assets</summary><div id="asset-log" class="asset-log"><p>Waiting for model loader…</p></div></details>
+        </div>
+      </section>
+
+      <section class="interaction-card hidden" id="interaction-card" aria-live="polite">
+        <button type="button" id="close-interaction" class="close-interaction" aria-label="Close workstation details">×</button>
+        <span class="hud-label" id="station-ref">WORKSTATION CC-01</span>
+        <h2 id="station-name">Customer Care</h2>
+        <p id="station-description">Voice and general customer enquiries.</p>
+        <div class="station-meta"><span id="station-channel">VOICE & GENERAL</span><span id="station-availability">READY</span></div>
+        <button type="button" class="primary-action" id="enter-workstation">ENTER WORKSTATION</button>
+      </section>
+
+      <div class="bottom-hud">
+        <div class="control-help desktop-help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Move</span><kbd>Mouse</kbd><span>Look</span><kbd>E</kbd><span>Use workstation</span><kbd>Esc</kbd><span>Release mouse</span></div>
+        <button id="walk-mode" class="walk-mode" type="button">ENTER WALK MODE</button>
+        <div class="mobile-controls" aria-label="Touch movement controls">
+          <button type="button" data-move="forward" aria-label="Move forward">▲</button>
+          <div><button type="button" data-move="left" aria-label="Move left">◀</button><button type="button" data-move="back" aria-label="Move backward">▼</button><button type="button" data-move="right" aria-label="Move right">▶</button></div>
+          <button type="button" id="mobile-interact" class="mobile-interact">USE</button>
+        </div>
+        <div class="proximity-hint" id="proximity-hint">Explore the floor. Move towards a workstation.</div>
+      </div>
+
+      <div class="loading-screen" id="loading-screen">
+        <div class="loader-mark">C</div>
+        <strong>Preparing the workplace</strong>
+        <span id="loading-detail">Checking local GLB assets…</span>
+        <div class="loading-track"><i id="loading-progress"></i></div>
+      </div>
+      <div class="fatal-message hidden" id="fatal-message"></div>
+    </section>
+
+    <footer class="office-footer">
+      <span>CALLORIA · 3D FLOOR PROTOTYPE · v6.2</span>
+      <span>GLB models are loaded from your existing <code>public/assets/models/</code> directory. Missing models are reported, not replaced with character placeholders.</span>
+    </footer>
+  </main>
+</body>
+</html>

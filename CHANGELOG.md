@@ -1,17 +1,13 @@
-# Changelog — CALLORIA v6.1
+# Changelog
 
-## Added
-- Career XP and an eight-rank gameplay ladder on the v6.0 Live Floor.
-- Six live shift objectives and eight one-time achievement badges.
-- End-of-shift XP awards based on contact volume, service results, knowledge use and shift routine.
-- Strict progression penalty: any critical compliance breach blocks all XP and performance-badge awards for that shift.
-- Idempotent import of ended and archived v6.0 shifts, with separate progress profiles per employee name/team.
-- Career reward panel in the shift report and responsive mobile styling.
+## v6.2.0
 
-## Changed
-- Shift archive records now retain team and shift start timestamp so progression can identify previous sessions reliably.
-- Live Floor page version label updated to build 6.1.
-
-## Unchanged
-- Recruitment/onboarding, contact scenarios, case handling, Customer 360, knowledge search and the v6.0 customer-care shift flow.
-- No banking, finance or billing workflow added to default gameplay.
+- Added an interactive first-person 3D contact-centre workplace.
+- Added Customer Care, Digital Support, Product Support and Service Recovery workstation zones.
+- Added walk-up workstation interaction and navigation into the existing Live Floor.
+- Added return navigation from the Live Floor back to the 3D workplace.
+- Added station-team preselection when entering the Live Floor from a station.
+- Added local GLB role/path diagnostics and strict desk/computer model gates.
+- Added skeleton-safe GLB character clones and optional idle animation playback.
+- Added compact HUD reading current shift and career profile data without changing the records.
+- Added touch controls, pointer-look and capped renderer settings.

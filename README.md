@@ -1,64 +1,73 @@
-# CALLORIA v6.1 — Agent Career Progression, XP & Achievements
+# CALLORIA v6.2 — 3D Workplace & GLB Workstation Bridge
 
 ## Purpose
 
-This is the next gameplay layer for the v6.0 Live Floor. It adds visible career progression to the player's actual simulated customer-care shifts. It does not add another back-office application and does not make banking, billing, accounting or bank statements part of the default game.
+v6.2 adds a navigable 3D contact-centre floor and connects its workstations to the existing v6.1 playable Live Floor. It is a gameplay bridge, not another back-office subsystem. Banking, billing and bank statements are not part of the default workplace.
 
-## What changes in the game
+## What is included
 
-- The Live Floor now shows the player's game rank, accumulated Career XP and progress to the next rank.
-- Six live shift objectives update as the player works: complete three contacts, maintain 85% QA, use approved knowledge, avoid critical compliance breaches, attend both briefings and complete both scheduled breaks.
-- Eight achievement badges are available: First Contact, Five Served, Quality Standard, Customer Champion, Knowledge Seeker, Safe Handling, Floor Discipline and First-Contact Resolver.
-- End-of-shift reports award XP based on completed contacts, service score, knowledge use and shift discipline.
-- A critical compliance breach blocks all Career XP and performance-badge unlocks for that shift.
-- Completed shifts are imported idempotently from v6.0's current and archived shift records. The same shift cannot be rewarded twice after a refresh or after starting the next shift.
-- Progress profiles are separated by employee name and assigned team on that browser.
-- A career reward panel shows XP, new achievements and game-rank advancement at shift close.
-
-## Rank ladder
-
-| Career XP | Game rank |
-|---:|---|
-| 0 | New Starter |
-| 300 | Customer Care Associate |
-| 750 | Skilled Associate |
-| 1,500 | Senior Associate |
-| 2,500 | Product Support Specialist |
-| 3,800 | Senior Specialist |
-| 5,400 | Team Lead Candidate |
-| 7,200 | Leadership Ready |
-
-These are gameplay ranks only. They are not actual job titles, HR grades or automatic promotions. Real promotions continue to require the formal performance/KPI and assessment process. XP does not change v4.9 employment or promotion records.
+- New `/office-floor.html` 3D workplace page.
+- Four walk-up workstations: Customer Care, Digital Support, Product Support and Service Recovery.
+- First-person movement with WASD, mouse-look and pointer lock; mobile touch movement and look-drag are included.
+- Workstation interaction using `E` or the on-screen `USE` control.
+- Entering an operational station opens the existing `/live-floor.html` customer shift with the station's team preselected.
+- Live Floor has a `3D WORKPLACE` return link.
+- Office HUD reads the existing v6.0 shift record and v6.1 career profile from the same browser origin. It does not create or rewrite those records.
+- Local asset inspection for desk, computer, agent and supervisor GLBs.
+- GLB candidate paths are tried in order and the exact successful/missing paths appear in the Asset Check panel.
+- A workstation is disabled unless both its desk and computer GLB models load. Character models are optional for station activation, but missing characters are not replaced with primitive human placeholders.
+- Loaded character models are cloned with Three.js SkeletonUtils; an available idle animation is used when the GLB includes animations.
+- Performance guardrails: pinned Three.js 0.170.0, capped pixel ratio, no real-time shadows, one shared load per model role, and no additional 3D dependency in `package.json`.
 
 ## Install
 
-This is an overlay for the CALLORIA v6.0 Live Floor. The v6.0 base files must already be in the repository's `public/` folder.
+This is an overlay for CALLORIA v6.1. The existing v6.1 Live Floor dependencies must already be in `public/`:
 
-Copy these five files from this package's `public/` folder into the repository's existing `public/` folder, replacing the matching v6.0 files:
-
-- `live-floor.html`
-- `live-floor.css`
-- `live-floor.js`
+- `agent-workbench-engine.js`
+- `customer-journey-engine.js`
 - `live-floor-engine.js`
-- `career-progression-engine.js` (new)
+- `career-progression-engine.js`
 
-Keep the existing v6.0 dependencies `agent-workbench-engine.js` and `customer-journey-engine.js`. Do not remove or replace them with unrelated engine files. No Vite configuration or package changes are required.
+Copy these seven files from this package's `public/` folder into the repository's existing `public/` folder, replacing only the matching files:
 
-The page remains at:
+- `office-floor.html` (new)
+- `office-floor.css` (new)
+- `office-floor.js` (new)
+- `office-floor-engine.js` (new)
+- `live-floor.html` (updated with a return link and v6.2 label)
+- `live-floor.css` (updated with return-link styling)
+- `live-floor.js` (updated to preselect the workstation team on arrival)
 
-`https://calloria.vercel.app/live-floor.html`
+Do not remove the existing v6.1 engine dependencies or GLB model directory. No Vite config or `package.json` change is required because these files are served from the existing Vite `public/` directory.
 
-The route is available only after the updated files are committed and a successful deployment completes.
+## Routes
 
-## Storage and data boundaries
+- 3D workplace: `https://calloria.vercel.app/office-floor.html`
+- Customer shift: `https://calloria.vercel.app/live-floor.html`
 
-- Career data is stored in browser local storage under `calloria.career-progression.v61`.
-- The Live Floor continues using its v6.0 shift record. Customer and case write-through remain local to the same browser/origin.
-- Progress is separated by employee name and team; use the same name/team on later shifts to continue the same profile.
-- The new engine reads completed shift summaries from the v6.0 Live Floor state. It does not read or modify the optional Billing/Finance modules.
-- No external login, Supabase write, HR sync, live multiplayer, actual telephone, email or messaging service is added.
-- This release still does not embed the Live Floor into the 3D office/GLB scene or main 3D navigation. It upgrades the playable shift's progression layer first.
+These routes are available only after the updated files are committed and the deployment succeeds.
+
+## Asset path handling
+
+The page searches the current `public/assets/models/` tree. It tries several likely filenames under the known model folders for:
+
+- `office/desks/office_desk`
+- `office/equipment/office_computer`
+- `characters/agents/female-agent` and `characters/agents/male-agent`, plus their alternate folder layout
+- `supervisors/office_female`
+
+The original GLB folder structure was not available in this patch workspace, so this package cannot assert that any particular model filename exists in the user's live repository. The in-page Asset Check reports the result after the page loads. If a path differs from the existing asset tree, add the actual filename to the relevant role's candidate list in `office-floor-engine.js`; do not rename or duplicate large GLB files unnecessarily.
+
+Desk and computer assets are required to enable workstation entry. Agent and supervisor models are displayed when found. Missing character models remain visibly reported; no oversized geometry substitute is rendered.
+
+## Technical boundaries
+
+- The 3D workplace uses Three.js 0.170.0 from a pinned jsDelivr CDN import map. A network connection to that CDN is required to start the renderer. GLB files remain local to CALLORIA.
+- This is a first-person 3D workplace prototype. It does not add collision-aware furniture navigation, multiplayer, real-time employee presence, audio, voice calling or live customer messaging.
+- Workstation entry opens the existing 2D playable shift. This package does not embed the entire three-step customer conversation UI into the 3D scene.
+- Shift and career HUD values are read from browser localStorage on the same origin. They are not shared between devices or employee accounts.
+- The office page does not modify Supabase, Groq, bank, billing or finance settings.
 
 ## Verification
 
-See `VERIFICATION.md` for focused test results and unverified deployment/browser checks.
+See `VERIFICATION.md`. Focused engine tests and syntax checks are run in this patch workspace. A full repository Vite build, production Vercel deployment and browser test against the user's actual GLB asset directory are not part of this verification.

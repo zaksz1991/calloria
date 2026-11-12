@@ -1,27 +1,30 @@
-# Verification — CALLORIA v6.1
+# Verification — CALLORIA v6.2
 
-## Completed
+## Focused checks performed
 
-- Node syntax checks for `live-floor.js`, `live-floor-engine.js` and `career-progression-engine.js`: passed.
-- Focused Node tests: **26 passed, 0 failed**.
-- Rank threshold, XP calculation, critical-breach blocking and badge-award tests: passed.
-- Idempotent imports, chronological history, per-employee/team profiles and storage round-trip tests: passed.
-- Live Floor shift-archive → career progression bridge test: passed.
-- HTML ID uniqueness and controller selector contract: passed.
-- Script load order and career-panel HTML contract: passed.
-- Responsive tablet/mobile CSS contract: passed.
-- Local HTTP static page request: HTTP 200.
+| Check | Result |
+|---|---:|
+| Office-floor engine and route-contract tests | 26 passed, 0 failed |
+| `office-floor-engine.js` syntax | Passed |
+| `office-floor.js` syntax | Passed |
+| Updated `live-floor.js` syntax | Passed |
+| Duplicate IDs on both HTML pages | None |
+| v6.0/v6.1 local-storage read contracts | Passed |
+| GLB loading and workstation gate contracts | Passed |
+| ZIP integrity | Passed (`unzip -t`) |
 
-## Not completed
+## Not performed
 
-- Chromium headless render attempt did not complete within the execution window. Visual rendering and browser click-through end-to-end testing are not certified.
-- Full CALLORIA repository tests and Vite production build were not run because the complete repository was not available in this working directory.
-- Vercel deployment and live production route were not verified.
-- Main 3D office scene/GLB integration was not included in this patch.
+- Full CALLORIA repository tests.
+- Vite production build.
+- Vercel deployment.
+- End-to-end browser render against the deployed website.
+- Actual GLB load verification against the user's production `/assets/models/` directory. Those asset files are not present in this patch workspace.
 
-## Important boundaries
+## Known constraints
 
-- Career XP, game ranks and achievements are local gameplay progression, not actual HR promotion or formal job grades.
-- Progress is stored in browser local storage; there is no Supabase or multi-device sync.
-- The optional Billing and Finance modules are not part of the default shift.
-- The game still uses scripted synthetic customer scenarios and is not connected to live communications channels.
+- Three.js 0.170.0 is loaded from a pinned CDN import map; a connection to that CDN is required to start the renderer.
+- The actual GLB files are not included in the patch. The page tries multiple filename candidates under the known model folders and reports successful or missing paths in the asset inspector.
+- Workstation entry requires both desk and computer GLBs. Agent and supervisor GLBs are optional and are never replaced with primitive character geometry.
+- The 3D floor is a first-person prototype. Furniture collision, multiplayer, audio, live telephony and live digital channels are not included.
+- The package assumes the v6.1 base engines remain installed in `public/`.
