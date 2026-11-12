@@ -18,6 +18,7 @@ import { calloriaGlazedDepartmentPartitionsPlugin } from './build/calloria-glaze
 import { calloriaOJTGLBActivationPlugin } from './build/calloria-ojt-glb-activation-plugin.mjs';
 import { calloriaFirstWorkingShiftV44Plugin } from './build/calloria-first-working-shift-v4-4-plugin.mjs';
 import { calloriaOutboundCampaignV45Plugin } from './build/calloria-outbound-campaign-v4-5-plugin.mjs';
+import { calloriaMobileResponsiveRepairPlugin } from './build/calloria-mobile-responsive-repair-v6-10.mjs';
 
 export default defineConfig({
   base: '/',
@@ -47,7 +48,9 @@ export default defineConfig({
     // The live-shift integration runs after OJT has inserted its employment gate.
     calloriaFirstWorkingShiftV44Plugin(),
     // The outbound campaign plugin runs after v4.4 has transformed the inbound/shift workflow.
-    calloriaOutboundCampaignV45Plugin()
+    calloriaOutboundCampaignV45Plugin(),
+    // Final post-transform: mobile first-person safety, responsive CSS and assessment controls.
+    calloriaMobileResponsiveRepairPlugin()
   ],
   build: {
     outDir: 'dist',

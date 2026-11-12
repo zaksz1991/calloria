@@ -1,19 +1,23 @@
-CALLORIA v6.4 focused verification
+CALLORIA v6.10 focused verification
 
-Command: node --test tests/*.test.cjs
-Result: 15 passed, 0 failed
+JavaScript syntax checks:
+- vite.config.js: PASS (syntax only; imports were not resolved by a full build)
+- build/calloria-mobile-responsive-repair-v6-10.mjs: PASS
+- js/world-player-avatar.js: PASS
+- public/js/calloria-mobile-ui-guard-v6-10.js: PASS
 
-Syntax:
-- node --check public/customer-dynamics-engine.js — PASS
-- node --check public/live-floor.js — PASS
+Node focused tests:
+- tests/calloria-mobile-responsive-repair-v6-10.test.mjs
+- 7 passed, 0 failed
 
-Static page checks:
-- 97 HTML IDs checked; no duplicate IDs — PASS
-- 91 Live Floor selectors checked; none missing — PASS
-- Customer dynamics script load order — PASS
+CSS parser:
+- tinycss2 1.5.1
+- 9 top-level rules parsed
+- 0 stylesheet parsing errors
+- 0 declaration parsing errors
 
-Scope limitations:
-- Full repository tests/build not run.
-- Vercel deployment not run.
-- Live browser rendering not verified.
-- Supervisor request remains local-only.
+Not run:
+- Full repository tests / Vite production build
+- Live Vercel deployment
+- Android/iOS browser interaction test
+- Actual production GLB rendering test
