@@ -1,14 +1,13 @@
-# CALLORIA v6.20 — Office Visual Finish
+# CALLORIA v6.21 — Lobby Greenery Shadow Polish
 
-This is a small overlay on v6.19. It refines the real reception lobby and glazed department partitions without replacing project configuration or existing GLB assets.
+This overlay builds on v6.20. It improves the way the existing validated CC0 reception plants render without adding new models, changing the lobby layout, or increasing the number of foliage draw calls beyond the material/attribute batches already present in the plant asset.
 
 ## Changes
 
-- Recognized glazing materials in the partition GLB receive two-sided transparency and restrained PBR settings. Unrelated frame materials are untouched.
-- Partition runtime status reports how many glass materials were scanned, matched and finished. A zero match count is reported honestly; no material is relabelled as glass.
-- Lobby meshes receive shadows on balanced/high graphics tiers, allowing existing dynamic staff/props to cast onto the lobby when the renderer already has shadow mapping enabled. Low tier keeps this disabled.
-- Existing fallbacks, async lifecycle and disposal remain intact.
+- Separates foliage from architectural mesh batches while retaining batching within the foliage family.
+- Lets foliage cast shadows on balanced/high tiers; the lobby continues to receive shadows on those tiers.
+- Keeps all shadow casting/receiving disabled on low tier.
+- Leaves the static building shell non-casting to avoid an unnecessary shadow-map workload.
+- Exposes decorative batch and shadow-caster counts in the existing `calloria:glb-lobby-ready` status detail under `lighting` and `decorativeBatches`.
 
-## Scope
-
-The package does not change Vite configuration, package files, Supabase, Groq, `production-world.js`, GLB asset files or global renderer settings.
+No new locations, geometry, textures, GLB assets, global renderer settings, Vite config, package manifests, Supabase settings or API keys are changed.

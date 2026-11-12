@@ -1,10 +1,10 @@
-# Verification — CALLORIA v6.20
+# CALLORIA v6.21 verification
 
-Executed in the patch workspace:
+Performed in the patch workspace:
 
-- Node built-in focused tests: 4 passed, 0 failed.
-- `node --check` syntax checks: passed for all four production JavaScript modules.
-- Static lifecycle contract checks: passed, including v6.17.1 lobby export, v6.18 greenery integration, and v6.19 partition integration.
+- Focused Node tests: 6 passed, 0 failed.
+- JavaScript syntax checks: passed for both modified production modules and the test file.
 - ZIP archive integrity: passed.
+- Static checks confirm compatibility with the existing lobby alias and partition/greenery lifecycle imports.
 
-Not verified: full Vite production build, Vercel deployment, HTTP delivery of external CC0 assets, actual browser/WebGL rendering, and renderer shadow-map configuration. Lobby shadow receiving only becomes visible when the existing renderer has shadow mapping enabled and dynamic objects cast shadows. Glass appearance depends on the source GLB's material names/alpha/transmission metadata; the status counts report whether materials were actually matched.
+Not verified: full Vite production build against the current GitHub tree, Vercel deployment, external CC0 asset delivery, actual browser/WebGL appearance, or renderer shadow-map configuration. Visible foliage shadows require the existing renderer to have shadow mapping enabled. This patch does not enable global shadows or change renderer quality settings.

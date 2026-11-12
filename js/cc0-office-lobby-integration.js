@@ -80,9 +80,20 @@ function geometryAttributeSignature(geometry) {
 }
 
 function disposeGeometryBuckets(buckets) {
-  for (const bySignature of buckets.values()) {
-    for (const geometries of bySignature.values()) for (const geometry of geometries) geometry.dispose();
+  for (const materialBuckets of buckets.values()) {
+    for (const bySignature of [materialBuckets.standard, materialBuckets.decorative]) {
+      for (const geometries of bySignature.values()) {
+        for (const geometry of geometries) geometry.dispose();
+      }
+    }
   }
+}
+
+function hasLobbyDecorativeAncestor(object) {
+  for (let current = object; current; current = current.parent) {
+    if (current.userData?.calloriaDecorAsset || current.userData?.calloriaLobbyDecorative) return true;
+  }
+  return false;
 }
 
 /**
@@ -110,8 +121,16 @@ export function createCC0OfficeLobbyRenderRoot(gltf, THREE) {
     const geometry = object.geometry.clone();
     geometry.applyMatrix4(object.matrixWorld);
     const signature = geometryAttributeSignature(geometry);
-    let bySignature = buckets.get(object.material);
-    if (!bySignature) { bySignature = new Map(); buckets.set(object.material, bySignature); }
+    let materialBuckets = buckets.get(object.material);
+    if (!materialBuckets) {
+      materialBuckets = { standard: new Map(), decorative: new Map() };
+      buckets.set(object.material, materialBuckets);
+    }
+    // Keep authored foliage in separate batches so it can cast real shadows;
+    // the larger static lobby remains aggressively batched for performance.
+    const bySignature = hasLobbyDecorativeAncestor(object)
+      ? materialBuckets.decorative
+      : materialBuckets.standard;
     const geometries = bySignature.get(signature) || [];
     geometries.push(geometry);
     bySignature.set(signature, geometries);
@@ -130,24 +149,29 @@ export function createCC0OfficeLobbyRenderRoot(gltf, THREE) {
   const generatedGeometries = [];
   let drawCalls = 0;
   try {
-    for (const [material, bySignature] of buckets) {
-      for (const [signature, geometries] of bySignature) {
-        const merged = geometries.length === 1 ? geometries[0] : mergeGeometries(geometries, false);
-        if (!merged) throw new Error(`Could not merge lobby vertex attributes: ${signature}`);
-        if (geometries.length > 1) for (const geometry of geometries) geometry.dispose();
-        merged.computeBoundingBox();
-        merged.computeBoundingSphere();
-        const mesh = new THREE.Mesh(merged, material);
-        mesh.name = `calloria-lobby-batch-${drawCalls + 1}`;
-        mesh.castShadow = false;
-        mesh.receiveShadow = false;
-        mesh.frustumCulled = true;
-        mergedRoot.add(mesh);
-        generatedGeometries.push(merged);
-        drawCalls += 1;
+    for (const [material, materialBuckets] of buckets) {
+      for (const [layer, bySignature] of Object.entries(materialBuckets)) {
+        const decorative = layer === 'decorative';
+        for (const [signature, geometries] of bySignature) {
+          const merged = geometries.length === 1 ? geometries[0] : mergeGeometries(geometries, false);
+          if (!merged) throw new Error(`Could not merge lobby vertex attributes: ${signature}`);
+          if (geometries.length > 1) for (const geometry of geometries) geometry.dispose();
+          merged.computeBoundingBox();
+          merged.computeBoundingSphere();
+          const mesh = new THREE.Mesh(merged, material);
+          mesh.name = `${decorative ? 'calloria-lobby-decor' : 'calloria-lobby'}-batch-${drawCalls + 1}`;
+          mesh.userData.calloriaLobbyDecorative = decorative;
+          mesh.castShadow = decorative;
+          mesh.receiveShadow = false;
+          mesh.frustumCulled = true;
+          mergedRoot.add(mesh);
+          generatedGeometries.push(merged);
+          drawCalls += 1;
+        }
       }
     }
-    return { root: mergedRoot, merged: true, drawCalls, generatedGeometries, mergeReason: null };
+    const decorativeBatches = [...mergedRoot.children].filter((object) => object.userData?.calloriaLobbyDecorative).length;
+    return { root: mergedRoot, merged: true, drawCalls, decorativeBatches, generatedGeometries, mergeReason: null };
   } catch (error) {
     for (const geometry of generatedGeometries) geometry.dispose();
     disposeGeometryBuckets(buckets);
@@ -316,6 +340,7 @@ export async function integrateCalloriaCC0OfficeLobby({
       merged: rendered.merged,
       drawCalls: rendered.drawCalls,
       mergeReason: rendered.mergeReason,
+      decorativeBatches: rendered.decorativeBatches || 0,
       lighting,
       fallbacksHidden: hiddenFallbacks.length,
       greenery: greeneryLease?.status || { loaded: false, reason: 'greenery integration returned no status' },

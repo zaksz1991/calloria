@@ -1,8 +1,10 @@
-# CALLORIA v6.20 — Office Visual Finish
+# CALLORIA v6.21 changelog
 
-- Applies a restrained two-sided transparent PBR finish to recognized glass materials in the validated QA/supervisor partition GLB.
-- Leaves aluminium/frame and unrelated partition materials unchanged.
-- Exposes scanned/matched/finished glass-material counts in the existing partition-ready status event.
-- Enables lobby surface shadow receiving on balanced/high tiers; low tier retains shadow receiving off.
-- Keeps the v6.19 lobby lifecycle, v6.18 greenery, v6.17.1 compatibility export and existing fallback/cleanup behavior.
-- Does not turn on global renderer shadow maps, create shadow casters, or alter renderer quality settings.
+## Lobby greenery shadow polish
+
+- Keeps greenery batches separate from static lobby architecture while still batching compatible foliage by shared material and vertex attributes.
+- Detects the greenery asset through its authored parent marker; no guessed mesh names or new placements are introduced.
+- Balanced/high tiers allow foliage batches to cast shadows and the lobby to receive shadows. Low tier disables both to protect mobile performance.
+- Static lobby architecture remains non-casting, avoiding a large shadow-map cost.
+- Adds decorative batch, mesh and shadow-caster counts to the existing lobby lighting status.
+- Preserves the v6.20 glass finish, v6.19 department partition runtime, v6.18 greenery placements and v6.17.1 lobby export compatibility.
