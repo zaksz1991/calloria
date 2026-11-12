@@ -1,15 +1,9 @@
-# CALLORIA v6.24 verification
+# v6.25 verification
 
-## Performed
+- Node unit tests: run with `node --test tests/calloria-v625-mobile-glb-audit.test.mjs` from this patch folder.
+- JavaScript module syntax: checked with Node.
+- HTML module script syntax: checked after extraction.
+- ZIP integrity: checked after packaging.
+- Full Vite build, Vercel deployment, production file availability and browser WebGL execution were not verified because a current complete repository checkout was not supplied.
 
-- Existing GLB Asset Lab regression tests plus v6.24 fit-policy tests.
-- HTML module script extracted and checked with Node's JavaScript syntax checker.
-- Exact production office fit targets compared against the v6.13 office runtime source carried in the installed v6.15 package.
-- ZIP archive integrity check.
-
-## Not performed
-
-- Full Vite production build against the latest GitHub repository.
-- Vercel deployment or production browser rendering.
-- Verification that all five staff GLBs and all four office GLBs are present in the current production deployment.
-- This lab preview does not prove that any asset has been inserted into the live gameplay scene.
+Memory figures are estimates. They are not actual GPU allocation telemetry. The audit decodes models but does not validate placement in the live workplace scene.

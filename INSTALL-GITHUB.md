@@ -1,24 +1,10 @@
-# CALLORIA v6.24 — GitHub Desktop installation
+# CALLORIA v6.25 installation
 
-## Replace one file
+Apply this patch over the current CALLORIA branch. Add/replace these files at the repository root:
 
-| ZIP path | Repository destination | Action |
-|---|---|---|
-| `public/glb-asset-lab.html` | `public/glb-asset-lab.html` | Replace |
+1. `public/glb-asset-lab.html` — replace the existing file with the supplied complete version.
+2. `js/calloria-glb-performance-audit.js` — add this new module.
 
-The `tests/` file is optional regression coverage and can be merged into the repository's existing `tests/` folder.
+Do not replace `package.json`, `vite.config.js`, lockfiles, Supabase settings, API keys or existing gameplay modules. No database migration is required.
 
-## Install
-
-1. Extract the ZIP in Windows File Explorer.
-2. Open the `zaksz1991/calloria` repository in GitHub Desktop.
-3. Choose **Repository → Show in Explorer**.
-4. Replace the existing `public/glb-asset-lab.html` with the ZIP version.
-5. Optionally copy `tests/calloria-v624-glb-fit-validation.test.mjs` into the existing `tests` folder.
-6. Review the changed-file list. The only production file changed should be `public/glb-asset-lab.html`.
-7. Commit and push to `main`.
-8. After Vercel deployment, open `https://calloria.vercel.app/glb-asset-lab.html`.
-
-## Protected files
-
-Do not replace `vite.config.js`, `package.json`, `package-lock.json`, `js/production-world.js`, `js/glb-world-integration.js`, `js/glb-office-world-integration.js`, Supabase settings or any `public/assets/models/` binaries for this upgrade.
+After deployment, open `https://calloria.vercel.app/glb-asset-lab.html`, then use **Run full asset audit**. Choose the Mobile profile first. The export button downloads a JSON evidence file. The page and batch scan require the deployed asset paths to be reachable and browser access to the pinned Three.js CDN.

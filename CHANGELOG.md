@@ -1,8 +1,7 @@
-# CALLORIA v6.24 — GLB Acceptance Fit Validation
+# v6.25 change log
 
-- Upgraded the existing public GLB Asset Acceptance Lab, without changing the production world or Vite plugin anchors.
-- Added selectable production-fit, natural-dimension and standing-staff preview modes.
-- Matched office preview fit envelopes to the production office GLB loader targets for desks, computers, headsets and reception desks.
-- Standardised staff preview height to a 1.72 m standing reference instead of treating staff as office props.
-- Added original dimensions, preview dimensions, fit factor and fit-rule reporting.
-- Preserved real same-origin model loading, Meshopt/Draco decoding, animation inspection and existing build-manifest checks.
+- Added batch decoding and performance scoring for deployed staff and office GLBs.
+- Added mobile, balanced and high-end asset budgets.
+- Added geometry/texture memory estimates, triangle and draw-call counts, rig and animation reporting.
+- Added JSON audit export.
+- Kept the existing single-asset visual preview and its gameplay-independent behavior unchanged.

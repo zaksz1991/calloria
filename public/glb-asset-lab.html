@@ -16,6 +16,15 @@
     .details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.detail{background:#10202c;border:1px solid var(--line);border-radius:8px;padding:8px}.detail b{display:block;font-size:15px;overflow-wrap:anywhere}.detail small{color:var(--muted);font-size:11px}.clips{color:var(--muted);font-size:12px;overflow-wrap:anywhere}.foot{margin-top:15px;color:var(--muted);font-size:12px}.error{color:var(--bad)}.ok{color:var(--good)}
     @media(max-width:800px){.shell{padding:12px}.layout{grid-template-columns:1fr}.viewport{height:410px;min-height:310px}.top{display:block}.build{display:inline-block;margin-top:9px}.push{margin-left:0}}
     @media(max-width:420px){.viewport{height:340px}.toolbar{align-items:stretch}.toolbar select{flex:1;min-width:130px}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+    .audit-panel{margin-top:16px;border:1px solid var(--line);background:var(--panel);border-radius:13px;padding:15px}
+    .audit-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+    .audit-head h2{font-size:18px;margin:0 0 5px}.audit-head p{margin:0;color:var(--muted);font-size:12px;max-width:720px}
+    .audit-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:13px}
+    .audit-progress{margin-top:12px;padding:10px 12px;background:#10202c;border:1px solid var(--line);border-radius:8px;color:var(--muted);font-size:12px;min-height:40px}
+    .audit-table-wrap{overflow:auto;margin-top:12px;border:1px solid var(--line);border-radius:9px}
+    .audit-table{width:100%;border-collapse:collapse;min-width:850px}.audit-table th,.audit-table td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);font-size:12px;vertical-align:top}.audit-table th{color:var(--muted);font-size:10px;letter-spacing:.08em;text-transform:uppercase}.audit-table tr:last-child td{border-bottom:0}.audit-table td:first-child{font-weight:650}.audit-small{color:var(--muted);font-size:11px;margin-top:3px;overflow-wrap:anywhere}.audit-good{color:var(--good)}.audit-warn{color:var(--warn)}.audit-bad{color:var(--bad)}
+    .audit-legend{margin-top:9px;color:var(--muted);font-size:11px;line-height:1.5}
   </style>
   <script type="importmap">
     {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
@@ -51,6 +60,14 @@
         <div class="section"><h2>Selected asset inspection</h2><div id="details" class="details"><div class="detail"><b>—</b><small>Load a model to inspect it</small></div></div><p id="clipNames" class="clips">Animation clip names will appear here.</p><p id="loadStatus" class="clips" aria-live="polite">No model selected.</p></div>
       </aside>
     </div>
+
+    <section class="audit-panel" aria-labelledby="auditTitle">
+      <div class="audit-head"><div><h2 id="auditTitle">Batch asset performance audit</h2><p>Decode every deployed staff and office GLB in sequence, measure geometry, draw calls and texture memory estimates, and compare each asset against a mobile graphics budget. This is a diagnostic estimate, not a claim that the game has rendered the asset in its world.</p></div><span class="build">v6.25 · mobile-first budgets</span></div>
+      <div class="audit-controls"><label for="auditProfile">Graphics budget</label><select id="auditProfile"><option value="mobile" selected>Mobile · conservative</option><option value="balanced">Balanced desktop</option><option value="high">High-end desktop</option></select><button id="runAuditButton" type="button">Run full asset audit</button><button id="exportAuditButton" type="button" disabled>Export audit JSON</button></div>
+      <div id="auditProgress" class="audit-progress" role="status" aria-live="polite">No batch audit has been run. The individual preview above remains available.</div>
+      <div class="audit-table-wrap"><table class="audit-table"><thead><tr><th>Asset</th><th>Budget result</th><th>File / geometry</th><th>Triangles / draw calls</th><th>Textures / GPU estimate</th><th>Rig / animation</th></tr></thead><tbody id="auditRows"><tr><td colspan="6">Run the audit to inspect all deployed models.</td></tr></tbody></table></div>
+      <p class="audit-legend">Texture memory is estimated from decoded image dimensions at 4 bytes per pixel plus a mipmap allowance. Geometry memory is estimated from unique decoded attribute/index buffers. Actual GPU usage depends on browser, driver, compression and renderer state. A warning identifies optimization risk; it does not invalidate a model.</p>
+    </section>
     <p class="foot">This page does not alter gameplay or mark a model as active in the office. It independently tests deployed files and previews their production-fit scale. Office fit targets mirror the production loader; staff are shown at a 1.72 m standing reference height. Three.js 0.170.0 is pinned to match the application dependency. The preview requires access to jsDelivr; model files are loaded from the CALLORIA deployment.</p>
   </main>
 <script type="module">
@@ -58,6 +75,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { measureCalloriaGlb, evaluateCalloriaGlbBudget } from '/js/calloria-glb-performance-audit.js';
 
 const root=document.getElementById('calloria-glb-lab');
 const $=(id)=>root.querySelector('#'+id);
@@ -163,6 +181,88 @@ viewport.addEventListener('pointerdown',event=>{if(!currentRoot)return;dragging=
 viewport.addEventListener('wheel',event=>{if(!camera)return;event.preventDefault();const factor=event.deltaY>0?1.08:.92;camera.position.multiplyScalar(factor);},{passive:false});
 function handleVisibility(){if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;}else if(renderer&&!raf){const frame=()=>{raf=requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.05);if(mixer)mixer.update(dt);renderer.render(scene,camera);};clock=new THREE.Clock();frame();}}
 document.addEventListener('visibilitychange',handleVisibility);
+
+// v6.25: batch-decode deployed GLBs and estimate low-tier rendering pressure.
+let lastBatchAudit=null;
+const MAX_AUDIT_FILE_BYTES=32*1024*1024;
+const auditProgress=$('auditProgress');
+const auditRows=$('auditRows');
+function fmtBytes(bytes){if(!Number.isFinite(bytes))return '—';const units=['B','KB','MB','GB'];let value=bytes,index=0;while(value>=1024&&index<units.length-1){value/=1024;index++;}return value.toFixed(index?1:0)+' '+units[index];}
+function auditAssets(){
+  const combined=[...available.map(item=>({...item,type:'staff'})),...officeAssets];
+  const seen=new Set();
+  return combined.filter(item=>{const key=item.id||item.output||item.url;if(!key||seen.has(key))return false;seen.add(key);return true;});
+}
+function budgetBadge(result){const cls=result.status==='PASS'?'audit-good':result.status==='OVER BUDGET'?'audit-bad':'audit-warn';return `<strong class="${cls}">${escapeHtml(result.status)}</strong><div class="audit-small">${escapeHtml(result.issues.join(' · ')||'Within selected budget')}</div>`;}
+function renderBatchAudit(){
+  if(!lastBatchAudit){$('exportAuditButton').disabled=true;return;}
+  const profile=$('auditProfile').value;
+  const results=lastBatchAudit.results.map(row=>({...row,budget:row.metrics?evaluateCalloriaGlbBudget(row.metrics,{profile}):{status:'FAILED',issues:[row.error||'Could not decode model']}}));
+  auditRows.innerHTML=results.map(row=>{
+    if(!row.metrics)return `<tr><td>${escapeHtml(row.name)}</td><td><strong class="audit-bad">FAILED</strong><div class="audit-small">${escapeHtml(row.error||'Decode failed')}</div></td><td colspan="4">${escapeHtml(row.url||'No URL')}</td></tr>`;
+    const m=row.metrics;
+    return `<tr><td>${escapeHtml(row.name)}<div class="audit-small">${escapeHtml(row.id)} · ${escapeHtml(row.url)}</div></td><td>${budgetBadge(row.budget)}</td><td>${fmtBytes(m.fileBytes)}<div class="audit-small">Geometry ${fmtBytes(m.geometryBytes)} · ${m.vertexCount.toLocaleString()} vertices</div></td><td>${m.triangleCount.toLocaleString()}<div class="audit-small">${m.drawCalls.toLocaleString()} estimated draw calls · ${m.meshCount} meshes</div></td><td>${m.textureCount} textures<div class="audit-small">${fmtBytes(m.estimatedTextureBytes)} estimated texture memory</div></td><td>${m.skinnedMeshCount} skinned meshes · ${m.boneCount} bones<div class="audit-small">${m.animationCount} animation clips</div></td></tr>`;
+  }).join('');
+  const good=results.filter(r=>r.metrics&&r.budget.status==='PASS').length;
+  const watch=results.filter(r=>r.metrics&&r.budget.status==='WATCH').length;
+  const over=results.filter(r=>r.metrics&&r.budget.status==='OVER BUDGET').length;
+  const failed=results.filter(r=>!r.metrics).length;
+  auditProgress.textContent=`${profile.toUpperCase()} profile: ${good} pass · ${watch} watch · ${over} over budget · ${failed} failed · ${results.length} assets checked. Profile changes re-score the same decoded measurements without re-downloading.`;
+  $('exportAuditButton').disabled=false;
+  lastBatchAudit.scoredResults=results;
+}
+async function auditOne(asset,draco){
+  const raw=asset.output||asset.url;
+  const parsed=new URL(raw,window.location.origin);
+  if(parsed.origin!==window.location.origin||!parsed.pathname.startsWith('/assets/models/'))throw new Error('Asset path is outside the deployed same-origin /assets/models directory.');
+  const response=await fetch(parsed.pathname+parsed.search,{cache:'no-store'});
+  if(!response.ok)throw new Error(`HTTP ${response.status} while downloading the GLB.`);
+  const declared=Number(response.headers.get('content-length')||0);
+  if(declared>MAX_AUDIT_FILE_BYTES)throw new Error(`File exceeds the ${fmtBytes(MAX_AUDIT_FILE_BYTES)} browser audit limit.`);
+  const buffer=await response.arrayBuffer();
+  if(buffer.byteLength>MAX_AUDIT_FILE_BYTES)throw new Error(`File exceeds the ${fmtBytes(MAX_AUDIT_FILE_BYTES)} browser audit limit.`);
+  if(buffer.byteLength<12)throw new Error('File is too small to be a valid GLB container.');
+  const loader=new GLTFLoader();loader.setMeshoptDecoder(MeshoptDecoder);loader.setDRACOLoader(draco);
+  const baseUrl=new URL('.',parsed.href).href;
+  const gltf=await loader.parseAsync(buffer,baseUrl);
+  try{
+    const sceneRoot=gltf.scene;
+    sceneRoot.updateMatrixWorld(true);
+    const box=new THREE.Box3().setFromObject(sceneRoot);
+    const size=box.getSize(new THREE.Vector3());
+    const dimensions={x:size.x,y:size.y,z:size.z};
+    const metrics=measureCalloriaGlb(gltf,buffer.byteLength,dimensions);
+    return {id:asset.id,name:asset.name||asset.id,url:parsed.pathname,metrics};
+  }finally{disposeObject(gltf.scene);}
+}
+async function runBatchAudit(){
+  if(auditProgress.dataset.running==='true')return;
+  const assets=auditAssets();
+  if(!assets.length){auditProgress.textContent='No staff assets are listed in the manifest and no office assets were supplied.';return;}
+  auditProgress.dataset.running='true';$('runAuditButton').disabled=true;$('exportAuditButton').disabled=true;
+  const results=[];const draco=new DRACOLoader();draco.setDecoderPath('/draco/');
+  try{
+    for(let index=0;index<assets.length;index++){
+      const asset=assets[index];auditProgress.textContent=`Decoding ${index+1}/${assets.length}: ${asset.name||asset.id}. The scan runs one model at a time to limit browser memory use.`;
+      try{results.push(await auditOne(asset,draco));}
+      catch(error){results.push({id:asset.id,name:asset.name||asset.id,url:asset.output||asset.url,error:String(error?.message||error)});}
+      auditRows.innerHTML=`<tr><td colspan="6">${index+1}/${assets.length} assets processed…</td></tr>`;
+    }
+    lastBatchAudit={version:'6.25',generatedAt:new Date().toISOString(),profile:$('auditProfile').value,disclaimer:'Texture and geometry memory are estimates, not measured GPU allocations. This audit decodes deployed files but does not prove that each asset is placed in the live game world.',results};
+    renderBatchAudit();
+    const failures=results.filter(row=>!row.metrics).length;
+    auditProgress.textContent+=' Audit complete; '+failures+' file(s) could not be decoded.';
+  }finally{draco.dispose();auditProgress.dataset.running='false';$('runAuditButton').disabled=false;}
+}
+$('runAuditButton').addEventListener('click',runBatchAudit);
+$('auditProfile').addEventListener('change',renderBatchAudit);
+$('exportAuditButton').addEventListener('click',()=>{
+  if(!lastBatchAudit)return;
+  const report={...lastBatchAudit,profile:$('auditProfile').value,results:lastBatchAudit.scoredResults||lastBatchAudit.results};
+  const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=`calloria-glb-performance-audit-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;document.body.append(link);link.click();link.remove();URL.revokeObjectURL(url);
+});
+
 readManifest();
 </script>
 </body>

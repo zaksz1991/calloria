@@ -1,12 +1,6 @@
-Production replacement:
-build/calloria-cc0-staff-glb-bundle-plugin.mjs
-
-Optional regression coverage:
-tests/calloria-v623-runtime-diagnostics.test.mjs
-tests/calloria-v622-transform-aware-bounds.test.mjs
-tests/fixtures/glb-world-integration-v12.fixture.js
-
-Docs:
+public/glb-asset-lab.html
+js/calloria-glb-performance-audit.js
+tests/calloria-v625-mobile-glb-audit.test.mjs
 README.md
 CHANGELOG.md
 INSTALL-GITHUB.md

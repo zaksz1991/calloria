@@ -1,19 +1,5 @@
-# CALLORIA v6.24 — GLB Acceptance Fit Validation
+# CALLORIA v6.25 — Mobile GLB Performance Audit
 
-This is a targeted upgrade to the existing public GLB Asset Acceptance Lab. It makes the preview scale comparable to the production placement policy rather than scaling every asset to an arbitrary display height.
+Adds a batch decoder/performance audit to the existing GLB Asset Acceptance Lab. It checks every available staff GLB from the deployed staff manifest plus the four office GLB paths already registered in the lab. It reports file size, unique geometry-buffer bytes, vertex and triangle counts, estimated draw calls, materials, textures, estimated texture memory, skeletons/bones and animation clips.
 
-## What changes
-
-- **Production fit:** office assets use the same maximum placement envelopes as the runtime loader. Models are uniformly scaled to fit inside those dimensions; proportions are not stretched.
-- **Natural asset size:** shows the GLB at its authored dimensions.
-- **Standing staff:** displays character models against a 1.72 m standing reference height.
-- **Measurement report:** lists original and preview dimensions, scale factor, fit rule, mesh count, skeletons, joints, triangles, materials, textures and animation clips.
-- Changing preview mode reloads the selected deployed GLB and uses a load token so an older request cannot replace the current selection.
-
-The page remains an independent acceptance tool. It does not claim that models are already placed in the production game scene, and it does not modify gameplay, production world code, Vite configuration, dependencies, Supabase or model binaries.
-
-## URL after deployment
-
-`https://calloria.vercel.app/glb-asset-lab.html`
-
-The page requires access to jsDelivr for the pinned Three.js 0.170.0 modules. Actual GLB files are fetched from the CALLORIA deployment.
+The audit defaults to a conservative mobile budget and supports balanced/high profiles. Results can be exported as JSON. The scan is sequential and limits each downloaded model to 32 MB to avoid loading the entire asset set into memory at once. It does not change or optimize GLBs, and it does not claim that assets are present in the live game world.
