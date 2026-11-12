@@ -1,21 +1,14 @@
 # Changelog
 
-## v5.9.0 — Finance Reconciliation & Period Close
+## v6.0.0 — Core Contact-Centre Shift Gameplay
 
-- Added import of bank statement CSV files with signed amount or debit/credit columns.
-- Added duplicate-row detection and statement batch history.
-- Added read-only receipt summary import from Billing v5.8 local storage.
-- Added exact-reference auto-match and ranked manual suggestions.
-- Added one-to-one receipt matching with strict amount and currency equality.
-- Added evidence-backed classification for bank fees, charges, tax/withholding, interest, transfers and other movements.
-- Added documented statement-line exclusions.
-- Added multi-currency credit/debit summaries and reconciliation exports.
-- Added period close checklists, independent approval, approved-period import lock and controlled reopening.
-- Added CSV formula-injection protection and responsive mobile layout.
-- Added 60 focused engine and HTML-contract tests.
-
-## Integration notes
-
-- Reads `calloria.billing-operations.v58`; does not modify Billing v5.8 records.
-- Stores its own data in `calloria.finance-reconciliation.v59`.
-- No Vite configuration or existing application files are replaced.
+- Established a playable daily contact-centre shift loop instead of adding another finance/ERP subsystem.
+- Added employee sign-in, shift clock and mandatory morning/afternoon briefings.
+- Added scheduled break and lunch gates.
+- Added a ten-contact multichannel synthetic queue across the RuffNeck product ecosystem and general customer care.
+- Added branching customer-care choices for empathy, diagnosis and resolution.
+- Added unsafe credential-handling detection as a critical compliance failure.
+- Added wrap-up, customer note, case creation/existing-case update and knowledge-reference flow.
+- Added QA, CSAT, FCR, compliance, productivity and shift summary metrics.
+- Added local persistence and repeatable shift sessions.
+- Explicitly excluded Billing and Finance Reconciliation from the default gameplay path.

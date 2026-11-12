@@ -1,79 +1,57 @@
-# CALLORIA v5.9 — Finance Reconciliation & Period Close
+# CALLORIA v6.0 — Core Contact-Centre Shift Gameplay
 
-An additive browser module for bank-statement CSV import, receipt reconciliation against Billing v5.8, evidence-backed transaction classification, and two-person finance period close.
+## Purpose
 
-## Package contents
+This release redirects development to CALLORIA's central game loop: sign in as a customer-care employee, attend operational briefings, accept customer contacts, investigate the customer's issue, select a response, apply approved guidance, record the outcome and review shift performance.
 
-```text
-CALLORIA_v5_9_Finance_Reconciliation/
-├── public/
-│   ├── finance-reconciliation.html
-│   ├── finance-reconciliation.css
-│   ├── finance-reconciliation.js
-│   └── finance-reconciliation-engine.js
-├── samples/
-│   └── bank-statement-template.csv
-├── tests/
-│   ├── finance-reconciliation-v59.test.mjs
-│   └── finance-reconciliation-html-v59.test.mjs
-├── CHANGELOG.md
-├── README.md
-└── VERIFICATION.md
-```
+It is **not** a banking simulation, finance application or accounting workflow. The v5.8 Billing and v5.9 Finance modules are not imported, required or displayed by this release. They remain optional back-office add-ons.
 
-## Installation
+## Gameplay in this release
 
-Copy the four files in this package's `public/` directory into the existing CALLORIA repository's `public/` directory. Preserve all existing files.
+- Employee sign-in without registration.
+- A simulated shift beginning at 07:30.
+- Mandatory 07:30 morning and 14:00 afternoon product/service briefings.
+- Scheduled 10:30 morning break and 12:30 lunch break.
+- A ten-contact synthetic queue covering RuffNeck LMS, Prospector, Social Hub, Connect, Kano Run, Kano Keke and general customer-care enquiries.
+- Multiple channels: Voice transcript simulation, Email, Live chat, Social, SMS and In-app.
+- Three interactive decision stages per contact: understand, investigate and resolve.
+- Customer responses, customer context, published knowledge lookup and contact wrap-up.
+- Customer 360 case creation, update of an existing case or customer-note-only outcome.
+- Quality, CSAT, first-contact resolution, compliance and knowledge-use scoring.
+- Shift report and repeatable next-shift cycle with prior-shift report archive.
+- Responsive layout for desktop and mobile screens.
 
-Do not replace the existing `billing-operations.html`, `billing-operations.js` or `billing-operations-engine.js` files. v5.9 reads Billing v5.8 data without writing to or changing the v5.8 storage record.
+## Install
 
-With the existing Vite configuration using `publicDir: 'public'`, the expected page route after the files are deployed is:
+This is a Vite `public/` overlay. No Vite configuration or application entry-point modification is required.
 
-`/finance-reconciliation.html`
+Copy the files from this package's `public/` folder into the repository's existing `public/` folder:
 
-Production URL after deployment:
+- `live-floor.html`
+- `live-floor.css`
+- `live-floor.js`
+- `live-floor-engine.js`
+- `agent-workbench-engine.js`
+- `customer-journey-engine.js`
 
-`https://calloria.vercel.app/finance-reconciliation.html`
+The last two files are compatibility copies from CALLORIA v5.5 and v5.4 so that the new page can load its engine dependencies. If the repository already contains customized versions of those two engines, keep the repository versions and copy only the four `live-floor` files.
 
-The route has not been verified on the live deployment.
+After the files are included in a successful deployment, the route is:
 
-## Using the module
+`https://calloria.vercel.app/live-floor.html`
 
-1. Open Billing & Revenue Operations v5.8 on the same browser origin and ensure its records have been saved.
-2. Open Finance Reconciliation v5.9 on that same origin and browser profile.
-3. Select **Import v5.8 receipts**. This reads the `calloria.billing-operations.v58` local-storage record. It imports receipt summaries only.
-4. Export a bank statement from the bank independently as CSV. Use the supplied CSV template or equivalent headers.
-5. Choose the bank account, record the importing operator and import the statement file.
-6. Use **Auto-match exact references** for unique reference + exact amount + exact currency matches.
-7. Review amount/currency suggestions manually. Manual matching still requires exact amount and currency plus an evidence reason.
-8. Classify fees, transfers, interest and other statement movements with a named operator and written evidence. Use exclusions only with a documented reason.
-9. Prepare a period close, resolve every blocker, refresh the checklist, then obtain approval from a different person.
+This route is not claimed to be live until the repository is updated and Vercel completes a deployment.
 
-### CSV format
+## Data and integration boundaries
 
-The importer accepts a transaction date and either a signed `amount` or separate `debit` and `credit` columns. Supported aliases include `transactionDate`, `bookingDate`, `valueDate`, `reference`, `bankReference`, `transactionReference`, `narration`, `details`, `currency`, `ccy`, `bankAccount`, `account` and `accountName`.
+- The shift session and its isolated agent queue are stored in browser local storage using `calloria.live-floor.v60` and `calloria.live-floor.agent-workbench.v55`.
+- Customer notes, cases and knowledge references write to the existing v5.4 Customer 360 local-storage record when it is present or when the v5.4 engine seeds its demonstration records.
+- Published knowledge is read from the v5.2 Knowledge Operations local-storage record on the same browser and origin.
+- The v6.0 queue is isolated from the v5.5 Agent Workbench queue. It does not silently reset or replace the user's v5.5 session.
+- This is scripted simulation. It does not connect to actual telephone calls, email, live chat, social networks, SMS, real customer queues, AI services or live multi-user employee accounts.
+- This is a 2D playable workstation module. It is not yet embedded in the 3D office scene, GLB character flow or main game navigation.
+- Shift scores are training/gameplay indicators. They do not automatically alter HR records or award a real promotion.
 
-Currencies currently accepted: NGN, USD, GBP and EUR. Amounts use decimal notation; commas used as thousands separators are removed. Debit and credit values must not both be populated for the same row.
+## Local checks
 
-## Controls
-
-- Automatic matching requires one unique receipt candidate with exact reference, amount and currency.
-- Similar amount/date candidates are suggestions only; they are not automatically linked.
-- Manual matching requires exact amount and currency, a named operator and a written reason.
-- A Billing receipt cannot be matched to more than one bank statement line.
-- Bank credits not represented in Billing may be classified, but must not be misrepresented as customer receipts.
-- Every statement movement must be matched, classified or explicitly excluded before period close.
-- Every Billing receipt in the period must have a bank statement match.
-- Period approval is blocked by unresolved items and requires a different person from the preparer.
-- Approved periods are locked against new statement imports in this browser workspace. Reopening requires a different person from the approver and a documented reason.
-- CSV exports escape spreadsheet formula-leading values.
-
-## Integration boundary and limitations
-
-This is a browser-local demonstration module. Reconciliation records are stored under `calloria.finance-reconciliation.v59` in browser local storage. Billing v5.8 is read from `calloria.billing-operations.v58` on the same browser origin; it is not changed by this module.
-
-There is no live bank feed, open-banking connection, bank-account verification, payment processing, accounting ledger, general-ledger posting, tax engine, payroll integration, invoice settlement, email delivery or multi-user database. A CSV statement is operator-supplied evidence, not proof that CALLORIA verified the bank source.
-
-Net processor settlements, fee deductions from customer receipts, split deposits and partial bank matches are not supported. Amount/currency discrepancies remain unmatched and must be investigated outside this matching flow. This module does not calculate tax, recognize revenue under accounting standards or certify statutory financial statements.
-
-Do not upload bank credentials, card data or confidential customer data. All sample values in the template are fictional.
+From this package folder, run the Node test files in `tests/`. They exercise the shift engine, briefing and break gates, scripted customer decision flow, Customer 360 write-through, compliance scoring, repeat-shift reset and page contract.

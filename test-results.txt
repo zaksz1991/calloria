@@ -1,370 +1,106 @@
 TAP version 13
-# Subtest: finance page loads the v5.9 engine before its UI controller
-ok 1 - finance page loads the v5.9 engine before its UI controller
+# Subtest: live floor HTML contains unique IDs
+ok 1 - live floor HTML contains unique IDs
   ---
-  duration_ms: 0.981402
+  duration_ms: 1.161793
   type: 'test'
   ...
-# Subtest: all static ID selectors referenced by the UI exist in the HTML
-ok 2 - all static ID selectors referenced by the UI exist in the HTML
+# Subtest: all literal DOM selectors in the controller exist in the page
+ok 2 - all literal DOM selectors in the controller exist in the page
   ---
-  duration_ms: 1.068633
+  duration_ms: 0.755904
   type: 'test'
   ...
-# Subtest: HTML contains no duplicate IDs
-ok 3 - HTML contains no duplicate IDs
+# Subtest: all required local engine scripts load in dependency order
+ok 3 - all required local engine scripts load in dependency order
   ---
-  duration_ms: 0.260871
+  duration_ms: 0.226099
   type: 'test'
   ...
-# Subtest: page exposes the required reconciliation, statement and period-close work areas
-ok 4 - page exposes the required reconciliation, statement and period-close work areas
+# Subtest: the page includes the required shift, queue, decision and wrap-up controls
+ok 4 - the page includes the required shift, queue, decision and wrap-up controls
   ---
-  duration_ms: 0.28611
+  duration_ms: 0.205378
   type: 'test'
   ...
-# Subtest: billing bridge uses the exact v5.8 storage key and never writes to billing storage
-ok 5 - billing bridge uses the exact v5.8 storage key and never writes to billing storage
+# Subtest: responsive layouts exist for tablet and mobile screens
+ok 5 - responsive layouts exist for tablet and mobile screens
   ---
-  duration_ms: 0.305778
+  duration_ms: 0.148182
   type: 'test'
   ...
-# Subtest: page clearly discloses its local demonstration and bank-connection limits
-ok 6 - page clearly discloses its local demonstration and bank-connection limits
+# Subtest: creates a fresh shift with the 07:30 briefing due
+ok 6 - creates a fresh shift with the 07:30 briefing due
   ---
-  duration_ms: 0.172029
+  duration_ms: 2.438759
   type: 'test'
   ...
-# Subtest: statement import uses a CSV-only file input
-ok 7 - statement import uses a CSV-only file input
+# Subtest: blocks customer contacts until the morning briefing is attended
+ok 7 - blocks customer contacts until the morning briefing is attended
   ---
-  duration_ms: 0.250896
+  duration_ms: 1.09294
   type: 'test'
   ...
-# Subtest: CSV parser preserves quoted commas and escaped double quotes
-ok 8 - CSV parser preserves quoted commas and escaped double quotes
+# Subtest: runs a three-stage customer interaction and records its transcript
+ok 8 - runs a three-stage customer interaction and records its transcript
   ---
-  duration_ms: 1.861803
+  duration_ms: 0.721783
   type: 'test'
   ...
-# Subtest: CSV parser rejects an unterminated quoted cell
-ok 9 - CSV parser rejects an unterminated quoted cell
+# Subtest: blocks scheduled breaks while a customer interaction is still active
+ok 9 - blocks scheduled breaks while a customer interaction is still active
   ---
-  duration_ms: 0.419199
+  duration_ms: 0.203285
   type: 'test'
   ...
-# Subtest: CSV parser ignores blank lines and a UTF-8 BOM
-ok 10 - CSV parser ignores blank lines and a UTF-8 BOM
+# Subtest: records a customer note and a linked Customer 360 case at wrap-up
+ok 10 - records a customer note and a linked Customer 360 case at wrap-up
   ---
-  duration_ms: 0.624727
+  duration_ms: 3.339691
   type: 'test'
   ...
-# Subtest: initial state starts with no fabricated statement transactions
-ok 11 - initial state starts with no fabricated statement transactions
+# Subtest: knowledge use is attached to the interaction and adds a small QA credit
+ok 11 - knowledge use is attached to the interaction and adds a small QA credit
   ---
-  duration_ms: 0.503075
+  duration_ms: 0.742474
   type: 'test'
   ...
-# Subtest: valid CSV imports a bank credit as a positive amount
-ok 12 - valid CSV imports a bank credit as a positive amount
+# Subtest: unsafe password or one-time-code request creates a critical compliance breach
+ok 12 - unsafe password or one-time-code request creates a critical compliance breach
   ---
-  duration_ms: 1.020361
+  duration_ms: 0.905778
   type: 'test'
   ...
-# Subtest: separate debit and credit columns become signed movements
-ok 13 - separate debit and credit columns become signed movements
+# Subtest: scheduled routine runs in morning break, lunch and afternoon briefing order
+ok 13 - scheduled routine runs in morning break, lunch and afternoon briefing order
   ---
-  duration_ms: 0.300461
+  duration_ms: 0.437246
   type: 'test'
   ...
-# Subtest: CSV import skips exact duplicate statement rows on re-import
-ok 14 - CSV import skips exact duplicate statement rows on re-import
+# Subtest: does not allow shift closure with an active interaction or due floor event
+ok 14 - does not allow shift closure with an active interaction or due floor event
   ---
-  duration_ms: 0.591107
+  duration_ms: 0.70664
   type: 'test'
   ...
-# Subtest: duplicate rows inside one CSV file are counted and skipped
-ok 15 - duplicate rows inside one CSV file are counted and skipped
+# Subtest: ends shift and produces clear performance totals
+ok 15 - ends shift and produces clear performance totals
   ---
-  duration_ms: 0.257776
+  duration_ms: 1.03272
   type: 'test'
   ...
-# Subtest: CSV import rejects files with no transaction body
-ok 16 - CSV import rejects files with no transaction body
+# Subtest: starts another shift with a fresh queue and archives the prior shift report
+ok 16 - starts another shift with a fresh queue and archives the prior shift report
   ---
-  duration_ms: 0.420992
+  duration_ms: 8.587283
   type: 'test'
   ...
-# Subtest: CSV import requires a date and amount/debit/credit columns
-ok 17 - CSV import requires a date and amount/debit/credit columns
-  ---
-  duration_ms: 0.364507
-  type: 'test'
-  ...
-# Subtest: CSV import rejects invalid calendar dates
-ok 18 - CSV import rejects invalid calendar dates
-  ---
-  duration_ms: 0.205117
-  type: 'test'
-  ...
-# Subtest: CSV import rejects zero-value statement movements
-ok 19 - CSV import rejects zero-value statement movements
-  ---
-  duration_ms: 0.177716
-  type: 'test'
-  ...
-# Subtest: CSV import rejects unsupported currencies
-ok 20 - CSV import rejects unsupported currencies
-  ---
-  duration_ms: 0.14666
-  type: 'test'
-  ...
-# Subtest: CSV import rejects rows with debit and credit populated together
-ok 21 - CSV import rejects rows with debit and credit populated together
-  ---
-  duration_ms: 0.176184
-  type: 'test'
-  ...
-# Subtest: CSV import requires an active bank account
-ok 22 - CSV import requires an active bank account
-  ---
-  duration_ms: 0.122234
-  type: 'test'
-  ...
-# Subtest: CSV import rejects rows for an approved period
-ok 23 - CSV import rejects rows for an approved period
-  ---
-  duration_ms: 1.075884
-  type: 'test'
-  ...
-# Subtest: Billing import copies receipt summaries without card or bank credentials
-ok 24 - Billing import copies receipt summaries without card or bank credentials
-  ---
-  duration_ms: 0.117767
-  type: 'test'
-  ...
-# Subtest: Billing import refreshes the same receipt instead of duplicating it
-ok 25 - Billing import refreshes the same receipt instead of duplicating it
-  ---
-  duration_ms: 0.122203
-  type: 'test'
-  ...
-# Subtest: candidate ranking puts an exact reference and amount first
-ok 26 - candidate ranking puts an exact reference and amount first
-  ---
-  duration_ms: 0.421002
-  type: 'test'
-  ...
-# Subtest: amount and currency alone produce a suggestion, not an exact match
-ok 27 - amount and currency alone produce a suggestion, not an exact match
-  ---
-  duration_ms: 0.323245
-  type: 'test'
-  ...
-# Subtest: exact auto-match links unique reference, amount and currency
-ok 28 - exact auto-match links unique reference, amount and currency
-  ---
-  duration_ms: 0.482534
-  type: 'test'
-  ...
-# Subtest: auto-match leaves amount-only suggestions unmatched
-ok 29 - auto-match leaves amount-only suggestions unmatched
-  ---
-  duration_ms: 0.206479
-  type: 'test'
-  ...
-# Subtest: auto-match leaves ambiguous exact references for review
-ok 30 - auto-match leaves ambiguous exact references for review
-  ---
-  duration_ms: 0.245879
-  type: 'test'
-  ...
-# Subtest: manual matching requires an evidence explanation
-ok 31 - manual matching requires an evidence explanation
-  ---
-  duration_ms: 0.19977
-  type: 'test'
-  ...
-# Subtest: manual matching permits exact amount/currency and records the reason
-ok 32 - manual matching permits exact amount/currency and records the reason
-  ---
-  duration_ms: 0.183335
-  type: 'test'
-  ...
-# Subtest: manual matching rejects a currency mismatch
-ok 33 - manual matching rejects a currency mismatch
-  ---
-  duration_ms: 0.213841
-  type: 'test'
-  ...
-# Subtest: manual matching rejects an amount mismatch rather than masking fees
-ok 34 - manual matching rejects an amount mismatch rather than masking fees
-  ---
-  duration_ms: 0.181903
-  type: 'test'
-  ...
-# Subtest: a Billing receipt can be matched to only one bank line
-ok 35 - a Billing receipt can be matched to only one bank line
-  ---
-  duration_ms: 0.196815
-  type: 'test'
-  ...
-# Subtest: debit classification accepts an expense class with evidence
-ok 36 - debit classification accepts an expense class with evidence
-  ---
-  duration_ms: 0.196175
-  type: 'test'
-  ...
-# Subtest: debit classification rejects a credit-only category
-ok 37 - debit classification rejects a credit-only category
-  ---
-  duration_ms: 0.364678
-  type: 'test'
-  ...
-# Subtest: credit classification accepts bank interest and an evidence note
-ok 38 - credit classification accepts bank interest and an evidence note
-  ---
-  duration_ms: 0.218418
-  type: 'test'
-  ...
-# Subtest: classification rejects a statement line already matched
-ok 39 - classification rejects a statement line already matched
-  ---
-  duration_ms: 0.294892
-  type: 'test'
-  ...
-# Subtest: classification requires a named operator
-ok 40 - classification requires a named operator
-  ---
-  duration_ms: 0.356925
-  type: 'test'
-  ...
-# Subtest: approved exclusion requires a substantial reason and is retained in state
-ok 41 - approved exclusion requires a substantial reason and is retained in state
-  ---
-  duration_ms: 0.324447
-  type: 'test'
-  ...
-# Subtest: period summary blocks when no Billing receipt snapshot has been imported
-ok 42 - period summary blocks when no Billing receipt snapshot has been imported
-  ---
-  duration_ms: 0.330075
-  type: 'test'
-  ...
-# Subtest: period summary counts unmatched statement lines and missing receipts
-ok 43 - period summary counts unmatched statement lines and missing receipts
-  ---
-  duration_ms: 0.29317
-  type: 'test'
-  ...
-# Subtest: period summary calculates credit and debit totals by currency
-ok 44 - period summary calculates credit and debit totals by currency
-  ---
-  duration_ms: 0.361913
-  type: 'test'
-  ...
-# Subtest: period summary rejects an end date before its start date
-ok 45 - period summary rejects an end date before its start date
-  ---
-  duration_ms: 0.152278
-  type: 'test'
-  ...
-# Subtest: period preparation records blockers instead of falsely approving
-ok 46 - period preparation records blockers instead of falsely approving
-  ---
-  duration_ms: 0.340852
-  type: 'test'
-  ...
-# Subtest: period close cannot be approved while blockers remain
-ok 47 - period close cannot be approved while blockers remain
-  ---
-  duration_ms: 0.351007
-  type: 'test'
-  ...
-# Subtest: refreshing a prepared close clears blockers after reconciliation is completed
-ok 48 - refreshing a prepared close clears blockers after reconciliation is completed
-  ---
-  duration_ms: 0.599299
-  type: 'test'
-  ...
-# Subtest: period close approval succeeds with independent approver after a clean checklist
-ok 49 - period close approval succeeds with independent approver after a clean checklist
-  ---
-  duration_ms: 0.33277
-  type: 'test'
-  ...
-# Subtest: period close approval enforces a separate person from the preparer
-ok 50 - period close approval enforces a separate person from the preparer
-  ---
-  duration_ms: 0.357686
-  type: 'test'
-  ...
-# Subtest: a prepared close must be refreshed if new unmatched lines are imported before approval
-ok 51 - a prepared close must be refreshed if new unmatched lines are imported before approval
-  ---
-  duration_ms: 0.542434
-  type: 'test'
-  ...
-# Subtest: period close prevents overlapping approved closes
-ok 52 - period close prevents overlapping approved closes
-  ---
-  duration_ms: 0.451577
-  type: 'test'
-  ...
-# Subtest: duplicate prepared close for the same period is prevented
-ok 53 - duplicate prepared close for the same period is prevented
-  ---
-  duration_ms: 0.467471
-  type: 'test'
-  ...
-# Subtest: reopening an approved period requires a different operator and a reason
-ok 54 - reopening an approved period requires a different operator and a reason
-  ---
-  duration_ms: 0.363055
-  type: 'test'
-  ...
-# Subtest: reopened period is no longer locked against corrected statement import
-ok 55 - reopened period is no longer locked against corrected statement import
-  ---
-  duration_ms: 0.317186
-  type: 'test'
-  ...
-# Subtest: a prepared close cannot be reopened
-ok 56 - a prepared close cannot be reopened
-  ---
-  duration_ms: 0.172649
-  type: 'test'
-  ...
-# Subtest: dashboard aggregates matching counts and currencies
-ok 57 - dashboard aggregates matching counts and currencies
-  ---
-  duration_ms: 0.291638
-  type: 'test'
-  ...
-# Subtest: state can be saved and loaded from browser-like storage
-ok 58 - state can be saved and loaded from browser-like storage
-  ---
-  duration_ms: 0.388363
-  type: 'test'
-  ...
-# Subtest: malformed stored JSON safely falls back to an initial state
-ok 59 - malformed stored JSON safely falls back to an initial state
-  ---
-  duration_ms: 0.584397
-  type: 'test'
-  ...
-# Subtest: CSV export protects spreadsheet formulas
-ok 60 - CSV export protects spreadsheet formulas
-  ---
-  duration_ms: 0.234932
-  type: 'test'
-  ...
-1..60
-# tests 60
+1..16
+# tests 16
 # suites 0
-# pass 60
+# pass 16
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 196.299589
+# duration_ms 165.999603

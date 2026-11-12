@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101c32">
+  <meta name="description" content="CALLORIA core contact-centre shift simulation. Handle customers, solve service issues, attend briefings and build your agent performance record.">
+  <title>CALLORIA · Live Floor Shift</title>
+  <link rel="stylesheet" href="/live-floor.css">
+  <script defer src="/agent-workbench-engine.js"></script>
+  <script defer src="/customer-journey-engine.js"></script>
+  <script defer src="/live-floor-engine.js"></script>
+  <script defer src="/live-floor.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="CALLORIA home">
+      <span class="brand-mark">C</span>
+      <span><strong>CALLORIA</strong><small>CONTACT CENTRE CAREER SIMULATOR</small></span>
+    </a>
+    <div class="topbar-right">
+      <span class="live-badge"><i></i> SIMULATED FLOOR</span>
+      <span class="version-label">CORE GAMEPLAY · BUILD 6.0</span>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="page-intro">
+      <div>
+        <div class="eyebrow">OPERATIONS FLOOR / CUSTOMER CARE</div>
+        <h1>Live floor shift</h1>
+        <p>Sign in, attend the service briefings, handle customer contacts and finish your shift against quality and service targets.</p>
+      </div>
+      <div class="shift-clock-card">
+        <span>SIMULATED SHIFT CLOCK</span>
+        <strong id="shift-clock">07:30</strong>
+        <small id="shift-status">OFF DUTY</small>
+      </div>
+    </section>
+
+    <section class="start-panel panel" id="start-panel">
+      <div class="start-copy">
+        <div class="eyebrow">EMPLOYEE SIGN-IN</div>
+        <h2>Start your customer-care shift</h2>
+        <p>The default shift begins with the 7:30 AM product and service briefing. No account registration is required for this simulation.</p>
+      </div>
+      <form id="start-form" class="start-form">
+        <label>Employee name<input id="agent-name" name="agentName" maxlength="80" value="Agent Trainee" required></label>
+        <label>Assigned team<select id="agent-team" name="agentTeam"><option>Customer Care</option><option>Digital Support</option><option>Player Support</option><option>Technical Support</option><option>Service Recovery</option><option>General Enquiries</option></select></label>
+        <button class="button button-primary" type="submit" id="start-shift">Sign in & start shift</button>
+      </form>
+    </section>
+
+    <section class="metric-grid" aria-label="Shift performance indicators">
+      <article class="metric-card"><span>CONTACTS HANDLED</span><strong id="metric-handled">0</strong><small>Completed interactions</small></article>
+      <article class="metric-card"><span>QUALITY ASSURANCE</span><strong id="metric-qa">—</strong><small>Weighted decision score</small></article>
+      <article class="metric-card"><span>CUSTOMER SATISFACTION</span><strong id="metric-csat">—</strong><small>Simulated score out of 5</small></article>
+      <article class="metric-card"><span>FIRST CONTACT RESOLUTION</span><strong id="metric-fcr">—</strong><small>Eligible resolved contacts</small></article>
+      <article class="metric-card"><span>COMPLIANCE EVENTS</span><strong id="metric-breaches">0</strong><small>Critical failures</small></article>
+      <article class="metric-card"><span>KNOWLEDGE USED</span><strong id="metric-knowledge">0</strong><small>Published guidance references</small></article>
+    </section>
+
+    <section id="event-panel" class="event-panel hidden" aria-live="polite">
+      <div class="event-icon" id="event-icon">!</div>
+      <div class="event-copy"><span class="eyebrow" id="event-time">SCHEDULED FLOOR EVENT</span><h2 id="event-title">Morning briefing</h2><p id="event-description"></p></div>
+      <button class="button button-primary" id="complete-event" type="button">Attend briefing</button>
+    </section>
+
+    <section class="floor-grid">
+      <aside class="panel queue-panel">
+        <div class="panel-heading">
+          <div><div class="eyebrow">INCOMING WORK</div><h2>Customer queue</h2></div>
+          <span class="count-pill" id="queue-count">0</span>
+        </div>
+        <div class="queue-filters">
+          <label class="sr-only" for="queue-channel">Filter queue by channel</label>
+          <select id="queue-channel"><option value="">All channels</option><option>Voice</option><option>Email</option><option>Live chat</option><option>Social</option><option>SMS</option><option>In-app</option></select>
+        </div>
+        <div id="queue-list" class="queue-list"><div class="empty-note">Sign in to load your shift queue.</div></div>
+        <div class="queue-footer"><span class="dot dot-green"></span> Queue uses synthetic customer scenarios</div>
+      </aside>
+
+      <section class="panel work-panel">
+        <div class="panel-heading work-heading">
+          <div><div class="eyebrow">AGENT WORKSTATION</div><h2 id="work-title">Ready for your shift</h2></div>
+          <span class="status-tag" id="work-status">NOT SIGNED IN</span>
+        </div>
+        <div id="work-empty" class="work-empty">
+          <div class="empty-graphic">⌁</div>
+          <h3 id="work-empty-title">Your customer desk is waiting</h3>
+          <p id="work-empty-copy">Start the shift and attend the 7:30 AM briefing. Your customer queue and workstation will unlock after sign-in.</p>
+        </div>
+        <div id="active-work" class="active-work hidden">
+          <div class="contact-banner">
+            <div><span class="contact-ref" id="contact-reference">CT-00000</span><span class="channel-chip" id="contact-channel">VOICE</span></div>
+            <span class="priority-chip" id="contact-priority">P3 NORMAL</span>
+          </div>
+          <h3 id="contact-subject">Customer issue</h3>
+          <p class="contact-focus" id="contact-focus"></p>
+          <div class="conversation" id="conversation" aria-live="polite"></div>
+          <div class="decision-area" id="decision-area">
+            <div class="decision-title"><span class="eyebrow" id="decision-step">STEP 1 OF 3</span><h3 id="decision-heading">Understand the customer</h3></div>
+            <p id="decision-prompt"></p>
+            <div id="decision-options" class="decision-options"></div>
+          </div>
+          <section id="wrapup-panel" class="wrapup-panel hidden">
+            <div class="decision-title"><span class="eyebrow">CONTACT WRAP-UP</span><h3>Record the outcome</h3></div>
+            <p>Complete the record before returning to the queue. Customer contact and case records are saved locally in Customer 360 when available.</p>
+            <form id="wrapup-form">
+              <label>Disposition<select id="wrap-disposition" required><option>Resolved on first contact</option><option>Information provided</option><option>Guidance provided</option><option>Case created</option><option>Escalated to specialist</option><option>Callback agreed</option><option>Pending customer</option><option>Service issue acknowledged</option></select></label>
+              <label>Customer-care summary<textarea id="wrap-summary" rows="3" minlength="20" maxlength="900" placeholder="Record the issue, checks completed, guidance given and agreed next step." required></textarea></label>
+              <div class="form-row">
+                <label>Case action<select id="case-action"><option value="existing">Update an existing case</option><option value="create">Create a new case</option><option value="skip">Customer note only</option></select></label>
+                <label id="existing-case-field">Existing case<select id="existing-case"><option value="">No open case found</option></select></label>
+              </div>
+              <div class="form-row">
+                <label>Case category<select id="case-category"><option>Account & access</option><option>Billing & payments</option><option>Product guidance</option><option>Technical support</option><option>Complaint & service recovery</option><option>Service disruption</option><option>Sales & service enquiry</option><option>Life & personal development</option><option>Other</option></select></label>
+                <label>Priority<select id="case-priority"><option>P1 - Urgent</option><option>P2 - High</option><option selected>P3 - Normal</option><option>P4 - Low</option></select></label>
+              </div>
+              <label id="case-subject-field">Case subject<input id="case-subject" maxlength="160"></label>
+              <div class="form-feedback" id="wrap-feedback" role="alert"></div>
+              <button class="button button-primary" type="submit">Save wrap-up & return to queue</button>
+            </form>
+          </section>
+          <div id="decision-feedback" class="decision-feedback hidden" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <aside class="right-rail">
+        <section class="panel customer-panel">
+          <div class="panel-heading"><div><div class="eyebrow">CUSTOMER CONTEXT</div><h2>Customer 360</h2></div></div>
+          <div id="customer-card" class="rail-content"><div class="empty-note">Customer information appears when a contact is accepted.</div></div>
+        </section>
+        <section class="panel knowledge-panel">
+          <div class="panel-heading"><div><div class="eyebrow">APPROVED GUIDANCE</div><h2>Knowledge base</h2></div></div>
+          <div class="knowledge-search"><input id="knowledge-query" type="search" placeholder="Search published articles" aria-label="Search published knowledge"><button id="knowledge-search-button" class="icon-button" type="button" aria-label="Search knowledge">⌕</button></div>
+          <div id="knowledge-list" class="rail-content"><div class="empty-note">Accept a customer to see relevant guidance.</div></div>
+        </section>
+        <section class="panel floor-rules">
+          <div class="panel-heading"><div><div class="eyebrow">SHIFT ROUTINE</div><h2>Today's schedule</h2></div></div>
+          <div class="schedule-list">
+            <div><time>07:30</time><span>Morning product & service briefing</span><b id="routine-morning">DUE</b></div>
+            <div><time>10:30</time><span>Morning break · 15 minutes</span><b id="routine-break">UPCOMING</b></div>
+            <div><time>12:30</time><span>Lunch break · 30 minutes</span><b id="routine-lunch">UPCOMING</b></div>
+            <div><time>14:00</time><span>Afternoon product & service briefing</span><b id="routine-afternoon">UPCOMING</b></div>
+            <div><time>16:00</time><span>Shift close and performance review</span><b>END</b></div>
+          </div>
+        </section>
+      </aside>
+    </section>
+
+    <section class="panel completed-panel">
+      <div class="panel-heading"><div><div class="eyebrow">SHIFT RECORD</div><h2>Completed customer contacts</h2></div><span id="completed-count" class="count-pill">0</span></div>
+      <div class="table-scroll"><table><thead><tr><th>Reference</th><th>Channel</th><th>Customer issue</th><th>QA</th><th>CSAT</th><th>Outcome</th></tr></thead><tbody id="completed-table"><tr><td colspan="6" class="empty-table">No customer contacts completed yet.</td></tr></tbody></table></div>
+    </section>
+
+    <section id="shift-report" class="panel report-panel hidden">
+      <div class="eyebrow">SHIFT PERFORMANCE</div><h2>End-of-shift report</h2>
+      <div class="report-grid" id="report-grid"></div>
+      <p id="report-note"></p>
+    </section>
+
+    <section class="activity-strip"><span>SIMULATION LOG</span><div id="activity-log">No activity recorded.</div><button id="end-shift" class="button button-secondary" type="button" disabled>End shift</button></section>
+    <footer class="page-foot">CALLORIA v6.0 · Synthetic gameplay scenarios · No real customer, telephone, email or messaging connections</footer>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

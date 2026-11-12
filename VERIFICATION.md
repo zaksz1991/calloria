@@ -1,24 +1,23 @@
-# Verification — CALLORIA v5.9
+# Verification — v6.0
 
 ## Completed checks
 
-| Check | Result |
-|---|---:|
-| Finance reconciliation engine tests | 53 passed, 0 failed |
-| HTML and UI contract tests | 7 passed, 0 failed |
-| Combined focused tests | **60 passed, 0 failed** |
-| `node --check` engine | Passed |
-| `node --check` UI controller | Passed |
-| Static HTML ID uniqueness | Passed |
-| Static UI selector-to-HTML ID check | Passed |
-| v5.8 storage-key / read-only bridge contract | Passed |
+- Node syntax checks: `agent-workbench-engine.js`, `customer-journey-engine.js`, `live-floor-engine.js`, `live-floor.js` — passed.
+- Focused Node tests: **16 passed, 0 failed**.
+- HTML ID uniqueness — passed.
+- Literal controller selector to HTML ID contract — passed.
+- Script dependency ordering — passed.
+- Responsive tablet/mobile CSS contract — passed.
+- Local static HTTP checks for the HTML, CSS and four JavaScript files — HTTP 200.
+- ZIP integrity check — passed.
 
 ## Not completed
 
-- Full CALLORIA repository test suite: not run; the full repository source was not available in this package workspace.
-- Full Vite production build: not run.
-- Vercel deployment: not run.
-- Live-route verification: not run.
-- Browser end-to-end rendering: attempted with headless Chromium, but the render command timed out before a usable verification result was produced.
+A Chromium headless render attempt timed out in this environment, so visual browser rendering and click-through end-to-end testing are not certified. The complete CALLORIA repository, Vite production build and Vercel deployment were not available for verification.
 
-This package is an additive public-page overlay. It has not been merged into the existing repository or connected to central Supabase records.
+## Key boundaries
+
+- Synthetic scripted contacts, not live customers or real channel integrations.
+- Local browser storage, not shared Supabase/HR data.
+- 2D workstation module, not yet integrated into the 3D office scene or the main game navigation.
+- No Billing, bank statement or Finance Reconciliation workflow in the default game path.
