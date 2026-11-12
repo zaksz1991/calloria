@@ -1,16 +1,10 @@
-# Verification — CALLORIA v6.19
+# Verification — CALLORIA v6.20
 
-Locally verified:
+Executed in the patch workspace:
 
-- Four focused Node contract tests pass.
-- `node --check` passes for the department partition runtime, reception lifecycle integration, and Vite compatibility plugin.
-- The existing lobby alias export is preserved.
-- The old Vite plugin export remains callable and its stale source transform is disabled.
-- ZIP archive integrity passes.
+- Node built-in focused tests: 4 passed, 0 failed.
+- `node --check` syntax checks: passed for all four production JavaScript modules.
+- Static lifecycle contract checks: passed, including v6.17.1 lobby export, v6.18 greenery integration, and v6.19 partition integration.
+- ZIP archive integrity: passed.
 
-Not verified:
-
-- Full Vite production build against the complete current CALLORIA repository.
-- Vercel deployment.
-- Live browser rendering or successful external CC0 asset retrieval.
-- Whether the current production scene contains all three expected authored pane anchors with the published dimensions. The runtime will report missing or invalid anchors and leave original panes visible.
+Not verified: full Vite production build, Vercel deployment, HTTP delivery of external CC0 assets, actual browser/WebGL rendering, and renderer shadow-map configuration. Lobby shadow receiving only becomes visible when the existing renderer has shadow mapping enabled and dynamic objects cast shadows. Glass appearance depends on the source GLB's material names/alpha/transmission metadata; the status counts report whether materials were actually matched.

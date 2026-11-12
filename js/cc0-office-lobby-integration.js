@@ -12,6 +12,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { disposeGLTFResources } from './glb-asset-loader.js';
 import { addCalloriaLobbyGreenery } from './cc0-lobby-greenery-integration.js';
 import { integrateCalloriaGlazedDepartmentPartitions } from './cc0-glazed-department-partitions.js';
+import { applyCalloriaLobbyLightingPolicy } from './calloria-lobby-lighting-policy.js';
 import {
   CC0_OFFICE_LOBBY_ASSET,
   CC0_OFFICE_LOBBY_LIMITS,
@@ -277,6 +278,7 @@ export async function integrateCalloriaCC0OfficeLobby({
     }
 
     const rendered = createCC0OfficeLobbyRenderRoot(gltf, THREE);
+    const lighting = applyCalloriaLobbyLightingPolicy(rendered.root, { tier });
     placedRoot = new THREE.Group();
     placedRoot.name = 'calloria-cc0-office-lobby';
     placedRoot.scale.setScalar(CC0_OFFICE_LOBBY_LIMITS.placedScale);
@@ -314,6 +316,7 @@ export async function integrateCalloriaCC0OfficeLobby({
       merged: rendered.merged,
       drawCalls: rendered.drawCalls,
       mergeReason: rendered.mergeReason,
+      lighting,
       fallbacksHidden: hiddenFallbacks.length,
       greenery: greeneryLease?.status || { loaded: false, reason: 'greenery integration returned no status' },
       partitions: partitionStatus,

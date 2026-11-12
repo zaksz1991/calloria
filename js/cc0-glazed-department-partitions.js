@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { disposeGLTFResources } from './glb-asset-loader.js';
+import { applyCalloriaGlassMaterialPolicy } from './calloria-glass-material-policy.js';
 
 export const CC0_GLAZED_PARTITION_ASSET = Object.freeze({
   id: '3dassets-downtown-office-glazed-partition-17051',
@@ -249,6 +250,13 @@ export async function integrateCalloriaGlazedDepartmentPartitions(scene, { tier 
     const validation = validateCC0GlazedPartition(metrics);
     if (!validation.valid) throw new Error(validation.errors.join('; '));
 
+    // Apply the finish only to recognized glass materials inside this validated
+    // partition GLB. Frames and unrelated materials remain unchanged.
+    const glassFinish = applyCalloriaGlassMaterialPolicy(gltf.scene, {
+      doubleSide: THREE.DoubleSide,
+      maxOpacity: 0.34
+    });
+
     const partitionCount = anchors.reduce((sum, entry) => sum + entry.spec.positions.length, 0);
     const triangleBudget = partitionCount * metrics.triangles;
     const maxCount = tier === 'low' ? LIMITS.maxPartitionsLow : LIMITS.maxPartitionsStandard;
@@ -281,6 +289,9 @@ export async function integrateCalloriaGlazedDepartmentPartitions(scene, { tier 
         sourceMeshes: metrics.meshes,
         materials: metrics.materials,
         textures: metrics.textures,
+        glassMaterialsScanned: glassFinish.scannedMaterials,
+        glassMaterialsMatched: glassFinish.glassMaterialsMatched,
+        glassMaterialsFinished: glassFinish.glassMaterialsFinished,
         dimensionsMeters: metrics.size
       },
       dispose() {

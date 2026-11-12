@@ -1,25 +1,21 @@
-# Install CALLORIA v6.19 — GitHub web interface
+# GitHub installation — CALLORIA v6.20
 
-Prerequisite: CALLORIA v6.18 Lobby Greenery Runtime Activation must already be installed. Apply this ZIP as an overlay on the repository's `main` branch.
+Prerequisite: v6.19 Department Glass Runtime Activation and its v6.18/v6.17.1 prerequisites must already be installed. Apply this ZIP as an overlay on `main`.
 
 ## Replace these files
 
 1. `js/cc0-office-lobby-integration.js`
-2. `build/calloria-glazed-department-partitions-plugin.mjs`
+2. `js/cc0-glazed-department-partitions.js`
 
-## Add or replace this file
+## Add these files
 
-3. `js/cc0-glazed-department-partitions.js`
+3. `js/calloria-glass-material-policy.js`
+4. `js/calloria-lobby-lighting-policy.js`
 
-## Preserve all other files
+Optional test file:
 
-Do not replace `vite.config.js`, `package.json`, `package-lock.json`, `js/production-world.js`, `js/cc0-lobby-greenery-integration.js`, `js/glb-asset-loader.js`, Supabase settings, Groq keys, or any GLB assets.
+5. `tests/office-visual-finish.test.mjs`
 
-## GitHub steps
+Do not replace `vite.config.js`, `package.json`, `package-lock.json`, `js/production-world.js`, `js/glb-asset-loader.js`, `js/cc0-lobby-greenery-integration.js`, `js/cc0-office-lobby-policy.js`, any asset under `public/assets/models/`, or any Supabase/Groq setting.
 
-1. Open the CALLORIA repository on GitHub.
-2. Open each listed path and use the edit/upload controls to replace the file with the matching file from this ZIP. Create the `js/cc0-glazed-department-partitions.js` file if it does not already exist.
-3. Commit the three-file overlay to `main`.
-4. Allow Vercel to deploy the commit.
-
-This package intentionally leaves `vite.config.js` untouched. Its existing plugin import remains valid; the plugin no longer rewrites `production-world.js` using stale text anchors.
+Upload/replace the files at those exact repository paths through GitHub's web interface and commit to `main`.

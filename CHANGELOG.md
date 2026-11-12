@@ -1,8 +1,8 @@
-# v6.19
+# CALLORIA v6.20 — Office Visual Finish
 
-- Activated department glass at runtime through the current reception/production scene lifecycle.
-- Added bounded waiting for authored QA/supervisor pane anchors to become available.
-- Preserved fallback glass until validated replacement modules are ready.
-- Added partition status reporting and lifecycle disposal.
-- Disabled the obsolete v3.3 Vite source-anchor transform while preserving its plugin export.
-- Preserved v6.18 lobby greenery and the v6.17.1 named lobby export.
+- Applies a restrained two-sided transparent PBR finish to recognized glass materials in the validated QA/supervisor partition GLB.
+- Leaves aluminium/frame and unrelated partition materials unchanged.
+- Exposes scanned/matched/finished glass-material counts in the existing partition-ready status event.
+- Enables lobby surface shadow receiving on balanced/high tiers; low tier retains shadow receiving off.
+- Keeps the v6.19 lobby lifecycle, v6.18 greenery, v6.17.1 compatibility export and existing fallback/cleanup behavior.
+- Does not turn on global renderer shadow maps, create shadow casters, or alter renderer quality settings.
