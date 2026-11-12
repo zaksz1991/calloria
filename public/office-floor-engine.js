@@ -5,7 +5,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  const VERSION = '6.2.0';
+  const VERSION = '6.3.0';
   const FLOOR_STORAGE_KEY = 'calloria.live-floor.v60';
   const CAREER_STORAGE_KEY = 'calloria.career-progression.v61';
 
@@ -46,6 +46,18 @@
       '/assets/models/supervisors/office_female.glb',
       '/assets/models/supervisors/the_bad_supervisor/model.glb',
       '/assets/models/supervisors/the_bad_supervisor/the_bad_supervisor.glb'
+    ]),
+    receptionDesk: Object.freeze([
+      '/assets/models/office/reception/reception-desk/model.glb',
+      '/assets/models/office/reception/reception-desk/reception-desk.glb',
+      '/assets/models/office/reception/reception-desk.glb',
+      '/assets/models/office/reception/reception-desk/scene.gltf'
+    ]),
+    receptionist: Object.freeze([
+      '/assets/models/receptionists/lady_in_a_trenchcoat/model.glb',
+      '/assets/models/receptionists/lady_in_a_trenchcoat/lady_in_a_trenchcoat.glb',
+      '/assets/models/receptionists/lady_in_a_trenchcoat.glb',
+      '/assets/models/receptionists/lady_in_a_trenchcoat/scene.gltf'
     ])
   });
 
@@ -54,6 +66,13 @@
     Object.freeze({ id: 'DS-02', name: 'Digital Support', team: 'Digital Support', channel: 'Email & Live Chat', x: -2.4, z: -1.8, role: 'Digital agent', model: 'agentMale' }),
     Object.freeze({ id: 'PS-03', name: 'Product Support', team: 'Technical Support', channel: 'Product & Technical', x: 2.4, z: -1.8, role: 'Product specialist', model: 'agentFemale' }),
     Object.freeze({ id: 'SR-04', name: 'Service Recovery', team: 'Service Recovery', channel: 'Complaints & Escalations', x: 7.2, z: -1.8, role: 'Recovery specialist', model: 'agentMale' })
+  ]);
+
+  const ACTIVITIES = Object.freeze([
+    Object.freeze({ id: 'reception', name: 'Staff Reception', kind: 'reception', x: -14.0, z: 8.2, action: 'Clock in and confirm your assigned team before starting the shift.' }),
+    Object.freeze({ id: 'briefing-room', name: 'Team Briefing Room', kind: 'briefing', x: -12.8, z: -8.3, action: 'Attend scheduled product and service updates with your team.' }),
+    Object.freeze({ id: 'staff-lounge', name: 'Staff Lounge', kind: 'break', x: 12.8, z: 8.2, action: 'Take the scheduled morning or lunch break.' }),
+    Object.freeze({ id: 'supervisor-hub', name: 'Supervisor Hub', kind: 'supervisor', x: 13.0, z: -8.2, action: 'Request guidance, escalation support or help with a floor issue.' })
   ]);
 
   const RANKS = Object.freeze([
@@ -144,6 +163,20 @@
     return Math.sqrt(dx * dx + dz * dz);
   }
 
+  function nearestPoint(points, position, maxDistance = 2.8) {
+    if (!Array.isArray(points) || !position) return null;
+    let nearest = null;
+    let bestDistance = Number(maxDistance);
+    for (const point of points) {
+      const distance = distanceXZ(point, position);
+      if (distance <= bestDistance) {
+        bestDistance = distance;
+        nearest = { ...point, distance: Math.round(distance * 100) / 100 };
+      }
+    }
+    return nearest;
+  }
+
   function nearestStation(stations, position, maxDistance = 2.8) {
     if (!Array.isArray(stations) || !position) return null;
     let nearest = null;
@@ -179,6 +212,7 @@
     CAREER_STORAGE_KEY,
     ASSET_CATALOG,
     STATIONS,
+    ACTIVITIES,
     RANKS,
     clean,
     profileKey,
@@ -186,6 +220,7 @@
     getFloorSnapshot,
     distanceXZ,
     nearestStation,
+    nearestPoint,
     stationIsUsable,
     getAssetPaths,
     assetSummary

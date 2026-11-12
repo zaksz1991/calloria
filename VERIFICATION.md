@@ -1,30 +1,22 @@
-# Verification — CALLORIA v6.2
+# v6.3 Verification
 
-## Focused checks performed
+## Executed checks
 
-| Check | Result |
-|---|---:|
-| Office-floor engine and route-contract tests | 26 passed, 0 failed |
-| `office-floor-engine.js` syntax | Passed |
-| `office-floor.js` syntax | Passed |
-| Updated `live-floor.js` syntax | Passed |
-| Duplicate IDs on both HTML pages | None |
-| v6.0/v6.1 local-storage read contracts | Passed |
-| GLB loading and workstation gate contracts | Passed |
-| ZIP integrity | Passed (`unzip -t`) |
+- Focused Node test suite: **47 passed, 0 failed**.
+- JavaScript syntax checks for `office-floor.js`, `office-floor-engine.js`, `office-routine-engine.js` and `live-floor.js`: passed.
+- HTML ID uniqueness checks for both updated pages: passed.
+- Static JavaScript-to-HTML selector binding checks: passed.
+- v6.0 shift and v6.1 career storage-key compatibility tests: passed.
+- Reception check-in, shift-start gating, event attendance token, single-use token, clock-out, supervisor request and legacy-shift migration tests: passed.
+- ZIP integrity check: passed.
 
 ## Not performed
 
-- Full CALLORIA repository tests.
-- Vite production build.
-- Vercel deployment.
-- End-to-end browser render against the deployed website.
-- Actual GLB load verification against the user's production `/assets/models/` directory. Those asset files are not present in this patch workspace.
+- Full repository `npm test` or Vite production build: not performed because the complete user repository and its complete dependency tree were not present in this patch workspace.
+- Vercel build or deployment: not performed.
+- Live browser interaction against the deployed site: not performed.
+- Actual GLB load verification: not performed because the user's full `public/assets/models/` tree was not present. The in-page Asset Check must confirm the reception desk and receptionist path results after installation.
 
-## Known constraints
+## Scope
 
-- Three.js 0.170.0 is loaded from a pinned CDN import map; a connection to that CDN is required to start the renderer.
-- The actual GLB files are not included in the patch. The page tries multiple filename candidates under the known model folders and reports successful or missing paths in the asset inspector.
-- Workstation entry requires both desk and computer GLBs. Agent and supervisor GLBs are optional and are never replaced with primitive character geometry.
-- The 3D floor is a first-person prototype. Furniture collision, multiplayer, audio, live telephony and live digital channels are not included.
-- The package assumes the v6.1 base engines remain installed in `public/`.
+This is an additive public-folder overlay. It does not alter Vite configuration, package dependencies, Supabase configuration, Groq keys or external integrations.

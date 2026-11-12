@@ -5,14 +5,15 @@
   const C = window.CalloriaCustomerJourneyEngine;
   const F = window.CalloriaLiveFloorEngine;
   const P = window.CalloriaCareerProgressionEngine;
+  const R = window.CalloriaOfficeRoutineEngine;
   const realStorage = window.localStorage;
   const toast = $('#toast');
   let toastTimer = null;
   let selectedChannel = '';
   let articleQuery = '';
 
-  if (!E || !C || !F || !P) {
-    document.body.innerHTML = '<main style="max-width:700px;margin:60px auto;padding:24px;font:14px system-ui"><h1>CALLORIA Live Floor could not start</h1><p>Required simulation engine files are missing. Copy the complete v6.1 package into the public folder and reload this page.</p></main>';
+  if (!E || !C || !F || !P || !R) {
+    document.body.innerHTML = '<main style="max-width:700px;margin:60px auto;padding:24px;font:14px system-ui"><h1>CALLORIA Live Floor could not start</h1><p>Required simulation engine files are missing. Copy the full v6.3 overlay and its v6.1 dependencies into the public folder, then reload this page.</p></main>';
     return;
   }
 
@@ -23,6 +24,9 @@
   };
 
   let state = F.load(realStorage);
+  if (state.shift && state.shift.status === 'On shift' && state.shift.agentName && state.shift.team) {
+    try { R.importExistingShift(realStorage, { name: state.shift.agentName, team: state.shift.team, date: state.shift.date }, state.shift.startedAt); } catch (_) { /* preserve the running shift if legacy attendance cannot be migrated */ }
+  }
   let progress = P.load(realStorage);
   let agentState = E.load(storageProxy);
   E.save(agentState, storageProxy);
@@ -95,7 +99,7 @@
         $('#work-empty-copy').textContent = 'Select the next queued customer on the left. Each interaction has three service decisions and a required wrap-up.';
       } else {
         $('#work-empty-title').textContent = 'Your customer desk is waiting';
-        $('#work-empty-copy').textContent = 'Start the shift and attend the 7:30 AM briefing. Your customer queue and workstation will unlock after sign-in.';
+        $('#work-empty-copy').textContent = 'Clock in at Staff Reception in the 3D Workplace, enter your assigned workstation and attend the 7:30 AM briefing before accepting contacts.';
       }
     }
   }
@@ -166,9 +170,10 @@
         : due.description;
     $('#event-time').textContent = `${due.time} · ${due.type === 'briefing' ? 'TEAM BRIEFING' : 'SCHEDULED BREAK'}`;
     $('#event-title').textContent = due.title;
-    $('#event-description').textContent = copy;
+    const activityArea = due.type === 'briefing' ? 'the Team Briefing Room' : 'the Staff Lounge';
+    $('#event-description').textContent = `${copy} Go to ${activityArea} in the 3D Workplace and record your attendance before completing this event here.`;
     $('#event-icon').textContent = due.type === 'briefing' ? 'B' : 'Ⅱ';
-    $('#complete-event').textContent = due.type === 'briefing' ? 'Attend briefing' : `Take ${due.duration}-minute break`;
+    $('#complete-event').textContent = due.type === 'briefing' ? 'Complete via Briefing Room' : `Complete via Staff Lounge`;
   }
   function renderRoutine() {
     const mapping = [
@@ -407,9 +412,16 @@
     const due = F.dueEvent(state);
     if (!due) return;
     try {
+      const identity = { name: state.shift.agentName, team: state.shift.team, date: state.shift.date };
+      if (!R.hasEventToken(realStorage, identity, due.id)) {
+        notify(due.type === 'briefing' ? 'Attend the scheduled briefing in the 3D Briefing Room first.' : 'Take the scheduled break in the 3D Staff Lounge first.', true);
+        window.location.href = '/office-floor.html';
+        return;
+      }
       F.attendEvent(state, due.id, new Date());
+      if (!R.consumeEventToken(realStorage, identity, due.id, new Date())) throw new Error('The office attendance record could not be consumed. Refresh and check the activity record.');
       persist(); renderAll();
-      notify(`${due.title} completed.`);
+      notify(`${due.title} completed from your 3D workplace attendance record.`);
     } catch (error) { notify(error.message, true); }
   }
   function finishShift() {
@@ -428,16 +440,23 @@
     if (requestedTeam && Array.from(teamSelect.options).some((option) => option.value === requestedTeam || option.textContent === requestedTeam)) {
       teamSelect.value = requestedTeam;
     }
-    const previousShift = F.load(realStorage);
-    if (previousShift.shift && previousShift.shift.agentName && previousShift.shift.agentName !== 'Agent Trainee') {
-      $('#agent-name').value = previousShift.shift.agentName;
+    const checkedInIdentity = R.getLastIdentity(realStorage, new Date());
+    if (checkedInIdentity) {
+      $('#agent-name').value = checkedInIdentity.name;
+      if (Array.from(teamSelect.options).some((option) => option.value === checkedInIdentity.team || option.textContent === checkedInIdentity.team)) teamSelect.value = checkedInIdentity.team;
+    } else {
+      const previousShift = F.load(realStorage);
+      if (previousShift.shift && previousShift.shift.agentName && previousShift.shift.agentName !== 'Agent Trainee') $('#agent-name').value = previousShift.shift.agentName;
     }
   }
 
   $('#start-form').addEventListener('submit', (event) => {
     event.preventDefault();
     try {
-      F.startShift(state, agentState, E, { name: $('#agent-name').value, team: $('#agent-team').value }, new Date());
+      const startIdentity = { name: $('#agent-name').value, team: $('#agent-team').value };
+      const resuming = F.isOnShift(state) && state.shift.agentName === startIdentity.name && state.shift.team === startIdentity.team;
+      if (!resuming && !R.validateShiftStart(realStorage, startIdentity, new Date())) throw new Error('Clock in at Staff Reception in the 3D Workplace before starting your shift.');
+      F.startShift(state, agentState, E, startIdentity, new Date());
       syncCareerProgress();
       persist(); renderAll(); notify('Shift started. Attend the 07:30 briefing before accepting contacts.');
     } catch (error) { notify(error.message, true); }

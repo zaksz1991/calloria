@@ -12,11 +12,13 @@ function showFatal(message) {
 
 Promise.all([
   import('/office-floor-engine.js'),
+  import('/live-floor-engine.js'),
+  import('/office-routine-engine.js'),
   import('three'),
   import('three/addons/loaders/GLTFLoader.js'),
   import('three/addons/utils/SkeletonUtils.js')
-]).then(([THREE, loaderModule, skeletonUtils]) => {
-  if (!window.CalloriaOfficeFloorEngine) throw new Error('The CALLORIA office-floor engine file did not load.');
+]).then(([, , , THREE, loaderModule, skeletonUtils]) => {
+  if (!window.CalloriaOfficeFloorEngine || !window.CalloriaLiveFloorEngine || !window.CalloriaOfficeRoutineEngine) throw new Error('A CALLORIA floor or office routine engine file did not load.');
   startOffice(THREE, loaderModule.GLTFLoader, skeletonUtils.clone);
 }).catch((error) => {
   showFatal(`The 3D renderer could not start. Check the connection to the pinned Three.js module files and reload. Technical detail: ${error && error.message ? error.message : 'module load failed'}`);
@@ -87,11 +89,14 @@ function startOffice(THREE, GLTFLoader, cloneSkeleton) {
 
   const stationGroups = new Map();
   const stationMarkers = new Map();
+  const activityMarkers = new Map();
   const mixers = [];
   const clock = new THREE.Clock();
   const held = new Set();
   let nearest = null;
+  let nearestActivity = null;
   let selected = null;
+  let selectedActivity = null;
   let pointerLocked = false;
   let dragging = false;
   let lastPointer = null;
@@ -99,6 +104,9 @@ function startOffice(THREE, GLTFLoader, cloneSkeleton) {
   let assets = {};
   let movementSpeed = 4.5;
   let snapshot = E.getFloorSnapshot(window.localStorage);
+  const R = window.CalloriaOfficeRoutineEngine;
+  const F = window.CalloriaLiveFloorEngine;
+  if (!R || !F) throw new Error('The office routine or live shift engine did not load.');
 
   const loader = new GLTFLoader();
   loader.setCrossOrigin('anonymous');
@@ -132,6 +140,26 @@ function startOffice(THREE, GLTFLoader, cloneSkeleton) {
       group.add(label);
       scene.add(group);
       stationMarkers.set(station.id, { group, disc, ring });
+    });
+  }
+
+  function createActivityMarkers() {
+    E.ACTIVITIES.forEach((activity) => {
+      const group = new THREE.Group();
+      group.position.set(activity.x, 0.018, activity.z);
+      const disc = new THREE.Mesh(new THREE.CircleGeometry(1.22, 40), new THREE.MeshBasicMaterial({ color: 0xc59bf7, transparent: true, opacity: 0.17, side: THREE.DoubleSide, depthWrite: false }));
+      disc.rotation.x = -Math.PI / 2;
+      group.add(disc);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(1.08, 1.14, 40), new THREE.MeshBasicMaterial({ color: 0xd2b0ff, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = 0.009;
+      group.add(ring);
+      const label = createTextLabel(activity.name.toUpperCase(), THREE);
+      label.position.set(0, 2.25, 0.1);
+      label.scale.set(3.2, 0.5, 1);
+      group.add(label);
+      scene.add(group);
+      activityMarkers.set(activity.id, { group, disc, ring });
     });
   }
 
@@ -188,9 +216,10 @@ function startOffice(THREE, GLTFLoader, cloneSkeleton) {
     initial.getSize(size);
     const maxDimension = Math.max(size.x, size.y, size.z, 0.001);
     let scale = 1;
-    if (role === 'agent' || role === 'supervisor') scale = 1.68 / Math.max(size.y, 0.01);
+    if (role === 'agent' || role === 'supervisor' || role === 'receptionist') scale = 1.68 / Math.max(size.y, 0.01);
     else if (role === 'desk') scale = Math.min(2.5 / Math.max(size.x, 0.01), 1.15 / Math.max(size.y, 0.01), 1.35 / Math.max(size.z, 0.01));
     else if (role === 'computer') scale = Math.min(0.92 / Math.max(size.x, 0.01), 0.78 / Math.max(size.y, 0.01), 0.72 / Math.max(size.z, 0.01));
+    else if (role === 'receptionDesk') scale = Math.min(2.8 / Math.max(size.x, 0.01), 1.35 / Math.max(size.y, 0.01), 1.6 / Math.max(size.z, 0.01));
     scale = Math.max(0.0005, Math.min(scale, 30));
     object.scale.setScalar(scale);
     object.updateMatrixWorld(true);
@@ -217,6 +246,14 @@ function startOffice(THREE, GLTFLoader, cloneSkeleton) {
       object.position.x += 0;
       object.position.z -= 8.9;
       object.rotation.y = Math.PI;
+    } else if (role === 'receptionDesk') {
+      object.position.x += station.x;
+      object.position.z += station.z;
+      object.rotation.y = -Math.PI / 2;
+    } else if (role === 'receptionist') {
+      object.position.x += station.x + 1.25;
+      object.position.z += station.z - 0.35;
+      object.rotation.y = Math.PI / 2;
     }
     scene.add(object);
     if (source.animations && source.animations.length) {
@@ -279,6 +316,9 @@ function startOffice(THREE, GLTFLoader, cloneSkeleton) {
       stationGroups.set(station.id, { group, desk, computer, person, station });
     });
     if (assets.supervisor && assets.supervisor.loaded) addModel(assets.supervisor.source, 'supervisor', null, null);
+    const reception = E.ACTIVITIES.find((item) => item.id === 'reception');
+    if (reception && assets.receptionDesk && assets.receptionDesk.loaded) addModel(assets.receptionDesk.source, 'receptionDesk', null, reception);
+    if (reception && assets.receptionist && assets.receptionist.loaded) addModel(assets.receptionist.source, 'receptionist', null, reception);
   }
 
   function renderDirectory() {
@@ -290,41 +330,213 @@ function startOffice(THREE, GLTFLoader, cloneSkeleton) {
 
   function showStation(station) {
     selected = station;
+    selectedActivity = null;
+    $('#activity-card').classList.add('hidden');
     const status = stationGroups.get(station.id);
-    const usable = E.stationIsUsable(assetStatus) && !!(status && status.desk && status.computer);
+    const modelsReady = E.stationIsUsable(assetStatus) && !!(status && status.desk && status.computer);
+    const shift = F.load(window.localStorage);
+    const alreadyOnShift = F.isOnShift(shift) && shift.shift.team === station.team;
+    const identity = currentIdentity();
+    const checkedIn = !!(identity && R.isClockedIn(window.localStorage, identity));
+    const teamMatches = !!(identity && identity.team === station.team);
+    const canEnter = modelsReady && (alreadyOnShift || (checkedIn && teamMatches));
     $('#station-ref').textContent = `WORKSTATION ${station.id}`;
     $('#station-name').textContent = station.name;
-    $('#station-description').textContent = `${station.role} · ${station.channel}. Walk-up access opens the interactive customer shift.`;
+    $('#station-description').textContent = `${station.role} · ${station.channel}. Workstation entry opens the interactive customer shift.`;
     $('#station-channel').textContent = station.channel.toUpperCase();
-    $('#station-availability').textContent = usable ? 'READY' : 'MODEL ASSET MISSING';
-    $('#station-availability').style.color = usable ? '#70d6ad' : '#e9a49a';
-    $('#enter-workstation').disabled = !usable;
-    $('#enter-workstation').textContent = usable ? (snapshot.status === 'On shift' ? 'RESUME CUSTOMER SHIFT' : 'ENTER CUSTOMER SHIFT') : 'WORKSTATION UNAVAILABLE';
+    const availability = !modelsReady ? 'MODEL ASSET MISSING' : alreadyOnShift ? 'SHIFT READY' : !checkedIn ? 'CLOCK IN AT RECEPTION' : !teamMatches ? 'ASSIGNED TEAM MISMATCH' : 'READY';
+    $('#station-availability').textContent = availability;
+    $('#station-availability').style.color = canEnter ? '#70d6ad' : '#e9a49a';
+    $('#enter-workstation').disabled = !canEnter;
+    $('#enter-workstation').textContent = canEnter ? (alreadyOnShift ? 'RESUME CUSTOMER SHIFT' : 'ENTER CUSTOMER SHIFT') : 'WORKSTATION UNAVAILABLE';
     $('#interaction-card').classList.remove('hidden');
-    $('#proximity-hint').textContent = usable ? `${station.id} selected. Enter the workstation to handle customer contacts.` : 'This station is disabled until its desk and computer GLB models are found.';
+    $('#proximity-hint').textContent = canEnter ? `${station.id} selected. Enter the workstation to handle customer contacts.` : !modelsReady ? 'Desk and computer GLB assets must load before this workstation can be used.' : !checkedIn ? 'Visit Staff Reception to clock in before entering a workstation.' : 'Choose the workstation assigned to your team.';
   }
 
   function interact() {
+    const activityFirst = nearestActivity && (!nearest || nearestActivity.distance <= nearest.distance);
+    if (activityFirst) {
+      showActivity(nearestActivity);
+      return;
+    }
     if (nearest) {
       showStation(nearest);
       return;
     }
-    if (selected) showStation(selected);
+    if (nearestActivity) showActivity(nearestActivity);
+    else if (selected) showStation(selected);
+    else if (selectedActivity) showActivity(selectedActivity);
+  }
+
+  function showActivity(activity) {
+    selectedActivity = activity;
+    selected = null;
+    $('#interaction-card').classList.add('hidden');
+    $('#activity-ref').textContent = `STAFF ACTIVITY · ${activity.id.toUpperCase()}`;
+    $('#activity-name').textContent = activity.name;
+    $('#activity-description').textContent = activity.action;
+    $('#activity-identity-fields').classList.toggle('hidden', activity.kind !== 'reception');
+    $('#activity-request-fields').classList.toggle('hidden', activity.kind !== 'supervisor');
+    $('#activity-status').textContent = 'CHECKING';
+    $('#activity-status').style.color = '#aabbd2';
+    $('#activity-action').disabled = true;
+    $('#activity-action').textContent = 'NOT AVAILABLE';
+    const identity = currentIdentity();
+    const shift = F.load(window.localStorage);
+    const onShift = F.isOnShift(shift);
+    const due = onShift ? F.dueEvent(shift) : null;
+    const today = identity && identity.date || R.localDate(new Date());
+    if (activity.kind === 'reception') {
+      const status = identity && R.getAttendanceStatus(window.localStorage, { name: identity.name, team: identity.team, date: today });
+      const shiftEnded = !!(shift && shift.shift && shift.shift.status === 'Ended');
+      const profile = identity || R.getLastIdentity(window.localStorage, new Date());
+      if (profile) {
+        $('#activity-employee-name').value = profile.name;
+        $('#activity-employee-team').value = profile.team;
+      }
+      if (status === 'Clocked out') {
+        $('#activity-status').textContent = 'CLOCKED OUT · SHIFT CLOSED';
+        $('#activity-action').textContent = 'ATTENDANCE CLOSED';
+        $('#activity-action').disabled = true;
+      } else if (status === 'Clocked in' && shiftEnded) {
+        $('#activity-status').textContent = 'SHIFT ENDED · CLOCK OUT AVAILABLE';
+        $('#activity-action').textContent = 'CLOCK OUT';
+        $('#activity-action').disabled = false;
+      } else if (status === 'Clocked in') {
+        $('#activity-status').textContent = onShift ? 'CLOCKED IN · ON SHIFT' : 'CLOCKED IN · WORKSTATION PENDING';
+        $('#activity-action').textContent = 'ALREADY CLOCKED IN';
+        $('#activity-action').disabled = true;
+      } else {
+        $('#activity-status').textContent = 'NOT CLOCKED IN';
+        $('#activity-action').textContent = 'CLOCK IN';
+        $('#activity-action').disabled = false;
+      }
+    } else if (activity.kind === 'briefing' || activity.kind === 'break') {
+      const expected = activity.kind;
+      if (!onShift) {
+        $('#activity-status').textContent = 'START YOUR SHIFT FIRST';
+        $('#activity-action').textContent = 'SHIFT NOT ACTIVE';
+      } else if (due && due.type === expected) {
+        const actionKey = due.id;
+        const token = identity && R.hasEventToken(window.localStorage, { name: shift.shift.agentName, team: shift.shift.team, date: shift.shift.date }, actionKey);
+        $('#activity-status').textContent = token ? 'ATTENDANCE RECORDED · RETURN TO WORKSTATION' : `${due.time} · ${due.title.toUpperCase()} DUE`;
+        $('#activity-action').textContent = token ? 'RECORDED' : (expected === 'briefing' ? 'ATTEND BRIEFING' : `TAKE ${due.duration}-MINUTE BREAK`);
+        $('#activity-action').disabled = !!token;
+        $('#activity-description').textContent = `${due.description} After recording attendance here, return to the Live Floor to complete the scheduled event.`;
+      } else if (due) {
+        $('#activity-status').textContent = `${due.time} · ${due.title.toUpperCase()} DUE`;
+        $('#activity-action').textContent = 'VISIT THE CORRECT AREA';
+      } else {
+        $('#activity-status').textContent = 'NO SCHEDULED ACTIVITY DUE';
+        $('#activity-action').textContent = 'NOT DUE';
+      }
+    } else if (activity.kind === 'supervisor') {
+      const hasIdentity = !!(identity && onShift && !shift.active);
+      $('#activity-status').textContent = hasIdentity ? 'SUPERVISOR SUPPORT AVAILABLE' : shift.active ? 'FINISH CURRENT CONTACT FIRST' : 'AVAILABLE DURING A SHIFT';
+      $('#activity-action').textContent = 'REQUEST SUPERVISOR';
+      $('#activity-action').disabled = !hasIdentity;
+    }
+    $('#activity-card').classList.remove('hidden');
+    $('#proximity-hint').textContent = `${activity.name} selected. Follow the on-screen staff activity.`;
+  }
+
+  function handleActivityAction() {
+    if (!selectedActivity) return;
+    const now = new Date();
+    try {
+      if (E.distanceXZ(player, selectedActivity) > 2.8) throw new Error('Move back inside this staff activity area before confirming the action.');
+      const shift = F.load(window.localStorage);
+      const identity = currentIdentity();
+      if (selectedActivity.kind === 'reception') {
+        const shiftEnded = !!(shift && shift.shift && shift.shift.status === 'Ended');
+        if (shiftEnded && identity && R.isClockedIn(window.localStorage, { ...identity, date: shift.shift.date })) {
+          R.clockOut(window.localStorage, { ...identity, date: shift.shift.date }, now, true);
+          updateHud();
+          showActivity(selectedActivity);
+          $('#activity-status').textContent = 'CLOCKED OUT · SHIFT CLOSED';
+          $('#activity-action').textContent = 'CLOCK-OUT RECORDED';
+          $('#activity-action').disabled = true;
+          return;
+        }
+        const name = $('#activity-employee-name').value;
+        const team = $('#activity-employee-team').value;
+        R.clockIn(window.localStorage, { name, team }, now);
+        updateHud();
+        showActivity(selectedActivity);
+        $('#activity-status').textContent = 'CLOCKED IN · SELECT YOUR TEAM WORKSTATION';
+        $('#activity-action').textContent = 'CLOCK-IN RECORDED';
+        $('#activity-action').disabled = true;
+        $('#proximity-hint').textContent = 'Clock-in saved. Move to a workstation for your assigned team.';
+        return;
+      }
+      if (selectedActivity.kind === 'briefing' || selectedActivity.kind === 'break') {
+        const due = F.dueEvent(shift);
+        if (!identity || !due) throw new Error('No scheduled activity is currently due.');
+        R.attendEvent(window.localStorage, { name: shift.shift.agentName, team: shift.shift.team, date: shift.shift.date }, due.id, due, now);
+        showActivity(selectedActivity);
+        $('#activity-status').textContent = 'ATTENDANCE RECORDED';
+        $('#activity-action').textContent = 'RECORDED · RETURN TO WORKSTATION';
+        $('#activity-action').disabled = true;
+        $('#proximity-hint').textContent = 'Attendance recorded. Return to the Live Floor and complete the scheduled event.';
+        return;
+      }
+      if (selectedActivity.kind === 'supervisor') {
+        const request = R.requestSupervisor(
+          window.localStorage,
+          { name: shift.shift.agentName, team: shift.shift.team, date: shift.shift.date },
+          $('#activity-request-type').value,
+          $('#activity-request-note').value,
+          now,
+          F.isOnShift(shift)
+        );
+        $('#activity-status').textContent = `REQUEST ${request.id} LOGGED`;
+        $('#activity-action').textContent = 'REQUEST SUBMITTED';
+        $('#activity-action').disabled = true;
+        $('#proximity-hint').textContent = 'Supervisor assistance request saved in this browser. It is not a live notification.';
+      }
+    } catch (error) {
+      $('#activity-status').textContent = 'ACTION NOT COMPLETED';
+      $('#activity-action').disabled = false;
+      $('#proximity-hint').textContent = error.message;
+    }
   }
 
   function enterWorkstation() {
     if (!selected) return;
+    if (E.distanceXZ(player, selected) > 2.8) {
+      $('#proximity-hint').textContent = 'Move back inside the workstation area before entering.';
+      return;
+    }
     const status = stationGroups.get(selected.id);
     if (!E.stationIsUsable(assetStatus) || !status || !status.desk || !status.computer) return;
+    const shift = F.load(window.localStorage);
+    const active = F.isOnShift(shift) && shift.shift.team === selected.team;
+    const identity = currentIdentity();
+    if (!active && (!identity || !R.isClockedIn(window.localStorage, identity) || identity.team !== selected.team)) {
+      $('#proximity-hint').textContent = !identity || !R.isClockedIn(window.localStorage, identity) ? 'Clock in at Staff Reception before entering a workstation.' : `Your assigned team is ${identity.team}. Select a matching workstation.`;
+      return;
+    }
     try { window.localStorage.setItem('calloria.office-floor.lastStation', JSON.stringify({ id: selected.id, name: selected.name, team: selected.team, enteredAt: new Date().toISOString() })); } catch (_) { /* local storage is optional for navigation */ }
     window.location.href = `/live-floor.html?fromOffice=1&station=${encodeURIComponent(selected.id)}&team=${encodeURIComponent(selected.team)}`;
   }
 
+  function currentIdentity() {
+    const shift = F.load(window.localStorage);
+    if (shift && shift.shift && shift.shift.agentName && shift.shift.team) {
+      const previous = { name: shift.shift.agentName, team: shift.shift.team, date: shift.shift.date };
+      if (F.isOnShift(shift) || R.isClockedIn(window.localStorage, previous) || shift.shift.date === R.localDate(new Date())) return previous;
+    }
+    return R.getLastIdentity(window.localStorage, new Date());
+  }
+
   function updateHud() {
     snapshot = E.getFloorSnapshot(window.localStorage);
-    $('#player-name').textContent = snapshot.agentName || 'Guest employee';
-    $('#player-team').textContent = snapshot.team || 'Choose a workstation to start';
-    $('#hud-shift').textContent = snapshot.status.toUpperCase();
+    const identity = currentIdentity();
+    $('#player-name').textContent = snapshot.agentName || identity && identity.name || 'Guest employee';
+    $('#player-team').textContent = snapshot.team || identity && identity.team || 'Clock in at Staff Reception';
+    const attendance = identity ? R.getAttendanceStatus(window.localStorage, identity) : 'Not clocked in';
+    const hudStatus = snapshot.status === 'Not signed in' && attendance === 'Clocked in' ? 'Clocked in' : snapshot.status;
+    $('#hud-shift').textContent = hudStatus.toUpperCase();
     $('#hud-rank').textContent = snapshot.rank.toUpperCase();
     $('#hud-xp').textContent = snapshot.xp.toLocaleString();
   }
@@ -337,11 +549,17 @@ function startOffice(THREE, GLTFLoader, cloneSkeleton) {
       marker.ring.material.color.set(active ? 0x73e2b5 : 0x78aeea);
       marker.ring.material.opacity = active ? 1 : 0.72;
     });
-    if (station) {
-      $('#proximity-hint').textContent = `${station.id} · ${station.name} — press E or USE to inspect workstation.`;
-    } else if ($('#interaction-card').classList.contains('hidden')) {
-      $('#proximity-hint').textContent = 'Explore the floor. Move towards a workstation.';
-    }
+  }
+
+  function setNearestActivity(activity) {
+    nearestActivity = activity;
+    activityMarkers.forEach((marker, id) => {
+      const active = !!activity && activity.id === id;
+      marker.disc.material.color.set(active ? 0x69d6b2 : 0xc59bf7);
+      marker.disc.material.opacity = active ? 0.29 : 0.17;
+      marker.ring.material.color.set(active ? 0x7ce7c1 : 0xd2b0ff);
+      marker.ring.material.opacity = active ? 1 : 0.85;
+    });
   }
 
   function updateMovement(delta) {
@@ -366,9 +584,14 @@ function startOffice(THREE, GLTFLoader, cloneSkeleton) {
     camera.rotation.set(player.pitch, player.yaw, 0, 'YXZ');
     mixers.forEach((mixer) => mixer.update(delta));
     const closest = E.nearestStation(E.STATIONS, player, 2.75);
+    const closestActivity = E.nearestPoint(E.ACTIVITIES, player, 2.75);
     if ((closest && (!nearest || closest.id !== nearest.id)) || (!closest && nearest)) setNearestStation(closest);
-    if (closest && $('#interaction-card').classList.contains('hidden')) {
-      $('#proximity-hint').textContent = `${closest.id} · ${closest.name} — press E or USE to inspect workstation.`;
+    if ((closestActivity && (!nearestActivity || closestActivity.id !== nearestActivity.id)) || (!closestActivity && nearestActivity)) setNearestActivity(closestActivity);
+    const activityFirst = closestActivity && (!closest || closestActivity.distance <= closest.distance);
+    if ($('#activity-card').classList.contains('hidden') && $('#interaction-card').classList.contains('hidden')) {
+      if (activityFirst) $('#proximity-hint').textContent = `${closestActivity.name} — press E or USE for staff activity.`;
+      else if (closest) $('#proximity-hint').textContent = `${closest.id} · ${closest.name} — press E or USE to inspect workstation.`;
+      else $('#proximity-hint').textContent = 'Explore the floor. Visit Staff Reception, Briefing Room, Staff Lounge or Supervisor Hub.';
     }
     renderer.render(scene, camera);
   }
@@ -417,6 +640,8 @@ function startOffice(THREE, GLTFLoader, cloneSkeleton) {
     ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((name) => renderer.domElement.addEventListener(name, () => { dragging = false; lastPointer = null; }));
     $('#walk-mode').addEventListener('click', requestWalkMode);
     $('#close-interaction').addEventListener('click', () => { selected = null; $('#interaction-card').classList.add('hidden'); });
+    $('#close-activity').addEventListener('click', () => { selectedActivity = null; $('#activity-card').classList.add('hidden'); });
+    $('#activity-action').addEventListener('click', handleActivityAction);
     $('#enter-workstation').addEventListener('click', enterWorkstation);
     $('#mobile-interact').addEventListener('click', interact);
     document.querySelectorAll('[data-move]').forEach((button) => {
@@ -437,7 +662,7 @@ function startOffice(THREE, GLTFLoader, cloneSkeleton) {
   }
 
   async function loadAllAssets() {
-    const roles = ['desk', 'computer', 'agentFemale', 'agentMale', 'supervisor'];
+    const roles = ['desk', 'computer', 'agentFemale', 'agentMale', 'supervisor', 'receptionDesk', 'receptionist'];
     let finished = 0;
     setLoadingProgress(8, 'Loading local office and staff GLB assets…');
     await Promise.all(roles.map(async (role) => {
@@ -464,6 +689,7 @@ function startOffice(THREE, GLTFLoader, cloneSkeleton) {
   onResize();
   window.addEventListener('resize', onResize);
   createStationMarkers();
+  createActivityMarkers();
   loadAllAssets().catch((error) => {
     showFatal(`The workplace scene could not finish loading: ${error && error.message ? error.message : 'unknown error'}`);
   });
@@ -474,6 +700,7 @@ function startOffice(THREE, GLTFLoader, cloneSkeleton) {
     getAssetStatus: () => ({ ...assetStatus }),
     getSnapshot: () => E.getFloorSnapshot(window.localStorage),
     getNearestStation: () => nearest,
-    inspectStation: (id) => { const station = E.STATIONS.find((item) => item.id === id); if (station) showStation(station); }
+    inspectStation: (id) => { const station = E.STATIONS.find((item) => item.id === id); if (station) showStation(station); },
+    inspectActivity: (id) => { const activity = E.ACTIVITIES.find((item) => item.id === id); if (activity) showActivity(activity); }
   };
 }

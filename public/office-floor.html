@@ -34,7 +34,7 @@
       <section class="hud hud-left">
         <div class="hud-label">OPERATIONS FLOOR</div>
         <h1>Contact Centre</h1>
-        <p class="hud-subtitle">Walk to a staffed workstation to begin your customer shift.</p>
+        <p class="hud-subtitle">Clock in at Staff Reception, attend scheduled team activities and enter your assigned workstation.</p>
         <div class="player-card">
           <div class="player-avatar">AG</div>
           <div><strong id="player-name">Guest employee</strong><small id="player-team">Not signed in</small></div>
@@ -71,15 +71,32 @@
         <button type="button" class="primary-action" id="enter-workstation">ENTER WORKSTATION</button>
       </section>
 
+      <section class="activity-card hidden" id="activity-card" aria-live="polite">
+        <button type="button" id="close-activity" class="close-interaction" aria-label="Close staff activity">×</button>
+        <span class="hud-label" id="activity-ref">STAFF ACTIVITY</span>
+        <h2 id="activity-name">Staff Reception</h2>
+        <p id="activity-description">Clock in and confirm your assigned team before starting the shift.</p>
+        <div class="station-meta"><span id="activity-status">CHECKING</span><span>STAFF ROUTINE</span></div>
+        <div id="activity-identity-fields" class="activity-fields hidden">
+          <label>Employee name<input id="activity-employee-name" type="text" maxlength="80" autocomplete="name" placeholder="Enter your employee name"></label>
+          <label>Assigned team<select id="activity-employee-team"><option>Customer Care</option><option>Digital Support</option><option>Technical Support</option><option>Service Recovery</option></select></label>
+        </div>
+        <div id="activity-request-fields" class="activity-fields hidden">
+          <label>Support category<select id="activity-request-type"><option>Customer escalation</option><option>Policy or knowledge guidance</option><option>System or workstation issue</option><option>Customer safety or vulnerability</option><option>Queue or workload support</option></select></label>
+          <label>What support is needed?<textarea id="activity-request-note" rows="2" maxlength="400" placeholder="Describe the issue and the action you need."></textarea></label>
+        </div>
+        <button type="button" class="primary-action" id="activity-action" disabled>NOT AVAILABLE</button>
+      </section>
+
       <div class="bottom-hud">
-        <div class="control-help desktop-help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Move</span><kbd>Mouse</kbd><span>Look</span><kbd>E</kbd><span>Use workstation</span><kbd>Esc</kbd><span>Release mouse</span></div>
+        <div class="control-help desktop-help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Move</span><kbd>Mouse</kbd><span>Look</span><kbd>E</kbd><span>Use area / workstation</span><kbd>Esc</kbd><span>Release mouse</span></div>
         <button id="walk-mode" class="walk-mode" type="button">ENTER WALK MODE</button>
         <div class="mobile-controls" aria-label="Touch movement controls">
           <button type="button" data-move="forward" aria-label="Move forward">▲</button>
           <div><button type="button" data-move="left" aria-label="Move left">◀</button><button type="button" data-move="back" aria-label="Move backward">▼</button><button type="button" data-move="right" aria-label="Move right">▶</button></div>
           <button type="button" id="mobile-interact" class="mobile-interact">USE</button>
         </div>
-        <div class="proximity-hint" id="proximity-hint">Explore the floor. Move towards a workstation.</div>
+        <div class="proximity-hint" id="proximity-hint">Explore the floor. Visit Staff Reception, Briefing Room, Staff Lounge or a workstation.</div>
       </div>
 
       <div class="loading-screen" id="loading-screen">
@@ -92,8 +109,8 @@
     </section>
 
     <footer class="office-footer">
-      <span>CALLORIA · 3D FLOOR PROTOTYPE · v6.2</span>
-      <span>GLB models are loaded from your existing <code>public/assets/models/</code> directory. Missing models are reported, not replaced with character placeholders.</span>
+      <span>CALLORIA · 3D FLOOR GAMEPLAY · v6.3</span>
+      <span>Clock-in, team briefings, scheduled breaks and supervisor requests are linked to the playable shift. GLB assets load from <code>public/assets/models/</code>.</span>
     </footer>
   </main>
 </body>

@@ -1,13 +1,21 @@
-# Changelog
+# CALLORIA v6.3 — Office Routine Gameplay
 
-## v6.2.0
+## Added
+- Physical 3D staff activity points for Reception, Team Briefing Room, Staff Lounge and Supervisor Hub.
+- Reception clock-in with employee name and assigned team; new shifts require a matching check-in.
+- Physical briefing and break attendance tokens, consumed by the existing Live Floor scheduled-event engine.
+- Reception clock-out after the Live Floor shift has ended.
+- Supervisor-assistance requests for escalation, policy guidance, system issues, customer safety and workload support.
+- Optional GLB loading for the reception desk and receptionist using the existing local model folders.
+- Location-proximity checks for staff actions and workstation entry.
+- Legacy migration for already-running v6.2 shifts.
 
-- Added an interactive first-person 3D contact-centre workplace.
-- Added Customer Care, Digital Support, Product Support and Service Recovery workstation zones.
-- Added walk-up workstation interaction and navigation into the existing Live Floor.
-- Added return navigation from the Live Floor back to the 3D workplace.
-- Added station-team preselection when entering the Live Floor from a station.
-- Added local GLB role/path diagnostics and strict desk/computer model gates.
-- Added skeleton-safe GLB character clones and optional idle animation playback.
-- Added compact HUD reading current shift and career profile data without changing the records.
-- Added touch controls, pointer-look and capped renderer settings.
+## Preserved
+- Existing customer queue, synthetic scenarios, three-stage customer handling, Customer 360/case bridge and career progression.
+- Existing desk/computer/agent/supervisor GLB loading; missing human models are not replaced with primitive people.
+- Existing v6.0/v6.1 local-storage records and v6.2 routes.
+
+## Boundaries
+- Routine, attendance and supervisor request records are browser-local.
+- Supervisor requests are logged locally; they are not live notifications to a real supervisor.
+- No real biometric attendance, telephony, external messaging or central HR integration is added.
