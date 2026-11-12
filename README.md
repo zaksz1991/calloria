@@ -1,13 +1,19 @@
-# CALLORIA v6.21 — Lobby Greenery Shadow Polish
+# CALLORIA v6.22 — Staff GLB Transform-Aware Validation
 
-This overlay builds on v6.20. It improves the way the existing validated CC0 reception plants render without adding new models, changing the lobby layout, or increasing the number of foliage draw calls beyond the material/attribute batches already present in the plant asset.
+This patch corrects staff-character dimension checks that previously measured raw POSITION accessor bounds without applying the active glTF scene's node hierarchy.
 
-## Changes
+## What changes
 
-- Separates foliage from architectural mesh batches while retaining batching within the foliage family.
-- Lets foliage cast shadows on balanced/high tiers; the lobby continues to receive shadows on those tiers.
-- Keeps all shadow casting/receiving disabled on low tier.
-- Leaves the static building shell non-casting to avoid an unnecessary shadow-map workload.
-- Exposes decorative batch and shadow-caster counts in the existing `calloria:glb-lobby-ready` status detail under `lighting` and `decorativeBatches`.
+- Computes character bounds from meshes reachable through the active/default glTF scene.
+- Applies each ancestor node's full transform, including matrix transforms and TRS translation, rotation and scale.
+- Avoids allowing an unreferenced mesh elsewhere in the GLB to distort the active character's reported dimensions.
+- Keeps the existing human-proportion limits, triangle limits, GLB size limits, skin validation and static-pose handling.
+- Rejects cyclic or invalid active-scene node hierarchies instead of risking unsafe traversal.
+- Includes effective scene-space dimensions in the build manifest and Vercel model log.
+- Preserves the existing Vite plugin name, factory API, staff asset destinations, staff runtime transform and v6.15 office-world transform.
 
-No new locations, geometry, textures, GLB assets, global renderer settings, Vite config, package manifests, Supabase settings or API keys are changed.
+This is a validation correction, not a geometry rescaling operation. GLB transforms already encoded in the asset remain intact. Truly oversized or undersized characters still fail the existing proportion limits.
+
+## Expected result
+
+A model with large local accessor coordinates but a valid scale in its active scene hierarchy can now pass proportion validation. The Vercel log reports the measured scene-space bounds in metres so the result can be checked directly.

@@ -1,12 +1,17 @@
-# GitHub installation — CALLORIA v6.21
+# GitHub installation — CALLORIA v6.22
 
-Apply this overlay on top of v6.20.
+Replace exactly one production file on the `main` branch:
 
-Replace these two files in `github.com/zaksz1991/calloria`:
+| Repository path | Action |
+|---|---|
+| `build/calloria-cc0-staff-glb-bundle-plugin.mjs` | Replace with the file at `build/calloria-cc0-staff-glb-bundle-plugin.mjs` in this ZIP |
 
-1. `js/cc0-office-lobby-integration.js`
-2. `js/calloria-lobby-lighting-policy.js`
+Keep the existing Vite plugin registration unchanged. Do not replace `vite.config.js`, `package.json`, `package-lock.json`, `js/glb-world-integration.js`, `js/production-world.js`, any Supabase configuration, or the `public/assets/models/` directory.
 
-Commit both replacements to `main` in the same commit. Do not replace `vite.config.js`, `package.json`, the lockfile, `js/production-world.js`, any Supabase settings, or any GLB assets.
+The optional regression test is at `tests/calloria-v622-transform-aware-bounds.test.mjs`. It can be added to the repository's existing `tests/` folder. The test imports the production plugin from `../build/`.
 
-The remaining files in the ZIP are release notes and focused regression tests. They are not required by the runtime unless you want to keep the project test suite in sync.
+## Vercel verification
+
+Look for log entries beginning with `CALLORIA v6.22`. For each bundled character, the plugin now prints its active-scene world bounds in metres. The bundle summary should also identify how many staff GLBs were structurally compatible.
+
+This patch does not claim an asset rendered merely because validation passed. Confirm the runtime status panel reports the model under `assetsInUse` after deployment.

@@ -1,10 +1,7 @@
-# CALLORIA v6.21 verification
+# v6.22 verification
 
-Performed in the patch workspace:
-
-- Focused Node tests: 6 passed, 0 failed.
-- JavaScript syntax checks: passed for both modified production modules and the test file.
-- ZIP archive integrity: passed.
-- Static checks confirm compatibility with the existing lobby alias and partition/greenery lifecycle imports.
-
-Not verified: full Vite production build against the current GitHub tree, Vercel deployment, external CC0 asset delivery, actual browser/WebGL appearance, or renderer shadow-map configuration. Visible foliage shadows require the existing renderer to have shadow mapping enabled. This patch does not enable global shadows or change renderer quality settings.
+- 37 regression tests passed, 0 failed. This includes the available v6.13–v6.15 office/staff regression suite and six v6.22 bounds tests.
+- `node --check` passed for the replacement build plugin.
+- ZIP archive integrity checked after packaging.
+- The test suite uses generated GLB fixtures; the live Gobkit model files were not downloaded or visually inspected in this environment.
+- A full current-repository Vite production build, Vercel deployment and in-browser GLB rendering were not performed.

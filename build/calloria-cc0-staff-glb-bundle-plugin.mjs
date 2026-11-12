@@ -1,5 +1,5 @@
 /**
- * CALLORIA v6.14 — GLB staff runtime placement + compatibility validator.
+ * CALLORIA v6.22 — transform-aware GLB staff validator and runtime placement.
  *
  * Drop-in replacement for the v3.9 build plugin. Keeps the same factory,
  * exported catalogue, plugin name, manifest path, and PRIMARY_CANDIDATES hook.
@@ -14,7 +14,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, relative, resolve, isAbsolute } from 'node:path';
 
 const TARGET = '/js/glb-world-integration.js';
+const OFFICE_TARGET = '/js/production-world.js';
 const MARKER = '__CALLORIA_CC0_STAFF_GLB_RUNTIME_V614__';
+const OFFICE_MARKER = '__CALLORIA_OFFICE_GLB_RUNTIME_V615__';
 const MANIFEST_RELATIVE = 'assets/models/calloria-cc0-staff-manifest.json';
 const MAX_MODEL_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 36 * 1024 * 1024;
@@ -78,6 +80,125 @@ function readGlbJsonAndChunks(input) {
   return { buffer, json, version, binaryChunkBytes, chunkCount };
 }
 
+
+/** Build a glTF node's column-major local matrix, honoring matrix or TRS. */
+function getNodeLocalMatrix(node = {}) {
+  if (Array.isArray(node.matrix) && node.matrix.length === 16) {
+    const matrix = node.matrix.map(Number);
+    if (!matrix.every(Number.isFinite)) throw new Error('GLB node contains a non-finite matrix value.');
+    return matrix;
+  }
+  const t = Array.isArray(node.translation) ? node.translation.map(Number) : [0, 0, 0];
+  const r = Array.isArray(node.rotation) ? node.rotation.map(Number) : [0, 0, 0, 1];
+  const scale = Array.isArray(node.scale) ? node.scale.map(Number) : [1, 1, 1];
+  if (t.length !== 3 || r.length !== 4 || scale.length !== 3
+      || ![...t, ...r, ...scale].every(Number.isFinite)) {
+    throw new Error('GLB node contains an invalid TRS transform.');
+  }
+  const qLength = Math.hypot(...r);
+  if (qLength < 1e-8) throw new Error('GLB node contains a zero-length rotation quaternion.');
+  const [x, y, z, w] = r.map((value) => value / qLength);
+  const [sx, sy, sz] = scale;
+  const x2 = x + x, y2 = y + y, z2 = z + z;
+  const xx = x * x2, xy = x * y2, xz = x * z2;
+  const yy = y * y2, yz = y * z2, zz = z * z2;
+  const wx = w * x2, wy = w * y2, wz = w * z2;
+  return [
+    (1 - (yy + zz)) * sx, (xy + wz) * sx, (xz - wy) * sx, 0,
+    (xy - wz) * sy, (1 - (xx + zz)) * sy, (yz + wx) * sy, 0,
+    (xz + wy) * sz, (yz - wx) * sz, (1 - (xx + yy)) * sz, 0,
+    t[0], t[1], t[2], 1
+  ];
+}
+
+/** Multiply column-major 4x4 matrices as parent * local. */
+function multiplyNodeMatrices(parent, local) {
+  const result = new Array(16).fill(0);
+  for (let column = 0; column < 4; column += 1) {
+    for (let row = 0; row < 4; row += 1) {
+      for (let k = 0; k < 4; k += 1) {
+        result[column * 4 + row] += parent[k * 4 + row] * local[column * 4 + k];
+      }
+    }
+  }
+  return result;
+}
+
+function transformNodePoint(matrix, x, y, z) {
+  return [
+    matrix[0] * x + matrix[4] * y + matrix[8] * z + matrix[12],
+    matrix[1] * x + matrix[5] * y + matrix[9] * z + matrix[13],
+    matrix[2] * x + matrix[6] * y + matrix[10] * z + matrix[14]
+  ];
+}
+
+/**
+ * Measure only meshes reachable from the active glTF scene, applying each
+ * ancestor node transform. Accessor-local bounds alone are not world bounds.
+ */
+function measureSceneNodeBounds(json) {
+  const accessors = Array.isArray(json.accessors) ? json.accessors : [];
+  const meshes = Array.isArray(json.meshes) ? json.meshes : [];
+  const nodes = Array.isArray(json.nodes) ? json.nodes : [];
+  const sceneIndex = Number.isInteger(json.scene) ? json.scene : 0;
+  const roots = json.scenes?.[sceneIndex]?.nodes;
+  if (!Array.isArray(roots)) throw new Error('GLB default scene has no node list for bounds measurement.');
+
+  const min = [Infinity, Infinity, Infinity];
+  const max = [-Infinity, -Infinity, -Infinity];
+  let measuredPrimitives = 0;
+  const identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+
+  const visit = (nodeIndex, parentMatrix, ancestors, depth) => {
+    if (!Number.isInteger(nodeIndex) || !nodes[nodeIndex]) {
+      throw new Error(`GLB scene references invalid node index ${nodeIndex}.`);
+    }
+    if (depth > nodes.length) throw new Error('GLB node hierarchy exceeds its safe traversal depth.');
+    if (ancestors.has(nodeIndex)) throw new Error(`GLB node hierarchy contains a cycle at node ${nodeIndex}.`);
+    const node = nodes[nodeIndex];
+    const worldMatrix = multiplyNodeMatrices(parentMatrix, getNodeLocalMatrix(node));
+
+    if (Number.isInteger(node.mesh)) {
+      const mesh = meshes[node.mesh];
+      if (!mesh) throw new Error(`GLB node ${nodeIndex} references missing mesh ${node.mesh}.`);
+      for (const primitive of mesh.primitives || []) {
+        const accessor = accessors[primitive?.attributes?.POSITION];
+        if (!Array.isArray(accessor?.min) || !Array.isArray(accessor?.max)
+            || accessor.min.length < 3 || accessor.max.length < 3) continue;
+        const lower = accessor.min.slice(0, 3).map(Number);
+        const upper = accessor.max.slice(0, 3).map(Number);
+        if (![...lower, ...upper].every(Number.isFinite)) continue;
+        for (let mask = 0; mask < 8; mask += 1) {
+          const point = transformNodePoint(
+            worldMatrix,
+            mask & 1 ? upper[0] : lower[0],
+            mask & 2 ? upper[1] : lower[1],
+            mask & 4 ? upper[2] : lower[2]
+          );
+          for (let axis = 0; axis < 3; axis += 1) {
+            min[axis] = Math.min(min[axis], point[axis]);
+            max[axis] = Math.max(max[axis], point[axis]);
+          }
+        }
+        measuredPrimitives += 1;
+      }
+    }
+
+    const nextAncestors = new Set(ancestors);
+    nextAncestors.add(nodeIndex);
+    for (const child of node.children || []) visit(child, worldMatrix, nextAncestors, depth + 1);
+  };
+
+  for (const root of roots) visit(root, identity, new Set(), 0);
+  if (!measuredPrimitives || ![...min, ...max].every(Number.isFinite)) return null;
+  return {
+    min: { x: min[0], y: min[1], z: min[2] },
+    max: { x: max[0], y: max[1], z: max[2] },
+    dimensions: { x: max[0] - min[0], y: max[1] - min[1], z: max[2] - min[2] },
+    measuredPrimitives
+  };
+}
+
 /**
  * Validate that the file is a useful, bounded, self-contained GLB scene.
  * Optional rigging and animation are measured, not required.
@@ -123,8 +244,6 @@ function parseGlb(input) {
   let triangleCount = 0;
   let primitiveCount = 0;
   let skinnedPrimitiveCount = 0;
-  let minX = Infinity, minY = Infinity, minZ = Infinity;
-  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
 
   for (let meshIndex = 0; meshIndex < json.meshes.length; meshIndex += 1) {
     const mesh = json.meshes[meshIndex];
@@ -142,15 +261,6 @@ function parseGlb(input) {
       if (positionAccessor.type !== 'VEC3' || !(Number(positionAccessor.count) > 0)) {
         throw new Error(`Mesh ${meshIndex} has an invalid POSITION accessor.`);
       }
-      if (Array.isArray(positionAccessor.min) && Array.isArray(positionAccessor.max)) {
-        minX = Math.min(minX, Number(positionAccessor.min[0]));
-        minY = Math.min(minY, Number(positionAccessor.min[1]));
-        minZ = Math.min(minZ, Number(positionAccessor.min[2]));
-        maxX = Math.max(maxX, Number(positionAccessor.max[0]));
-        maxY = Math.max(maxY, Number(positionAccessor.max[1]));
-        maxZ = Math.max(maxZ, Number(positionAccessor.max[2]));
-      }
-
       const jointsPresent = Number.isInteger(attributes.JOINTS_0);
       const weightsPresent = Number.isInteger(attributes.WEIGHTS_0);
       if (jointsPresent !== weightsPresent) {
@@ -210,9 +320,9 @@ function parseGlb(input) {
   const renderMode = animations.length
     ? (skinnedPrimitiveCount ? 'animated-skinned' : 'animated-node-transforms')
     : (skinnedPrimitiveCount ? 'skinned-static-pose' : 'static-mesh');
-  const dimensions = [minX, minY, minZ, maxX, maxY, maxZ].every(Number.isFinite)
-    ? { x: maxX - minX, y: maxY - minY, z: maxZ - minZ }
-    : null;
+  const sceneBounds = measureSceneNodeBounds(json);
+  const dimensions = sceneBounds?.dimensions || null;
+  if (!dimensions) throw new Error('GLB active scene has no measurable POSITION accessor bounds.');
   if (dimensions && (dimensions.y < 0.4 || dimensions.y > 5.0
       || dimensions.x < 0.04 || dimensions.x > 3.5
       || dimensions.z < 0.04 || dimensions.z > 3.5)) {
@@ -236,6 +346,8 @@ function parseGlb(input) {
     triangleCount,
     primitiveCount,
     dimensions,
+    boundsSource: 'active-scene-node-transforms',
+    measuredPrimitives: sceneBounds.measuredPrimitives,
   };
 }
 
@@ -282,13 +394,13 @@ function makeManifest(entries, totals, status) {
   const staticPose = models.filter((entry) => ['skinned-static-pose', 'static-mesh'].includes(entry.renderMode)).length;
   return {
     schemaVersion: 2,
-    buildIntegration: 'CALLORIA v6.14 staff GLB runtime placement bundle',
+    buildIntegration: 'CALLORIA v6.22 transform-aware staff GLB validation and runtime placement',
     createdAt: new Date().toISOString(),
     status,
     source: 'Gobkit CC0 character pack direct GLB files; provenance recorded per model and pack.',
     license: LICENSE,
     runtimeDelivery: 'Validated files are copied into CALLORIA public/assets/models and served from the CALLORIA deployment. No browser-time Gobkit request is made.',
-    compatibilityPolicy: 'A valid GLB may be animated-skinned, animated-node-transforms, skinned-static-pose, or static-mesh. Animation clips and a 15-joint minimum are not required. No skeleton or animation is fabricated.',
+    compatibilityPolicy: 'A valid GLB may be animated-skinned, animated-node-transforms, skinned-static-pose, or static-mesh. Character proportions are measured from POSITION accessor bounds transformed through the active scene node hierarchy (matrix or TRS). Accessor-local dimensions are not treated as world dimensions. Animation clips and a 15-joint minimum are not required. No skeleton or animation is fabricated.',
     seatedAgentPolicy: 'Standing or static-pose staff assets must not be placed at seated workstation anchors unless their visible proportions and pose have been approved. Existing seated-agent handling remains unchanged.',
     totalBytes: totals.bytes,
     validatedStaffModels: totals.valid,
@@ -411,6 +523,45 @@ export function transformStaffRuntimeIntegration(source, availableIds, renderMod
   return { code: `/* ${MARKER} */\n${code}`, map: null, alreadyPatched: false };
 }
 
+/**
+ * Connect the v6.13 office-asset runtime to the production-world scene.
+ * This transform uses checked source anchors and fails closed if the world API
+ * has changed; it never creates a second renderer or animation loop.
+ */
+export function transformOfficeWorldIntegration(source) {
+  const original = String(source || '').replace(/\r\n?/g, '\n');
+  if (original.includes(OFFICE_MARKER)) {
+    return { code: original, map: null, alreadyPatched: true, warnings: [] };
+  }
+
+  const readyAnchor = "  callbacks.onAssetsReady?.({ loaded: 0, fallback: staff.length, mode: 'merged-articulated-local-staff', tier });";
+  const disposeAnchor = '      scene.traverse((object) => {';
+  const existingImport = "import { integrateCalloriaGLBOfficeAssets } from './glb-office-world-integration.js';";
+  const checks = [
+    ['production-world initializer', original.split('export async function initProductionWorld(THREE, host, callbacks = {}) {').length - 1 === 1],
+    ['office station list', original.split('  const stations = [];').length - 1 === 1],
+    ['post-construction readiness anchor', original.split(readyAnchor).length - 1 === 1],
+    ['scene disposal anchor', original.split(disposeAnchor).length - 1 === 1],
+    ['single scene renderer contract', original.includes('renderer.render(scene, camera);')],
+    ['office runtime import not already present', !original.includes(existingImport)]
+  ];
+  const missing = checks.filter(([, ok]) => !ok).map(([label]) => label);
+  if (missing.length) {
+    return {
+      code: null,
+      map: null,
+      warnings: [`Office GLB runtime was not connected: ${missing.join(', ')} did not match the checked production-world contract.`]
+    };
+  }
+
+  const bootstrap = `  // ${OFFICE_MARKER}: start after the floor and station anchors exist.\n  // The current local/instanced furniture remains visible until each GLB is\n  // loaded, validated and placed successfully by the office runtime.\n  let officeGlbLayer = null;\n  const officeGlbBootstrap = integrateCalloriaGLBOfficeAssets({ THREE, scene, stations, tier })\n    .then((layer) => {\n      if (disposed) { layer.dispose?.(); return null; }\n      officeGlbLayer = layer;\n      callbacks.onOfficeAssetsReady?.(layer.status);\n      if (Number(layer.status?.officeObjectsPlaced || 0) > 0) renderStill();\n      return layer;\n    })\n    .catch((error) => {\n      const message = String(error?.message || error);\n      const status = Object.freeze({\n        placed: 0, officeObjectsPlaced: 0, assets: [], loadedAssetIds: [],\n        failedAssetIds: ['office-runtime'], tier, stationCount: stations.length,\n        assetDetails: [], errors: [{ assetId: 'office-runtime', message }],\n        reason: 'Office GLB runtime failed: ' + message\n      });\n      callbacks.onOfficeAssetsReady?.(status);\n      if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {\n        window.dispatchEvent(new CustomEvent('calloria:office-glb-status', { detail: status }));\n      }\n      return null;\n    });\n  void officeGlbBootstrap;\n`;
+
+  let code = original.replace(readyAnchor, `${bootstrap}${readyAnchor}`);
+  code = code.replace(disposeAnchor, `      officeGlbLayer?.dispose?.();\n      officeGlbLayer = null;\n${disposeAnchor}`);
+  code = `${existingImport}\n/* ${OFFICE_MARKER} */\n${code}`;
+  return { code, map: null, alreadyPatched: false, warnings: [] };
+}
+
 export function createCalloriaCC0StaffGLBBundlePlugin(options = {}) {
   const rootDir = safeRoot(options.rootDir || process.cwd());
   const fetchImpl = options.fetchImpl || globalThis.fetch;
@@ -478,13 +629,13 @@ export function createCalloriaCC0StaffGLBBundlePlugin(options = {}) {
           totalBytes += bytes.length;
           results[index] = { id: asset.id, status: 'downloaded-and-compatible', bytes: bytes.length };
           entries[index] = { ...asset, output: `/assets/models/${asset.path}`, status: 'downloaded-and-compatible', source, sizeBytes: bytes.length, sha256: sha256(bytes), ...metrics };
-          this.info?.(`CALLORIA v6.14 bundled ${asset.name} (${bytes.length.toLocaleString()} bytes; ${metrics.triangleCount.toLocaleString()} triangles; mode ${metrics.renderMode}; ${metrics.boneCount} joints; ${metrics.animationCount} clips).`);
+          this.info?.(`CALLORIA v6.22 bundled ${asset.name} (${bytes.length.toLocaleString()} bytes; ${metrics.triangleCount.toLocaleString()} triangles; world bounds ${metrics.dimensions.x.toFixed(2)} × ${metrics.dimensions.y.toFixed(2)} × ${metrics.dimensions.z.toFixed(2)} m; mode ${metrics.renderMode}; ${metrics.boneCount} joints; ${metrics.animationCount} clips).`);
         } catch (error) {
           failed += 1;
           const message = [priorError, String(error?.message || error)].filter(Boolean).join(' | ');
           results[index] = { id: asset.id, status: 'unavailable', error: message };
           entries[index] = { ...asset, output: `/assets/models/${asset.path}`, status: 'unavailable', source, error: message };
-          this.warn?.(`CALLORIA v6.14 could not bundle ${asset.name}: ${message}`);
+          this.warn?.(`CALLORIA v6.22 could not bundle ${asset.name}: ${message}`);
         }
       };
 
@@ -505,17 +656,27 @@ export function createCalloriaCC0StaffGLBBundlePlugin(options = {}) {
       const manifestPath = resolve(publicRoot, MANIFEST_RELATIVE);
       mkdirSync(dirname(manifestPath), { recursive: true });
       writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
-      this.info?.(`CALLORIA v6.14 staff GLB runtime bundle: ${availableIds.length}/${CC0_STAFF_MODELS.length} structurally compatible, ${manifest.animatedStaffModels} animated, ${manifest.staticPoseStaffModels} static-pose, ${totalBytes.toLocaleString()} bytes; manifest: /${MANIFEST_RELATIVE}.`);
+      this.info?.(`CALLORIA v6.22 staff GLB runtime bundle: ${availableIds.length}/${CC0_STAFF_MODELS.length} structurally compatible, ${manifest.animatedStaffModels} animated, ${manifest.staticPoseStaffModels} static-pose, ${totalBytes.toLocaleString()} bytes; manifest: /${MANIFEST_RELATIVE}.`);
     },
     transform(source, id) {
       const target = String(id || '').split('?')[0].replaceAll('\\', '/');
+      if (target.endsWith(OFFICE_TARGET)) {
+        if (source.includes(OFFICE_MARKER)) return null;
+        const office = transformOfficeWorldIntegration(source);
+        if (!office?.code) {
+          for (const warning of office?.warnings || []) this.warn?.(`CALLORIA v6.22 office integration: ${warning}`);
+          return null;
+        }
+        this.info?.('CALLORIA v6.22 office GLB runtime activation preserved: desks, computers, headsets and reception assets load into the existing production-world scene.');
+        return { code: office.code, map: null };
+      }
       if (!target.endsWith(TARGET) || source.includes(MARKER) || !availableIds.length) return null;
       const transformed = transformStaffRuntimeIntegration(source, availableIds, renderModes);
       if (!transformed?.code) {
-        for (const warning of transformed?.warnings || []) this.warn?.(`CALLORIA v6.14 ${warning}`);
+        for (const warning of transformed?.warnings || []) this.warn?.(`CALLORIA v6.22 staff runtime integration: ${warning}`);
         return null;
       }
-      this.info?.(`CALLORIA v6.14 runtime integration enabled for ${availableIds.length} bundled staff GLB(s): ${Object.entries(renderModes).map(([id, mode]) => `${id}=${mode}`).join(', ')}. Static-pose models are restricted to standing staff anchors.`);
+      this.info?.(`CALLORIA v6.22 runtime integration enabled for ${availableIds.length} bundled staff GLB(s): ${Object.entries(renderModes).map(([id, mode]) => `${id}=${mode}`).join(', ')}. Static-pose models are restricted to standing staff anchors.`);
       return { code: transformed.code, map: null };
     },
     api: {
@@ -531,7 +692,9 @@ export function calloriaCC0StaffGLBBundlePlugin() {
 }
 
 export const __calloriaCC0StaffGLBBundleTest = Object.freeze({
-  TARGET, MARKER, MANIFEST_RELATIVE, MAX_MODEL_BYTES, MAX_TOTAL_BYTES, MAX_TRIANGLES,
+  TARGET, OFFICE_TARGET, MARKER, OFFICE_MARKER, MANIFEST_RELATIVE, MAX_MODEL_BYTES, MAX_TOTAL_BYTES, MAX_TRIANGLES,
   REQUIRED_ANIMATIONS: Object.freeze([]), PREFERRED_ANIMATIONS, LICENSE,
-  readGlbJsonAndChunks, parseGlb, sha256, fetchWithRetry, makeManifest, transformStaffRuntimeIntegration
+  readGlbJsonAndChunks, parseGlb, sha256, fetchWithRetry, makeManifest,
+  getNodeLocalMatrix, multiplyNodeMatrices, transformNodePoint, measureSceneNodeBounds,
+  transformStaffRuntimeIntegration, transformOfficeWorldIntegration
 });
