@@ -4,14 +4,15 @@
   const E = window.CalloriaAgentWorkbenchEngine;
   const C = window.CalloriaCustomerJourneyEngine;
   const F = window.CalloriaLiveFloorEngine;
+  const P = window.CalloriaCareerProgressionEngine;
   const realStorage = window.localStorage;
   const toast = $('#toast');
   let toastTimer = null;
   let selectedChannel = '';
   let articleQuery = '';
 
-  if (!E || !C || !F) {
-    document.body.innerHTML = '<main style="max-width:700px;margin:60px auto;padding:24px;font:14px system-ui"><h1>CALLORIA Live Floor could not start</h1><p>Required simulation engine files are missing. Copy the complete v6.0 package into the public folder and reload this page.</p></main>';
+  if (!E || !C || !F || !P) {
+    document.body.innerHTML = '<main style="max-width:700px;margin:60px auto;padding:24px;font:14px system-ui"><h1>CALLORIA Live Floor could not start</h1><p>Required simulation engine files are missing. Copy the complete v6.1 package into the public folder and reload this page.</p></main>';
     return;
   }
 
@@ -22,9 +23,12 @@
   };
 
   let state = F.load(realStorage);
+  let progress = P.load(realStorage);
   let agentState = E.load(storageProxy);
   E.save(agentState, storageProxy);
   F.save(state, realStorage);
+  P.syncFromFloor(progress, state);
+  P.save(progress, realStorage);
 
   function escapeHtml(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
@@ -39,7 +43,8 @@
   function persist() {
     const agentSaved = E.save(agentState, storageProxy);
     const floorSaved = F.save(state, realStorage);
-    if (!agentSaved || !floorSaved) notify('Browser storage could not save the current shift. Check available site storage.', true);
+    const progressSaved = P.save(progress, realStorage);
+    if (!agentSaved || !floorSaved || !progressSaved) notify('Browser storage could not save the current shift. Check available site storage.', true);
   }
   function productLabel(productId) {
     return (E.PRODUCTS.find((item) => item.id === productId) || E.PRODUCTS[0]).name;
@@ -112,6 +117,43 @@
       </button>`).join('');
     list.querySelectorAll('[data-contact-id]').forEach((button) => button.addEventListener('click', () => acceptContact(button.dataset.contactId)));
   }
+  function renderCareer() {
+    const summary = P.getSummary(progress, state.shift.agentName, state.shift.team);
+    const rank = summary.rank;
+    $('#career-rank').textContent = rank.name.toUpperCase();
+    $('#career-xp').textContent = summary.totalXp.toLocaleString();
+    $('#career-next-rank').textContent = summary.nextRank ? summary.nextRank.name : 'Maximum gameplay rank';
+    $('#career-xp-to-next').textContent = summary.nextRank ? `${summary.xpToNext.toLocaleString()} XP remaining` : 'Top gameplay rank reached';
+    $('#career-progress-bar').style.width = `${summary.progressPct}%`;
+    $('#career-progress-bar').setAttribute('aria-valuenow', String(summary.progressPct));
+    $('#career-copy').textContent = `${rank.description} ${summary.totalShifts} shifts completed · ${summary.totalContacts} customer contacts handled.`;
+    const objectives = P.getShiftObjectives(state);
+    $('#career-objectives-list').innerHTML = objectives.map((item) => `
+      <div class="career-objective ${item.done ? 'done' : item.blocked ? 'blocked' : ''}">
+        <span class="career-objective-mark">${item.done ? '✓' : item.blocked ? '!' : '○'}</span>
+        <span class="career-objective-copy"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.detail)}</small></span>
+        <span class="career-objective-status">${escapeHtml(item.status)}</span>
+      </div>`).join('');
+    const earned = new Map(summary.badges.map((badge) => [badge.id, badge]));
+    $('#career-badge-count').textContent = `${earned.size} / ${P.BADGES.length} earned`;
+    $('#career-badges-list').innerHTML = P.BADGES.map((badge) => {
+      const unlocked = earned.get(badge.id);
+      return `<div class="career-badge ${unlocked ? 'unlocked' : 'locked'}"><span class="career-badge-mark">${unlocked ? '★' : '◇'}</span><span><strong>${escapeHtml(badge.name)}</strong><small>${escapeHtml(unlocked ? `Unlocked ${unlocked.unlockedAt || 'during a shift'}` : badge.description)}</small></span></div>`;
+    }).join('');
+  }
+  function currentShiftIdentity() {
+    return P.shiftIdentity({
+      date: state.shift.date, agentName: state.shift.agentName, team: state.shift.team,
+      startedAt: state.shift.startedAt, endedAt: state.shift.endedAt,
+      report: F.getShiftReport(state)
+    });
+  }
+  function syncCareerProgress() {
+    const result = P.syncFromFloor(progress, state);
+    P.save(progress, realStorage);
+    return result;
+  }
+
   function renderEvent() {
     const due = F.dueEvent(state);
     const panel = $('#event-panel');
@@ -281,6 +323,16 @@
     ];
     $('#report-grid').innerHTML = items.map(([label, value]) => `<div class="report-stat"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
     $('#report-note').textContent = `Briefings: morning ${report.attendedMorningBriefing ? 'attended' : 'missed'}, afternoon ${report.attendedAfternoonBriefing ? 'attended' : 'not due'}. Scheduled breaks ${report.attendedBreaks ? 'completed' : 'not both completed'}. This is a simulated performance record, not an employment decision.`;
+    const summary = P.getSummary(progress, state.shift.agentName, state.shift.team);
+    const award = summary.lastAward;
+    const awardPanel = $('#career-award');
+    const isCurrentAward = award && award.shiftId === currentShiftIdentity();
+    awardPanel.classList.toggle('hidden', !isCurrentAward);
+    if (isCurrentAward) {
+      const badges = award.unlockedBadges && award.unlockedBadges.length ? ` New achievements: ${award.unlockedBadges.map((badge) => badge.name).join(', ')}.` : '';
+      const rankChange = award.rankUp ? ` Rank advanced: ${award.rankBefore} → ${award.rankAfter}.` : '';
+      awardPanel.innerHTML = `<strong>Career reward: +${award.earnedXp} XP</strong><span>${escapeHtml(award.reason)}${escapeHtml(badges)}${escapeHtml(rankChange)}</span>`;
+    }
   }
   function renderAll() {
     renderClockAndStatus(); renderMetrics(); renderEvent(); renderRoutine(); renderQueue();
@@ -289,7 +341,7 @@
       $('#customer-card').innerHTML = '<div class="empty-note">Customer information appears when a contact is accepted.</div>';
       $('#knowledge-list').innerHTML = '<div class="empty-note">Accept a customer to see relevant guidance.</div>';
     }
-    renderCompleted(); renderActivity(); renderReport();
+    renderCompleted(); renderActivity(); renderReport(); renderCareer();
   }
   function acceptContact(contactId) {
     try {
@@ -363,6 +415,7 @@
   function finishShift() {
     try {
       F.endShift(state, agentState, E, new Date());
+      syncCareerProgress();
       persist(); renderAll();
       notify('Shift ended. Performance report is ready.');
     } catch (error) { notify(error.message, true); }
@@ -372,6 +425,7 @@
     event.preventDefault();
     try {
       F.startShift(state, agentState, E, { name: $('#agent-name').value, team: $('#agent-team').value }, new Date());
+      syncCareerProgress();
       persist(); renderAll(); notify('Shift started. Attend the 07:30 briefing before accepting contacts.');
     } catch (error) { notify(error.message, true); }
   });
@@ -383,5 +437,5 @@
   $('#case-action').addEventListener('change', updateCaseActionFields);
   $('#wrapup-form').addEventListener('submit', submitWrapUp);
   renderAll();
-  window.CalloriaLiveFloor = { getState: () => state, getAgentState: () => agentState, refresh: renderAll, engine: F };
+  window.CalloriaLiveFloor = { getState: () => state, getAgentState: () => agentState, getCareerProgress: () => progress, refresh: renderAll, engine: F, progressionEngine: P };
 })();

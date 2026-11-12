@@ -1,57 +1,64 @@
-# CALLORIA v6.0 — Core Contact-Centre Shift Gameplay
+# CALLORIA v6.1 — Agent Career Progression, XP & Achievements
 
 ## Purpose
 
-This release redirects development to CALLORIA's central game loop: sign in as a customer-care employee, attend operational briefings, accept customer contacts, investigate the customer's issue, select a response, apply approved guidance, record the outcome and review shift performance.
+This is the next gameplay layer for the v6.0 Live Floor. It adds visible career progression to the player's actual simulated customer-care shifts. It does not add another back-office application and does not make banking, billing, accounting or bank statements part of the default game.
 
-It is **not** a banking simulation, finance application or accounting workflow. The v5.8 Billing and v5.9 Finance modules are not imported, required or displayed by this release. They remain optional back-office add-ons.
+## What changes in the game
 
-## Gameplay in this release
+- The Live Floor now shows the player's game rank, accumulated Career XP and progress to the next rank.
+- Six live shift objectives update as the player works: complete three contacts, maintain 85% QA, use approved knowledge, avoid critical compliance breaches, attend both briefings and complete both scheduled breaks.
+- Eight achievement badges are available: First Contact, Five Served, Quality Standard, Customer Champion, Knowledge Seeker, Safe Handling, Floor Discipline and First-Contact Resolver.
+- End-of-shift reports award XP based on completed contacts, service score, knowledge use and shift discipline.
+- A critical compliance breach blocks all Career XP and performance-badge unlocks for that shift.
+- Completed shifts are imported idempotently from v6.0's current and archived shift records. The same shift cannot be rewarded twice after a refresh or after starting the next shift.
+- Progress profiles are separated by employee name and assigned team on that browser.
+- A career reward panel shows XP, new achievements and game-rank advancement at shift close.
 
-- Employee sign-in without registration.
-- A simulated shift beginning at 07:30.
-- Mandatory 07:30 morning and 14:00 afternoon product/service briefings.
-- Scheduled 10:30 morning break and 12:30 lunch break.
-- A ten-contact synthetic queue covering RuffNeck LMS, Prospector, Social Hub, Connect, Kano Run, Kano Keke and general customer-care enquiries.
-- Multiple channels: Voice transcript simulation, Email, Live chat, Social, SMS and In-app.
-- Three interactive decision stages per contact: understand, investigate and resolve.
-- Customer responses, customer context, published knowledge lookup and contact wrap-up.
-- Customer 360 case creation, update of an existing case or customer-note-only outcome.
-- Quality, CSAT, first-contact resolution, compliance and knowledge-use scoring.
-- Shift report and repeatable next-shift cycle with prior-shift report archive.
-- Responsive layout for desktop and mobile screens.
+## Rank ladder
+
+| Career XP | Game rank |
+|---:|---|
+| 0 | New Starter |
+| 300 | Customer Care Associate |
+| 750 | Skilled Associate |
+| 1,500 | Senior Associate |
+| 2,500 | Product Support Specialist |
+| 3,800 | Senior Specialist |
+| 5,400 | Team Lead Candidate |
+| 7,200 | Leadership Ready |
+
+These are gameplay ranks only. They are not actual job titles, HR grades or automatic promotions. Real promotions continue to require the formal performance/KPI and assessment process. XP does not change v4.9 employment or promotion records.
 
 ## Install
 
-This is a Vite `public/` overlay. No Vite configuration or application entry-point modification is required.
+This is an overlay for the CALLORIA v6.0 Live Floor. The v6.0 base files must already be in the repository's `public/` folder.
 
-Copy the files from this package's `public/` folder into the repository's existing `public/` folder:
+Copy these five files from this package's `public/` folder into the repository's existing `public/` folder, replacing the matching v6.0 files:
 
 - `live-floor.html`
 - `live-floor.css`
 - `live-floor.js`
 - `live-floor-engine.js`
-- `agent-workbench-engine.js`
-- `customer-journey-engine.js`
+- `career-progression-engine.js` (new)
 
-The last two files are compatibility copies from CALLORIA v5.5 and v5.4 so that the new page can load its engine dependencies. If the repository already contains customized versions of those two engines, keep the repository versions and copy only the four `live-floor` files.
+Keep the existing v6.0 dependencies `agent-workbench-engine.js` and `customer-journey-engine.js`. Do not remove or replace them with unrelated engine files. No Vite configuration or package changes are required.
 
-After the files are included in a successful deployment, the route is:
+The page remains at:
 
 `https://calloria.vercel.app/live-floor.html`
 
-This route is not claimed to be live until the repository is updated and Vercel completes a deployment.
+The route is available only after the updated files are committed and a successful deployment completes.
 
-## Data and integration boundaries
+## Storage and data boundaries
 
-- The shift session and its isolated agent queue are stored in browser local storage using `calloria.live-floor.v60` and `calloria.live-floor.agent-workbench.v55`.
-- Customer notes, cases and knowledge references write to the existing v5.4 Customer 360 local-storage record when it is present or when the v5.4 engine seeds its demonstration records.
-- Published knowledge is read from the v5.2 Knowledge Operations local-storage record on the same browser and origin.
-- The v6.0 queue is isolated from the v5.5 Agent Workbench queue. It does not silently reset or replace the user's v5.5 session.
-- This is scripted simulation. It does not connect to actual telephone calls, email, live chat, social networks, SMS, real customer queues, AI services or live multi-user employee accounts.
-- This is a 2D playable workstation module. It is not yet embedded in the 3D office scene, GLB character flow or main game navigation.
-- Shift scores are training/gameplay indicators. They do not automatically alter HR records or award a real promotion.
+- Career data is stored in browser local storage under `calloria.career-progression.v61`.
+- The Live Floor continues using its v6.0 shift record. Customer and case write-through remain local to the same browser/origin.
+- Progress is separated by employee name and team; use the same name/team on later shifts to continue the same profile.
+- The new engine reads completed shift summaries from the v6.0 Live Floor state. It does not read or modify the optional Billing/Finance modules.
+- No external login, Supabase write, HR sync, live multiplayer, actual telephone, email or messaging service is added.
+- This release still does not embed the Live Floor into the 3D office/GLB scene or main 3D navigation. It upgrades the playable shift's progression layer first.
 
-## Local checks
+## Verification
 
-From this package folder, run the Node test files in `tests/`. They exercise the shift engine, briefing and break gates, scripted customer decision flow, Customer 360 write-through, compliance scoring, repeat-shift reset and page contract.
+See `VERIFICATION.md` for focused test results and unverified deployment/browser checks.

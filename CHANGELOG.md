@@ -1,14 +1,17 @@
-# Changelog
+# Changelog — CALLORIA v6.1
 
-## v6.0.0 — Core Contact-Centre Shift Gameplay
+## Added
+- Career XP and an eight-rank gameplay ladder on the v6.0 Live Floor.
+- Six live shift objectives and eight one-time achievement badges.
+- End-of-shift XP awards based on contact volume, service results, knowledge use and shift routine.
+- Strict progression penalty: any critical compliance breach blocks all XP and performance-badge awards for that shift.
+- Idempotent import of ended and archived v6.0 shifts, with separate progress profiles per employee name/team.
+- Career reward panel in the shift report and responsive mobile styling.
 
-- Established a playable daily contact-centre shift loop instead of adding another finance/ERP subsystem.
-- Added employee sign-in, shift clock and mandatory morning/afternoon briefings.
-- Added scheduled break and lunch gates.
-- Added a ten-contact multichannel synthetic queue across the RuffNeck product ecosystem and general customer care.
-- Added branching customer-care choices for empathy, diagnosis and resolution.
-- Added unsafe credential-handling detection as a critical compliance failure.
-- Added wrap-up, customer note, case creation/existing-case update and knowledge-reference flow.
-- Added QA, CSAT, FCR, compliance, productivity and shift summary metrics.
-- Added local persistence and repeatable shift sessions.
-- Explicitly excluded Billing and Finance Reconciliation from the default gameplay path.
+## Changed
+- Shift archive records now retain team and shift start timestamp so progression can identify previous sessions reliably.
+- Live Floor page version label updated to build 6.1.
+
+## Unchanged
+- Recruitment/onboarding, contact scenarios, case handling, Customer 360, knowledge search and the v6.0 customer-care shift flow.
+- No banking, finance or billing workflow added to default gameplay.

@@ -296,7 +296,7 @@
     if (isOnShift(state)) throw new Error('This simulated shift is already active.');
     if (state.shift.status === 'Ended') {
       state.pastShifts = Array.isArray(state.pastShifts) ? state.pastShifts : [];
-      state.pastShifts.unshift({ date: state.shift.date, agentName: state.shift.agentName, report: getShiftReport(state), endedAt: state.shift.endedAt });
+      state.pastShifts.unshift({ date: state.shift.date, agentName: state.shift.agentName, team: state.shift.team, startedAt: state.shift.startedAt, report: getShiftReport(state), endedAt: state.shift.endedAt });
       state.pastShifts = state.pastShifts.slice(0, 30);
       Object.assign(agentState, agentEngine.createInitialState(at || new Date()));
     }
