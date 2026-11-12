@@ -1,31 +1,24 @@
-# GitHub installation — CALLORIA v6.23
+# CALLORIA v6.24 — GitHub Desktop installation
 
-Replace exactly one production file on the `main` branch:
+## Replace one file
 
-| Repository path | Action |
-|---|---|
-| `build/calloria-cc0-staff-glb-bundle-plugin.mjs` | Replace with the matching file in this ZIP |
+| ZIP path | Repository destination | Action |
+|---|---|---|
+| `public/glb-asset-lab.html` | `public/glb-asset-lab.html` | Replace |
 
-Keep the existing Vite plugin registration unchanged. Do not replace `vite.config.js`, `package.json`, `package-lock.json`, `js/glb-world-integration.js`, `js/production-world.js`, any Supabase configuration, or `public/assets/models/`.
+The `tests/` file is optional regression coverage and can be merged into the repository's existing `tests/` folder.
 
-The ZIP also includes optional regression tests:
+## Install
 
-- `tests/calloria-v623-runtime-diagnostics.test.mjs`
-- `tests/calloria-v622-transform-aware-bounds.test.mjs`
-- `tests/fixtures/glb-world-integration-v12.fixture.js`
+1. Extract the ZIP in Windows File Explorer.
+2. Open the `zaksz1991/calloria` repository in GitHub Desktop.
+3. Choose **Repository → Show in Explorer**.
+4. Replace the existing `public/glb-asset-lab.html` with the ZIP version.
+5. Optionally copy `tests/calloria-v624-glb-fit-validation.test.mjs` into the existing `tests` folder.
+6. Review the changed-file list. The only production file changed should be `public/glb-asset-lab.html`.
+7. Commit and push to `main`.
+8. After Vercel deployment, open `https://calloria.vercel.app/glb-asset-lab.html`.
 
-The tests may be copied into the repository's existing `tests/` directory. They do not need to be part of the production app bundle.
+## Protected files
 
-## Verify the deployed audit page
-
-After the Vercel deployment completes, open:
-
-`https://calloria.vercel.app/calloria-staff-glb-diagnostics.html`
-
-The page separately reports:
-
-1. Which staff GLBs passed build validation.
-2. Whether the Vite build transformed the staff and office runtime source files or skipped them, including the precise warning.
-3. Whether the corresponding `.glb` files are reachable from production and begin with a valid GLB header.
-
-A `patched` result means the build transform was applied. A `reachable` result means the file is deployed. Neither result alone proves the model was placed or visibly rendered in the 3D scene.
+Do not replace `vite.config.js`, `package.json`, `package-lock.json`, `js/production-world.js`, `js/glb-world-integration.js`, `js/glb-office-world-integration.js`, Supabase settings or any `public/assets/models/` binaries for this upgrade.

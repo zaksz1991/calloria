@@ -1,7 +1,8 @@
-# v6.23 — Staff GLB Deployment Audit
+# CALLORIA v6.24 — GLB Acceptance Fit Validation
 
-- Added build-time tracking for staff and office world integration transforms.
-- Added production JSON diagnostics for build validation and transform results.
-- Added a mobile-responsive browser audit page with bounded same-origin GLB header checks.
-- Kept v6.22's world-transform-aware bounds validation and runtime placement logic unchanged.
-- Added regression tests for the report, page generation, plugin hooks, and v1.2 runtime transform fixture.
+- Upgraded the existing public GLB Asset Acceptance Lab, without changing the production world or Vite plugin anchors.
+- Added selectable production-fit, natural-dimension and standing-staff preview modes.
+- Matched office preview fit envelopes to the production office GLB loader targets for desks, computers, headsets and reception desks.
+- Standardised staff preview height to a 1.72 m standing reference instead of treating staff as office props.
+- Added original dimensions, preview dimensions, fit factor and fit-rule reporting.
+- Preserved real same-origin model loading, Meshopt/Draco decoding, animation inspection and existing build-manifest checks.

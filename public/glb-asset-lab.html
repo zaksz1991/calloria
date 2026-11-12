@@ -24,14 +24,15 @@
 <body>
   <main class="shell" id="calloria-glb-lab">
     <header class="top">
-      <div><div class="eyebrow">CALLORIA · DEVELOPMENT TOOL</div><h1>GLB Asset Acceptance Lab</h1><p class="sub">Inspect the actual staff and office GLB files delivered by the deployed build. A manifest entry is not counted as a rendered model: each asset must load into this viewer before it receives a browser-rendered status.</p></div>
-      <span class="build">v4.0 · visual verification</span>
+      <div><div class="eyebrow">CALLORIA · DEVELOPMENT TOOL</div><h1>GLB Asset Acceptance Lab</h1><p class="sub">Inspect the actual staff and office GLB files delivered by the deployed build. Compare natural dimensions with the same bounding-box fit used by the production office furniture loader. A manifest entry is not counted as rendered until the GLB loads into this viewer.</p></div>
+      <span class="build">v6.24 · production-fit verification</span>
     </header>
     <div id="bundleNotice" class="notice" role="status" aria-live="polite">Reading the deployed staff asset manifest…</div>
     <div class="layout">
       <section class="viewer" aria-label="3D asset preview">
         <div class="viewport" id="viewport"><div class="empty" id="empty"><div><strong>Select an asset to inspect</strong><small>The model preview will report its actual geometry, skeleton, texture and animation data after the GLB loads.</small></div></div><div class="view-label" id="viewLabel">NO MODEL LOADED</div></div>
         <div class="toolbar">
+          <label for="fitMode">Preview scale</label><select id="fitMode" aria-label="Preview scale"><option value="production" selected>Production fit</option><option value="natural">Natural asset size</option><option value="staff">Standing staff · 1.72 m</option></select>
           <label for="animationSelect">Animation</label><select id="animationSelect" disabled><option>No clips loaded</option></select>
           <button id="playButton" type="button" disabled>Play</button><button id="pauseButton" type="button" disabled>Pause</button>
           <button id="resetViewButton" type="button">Reset view</button>
@@ -50,7 +51,7 @@
         <div class="section"><h2>Selected asset inspection</h2><div id="details" class="details"><div class="detail"><b>—</b><small>Load a model to inspect it</small></div></div><p id="clipNames" class="clips">Animation clip names will appear here.</p><p id="loadStatus" class="clips" aria-live="polite">No model selected.</p></div>
       </aside>
     </div>
-    <p class="foot">This page does not alter gameplay or mark a model as active in the office. It independently tests the deployed files. Three.js 0.170.0 is pinned to match the application dependency. The preview requires access to jsDelivr; model files are loaded from the CALLORIA deployment.</p>
+    <p class="foot">This page does not alter gameplay or mark a model as active in the office. It independently tests deployed files and previews their production-fit scale. Office fit targets mirror the production loader; staff are shown at a 1.72 m standing reference height. Three.js 0.170.0 is pinned to match the application dependency. The preview requires access to jsDelivr; model files are loaded from the CALLORIA deployment.</p>
   </main>
 <script type="module">
 import * as THREE from 'three';
@@ -106,6 +107,25 @@ async function readManifest(){
 }
 function setDetails(items){$('details').innerHTML=items.map(([label,value])=>`<div class="detail"><b>${escapeHtml(value)}</b><small>${escapeHtml(label)}</small></div>`).join('');}
 function currentButton(asset){root.querySelectorAll('.asset').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.id===asset.id)));}
+const OFFICE_PRODUCTION_TARGETS=Object.freeze({
+  'office-desk':Object.freeze({x:2.60,y:0.98,z:1.28}),
+  'office-computer':Object.freeze({x:0.88,y:0.78,z:0.48}),
+  'headset-model':Object.freeze({x:0.30,y:0.30,z:0.30}),
+  'reception-desk':Object.freeze({x:5.05,y:1.42,z:1.45})
+});
+function isStaffAsset(asset){return Boolean(asset?.output)||asset?.type==='staff';}
+function getPreviewFit(asset,size){
+  const mode=$('fitMode').value;
+  if(mode==='natural')return{factor:1,description:'Original GLB scale',target:null};
+  if(isStaffAsset(asset)){
+    const factor=1.72/Math.max(size.y,.001);
+    return{factor,description:'Standing staff reference · 1.72 m',target:{x:size.x*factor,y:1.72,z:size.z*factor}};
+  }
+  const target=OFFICE_PRODUCTION_TARGETS[asset.id];
+  if(!target)return{factor:1,description:'Original GLB scale · no production target registered',target:null};
+  const factor=Math.min(target.x/Math.max(size.x,.001),target.y/Math.max(size.y,.001),target.z/Math.max(size.z,.001));
+  return{factor,description:`Production placement envelope · ${target.x.toFixed(2)} × ${target.y.toFixed(2)} × ${target.z.toFixed(2)} m`,target};
+}
 function loadAsset(asset){
   const token=++loadToken;currentAsset=asset;currentButton(asset);if(currentRoot){scene?.remove(currentRoot);disposeObject(currentRoot);currentRoot=null;}mixer=null;activeAction=null;loadedClips=[];let modelUrl='';try{const rawUrl=asset.output||asset.url;const parsed=new URL(rawUrl,window.location.origin);if(parsed.origin!==window.location.origin||!parsed.pathname.startsWith('/assets/models/'))throw new Error('Model URL must resolve to the CALLORIA same-origin /assets/models/ path.');modelUrl=parsed.pathname+parsed.search;}catch(error){$('viewLabel').textContent='INVALID ASSET PATH';setStatus(String(error?.message||error),'error');return;}$('empty').style.display='grid';$('empty').querySelector('strong').textContent='Loading '+(asset.name||asset.id)+'…';$('empty').querySelector('small').textContent='Fetching the actual deployed GLB file and decoding its geometry, materials and animations.';$('viewLabel').textContent='LOADING GLB';$('animationSelect').disabled=true;$('playButton').disabled=true;$('pauseButton').disabled=true;$('clipNames').textContent='Waiting for model animation data.';setStatus('Loading '+modelUrl+' …');
   createRenderer();
@@ -115,8 +135,10 @@ function loadAsset(asset){
     if(currentRoot){scene.remove(currentRoot);disposeObject(currentRoot);currentRoot=null;}mixer=null;activeAction=null;
     const object=gltf.scene;object.updateMatrixWorld(true);const before=new THREE.Box3().setFromObject(object);const size=before.getSize(new THREE.Vector3());const center=before.getCenter(new THREE.Vector3());
     if(!Number.isFinite(size.x+size.y+size.z)||Math.max(size.x,size.y,size.z)<=0){setStatus('Rejected: model has empty or invalid geometry.','error');disposeObject(object);return;}
-    object.position.x-=center.x;object.position.z-=center.z;object.position.y-=before.min.y;
-    const maxDim=Math.max(size.x,size.y,size.z);const target=asset.role?.toLowerCase().includes('furniture')||asset.role?.toLowerCase().includes('equipment')||asset.role?.toLowerCase().includes('accessory')?1.4:1.75;object.scale.setScalar(target/Math.max(size.y,.001));object.updateMatrixWorld(true);
+    const fit=getPreviewFit(asset,size);
+    object.scale.multiplyScalar(fit.factor);
+    object.position.x-=center.x*fit.factor;object.position.z-=center.z*fit.factor;object.position.y-=before.min.y*fit.factor;
+    object.updateMatrixWorld(true);
     scene.add(object);currentRoot=object;
     const box=new THREE.Box3().setFromObject(object);const actual=box.getSize(new THREE.Vector3());const metrics={meshes:0,skinned:0,triangles:0,bones:new Set(),materials:new Set(),textures:new Set()};
     object.traverse(node=>{if(node.isMesh||node.isSkinnedMesh||node.isInstancedMesh){metrics.meshes++;if(node.isSkinnedMesh&&node.skeleton){metrics.skinned++;metrics.bones.add(node.skeleton);}const pos=node.geometry?.getAttribute?.('position');const count=node.geometry?.index?.count??pos?.count??0;metrics.triangles+=Math.floor(count/3)*(node.isInstancedMesh?Math.max(1,node.count):1);const mats=Array.isArray(node.material)?node.material:node.material?[node.material]:[];for(const mat of mats){metrics.materials.add(mat);for(const v of Object.values(mat))if(v?.isTexture)metrics.textures.add(v);}}});
@@ -124,9 +146,9 @@ function loadAsset(asset){
     loadedClips=animations;mixer=animations.length?new THREE.AnimationMixer(object):null;
     const select=$('animationSelect');select.innerHTML='';if(animations.length){for(const clip of animations){const option=document.createElement('option');option.value=clip.name;option.textContent=clip.name||'Unnamed clip';select.append(option);}const preferred=animations.findIndex(clip=>/idle|stand|rest|breath|listen/i.test(clip.name));select.selectedIndex=preferred>=0?preferred:0;playSelected();select.disabled=false;$('playButton').disabled=false;$('pauseButton').disabled=false;}else{const option=document.createElement('option');option.textContent='No embedded animations';select.append(option);select.disabled=true;}
     const textureNames=[...metrics.textures].map(t=>t.name||t.image?.src||'embedded texture').slice(0,8);
-    setDetails([['Mesh objects',metrics.meshes],['Skinned meshes',metrics.skinned],['Skeleton joints',boneCount],['Triangles (runtime estimate)',metrics.triangles.toLocaleString()],['Materials',metrics.materials.size],['Textures',metrics.textures.size],['Animation clips',animations.length],['Normalised height',actual.y.toFixed(2)+' m']]);
+    setDetails([['Original dimensions',`${size.x.toFixed(2)} × ${size.y.toFixed(2)} × ${size.z.toFixed(2)} m`],['Preview dimensions',`${actual.x.toFixed(2)} × ${actual.y.toFixed(2)} × ${actual.z.toFixed(2)} m`],['Scale factor',fit.factor.toFixed(4)+'×'],['Fit rule',fit.description],['Mesh objects',metrics.meshes],['Skinned meshes',metrics.skinned],['Skeleton joints',boneCount],['Triangles (runtime estimate)',metrics.triangles.toLocaleString()],['Materials',metrics.materials.size],['Textures',metrics.textures.size],['Animation clips',animations.length]]);
     $('clipNames').textContent=animations.length?'Clips: '+animations.map(x=>x.name||'unnamed').join(' · '):'No embedded animation clips. This asset can only be a static display unless a separately validated animation is supplied.';
-    $('viewLabel').textContent='GLB LOADED · '+asset.id.toUpperCase();$('empty').style.display='none';setStatus(`BROWSER RENDER PASS: ${asset.name||asset.id} loaded from ${modelUrl}. Original dimensions: ${size.x.toFixed(2)} × ${size.y.toFixed(2)} × ${size.z.toFixed(2)}. ${textureNames.length? 'Textures: '+textureNames.join(', '):'No material textures detected.'}`, 'ok');rendered.add(asset.id);$('renderedCount').textContent=String(rendered.size);camera.position.set(0,Math.max(1.15,actual.y*.72),Math.max(2.8,actual.y*2.55));camera.lookAt(0,actual.y*.48,0);draco.dispose();
+    $('viewLabel').textContent='GLB LOADED · '+asset.id.toUpperCase();$('empty').style.display='none';setStatus(`BROWSER RENDER PASS: ${asset.name||asset.id} loaded from ${modelUrl}. Original dimensions: ${size.x.toFixed(2)} × ${size.y.toFixed(2)} × ${size.z.toFixed(2)} m. ${fit.description}. ${textureNames.length? 'Textures: '+textureNames.join(', '):'No material textures detected.'}`, 'ok');rendered.add(asset.id);$('renderedCount').textContent=String(rendered.size);camera.position.set(0,Math.max(1.15,actual.y*.72),Math.max(2.8,actual.y*2.55));camera.lookAt(0,actual.y*.48,0);draco.dispose();
   },progress=>{if(token===loadToken&&progress.total)$('viewLabel').textContent='LOADING '+Math.round(progress.loaded/progress.total*100)+'%';},error=>{if(token!==loadToken)return;$('viewLabel').textContent='GLB LOAD FAILED';$('empty').style.display='grid';$('empty').querySelector('strong').textContent='Model could not be rendered';$('empty').querySelector('small').textContent=String(error?.message||error);setStatus(`BROWSER RENDER FAILED: ${String(error?.message||error)}. Check the deployed file path, decoder setup and browser console.`, 'error');setDetails([['Browser load result','Failed'],['Asset path',modelUrl]]);draco.dispose();});
 }
 // Retain the loaded clips and explicitly control the selected animation action.
@@ -136,7 +158,7 @@ function playActionForSelected(){if(!mixer||!loadedClips.length)return;const cli
 function pauseAction(){activeAction?.paused!==undefined&&(activeAction.paused=true);}
 // Rebind playSelected after declarations so animation selection always uses the current loaded clips.
 function resetView(){if(!currentRoot||!camera)return;const box=new THREE.Box3().setFromObject(currentRoot);const size=box.getSize(new THREE.Vector3());camera.position.set(0,Math.max(1.15,size.y*.72),Math.max(2.8,size.y*2.55));camera.lookAt(0,size.y*.48,0);currentRoot.rotation.y=0;}
-$('animationSelect').addEventListener('change',()=>playActionForSelected());$('playButton').addEventListener('click',()=>{if(activeAction){activeAction.paused=false;}else playActionForSelected();});$('pauseButton').addEventListener('click',pauseAction);$('resetViewButton').addEventListener('click',resetView);
+$('fitMode').addEventListener('change',()=>{if(currentAsset)loadAsset(currentAsset);});$('animationSelect').addEventListener('change',()=>playActionForSelected());$('playButton').addEventListener('click',()=>{if(activeAction){activeAction.paused=false;}else playActionForSelected();});$('pauseButton').addEventListener('click',pauseAction);$('resetViewButton').addEventListener('click',resetView);
 viewport.addEventListener('pointerdown',event=>{if(!currentRoot)return;dragging=true;lastX=event.clientX;viewport.setPointerCapture?.(event.pointerId);});viewport.addEventListener('pointermove',event=>{if(!dragging||!currentRoot)return;const dx=event.clientX-lastX;lastX=event.clientX;currentRoot.rotation.y+=dx*.009;});viewport.addEventListener('pointerup',()=>dragging=false);viewport.addEventListener('pointercancel',()=>dragging=false);
 viewport.addEventListener('wheel',event=>{if(!camera)return;event.preventDefault();const factor=event.deltaY>0?1.08:.92;camera.position.multiplyScalar(factor);},{passive:false});
 function handleVisibility(){if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;}else if(renderer&&!raf){const frame=()=>{raf=requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.05);if(mixer)mixer.update(dt);renderer.render(scene,camera);};clock=new THREE.Clock();frame();}}

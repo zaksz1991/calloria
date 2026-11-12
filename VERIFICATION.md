@@ -1,9 +1,15 @@
-# v6.23 verification
+# CALLORIA v6.24 verification
 
-- `node --check build/calloria-cc0-staff-glb-bundle-plugin.mjs`: passed.
-- Generated diagnostics page inline JavaScript syntax check: passed.
-- Node regression tests: 10 passed, 0 failed (6 inherited transform-aware bounds tests and 4 v6.23 diagnostics tests).
-- ZIP integrity: verified after packaging.
-- Full repository Vite build: not run; a complete current CALLORIA repository snapshot was not available in this patch workspace.
-- Vercel deployment and live browser asset checks: not run.
-- Actual staff-model scene placement/rendering: not claimed or verified by this patch.
+## Performed
+
+- Existing GLB Asset Lab regression tests plus v6.24 fit-policy tests.
+- HTML module script extracted and checked with Node's JavaScript syntax checker.
+- Exact production office fit targets compared against the v6.13 office runtime source carried in the installed v6.15 package.
+- ZIP archive integrity check.
+
+## Not performed
+
+- Full Vite production build against the latest GitHub repository.
+- Vercel deployment or production browser rendering.
+- Verification that all five staff GLBs and all four office GLBs are present in the current production deployment.
+- This lab preview does not prove that any asset has been inserted into the live gameplay scene.

@@ -1,19 +1,19 @@
-# CALLORIA v6.23 — Staff GLB Deployment Audit
+# CALLORIA v6.24 — GLB Acceptance Fit Validation
 
-This patch extends the existing v6.22 staff-GLB bundle plugin. It does not add another renderer, animation loop, asset loader, or runtime world.
+This is a targeted upgrade to the existing public GLB Asset Acceptance Lab. It makes the preview scale comparable to the production placement policy rather than scaling every asset to an arbitrary display height.
 
 ## What changes
 
-- Records whether the existing Vite build transformed `js/glb-world-integration.js` and `js/production-world.js`.
-- Preserves the exact warning text when either source transform is skipped because its checked source contract does not match.
-- Emits `calloria-staff-glb-diagnostics.json` into the production build.
-- Emits a self-contained `calloria-staff-glb-diagnostics.html` audit page.
-- The page checks each bundled model's production URL using a `Range: bytes=0-3` request and confirms the GLB `glTF` header without intentionally downloading the complete model.
-- Displays model validation state, render mode, measured world dimensions, triangle count, bones, animation clips, and deployment file availability.
-- Explicitly distinguishes build validation, source transformation, deployed file availability, and actual game-scene placement. It does not report a GLB as rendered merely because it was bundled or reachable.
+- **Production fit:** office assets use the same maximum placement envelopes as the runtime loader. Models are uniformly scaled to fit inside those dimensions; proportions are not stretched.
+- **Natural asset size:** shows the GLB at its authored dimensions.
+- **Standing staff:** displays character models against a 1.72 m standing reference height.
+- **Measurement report:** lists original and preview dimensions, scale factor, fit rule, mesh count, skeletons, joints, triangles, materials, textures and animation clips.
+- Changing preview mode reloads the selected deployed GLB and uses a load token so an older request cannot replace the current selection.
 
-## After deployment
+The page remains an independent acceptance tool. It does not claim that models are already placed in the production game scene, and it does not modify gameplay, production world code, Vite configuration, dependencies, Supabase or model binaries.
 
-Open `/calloria-staff-glb-diagnostics.html` on the deployed CALLORIA domain. The report makes it possible to identify whether the remaining issue is model bundling, source integration, or deployed asset availability without relying only on Vercel warning text.
+## URL after deployment
 
-The existing v6.22 transform-aware GLB validation remains intact. No Supabase, Groq, package, lockfile, Vite configuration, or existing game-world file is replaced.
+`https://calloria.vercel.app/glb-asset-lab.html`
+
+The page requires access to jsDelivr for the pinned Three.js 0.170.0 modules. Actual GLB files are fetched from the CALLORIA deployment.
