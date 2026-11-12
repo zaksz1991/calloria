@@ -1,24 +1,10 @@
-# GitHub installation — CALLORIA v6.13
+# GitHub installation — v6.13.2
 
-In the GitHub repository, make only these two file changes:
+1. Open `github.com/zaksz1991/calloria`.
+2. Open the root-level `package.json` (not one inside a subfolder).
+3. Replace its contents with the supplied `package.json`.
+4. Save the change to the `main` branch.
 
-| Repository path | Action |
-|---|---|
-| `js/glb-office-world-integration.js` | Replace with the supplied file |
-| `js/glb-office-asset-policy.js` | Add the supplied file |
+Keep `package-lock.json`; Vercel's configured `npm install` reconciles it with the manifest. Retain any additional dependencies already used by other repository modules if they are not represented in the supplied manifest.
 
-Keep all existing files, especially:
-
-- `vite.config.js`
-- `js/production-world.js`
-- `js/glb-world-integration.js`
-- `js/glb-asset-registry.js`
-- `js/glb-asset-loader.js`
-- `js/world-player-avatar.js`
-- `js/world-player-avatar-desktop.js`
-- all existing `build/` plugins
-- the entire `public/assets/models/` folder
-
-The replacement intentionally retains the exact `GLTFLoader`, Meshopt, device-tier plan, headset plan and reception plan anchors used by the existing v2.9/v3.8 transforms. Do not remove or reorder those plugins.
-
-After the deployment, inspect the office GLB status in the 3D workplace. The per-asset report distinguishes a missing file/404, a loader/decoder error, a validation rejection and a placement failure.
+This is the next dependency correction after v6.13.1. No Vite or source-file edits are required for the reported `@supabase/supabase-js` resolution error.

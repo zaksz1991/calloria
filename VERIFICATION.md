@@ -1,9 +1,11 @@
-# Verification — v6.13.1
+# Verification — v6.13.2
 
-- JSON parsed successfully.
-- Required npm scripts (`dev`, `build`, `preview`, `check`, `test`) present.
-- Build command is exactly `vite build`.
-- Node engine and dependency pins match the logged CALLORIA toolchain (Node `>=22.12.0`, Vite `6.4.5`, Three.js `0.170.0`).
-- This patch does not include or modify Vite plugins or application source.
+- `package.json` parses as valid JSON.
+- Required scripts `dev`, `build`, `preview`, `check`, and `test` are present.
+- `build` resolves to `vite build`.
+- `@supabase/supabase-js` is declared under runtime `dependencies` at exact version `2.119.0`.
+- Three.js remains pinned to `0.170.0`; Vite remains pinned to `6.4.5`.
+- Node engine remains `>=22.12.0`.
+- The patch intentionally does not replace the project lockfile.
 
-A full production build cannot be run from this one-file repair package because the complete repository source and `vite.config.js` are not present in this workspace. Vercel build success must be established by the next deployment log.
+A complete Vite build was not run because this workspace does not contain the current CALLORIA repository source tree, its exact `vite.config.js`, or current `package-lock.json`.

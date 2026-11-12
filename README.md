@@ -1,29 +1,23 @@
-# CALLORIA v6.13.1 — Vercel Build Script Repair
+# CALLORIA v6.13.2 — Supabase SDK Dependency Repair
 
-This patch restores the root npm manifest expected by Vercel. The reported failure occurs before Vite starts because npm cannot find a `build` script.
+## Build error addressed
 
-## Why this happened
+The Vercel build now reaches Vite, but Rollup stops at:
 
-The earlier v6.13 office-runtime ZIP accidentally carried a minimal `package.json` (name/private/type only) even though its installation guide said to copy only the two JavaScript files. If that manifest was copied over the repository root, it would remove the `scripts.build` entry and produce exactly:
+`Failed to resolve import "@supabase/supabase-js" from "js/customer-care-workbench.js"`
 
-`npm error Missing script: "build"`
+The v6.13.1 package manifest restored the build script but omitted the Supabase SDK dependency. Consequently, `npm install` removed packages not declared by the replacement manifest, and Vite could not resolve the application import.
 
-That packaging mistake is ours.
+## Patch contents
+
+This package contains a corrected repository-root `package.json` that preserves the CALLORIA 0.3.0 manifest profile and adds the stable Supabase JS v2 SDK at an exact version pin (`2.119.0`). The SDK remains a normal runtime dependency so Vite can bundle the browser module; it is not externalized.
 
 ## Installation
 
-Replace **only the repository-root `package.json`** with the supplied file.
+Replace the repository-root `package.json` with the supplied file.
 
-Do not copy this file into a subfolder. Do not replace `package-lock.json`, `vite.config.js`, any source modules, plugins, or GLB assets.
+Do not replace `vite.config.js`, application source, the GLB plugins, or the model directory. Do not delete `package-lock.json`. The Vercel install step uses `npm install`, which will reconcile the lockfile with the added dependency during installation. If your repository has additional dependencies not listed in this manifest, keep those existing entries when merging.
 
-The manifest restores:
+## What this does not claim
 
-- `npm run dev`
-- `npm run build` → `vite build`
-- `npm run preview`
-- `npm run check`
-- `npm test`
-
-It pins Vite to `6.4.5` and Three.js to `0.170.0`, matching the CALLORIA build environment represented in the supplied build logs. It preserves Node `>=22.12.0`.
-
-If the repository currently uses additional npm dependencies beyond Three.js and Vite, retain those existing dependency entries when merging this root manifest. The supplied manifest is aligned to the current logged CALLORIA 0.3.0 build profile, not a claim that every unpublished local dependency was inspected.
+This corrects the specific missing-package error shown in the Vercel log. It does not prove the next build will pass; the next run may expose further missing dependencies or source errors. No app source, Supabase project settings, keys, database, migrations, or authentication behaviour are changed.
