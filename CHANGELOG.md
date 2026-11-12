@@ -1,21 +1,16 @@
-# CALLORIA v6.3 — Office Routine Gameplay
+# Changelog — v6.4
 
-## Added
-- Physical 3D staff activity points for Reception, Team Briefing Room, Staff Lounge and Supervisor Hub.
-- Reception clock-in with employee name and assigned team; new shifts require a matching check-in.
-- Physical briefing and break attendance tokens, consumed by the existing Live Floor scheduled-event engine.
-- Reception clock-out after the Live Floor shift has ended.
-- Supervisor-assistance requests for escalation, policy guidance, system issues, customer safety and workload support.
-- Optional GLB loading for the reception desk and receptionist using the existing local model folders.
-- Location-proximity checks for staff actions and workstation entry.
-- Legacy migration for already-running v6.2 shifts.
+## Adaptive Customer Behaviour & Service Interaction
 
-## Preserved
-- Existing customer queue, synthetic scenarios, three-stage customer handling, Customer 360/case bridge and career progression.
-- Existing desk/computer/agent/supervisor GLB loading; missing human models are not replaced with primitive people.
-- Existing v6.0/v6.1 local-storage records and v6.2 routes.
+- Added deterministic customer profile mapping from the existing customer tone values.
+- Added rapport, patience, trust and emotional-state tracking to each active contact.
+- Added responsive customer reaction lines to simulated transcripts.
+- Added contextual agent coaching cues.
+- Added end-of-contact customer experience adjustment while keeping QA separate.
+- Preserved zero-score handling for critical compliance breaches.
+- Added optional supervisor-support request recording with a mandatory reason.
+- Added completed-contact customer experience evidence.
+- Added lazy migration for already-active v6.3 interactions.
+- Updated Live Floor presentation and mobile-responsive customer dynamics panel.
 
-## Boundaries
-- Routine, attendance and supervisor request records are browser-local.
-- Supervisor requests are logged locally; they are not live notifications to a real supervisor.
-- No real biometric attendance, telephony, external messaging or central HR integration is added.
+No banking, billing, finance, real-time messaging, external AI or 3D scene changes were introduced.

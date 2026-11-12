@@ -1,12 +1,19 @@
-CALLORIA v6.3 focused verification
-==================================
-Node tests: 47 passed, 0 failed
-JavaScript syntax: passed (4 application/engine files)
-HTML duplicate ID checks: passed
-Static JS selector-to-HTML binding checks: passed
-Local storage compatibility checks: passed
-Routine activity and single-use token checks: passed
-ZIP integrity: passed
+CALLORIA v6.4 focused verification
 
-Not run: full repository tests, Vite production build, Vercel build/deployment,
-end-to-end browser testing, or actual GLB loading against the user's model folder.
+Command: node --test tests/*.test.cjs
+Result: 15 passed, 0 failed
+
+Syntax:
+- node --check public/customer-dynamics-engine.js — PASS
+- node --check public/live-floor.js — PASS
+
+Static page checks:
+- 97 HTML IDs checked; no duplicate IDs — PASS
+- 91 Live Floor selectors checked; none missing — PASS
+- Customer dynamics script load order — PASS
+
+Scope limitations:
+- Full repository tests/build not run.
+- Vercel deployment not run.
+- Live browser rendering not verified.
+- Supervisor request remains local-only.

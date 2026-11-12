@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: full shift engine integration persists and scores adaptive customer reactions
+ok 1 - full shift engine integration persists and scores adaptive customer reactions
+  ---
+  duration_ms: 3.904476
+  type: 'test'
+  ...
+# Subtest: supervisor-support evidence is included in the completed contact record
+ok 2 - supervisor-support evidence is included in the completed contact record
+  ---
+  duration_ms: 2.322955
+  type: 'test'
+  ...
+# Subtest: customer tone selects a deterministic customer profile
+ok 3 - customer tone selects a deterministic customer profile
+  ---
+  duration_ms: 1.1969
+  type: 'test'
+  ...
+# Subtest: contact acceptance initializes rapport, patience and needs from customer tone
+ok 4 - contact acceptance initializes rapport, patience and needs from customer tone
+  ---
+  duration_ms: 0.803658
+  type: 'test'
+  ...
+# Subtest: a strong service response improves rapport, trust and customer emotion
+ok 5 - a strong service response improves rapport, trust and customer emotion
+  ---
+  duration_ms: 0.563794
+  type: 'test'
+  ...
+# Subtest: poor service decisions reduce patience and apply an experience penalty without changing QA
+ok 6 - poor service decisions reduce patience and apply an experience penalty without changing QA
+  ---
+  duration_ms: 0.308677
+  type: 'test'
+  ...
+# Subtest: critical compliance breaches cannot be repaired by positive customer rapport
+ok 7 - critical compliance breaches cannot be repaired by positive customer rapport
+  ---
+  duration_ms: 0.245913
+  type: 'test'
+  ...
+# Subtest: supervisor support request requires a reason and cannot be duplicated
+ok 8 - supervisor support request requires a reason and cannot be duplicated
+  ---
+  duration_ms: 0.56073
+  type: 'test'
+  ...
+# Subtest: end-of-contact sentiment adjusts customer experience score but not QA
+ok 9 - end-of-contact sentiment adjusts customer experience score but not QA
+  ---
+  duration_ms: 0.434042
+  type: 'test'
+  ...
+# Subtest: low customer rapport lowers the final customer experience score
+ok 10 - low customer rapport lowers the final customer experience score
+  ---
+  duration_ms: 0.213646
+  type: 'test'
+  ...
+# Subtest: older active shift records are upgraded lazily without losing stage history
+ok 11 - older active shift records are upgraded lazily without losing stage history
+  ---
+  duration_ms: 0.285852
+  type: 'test'
+  ...
+# Subtest: engine installation is idempotent and rejects incomplete engines
+ok 12 - engine installation is idempotent and rejects incomplete engines
+  ---
+  duration_ms: 0.340013
+  type: 'test'
+  ...
+# Subtest: completed interaction record carries customer experience evidence
+ok 13 - completed interaction record carries customer experience evidence
+  ---
+  duration_ms: 0.158734
+  type: 'test'
+  ...
+# Subtest: live-floor page loads dynamics after its base engine and exposes the signals panel
+ok 14 - live-floor page loads dynamics after its base engine and exposes the signals panel
+  ---
+  duration_ms: 0.357889
+  type: 'test'
+  ...
+# Subtest: live-floor controller renders dynamics and records local supervisor assistance
+ok 15 - live-floor controller renders dynamics and records local supervisor assistance
+  ---
+  duration_ms: 0.327915
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 124.888097

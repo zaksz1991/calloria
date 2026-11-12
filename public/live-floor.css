@@ -11,3 +11,48 @@
 /* v6.2 3D workplace return navigation */
 .office-nav-link{display:inline-flex;align-items:center;justify-content:center;padding:7px 10px;border:1px solid #cbd9ec;border-radius:7px;background:#eef4ff;color:#31578f;text-decoration:none;font-size:8px;font-weight:900;letter-spacing:.08em}.office-nav-link:hover{background:#dfeaff}
 @media(max-width:560px){.office-nav-link{font-size:7px;padding:6px 7px}.topbar-right{gap:7px}}
+
+
+/* v6.4 adaptive customer behaviour panel */
+.customer-dynamics {
+  margin: 16px 0 18px;
+  padding: 16px;
+  border: 1px solid #d9e2ef;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #f7faff 0%, #f2f6fb 100%);
+  color: #15243a;
+}
+.dynamics-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.dynamics-heading > div { display:grid; gap:4px; }
+.dynamics-heading strong { font-size:15px; }
+.dynamics-mood { display:inline-flex; align-items:center; justify-content:center; min-height:28px; padding:5px 10px; border-radius:999px; background:#e8edf4; color:#35445a; font-size:10px; font-weight:850; letter-spacing:.06em; }
+.dynamics-mood.reassured { background:#d9f5e8; color:#126642; }
+.dynamics-mood.settling { background:#e1f2ef; color:#17635b; }
+.dynamics-mood.concerned { background:#fff1d5; color:#86530a; }
+.dynamics-mood.frustrated, .dynamics-mood.escalation-risk { background:#ffe0df; color:#9a2828; }
+.dynamics-mood.impatient { background:#fff0db; color:#8a4b11; }
+.dynamics-meters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-bottom:14px; }
+.dynamics-meter > div:first-child { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:6px; }
+.dynamics-meter > div:first-child span, .dynamics-needs > span, .dynamics-reaction > span, .dynamics-coaching > span { color:#67778e; font-size:9px; font-weight:850; letter-spacing:.08em; }
+.dynamics-meter strong { font-size:11px; color:#1b2c43; white-space:nowrap; }
+.dynamics-track { height:7px; overflow:hidden; border-radius:999px; background:#dce5ef; }
+.dynamics-track > span { display:block; height:100%; border-radius:inherit; background:#4675ba; transition:width .25s ease; }
+#dynamics-patience-bar { background:#368b79; }
+#dynamics-trust-bar { background:#7867a8; }
+.dynamics-needs, .dynamics-reaction, .dynamics-coaching { padding:10px 12px; border-radius:10px; background:rgba(255,255,255,.78); }
+.dynamics-needs p, .dynamics-reaction p, .dynamics-coaching p { margin:4px 0 0; font-size:12px; line-height:1.5; color:#31445f; }
+.dynamics-reaction { margin-top:8px; border-left:3px solid #d59b35; }
+.dynamics-coaching { margin-top:8px; border-left:3px solid #527db7; }
+@media (max-width:680px) {
+  .customer-dynamics { padding:12px; }
+  .dynamics-meters { grid-template-columns:1fr; gap:9px; }
+  .dynamics-heading { align-items:flex-start; }
+}
+
+.dynamics-supervisor { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:10px; margin-top:10px; padding-top:12px; border-top:1px solid #dce5ef; }
+.dynamics-supervisor label { display:grid; gap:5px; color:#66768b; font-size:10px; font-weight:800; letter-spacing:.03em; }
+.dynamics-supervisor select { width:100%; min-height:38px; border:1px solid #d5deea; border-radius:8px; background:#fff; padding:7px 9px; color:#20324a; font:inherit; font-size:11px; letter-spacing:normal; }
+.dynamics-supervisor button { min-height:38px; padding:8px 12px; font-size:11px; white-space:nowrap; }
+.dynamics-supervisor p { grid-column:1 / -1; margin:0; color:#6a7b91; font-size:10px; line-height:1.45; }
+.dynamics-supervisor button:disabled { opacity:.65; cursor:not-allowed; }
+@media (max-width:680px) { .dynamics-supervisor { grid-template-columns:1fr; } .dynamics-supervisor button { width:100%; } }

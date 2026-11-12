@@ -6,14 +6,20 @@
   const F = window.CalloriaLiveFloorEngine;
   const P = window.CalloriaCareerProgressionEngine;
   const R = window.CalloriaOfficeRoutineEngine;
+  const D = window.CalloriaCustomerDynamics;
   const realStorage = window.localStorage;
   const toast = $('#toast');
   let toastTimer = null;
   let selectedChannel = '';
   let articleQuery = '';
 
-  if (!E || !C || !F || !P || !R) {
-    document.body.innerHTML = '<main style="max-width:700px;margin:60px auto;padding:24px;font:14px system-ui"><h1>CALLORIA Live Floor could not start</h1><p>Required simulation engine files are missing. Copy the full v6.3 overlay and its v6.1 dependencies into the public folder, then reload this page.</p></main>';
+  if (!E || !C || !F || !P || !R || !D) {
+    document.body.innerHTML = '<main style="max-width:700px;margin:60px auto;padding:24px;font:14px system-ui"><h1>CALLORIA Live Floor could not start</h1><p>Required simulation engine files are missing. Copy the full v6.4 overlay and its v6.3/v6.1 dependencies into the public folder, then reload this page.</p></main>';
+    return;
+  }
+
+  if (!D.install(F)) {
+    document.body.innerHTML = '<main style="max-width:700px;margin:60px auto;padding:24px;font:14px system-ui"><h1>CALLORIA customer dynamics could not start</h1><p>The adaptive customer engine could not connect to the live-floor engine. Restore the matching v6.3 engine dependency and reload.</p></main>';
     return;
   }
 
@@ -273,10 +279,40 @@
     $('#case-priority').value = contact.priority;
     $('#wrap-feedback').textContent = '';
   }
+  function renderCustomerDynamics(active) {
+    const panel = $('#customer-dynamics');
+    if (!active) { panel.classList.add('hidden'); return; }
+    const contact = E.getActiveContact(agentState);
+    const d = D.snapshot(active, contact);
+    if (!d) { panel.classList.add('hidden'); return; }
+    panel.classList.remove('hidden');
+    $('#dynamics-profile').textContent = d.archetype;
+    $('#dynamics-mood').textContent = d.emotion.toUpperCase();
+    $('#dynamics-mood').className = `dynamics-mood ${d.emotion.toLowerCase().replace(/[^a-z]+/g, '-')}`;
+    $('#dynamics-rapport-value').textContent = `${d.rapport} / 100`;
+    $('#dynamics-patience-value').textContent = `${d.patience} / 100`;
+    $('#dynamics-trust-value').textContent = `${d.trust} / 100`;
+    $('#dynamics-rapport-bar').style.width = `${d.rapport}%`;
+    $('#dynamics-patience-bar').style.width = `${d.patience}%`;
+    $('#dynamics-trust-bar').style.width = `${d.trust}%`;
+    $('#dynamics-rapport-track').setAttribute('aria-valuenow', String(d.rapport));
+    $('#dynamics-patience-track').setAttribute('aria-valuenow', String(d.patience));
+    $('#dynamics-trust-track').setAttribute('aria-valuenow', String(d.trust));
+    $('#dynamics-needs').textContent = d.needs;
+    $('#dynamics-reaction').textContent = d.lastReaction;
+    $('#dynamics-coaching').textContent = d.coachingCue;
+    $('#request-supervisor').disabled = !!d.supervisorSuggested;
+    $('#request-supervisor').textContent = d.supervisorSuggested ? 'Support request recorded' : 'Request floor-supervisor support';
+    $('#supervisor-request-status').textContent = d.supervisorSuggested
+      ? `Local simulation record created: ${state.active.supervisorSupport && state.active.supervisorSupport.reason || 'Support requested'}. No live supervisor is connected.`
+      : 'Use this when a complaint is escalating, policy guidance is needed or the customer asks for a supervisor.';
+  }
+
   function renderActive() {
     const active = F.getActiveScenario(state, agentState, E);
     if (!active) {
       $('#customer-card').innerHTML = '<div class="empty-note">Customer information appears when a contact is accepted.</div>';
+      $('#customer-dynamics').classList.add('hidden');
       $('#knowledge-list').innerHTML = '<div class="empty-note">Accept a customer to see relevant guidance.</div>';
       return;
     }
@@ -287,6 +323,7 @@
     $('#contact-priority').className = `priority-chip ${priorityClass(contact.priority)}`;
     $('#contact-subject').textContent = contact.subject;
     $('#contact-focus').textContent = `${scenario.focus} · ${contact.customerTone || 'Customer'} customer`;
+    renderCustomerDynamics(state.active);
     renderConversation(contact);
     renderCustomer(contact);
     renderKnowledge(contact);
@@ -344,6 +381,7 @@
     if (state.active) renderActive();
     else {
       $('#customer-card').innerHTML = '<div class="empty-note">Customer information appears when a contact is accepted.</div>';
+      $('#customer-dynamics').classList.add('hidden');
       $('#knowledge-list').innerHTML = '<div class="empty-note">Accept a customer to see relevant guidance.</div>';
     }
     renderCompleted(); renderActivity(); renderReport(); renderCareer();
@@ -408,6 +446,19 @@
       notify(`${result.completed.reference} saved. QA ${result.record.qa}% · CSAT ${result.record.csat}/5.`);
     } catch (error) { $('#wrap-feedback').textContent = error.message; }
   }
+  function requestSupervisorAssistance() {
+    const contact = E.getActiveContact(agentState);
+    if (!contact || !state.active) return;
+    const reason = $('#supervisor-reason').value;
+    try {
+      const snapshot = D.requestSupervisor(state.active, reason, contact);
+      E.addInternalNote(agentState, contact.id, `Floor-supervisor assistance requested: ${reason}. This is a local simulation record; no live supervisor was notified.`, new Date());
+      state.active.supervisorSupport = { reason, requestedAt: new Date().toISOString(), status: 'Recorded locally' };
+      persist(); renderAll();
+      notify(`Supervisor support request recorded. Customer mood: ${snapshot.emotion}. No live supervisor was notified.`);
+    } catch (error) { notify(error.message, true); }
+  }
+
   function doShiftEvent() {
     const due = F.dueEvent(state);
     if (!due) return;
@@ -462,6 +513,7 @@
     } catch (error) { notify(error.message, true); }
   });
   $('#complete-event').addEventListener('click', doShiftEvent);
+  $('#request-supervisor').addEventListener('click', requestSupervisorAssistance);
   $('#end-shift').addEventListener('click', finishShift);
   $('#queue-channel').addEventListener('change', (event) => { selectedChannel = event.target.value; renderQueue(); });
   $('#knowledge-query').addEventListener('input', (event) => { articleQuery = event.target.value; const contact = state.active && E.getActiveContact(agentState); if (contact) renderKnowledge(contact); });

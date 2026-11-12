@@ -10,6 +10,7 @@
   <script defer src="/agent-workbench-engine.js"></script>
   <script defer src="/customer-journey-engine.js"></script>
   <script defer src="/live-floor-engine.js"></script>
+  <script defer src="/customer-dynamics-engine.js"></script>
   <script defer src="/career-progression-engine.js"></script>
   <script defer src="/office-routine-engine.js"></script>
   <script defer src="/live-floor.js"></script>
@@ -23,7 +24,7 @@
     <div class="topbar-right">
       <a class="office-nav-link" href="/office-floor.html">3D WORKPLACE</a>
       <span class="live-badge"><i></i> SIMULATED FLOOR</span>
-      <span class="version-label">CORE GAMEPLAY · BUILD 6.3</span>
+      <span class="version-label">CORE GAMEPLAY · BUILD 6.4</span>
     </div>
   </header>
 
@@ -116,6 +117,25 @@
           </div>
           <h3 id="contact-subject">Customer issue</h3>
           <p class="contact-focus" id="contact-focus"></p>
+          <section id="customer-dynamics" class="customer-dynamics hidden" aria-label="Live customer behaviour signals">
+            <div class="dynamics-heading">
+              <div><span class="eyebrow">LIVE CUSTOMER RESPONSE</span><strong id="dynamics-profile">Customer profile</strong></div>
+              <span id="dynamics-mood" class="dynamics-mood">NEUTRAL</span>
+            </div>
+            <div class="dynamics-meters">
+              <div class="dynamics-meter"><div><span>RAPPORT</span><strong id="dynamics-rapport-value">50 / 100</strong></div><div class="dynamics-track" id="dynamics-rapport-track" role="progressbar" aria-label="Customer rapport" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span id="dynamics-rapport-bar" style="width:50%"></span></div></div>
+              <div class="dynamics-meter"><div><span>PATIENCE</span><strong id="dynamics-patience-value">60 / 100</strong></div><div class="dynamics-track" id="dynamics-patience-track" role="progressbar" aria-label="Customer patience" aria-valuemin="0" aria-valuemax="100" aria-valuenow="60"><span id="dynamics-patience-bar" style="width:60%"></span></div></div>
+              <div class="dynamics-meter"><div><span>TRUST</span><strong id="dynamics-trust-value">50 / 100</strong></div><div class="dynamics-track" id="dynamics-trust-track" role="progressbar" aria-label="Customer trust" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span id="dynamics-trust-bar" style="width:50%"></span></div></div>
+            </div>
+            <div class="dynamics-needs"><span>WHAT THIS CUSTOMER NEEDS</span><p id="dynamics-needs">Relevant answers and a clear next step.</p></div>
+            <div class="dynamics-reaction"><span>CUSTOMER SIGNAL</span><p id="dynamics-reaction" aria-live="polite">Listen to the customer’s opening message.</p></div>
+            <div class="dynamics-coaching"><span>AGENT SERVICE CUE</span><p id="dynamics-coaching">Confirm the customer’s intended outcome before proceeding.</p></div>
+            <div class="dynamics-supervisor">
+              <label for="supervisor-reason">Floor-supervisor support reason<select id="supervisor-reason"><option>Customer requests a supervisor</option><option>Complaint is escalating</option><option>Policy or approval guidance is needed</option><option>Potential safety or security concern</option><option>Service disruption affects the customer</option></select></label>
+              <button id="request-supervisor" class="button button-secondary" type="button">Request floor-supervisor support</button>
+              <p id="supervisor-request-status" role="status">Use this when a complaint is escalating, policy guidance is needed or the customer asks for a supervisor.</p>
+            </div>
+          </section>
           <div class="conversation" id="conversation" aria-live="polite"></div>
           <div class="decision-area" id="decision-area">
             <div class="decision-title"><span class="eyebrow" id="decision-step">STEP 1 OF 3</span><h3 id="decision-heading">Understand the customer</h3></div>
@@ -181,7 +201,7 @@
     </section>
 
     <section class="activity-strip"><span>SIMULATION LOG</span><div id="activity-log">No activity recorded.</div><button id="end-shift" class="button button-secondary" type="button" disabled>End shift</button></section>
-    <footer class="page-foot">CALLORIA v6.3 · Synthetic gameplay scenarios · No real customer, telephone, email or messaging connections</footer>
+    <footer class="page-foot">CALLORIA v6.4 · Adaptive synthetic customer behaviour · No real customer, telephone, email or messaging connections</footer>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>

@@ -1,22 +1,25 @@
-# v6.3 Verification
+# Verification — CALLORIA v6.4
 
-## Executed checks
+## Passed
 
-- Focused Node test suite: **47 passed, 0 failed**.
-- JavaScript syntax checks for `office-floor.js`, `office-floor-engine.js`, `office-routine-engine.js` and `live-floor.js`: passed.
-- HTML ID uniqueness checks for both updated pages: passed.
-- Static JavaScript-to-HTML selector binding checks: passed.
-- v6.0 shift and v6.1 career storage-key compatibility tests: passed.
-- Reception check-in, shift-start gating, event attendance token, single-use token, clock-out, supervisor request and legacy-shift migration tests: passed.
-- ZIP integrity check: passed.
+- `node --check public/customer-dynamics-engine.js`
+- `node --check public/live-floor.js`
+- Focused unit and integration suite: **15 passed, 0 failed**.
+- Full contact-flow integration exercised the existing base shift, agent, customer journey and live-floor engines.
+- Supervisor-support evidence was verified in the completed contact record.
+- Duplicate HTML IDs: **none** (97 static IDs checked).
+- Live Floor controller selector contract: **91 selectors checked, 0 missing**.
+- HTML script load order checked: base live-floor engine → customer dynamics extension → live-floor controller.
+- ZIP archive integrity checked after packaging.
 
-## Not performed
+## Not verified
 
-- Full repository `npm test` or Vite production build: not performed because the complete user repository and its complete dependency tree were not present in this patch workspace.
-- Vercel build or deployment: not performed.
-- Live browser interaction against the deployed site: not performed.
-- Actual GLB load verification: not performed because the user's full `public/assets/models/` tree was not present. The in-page Asset Check must confirm the reception desk and receptionist path results after installation.
+- Full CALLORIA repository test suite.
+- Full Vite production build.
+- Vercel deployment or production URL behaviour.
+- Browser visual/end-to-end testing on desktop or mobile.
+- Real multi-user supervisor notification or Supabase synchronisation.
 
-## Scope
+## Test scope
 
-This is an additive public-folder overlay. It does not alter Vite configuration, package dependencies, Supabase configuration, Groq keys or external integrations.
+The included integration fixtures reproduce the v6.0-compatible engines retained by the v6.3 stack. They verify the v6.4 extension contract and a complete synthetic contact flow. They do not prove that the current GitHub repository or deployed website has been updated.
