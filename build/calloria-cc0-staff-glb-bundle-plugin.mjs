@@ -806,6 +806,120 @@ function addTierAwareStaffIdleScheduler(code) {
   return { code: `/* ${TIER_AWARE_IDLE_MARKER} */\n${next}`, alreadyPatched: false };
 }
 
+
+
+/**
+ * v6.35 adds restrained eye-gaze shifts for static-pose staff models that
+ * already expose explicit ARKit-style eye-look morph targets. It does not
+ * infer or fabricate face geometry, and it never touches authored clips.
+ */
+const STAFF_EYE_GAZE_MORPH_MARKER = '__CALLORIA_STAFF_EYE_GAZE_MORPHS_V635__';
+function addStaffEyeGazeMorphSupport(code) {
+  const original = String(code || '').replace(/\r\n?/g, '\n');
+  if (original.includes(STAFF_EYE_GAZE_MORPH_MARKER)) {
+    return { code: original, alreadyPatched: true, warnings: [] };
+  }
+
+  const anchors = [
+    ['gaze target registry', 'const idleExpressionMorphTargets = [];'],
+    ['gaze morph discovery location', '        if (!node?.isBone || !node.quaternion?.clone) return;'],
+    ['gaze controller registration', 'expressionPhase: (replacements.length * 1.77) % 5,'],
+    ['gaze runtime update location', '          if (idle.boneTargets?.length) {'],
+    ['gaze diagnostics', 'expressionMorphTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleExpressionTargets || 0), 0),'],
+    ['gaze replacement metadata', 'proceduralIdleExpressionTargets: idleExpressionMorphTargets.length });']
+  ];
+  const missing = anchors.filter(([, anchor]) => original.split(anchor).length - 1 !== 1).map(([label]) => label);
+  if (missing.length) {
+    return { code: null, alreadyPatched: false, warnings: [`Staff eye-gaze morph support was not added: ${missing.join(', ')} did not match the verified v6.34 runtime.`] };
+  }
+
+  let next = original.replace(
+    'const idleExpressionMorphTargets = [];',
+    'const idleExpressionMorphTargets = [];\n    const idleGazeMorphTargets = [];'
+  );
+
+  const discovery = `        // Only use explicit per-eye gaze morphs. The ARKit-style naming rule
+        // avoids accidentally animating broad facial poses or unrelated targets.
+        if (morphDictionary && morphInfluences && typeof morphInfluences.length === 'number') {
+          for (const [morphName, morphIndexValue] of Object.entries(morphDictionary)) {
+            const normalizedMorphName = String(morphName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const gazeMatch = /^(?:eye)?look(up|down|in|out)(left|right)$/.exec(normalizedMorphName);
+            const morphIndex = Number(morphIndexValue);
+            if (!gazeMatch || !Number.isInteger(morphIndex) || morphIndex < 0 || morphIndex >= morphInfluences.length) continue;
+            const baseInfluence = Number(morphInfluences[morphIndex] || 0);
+            if (!Number.isFinite(baseInfluence)) continue;
+            const clampedBase = Math.max(0, Math.min(1, baseInfluence));
+            const amplitude = Math.min(0.075, 1 - clampedBase);
+            if (amplitude <= 0) continue;
+            idleGazeMorphTargets.push({
+              mesh: node,
+              index: morphIndex,
+              direction: gazeMatch[1],
+              side: gazeMatch[2],
+              baseInfluence: clampedBase,
+              amplitude
+            });
+          }
+        }
+`;
+  next = next.replace(
+    '        if (!node?.isBone || !node.quaternion?.clone) return;',
+    discovery + '        if (!node?.isBone || !node.quaternion?.clone) return;'
+  );
+
+  next = next.replace(
+    'expressionPhase: (replacements.length * 1.77) % 5,',
+    `expressionPhase: (replacements.length * 1.77) % 5,
+        gazeMorphTargets: idleGazeMorphTargets,
+        gazePeriod: 8.5 + ((replacements.length * 1.37) % 4.5),
+        gazePhase: (replacements.length * 1.61) % 4,`
+  );
+
+  const gazeUpdate = `          // A short, occasional glance uses only compatible eye-look morphs
+          // already authored in the model. Most of each cycle remains centred.
+          if (idle.gazeMorphTargets?.length) {
+            const gazeElapsed = idle.elapsed + idle.gazePhase;
+            const gazeCycle = (gazeElapsed % idle.gazePeriod) / idle.gazePeriod;
+            let gazeWeight = 0;
+            if (gazeCycle >= 0.61 && gazeCycle < 0.68) {
+              const t = (gazeCycle - 0.61) / 0.07;
+              gazeWeight = t * t * (3 - 2 * t);
+            } else if (gazeCycle >= 0.68 && gazeCycle < 0.77) {
+              gazeWeight = 1;
+            } else if (gazeCycle >= 0.77 && gazeCycle < 0.84) {
+              const t = 1 - (gazeCycle - 0.77) / 0.07;
+              gazeWeight = t * t * (3 - 2 * t);
+            }
+            const gazeDirections = ['up', 'left', 'right', 'down'];
+            const gazeDirection = gazeDirections[Math.floor(gazeElapsed / idle.gazePeriod) % gazeDirections.length];
+            for (const target of idle.gazeMorphTargets) {
+              const influences = target.mesh?.morphTargetInfluences;
+              if (!influences || target.index >= influences.length) continue;
+              const activeDirection = gazeDirection === target.direction
+                || (gazeDirection === 'left' && ((target.side === 'left' && target.direction === 'out') || (target.side === 'right' && target.direction === 'in')))
+                || (gazeDirection === 'right' && ((target.side === 'left' && target.direction === 'in') || (target.side === 'right' && target.direction === 'out')));
+              const weight = activeDirection ? gazeWeight : 0;
+              influences[target.index] = Math.max(0, Math.min(1, target.baseInfluence + target.amplitude * weight));
+            }
+          }
+`;
+  next = next.replace('          if (idle.boneTargets?.length) {', gazeUpdate + '          if (idle.boneTargets?.length) {');
+
+  next = next.replace(
+    'expressionMorphTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleExpressionTargets || 0), 0),',
+    `expressionMorphTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleExpressionTargets || 0), 0),
+        eyeGazeMorphStaffPlaced: replacements.filter((entry) => entry.proceduralIdleGazeTargets > 0).length,
+        eyeGazeMorphTargets: replacements.reduce((sum, entry) => sum + (entry.proceduralIdleGazeTargets || 0), 0),`
+  );
+
+  next = next.replace(
+    'proceduralIdleExpressionTargets: idleExpressionMorphTargets.length });',
+    'proceduralIdleExpressionTargets: idleExpressionMorphTargets.length, proceduralIdleGazeTargets: idleGazeMorphTargets.length });'
+  );
+
+  return { code: `/* ${STAFF_EYE_GAZE_MORPH_MARKER} */\n${next}`, alreadyPatched: false, warnings: [] };
+}
+
 export function transformStaffRuntimeIntegration(source, availableIds, renderModes) {
   const base = transformStaffRuntimeIntegrationBase(source, availableIds, renderModes);
   if (!base?.code) return base;
@@ -820,13 +934,16 @@ export function transformStaffRuntimeIntegration(source, availableIds, renderMod
   }
   const scheduled = addTierAwareStaffIdleScheduler(working);
   if (!scheduled?.code) return { ...base, code: null, warnings: scheduled?.warnings || ['Tier-aware staff idle scheduler did not produce code.'] };
+  const eyeGaze = addStaffEyeGazeMorphSupport(scheduled.code);
+  if (!eyeGaze?.code) return { ...base, code: null, warnings: eyeGaze?.warnings || ['Staff eye-gaze morph transform did not produce code.'] };
   return {
     ...base,
-    code: scheduled.code,
+    code: eyeGaze.code,
     attentionGesturesAdded: true,
     proceduralIdleAdded: idleAdded || working.includes(PROCEDURAL_IDLE_MARKER),
     tierAwareIdleSchedulerAdded: !scheduled.alreadyPatched,
-    alreadyPatched: Boolean(base.alreadyPatched && scheduled.alreadyPatched)
+    eyeGazeMorphSupportAdded: !eyeGaze.alreadyPatched,
+    alreadyPatched: Boolean(base.alreadyPatched && scheduled.alreadyPatched && eyeGaze.alreadyPatched)
   };
 }
 /**

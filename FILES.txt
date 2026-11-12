@@ -12,4 +12,5 @@ Regression tests carried forward:
 - tests/calloria-v632-blink-morphs.test.mjs
 - tests/calloria-v633-static-mesh-blink.test.mjs
 - tests/calloria-v634-facial-expression-morphs.test.mjs
+- tests/calloria-v635-staff-eye-gaze-morphs.test.mjs
 - tests/fixtures/glb-world-integration-v12.fixture.js
