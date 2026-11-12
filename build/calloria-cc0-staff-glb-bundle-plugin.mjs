@@ -1,5 +1,5 @@
 /**
- * CALLORIA v6.12 — GLB staff asset compatibility validator.
+ * CALLORIA v6.14 — GLB staff runtime placement + compatibility validator.
  *
  * Drop-in replacement for the v3.9 build plugin. Keeps the same factory,
  * exported catalogue, plugin name, manifest path, and PRIMARY_CANDIDATES hook.
@@ -14,7 +14,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, relative, resolve, isAbsolute } from 'node:path';
 
 const TARGET = '/js/glb-world-integration.js';
-const MARKER = '__CALLORIA_CC0_STAFF_GLB_COMPAT_V612__';
+const MARKER = '__CALLORIA_CC0_STAFF_GLB_RUNTIME_V614__';
 const MANIFEST_RELATIVE = 'assets/models/calloria-cc0-staff-manifest.json';
 const MAX_MODEL_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 36 * 1024 * 1024;
@@ -255,7 +255,7 @@ async function fetchWithRetry(asset, fetchImpl, { attempts, timeoutMs, maxBytes,
         signal: controller.signal,
         headers: {
           Accept: 'model/gltf-binary, application/octet-stream;q=0.9, */*;q=0.1',
-          'User-Agent': 'CALLORIA-Staff-Asset-Bundler/6.12 (+https://calloria.vercel.app)',
+          'User-Agent': 'CALLORIA-Staff-Asset-Bundler/6.14 (+https://calloria.vercel.app)',
           Referer: 'https://gobkit.com/'
         }
       });
@@ -282,7 +282,7 @@ function makeManifest(entries, totals, status) {
   const staticPose = models.filter((entry) => ['skinned-static-pose', 'static-mesh'].includes(entry.renderMode)).length;
   return {
     schemaVersion: 2,
-    buildIntegration: 'CALLORIA v6.12 staff GLB compatibility bundle',
+    buildIntegration: 'CALLORIA v6.14 staff GLB runtime placement bundle',
     createdAt: new Date().toISOString(),
     status,
     source: 'Gobkit CC0 character pack direct GLB files; provenance recorded per model and pack.',
@@ -302,6 +302,113 @@ function makeManifest(entries, totals, status) {
     }, {}),
     models,
   };
+}
+
+/**
+ * Patch the existing browser-side staff integration so the manifest produced
+ * by this same build controls what can be placed. Static-pose assets are only
+ * placed on standing/non-walking staff anchors; animated assets retain the
+ * existing named-clip requirement and can replace seated or standing staff.
+ *
+ * This helper deliberately supports both repository generations of the
+ * runtime candidate array (PRIMARY_CANDIDATES and CANDIDATE_IDS). Unknown
+ * source shapes are reported as a warning by the plugin and left untouched.
+ */
+export function transformStaffRuntimeIntegration(source, availableIds, renderModes) {
+  const original = String(source || '').replace(/\r\n?/g, '\n');
+  if (original.includes(MARKER)) return { code: original, map: null, alreadyPatched: true };
+  if (!Array.isArray(availableIds) || !availableIds.length) return null;
+
+  const candidatePattern = /const (PRIMARY_CANDIDATES|CANDIDATE_IDS) = \[[^\]]*\];/g;
+  const candidateMatches = [...original.matchAll(candidatePattern)];
+  const rigAnchor = 'const rigValid = metrics.skinnedMeshCount > 0 && metrics.skeletonCount > 0 && metrics.boneCount >= 15;';
+  const humanScaleAnchor = `const humanScale = metrics.size.y >= 1.0 && metrics.size.y <= 2.6\n        && metrics.size.x >= 0.2 && metrics.size.x <= 1.35\n        && metrics.size.z >= 0.12 && metrics.size.z <= 1.35;`;
+  const selectionAnchor = `const candidateClip = chooseClip(candidate.gltf.animations, Boolean(person.seated));
+      if (candidateClip) {
+        selected = candidate;
+        clip = candidateClip;
+        break;
+      }`;
+  const selectedGuard = 'if (!selected || !clip) continue;';
+  const mixerAnchor = `const mixer = new T.AnimationMixer(clonedRoot);
+    mixer.clipAction(clip).reset().play();
+    mixers.push(mixer);`;
+  const pushAnchor = 'replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip.name });';
+  const disposeAnchor = 'entry.mixer.stopAllAction();';
+  const approvalAnchor = 'return new Set(Array.isArray(data.approvedAssetIds) ? data.approvedAssetIds : []);';
+  const catchAnchor = 'return new Set();';
+
+  const checks = [
+    ['one candidate array', candidateMatches.length === 1],
+    ['one legacy rig-validation anchor', original.split(rigAnchor).length - 1 === 1],
+    ['one human-scale validation anchor', original.split(humanScaleAnchor).length - 1 === 1],
+    ['one candidate-selection loop anchor', original.split(selectionAnchor).length - 1 === 1],
+    ['one selected-candidate guard', original.split(selectedGuard).length - 1 === 1],
+    ['one animation-mixer anchor', original.split(mixerAnchor).length - 1 === 1],
+    ['one replacement-record anchor', original.split(pushAnchor).length - 1 === 1],
+    ['one source-model disposal anchor', original.split(disposeAnchor).length - 1 === 1],
+    ['one inspector approval read anchor', original.split(approvalAnchor).length - 1 === 1],
+    ['one inspector fallback anchor', original.split(catchAnchor).length - 1 === 1]
+  ];
+  const missing = checks.filter(([, ok]) => !ok).map(([label]) => label);
+  if (missing.length) return { code: null, warnings: [`Runtime integration source was not modified: ${missing.join(', ')} did not match the checked v1.2+ contract.`] };
+
+  const defaultIds = JSON.stringify(availableIds);
+  const modeJson = JSON.stringify(renderModes || {});
+  let code = original;
+  const candidateName = candidateMatches[0][1];
+  const candidateReplacement = `const CALLORIA_STAFF_RENDER_MODES = Object.freeze(${modeJson});\nconst CALLORIA_STAFF_DEFAULT_CANDIDATES = Object.freeze(${defaultIds});\nconst ${candidateName} = ${defaultIds};`;
+  code = code.replace(candidatePattern, candidateReplacement);
+
+  code = code.replace(approvalAnchor, `const explicit = Array.isArray(data.approvedAssetIds) ? data.approvedAssetIds : [];
+    const selected = explicit.filter((id) => CALLORIA_STAFF_DEFAULT_CANDIDATES.includes(id));
+    return new Set(selected.length ? selected : CALLORIA_STAFF_DEFAULT_CANDIDATES);`);
+  code = code.replace(catchAnchor, 'return new Set(CALLORIA_STAFF_DEFAULT_CANDIDATES);');
+  code = code.replace(humanScaleAnchor, `const humanScale = metrics.size.y >= 0.4 && metrics.size.y <= 5.0
+        && metrics.size.x >= 0.04 && metrics.size.x <= 3.5
+        && metrics.size.z >= 0.04 && metrics.size.z <= 3.5
+        && metrics.size.x / Math.max(metrics.size.y, 0.001) <= 1.0
+        && metrics.size.z / Math.max(metrics.size.y, 0.001) <= 1.0;`);
+
+  code = code.replace(rigAnchor, `const staffRenderMode = CALLORIA_STAFF_RENDER_MODES[asset.id] || null;
+      const usableSkin = metrics.skinnedMeshCount > 0 && metrics.skeletonCount > 0 && metrics.boneCount >= 1;
+      const rigValid = staffRenderMode === 'static-mesh'
+        || staffRenderMode === 'animated-node-transforms'
+        || (['skinned-static-pose', 'animated-skinned'].includes(staffRenderMode) && usableSkin)
+        || (!staffRenderMode && metrics.skinnedMeshCount > 0 && metrics.skeletonCount > 0 && metrics.boneCount >= 15);`);
+
+  code = code.replace('    let clip = null;\n    for (let offset = 0;', '    let clip = null;\n    let selectedRenderMode = null;\n    for (let offset = 0;');
+  code = code.replace(selectionAnchor, `const candidateRenderMode = CALLORIA_STAFF_RENDER_MODES[candidate.asset.id] || 'animated-skinned';
+      const candidateClip = chooseClip(candidate.gltf.animations, Boolean(person.seated));
+      const isStaticPose = ['skinned-static-pose', 'static-mesh'].includes(candidateRenderMode);
+      const canUseStandingPose = !person.seated
+        && (isStaticPose || String(candidateRenderMode).startsWith('animated-'));
+      if (candidateClip || canUseStandingPose) {
+        selected = candidate;
+        clip = candidateClip;
+        selectedRenderMode = candidateRenderMode;
+        break;
+      }`);
+  code = code.replace(selectedGuard, `if (!selected || (!clip && person.seated)) continue;`);
+  code = code.replace(mixerAnchor, `let mixer = null;
+    if (clip) {
+      mixer = new T.AnimationMixer(clonedRoot);
+      mixer.clipAction(clip).reset().play();
+      mixers.push(mixer);
+    }`);
+  code = code.replace(pushAnchor, `replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip) });`);
+  code = code.replace(disposeAnchor, 'entry.mixer?.stopAllAction?.();');
+
+  // Expose real placement detail to the existing onAssetsReady/GLB status UI.
+  const statusAnchor = '      mode: replacements.length ? \'approved-glb-staff-with-local-fallback\' : \'merged-articulated-local-staff\',';
+  if (code.split(statusAnchor).length - 1 === 1) {
+    code = code.replace(statusAnchor, `${statusAnchor}
+        assetsInUse: [...new Set(replacements.map((entry) => entry.assetId))],
+        staticPosePlaced: replacements.filter((entry) => ['skinned-static-pose', 'static-mesh'].includes(entry.renderMode)).length,
+        animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,`);
+  }
+
+  return { code: `/* ${MARKER} */\n${code}`, map: null, alreadyPatched: false };
 }
 
 export function createCalloriaCC0StaffGLBBundlePlugin(options = {}) {
@@ -371,13 +478,13 @@ export function createCalloriaCC0StaffGLBBundlePlugin(options = {}) {
           totalBytes += bytes.length;
           results[index] = { id: asset.id, status: 'downloaded-and-compatible', bytes: bytes.length };
           entries[index] = { ...asset, output: `/assets/models/${asset.path}`, status: 'downloaded-and-compatible', source, sizeBytes: bytes.length, sha256: sha256(bytes), ...metrics };
-          this.info?.(`CALLORIA v6.12 bundled ${asset.name} (${bytes.length.toLocaleString()} bytes; ${metrics.triangleCount.toLocaleString()} triangles; mode ${metrics.renderMode}; ${metrics.boneCount} joints; ${metrics.animationCount} clips).`);
+          this.info?.(`CALLORIA v6.14 bundled ${asset.name} (${bytes.length.toLocaleString()} bytes; ${metrics.triangleCount.toLocaleString()} triangles; mode ${metrics.renderMode}; ${metrics.boneCount} joints; ${metrics.animationCount} clips).`);
         } catch (error) {
           failed += 1;
           const message = [priorError, String(error?.message || error)].filter(Boolean).join(' | ');
           results[index] = { id: asset.id, status: 'unavailable', error: message };
           entries[index] = { ...asset, output: `/assets/models/${asset.path}`, status: 'unavailable', source, error: message };
-          this.warn?.(`CALLORIA v6.12 could not bundle ${asset.name}: ${message}`);
+          this.warn?.(`CALLORIA v6.14 could not bundle ${asset.name}: ${message}`);
         }
       };
 
@@ -398,29 +505,18 @@ export function createCalloriaCC0StaffGLBBundlePlugin(options = {}) {
       const manifestPath = resolve(publicRoot, MANIFEST_RELATIVE);
       mkdirSync(dirname(manifestPath), { recursive: true });
       writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
-      this.info?.(`CALLORIA v6.12 staff GLB compatibility bundle: ${availableIds.length}/${CC0_STAFF_MODELS.length} structurally compatible, ${manifest.animatedStaffModels} animated, ${manifest.staticPoseStaffModels} static-pose, ${totalBytes.toLocaleString()} bytes; manifest: /${MANIFEST_RELATIVE}.`);
+      this.info?.(`CALLORIA v6.14 staff GLB runtime bundle: ${availableIds.length}/${CC0_STAFF_MODELS.length} structurally compatible, ${manifest.animatedStaffModels} animated, ${manifest.staticPoseStaffModels} static-pose, ${totalBytes.toLocaleString()} bytes; manifest: /${MANIFEST_RELATIVE}.`);
     },
     transform(source, id) {
       const target = String(id || '').split('?')[0].replaceAll('\\', '/');
       if (!target.endsWith(TARGET) || source.includes(MARKER) || !availableIds.length) return null;
-      const pattern = /const PRIMARY_CANDIDATES = \[[^\]]*\];/g;
-      const matches = source.match(pattern) || [];
-      if (matches.length !== 1) {
-        this.warn?.(`CALLORIA v6.12 could not find exactly one PRIMARY_CANDIDATES array in ${TARGET} (found ${matches.length}); compatible GLBs remain bundled, but the existing runtime candidate order is unchanged.`);
+      const transformed = transformStaffRuntimeIntegration(source, availableIds, renderModes);
+      if (!transformed?.code) {
+        for (const warning of transformed?.warnings || []) this.warn?.(`CALLORIA v6.14 ${warning}`);
         return null;
       }
-      const replacement = `const PRIMARY_CANDIDATES = ${JSON.stringify(availableIds)};`;
-      const modeMap = `const CALLORIA_STAFF_RENDER_MODES = Object.freeze(${JSON.stringify(renderModes)});`;
-      let code = source.replace(pattern, replacement);
-      code = code.replace(replacement, `${modeMap}\n${replacement}`);
-      const approvalAnchor = 'return new Set(explicit.length ? explicit : PRIMARY_CANDIDATES);';
-      const approvalCount = code.split(approvalAnchor).length - 1;
-      if (approvalCount === 1) {
-        code = code.replace(approvalAnchor, `const selected = explicit.filter((id) => PRIMARY_CANDIDATES.includes(id));\n    return new Set(selected.length ? selected : PRIMARY_CANDIDATES);`);
-      } else {
-        this.warn?.(`CALLORIA v6.12 could not reconcile saved GLB Inspector approvals (${approvalCount} approval anchors); only the default candidate array was updated.`);
-      }
-      return { code: `/* ${MARKER} */\n${code}`, map: null };
+      this.info?.(`CALLORIA v6.14 runtime integration enabled for ${availableIds.length} bundled staff GLB(s): ${Object.entries(renderModes).map(([id, mode]) => `${id}=${mode}`).join(', ')}. Static-pose models are restricted to standing staff anchors.`);
+      return { code: transformed.code, map: null };
     },
     api: {
       getAvailableStaffIds() { return [...availableIds]; },
@@ -437,5 +533,5 @@ export function calloriaCC0StaffGLBBundlePlugin() {
 export const __calloriaCC0StaffGLBBundleTest = Object.freeze({
   TARGET, MARKER, MANIFEST_RELATIVE, MAX_MODEL_BYTES, MAX_TOTAL_BYTES, MAX_TRIANGLES,
   REQUIRED_ANIMATIONS: Object.freeze([]), PREFERRED_ANIMATIONS, LICENSE,
-  readGlbJsonAndChunks, parseGlb, sha256, fetchWithRetry, makeManifest
+  readGlbJsonAndChunks, parseGlb, sha256, fetchWithRetry, makeManifest, transformStaffRuntimeIntegration
 });

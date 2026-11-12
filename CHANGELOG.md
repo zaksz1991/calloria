@@ -1,8 +1,13 @@
-# v6.13 changelog
+# CALLORIA v6.14 changelog
 
-- Replaced the office GLB runtime with a diagnostic, independently loading asset pipeline.
-- Preserved v2.9/v3.8 Vite transform anchors and production-world API.
-- Added tier-aware office asset validation policy in a separate testable module.
-- Added precise asset and placement diagnostics through `calloria:office-glb-status`.
-- Kept primitive fallbacks visible until their real GLB replacements are successfully placed.
-- Added duplicate-initialization protection and parallel independent asset loading.
+## Staff GLB runtime activation
+
+- Connected the v6.12 validated staff manifest to the existing staff runtime integration.
+- Added support for both `PRIMARY_CANDIDATES` and `CANDIDATE_IDS` runtime source generations.
+- Added safe default activation of build-validated models while respecting explicit GLB Inspector selections.
+- Added support for animated-skinned, animated-node-transform, skinned-static-pose and static-mesh modes.
+- Restricted static-pose placements to standing/non-seated staff anchors.
+- Avoided starting animation mixers when a selected model has no real clip.
+- Preserved existing scene, render loop, Vite factory API, model catalogue, manifest path and disposal flow.
+- Added actual placed model IDs and render-mode counts to readiness diagnostics.
+- Changed unknown runtime source contracts to warn and skip the transform rather than failing Vite.

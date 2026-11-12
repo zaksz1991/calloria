@@ -1,11 +1,14 @@
-# Reading the next Vercel build log
+# Reading the next Vercel build log — v6.14
 
-Look for the new `CALLORIA v6.12 staff GLB compatibility bundle` line.
+Check both records:
 
-- `N/5 structurally compatible` reports models that passed the revised build-time structural validator.
-- `animated` counts models with embedded clips.
-- `static-pose` counts models without a complete animation capability.
+1. **Bundle result** — `N/5 structurally compatible`, plus animated/static-pose counts. This is build-time validation only.
+2. **Runtime transform result** — `runtime integration enabled for N bundled staff GLB(s)`. This confirms that the browser staff-integration source was transformed.
 
-If the count remains `0/5`, inspect each `could not bundle <model>` warning. That means one of the structural checks still rejected the real file or the pinned download failed.
+If the bundle count is `0/5`, inspect per-model warnings and verify the real files or network download. If it is `4/5`, the rejected model is named in the log; the other four may still be activated.
 
-If the bundle reports compatible models but the game still shows `GLB STAFF 0`, the remaining failure is in the browser runtime/placement path rather than this build-time validator. The manifest at `/assets/models/calloria-cc0-staff-manifest.json` identifies the model paths and render modes for that next diagnosis.
+If a `Runtime integration source was not modified` warning appears, the current `js/glb-world-integration.js` no longer matches the captured v1.2+ transform contract. The build intentionally skips that transform rather than failing. The source then needs a targeted anchor reconciliation.
+
+If both build records report success, inspect the deployed GLB status panel. It must report model IDs actually placed, not merely downloaded. Static-pose models should appear at standing support positions and will remain still.
+
+The separate `GLB OFFICE OBJECTS` count is not changed by v6.14. This package does not claim to repair office props.
