@@ -14,6 +14,7 @@
   <script defer src="/career-progression-engine.js"></script>
   <script defer src="/office-routine-engine.js"></script>
   <script defer src="/voice-call-engine.js"></script>
+  <script defer src="/digital-channel-engine.js"></script>
   <script defer src="/live-floor.js"></script>
 </head>
 <body>
@@ -25,7 +26,7 @@
     <div class="topbar-right">
       <a class="office-nav-link" href="/office-floor.html">3D WORKPLACE</a>
       <span class="live-badge"><i></i> SIMULATED FLOOR</span>
-      <span class="version-label">CORE GAMEPLAY · BUILD 6.5</span>
+      <span class="version-label">CORE GAMEPLAY · BUILD 6.6</span>
     </div>
   </header>
 
@@ -176,6 +177,40 @@
             </div>
           </section>
           <div class="conversation" id="conversation" aria-live="polite"></div>
+          <section id="digital-channel-panel" class="digital-channel-panel hidden" aria-label="Email and live chat handling tools">
+            <div class="digital-panel-heading">
+              <div><span class="eyebrow" id="digital-channel-eyebrow">DIGITAL CONTACT</span><h3 id="digital-channel-title">Digital response workspace</h3></div>
+              <span id="digital-channel-status" class="digital-status">ACTIVE</span>
+            </div>
+            <div id="digital-email-workspace" class="digital-email-workspace hidden">
+              <div class="digital-sla-strip">
+                <div><span>EMAIL RESPONSE TARGET</span><strong id="digital-email-sla">WITHIN TARGET</strong></div>
+                <div><span>REMAINING SHIFT TIME</span><strong id="digital-email-remaining">—</strong></div>
+                <div><span>REQUIRED QUALITY</span><strong>60 / 100 minimum</strong></div>
+              </div>
+              <p id="digital-email-instruction" class="digital-instruction">Complete the customer investigation first. Then prepare and send a clear, evidence-based email response.</p>
+              <label for="digital-email-subject">Email subject</label>
+              <input id="digital-email-subject" type="text" maxlength="140" autocomplete="off" value="Re: Customer enquiry" placeholder="Re: Customer enquiry">
+              <label for="digital-email-body">Customer email response</label>
+              <textarea id="digital-email-body" rows="7" maxlength="3000" placeholder="Dear customer,&#10;&#10;Thank you for contacting us..."></textarea>
+              <div class="digital-email-actions">
+                <button id="digital-email-scaffold" class="button button-secondary" type="button">Insert response structure</button>
+                <button id="digital-email-review" class="button button-secondary" type="button">Review quality</button>
+                <button id="digital-email-send" class="button button-primary" type="button" disabled>Send simulated email reply</button>
+              </div>
+              <div id="digital-email-quality" class="digital-quality" role="status" aria-live="polite">Quality checklist appears when you review your draft.</div>
+              <p class="digital-disclaimer">SIMULATED EMAIL · The reply is recorded in this practice interaction only. No external email is sent.</p>
+            </div>
+            <div id="digital-chat-workspace" class="digital-chat-workspace hidden">
+              <div class="digital-chat-topline"><div><span>CHAT TURN</span><strong id="digital-chat-stage">1 OF 3</strong></div><div><span>LATEST REPLY TIME</span><strong id="digital-chat-response-time">—</strong></div><div><span>REPLIES RECORDED</span><strong id="digital-chat-replies">0 / 3</strong></div></div>
+              <p id="digital-chat-instruction" class="digital-instruction">Prepare a concise customer-facing reply for this stage. Then select the service action below to send it and continue the chat.</p>
+              <label for="digital-chat-body">Your live-chat response</label>
+              <textarea id="digital-chat-body" rows="4" maxlength="700" placeholder="Acknowledge the customer's concern and explain the next step..."></textarea>
+              <div class="digital-chat-actions"><span id="digital-chat-character-count">0 / 700 characters</span><button id="digital-chat-prepare" class="button button-primary" type="button">Prepare chat response</button></div>
+              <div id="digital-chat-quality" class="digital-quality" role="status" aria-live="polite">A reply is required before selecting the service action.</div>
+              <p class="digital-disclaimer">SIMULATED LIVE CHAT · Customer follow-ups are scripted. No live chat visitor or external messaging connection is present.</p>
+            </div>
+          </section>
           <div class="decision-area" id="decision-area">
             <div class="decision-title"><span class="eyebrow" id="decision-step">STEP 1 OF 3</span><h3 id="decision-heading">Understand the customer</h3></div>
             <p id="decision-prompt"></p>
@@ -240,7 +275,7 @@
     </section>
 
     <section class="activity-strip"><span>SIMULATION LOG</span><div id="activity-log">No activity recorded.</div><button id="end-shift" class="button button-secondary" type="button" disabled>End shift</button></section>
-    <footer class="page-foot">CALLORIA v6.5 · Voice-call handling simulation · No real customer, telephone, email or messaging connections</footer>
+    <footer class="page-foot">CALLORIA v6.6 · Digital contact handling simulation · No real customer, telephone, email or messaging connections</footer>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>
