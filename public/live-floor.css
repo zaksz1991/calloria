@@ -104,3 +104,43 @@
 .social-messaging-workspace textarea:disabled{background:#f5f7fa;color:#66778e}
 .social-messaging-workspace .digital-chat-actions>span{font-variant-numeric:tabular-nums}
 @media(max-width:680px){.social-messaging-workspace{padding:9px}.social-message-topline{grid-template-columns:1fr 1fr}.social-message-topline>div:last-child{grid-column:1/-1}.social-messaging-workspace .digital-chat-actions{display:grid;grid-template-columns:1fr}.social-messaging-workspace .digital-chat-actions .button{width:100%}}
+
+/* v6.8 skill-based omnichannel routing and queue SLA visibility */
+.queue-filters-v68{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:0 13px 9px}
+.queue-filters-v68 label{min-width:0}
+.queue-filters-v68 select{width:100%;min-width:0;min-height:34px}
+.routing-overview{margin:0 12px 10px;padding:11px 12px;border:1px solid #dce6f3;border-radius:9px;background:linear-gradient(135deg,#f5f8ff,#eef4fb)}
+.routing-overview-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.routing-mode-badge{display:inline-flex;align-items:center;padding:4px 7px;border-radius:20px;background:#e2eaff;color:#355ba7;font-size:7px;font-weight:950;letter-spacing:.08em;white-space:nowrap}
+.routing-overview>strong{display:block;margin-top:7px;color:#263d5f;font-size:10px;line-height:1.4;overflow-wrap:anywhere}
+.routing-overview>p{margin:5px 0 8px;color:#708098;font-size:8px;line-height:1.5}
+.routing-stats{display:flex;flex-wrap:wrap;gap:6px}
+.routing-stats span{padding:4px 7px;border-radius:6px;background:#fff;border:1px solid #e1e8f2;color:#65758d;font-size:7px;font-weight:850}
+.routing-profile-panel{margin:0 12px 10px;border:1px solid #e4eaf2;border-radius:8px;background:#fbfcfe}
+.routing-profile-panel summary{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;cursor:pointer;color:#425873;font-size:8px;font-weight:900;list-style-position:inside}
+.routing-profile-panel summary small{color:#8a96a7;font-size:7px;font-weight:700}
+.routing-profile-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 10px 10px}
+.routing-skill-section{min-width:0;display:grid;gap:5px}
+.routing-skill-section>strong{padding:5px 0;border-bottom:1px solid #e9edf3;color:#7b899d;font-size:7px;letter-spacing:.08em;text-transform:uppercase}
+.routing-skill-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px;color:#5d6e85;font-size:7px;line-height:1.25}
+.routing-skill-row span{min-width:0;overflow-wrap:anywhere}
+.routing-skill-row select{max-width:92px;min-height:26px;padding:4px 5px;border:1px solid #dce4ee;border-radius:5px;background:#fff;color:#435773;font:inherit;font-size:7px}
+.routing-profile-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 10px 10px}
+.routing-profile-actions .button{padding:6px 8px;font-size:7px}
+.routing-profile-actions>span{color:#98a3b2;font-size:7px;text-align:right}
+.queue-item-v68{padding-bottom:10px}
+.routing-contact-meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.routing-sla-chip,.routing-fit-chip{display:inline-flex;align-items:center;padding:4px 6px;border-radius:5px;font-size:6px;font-weight:950;letter-spacing:.045em}
+.routing-sla-chip.within{background:#eaf6ef;color:#327152}
+.routing-sla-chip.risk{background:#fff3dc;color:#91610c}
+.routing-sla-chip.breached{background:#ffebe8;color:#a43a30}
+.routing-fit-chip.matched{background:#eaf1ff;color:#365da7}
+.routing-fit-chip.review{background:#f0edf8;color:#6b568c}
+.routing-reason{display:block;margin-top:5px;color:#8290a4;font-size:7px;line-height:1.4;font-weight:650}
+@media(max-width:680px){
+  .routing-profile-controls{grid-template-columns:1fr}
+  .routing-profile-panel summary{align-items:flex-start;flex-direction:column;gap:3px}
+  .routing-profile-actions{align-items:flex-start;flex-direction:column}
+  .routing-profile-actions>span{text-align:left}
+  .queue-filters-v68{grid-template-columns:1fr 1fr}
+}

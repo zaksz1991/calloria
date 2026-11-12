@@ -13,9 +13,9 @@ test('Social messaging engine loads before the Live Floor controller', () => {
   assert.ok(html.indexOf('/social-messaging-engine.js') < html.indexOf('/live-floor.js'));
 });
 
-test('page version and footer identify v6.7', () => {
-  assert.match(html, /BUILD 6\.7/);
-  assert.match(html, /CALLORIA v6\.7/);
+test('page version and footer identify v6.8 while retaining v6.7 workflows', () => {
+  assert.match(html, /BUILD 6\.8/);
+  assert.match(html, /CALLORIA v6\.8/);
 });
 
 test('all three channel workspace controls exist in HTML', () => {
@@ -34,10 +34,12 @@ test('all direct Live Floor selectors have matching HTML IDs', () => {
   assert.deepEqual([...new Set(selectors.filter((id) => !all.has(id)))], []);
 });
 
-test('controller requires and exposes the v6.7 engine', () => {
+test('controller requires and exposes v6.7 messaging and v6.8 routing engines', () => {
   assert.match(js, /const S = window\.CalloriaSocialMessagingEngine/);
-  assert.match(js, /\|\| !S\)/);
+  assert.match(js, /const Q = window\.CalloriaQueueRoutingEngine/);
+  assert.match(js, /\|\| !Q\)/);
   assert.match(js, /socialMessagingEngine: S/);
+  assert.match(js, /queueRoutingEngine: Q/);
 });
 
 test('Social, SMS and In-app contacts create and restore their own sessions', () => {

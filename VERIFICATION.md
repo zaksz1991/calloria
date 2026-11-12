@@ -1,32 +1,29 @@
-# CALLORIA v6.7 Verification
+# CALLORIA v6.8 Verification
 
 ## Automated checks
 
 | Check | Result |
 |---|---:|
-| v6.7 engine + integration tests | 35 passed |
-| v6.6 digital-channel tests | 19 passed |
-| v6.5 voice regression tests | 29 passed |
-| **Combined focused/regression tests** | **83 passed, 0 failed** |
+| Focused + regression tests | **109 passed, 0 failed** |
 | JavaScript syntax checks | Passed |
-| HTML duplicate-ID check | Passed |
-| Static controller selector check | Passed |
+| HTML duplicate-ID check | Passed — 161 IDs, no duplicates |
+| Live Floor direct selector check | Passed — 154 selectors, none missing |
+| Local HTTP asset requests | All 13 checked paths returned HTTP 200 |
 | ZIP integrity | Passed |
-| Local static asset HTTP checks | Passed |
 
-The combined `node --test tests/*.test.cjs` run completed with 83 tests passing and zero failures.
+Test coverage includes skill-profile defaults and persistence, profile isolation by employee/team, ranking by priority/SLA/age/skills, due/at-risk/breached SLA states, sorting modes, routing explanation, routing snapshot persistence, v6.5 voice controls, v6.6 Email/Live Chat and v6.7 Social/SMS/In-app regressions.
 
-## Not performed
+## Not performed / incomplete
 
-- Full CALLORIA repository test suite.
-- Vite production build against the complete repository.
-- Vercel deployment or verification at the live URL.
-- Full browser end-to-end gameplay using the user's actual customer queue and all existing engine assets.
+- The headless Chromium render attempt timed out; no browser visual acceptance is claimed.
+- Full CALLORIA repository tests were not run.
+- Vite production build against the complete repository was not run.
+- Vercel deployment and live-site verification were not performed.
 
-## Known boundaries
+## Runtime dependencies
 
-- Social, SMS and In-app contacts are still synthetic scenarios.
-- No external social provider, SMS gateway or app messaging API is connected.
-- Drafts and completed channel records remain in browser local storage.
-- Social privacy detection is pattern-based; operators still need to avoid publishing personal information.
-- SMS segment counts are estimates and not carrier billing calculations; Unicode limits are measured in UTF-16 code units.
+The Live Floor page still requires the existing v6.0-v6.7 runtime engines and assets listed in `README.md`. This overlay does not include or replace the 3D models or Vite configuration.
+
+## Data and integration boundaries
+
+Routing data is saved to browser local storage. Queue contacts are synthetic. This is advisory single-player routing, not a live omnichannel distributor or multi-agent assignment service.

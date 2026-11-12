@@ -10,14 +10,15 @@
   const V = window.CalloriaVoiceCallEngine;
   const G = window.CalloriaDigitalChannelEngine;
   const S = window.CalloriaSocialMessagingEngine;
+  const Q = window.CalloriaQueueRoutingEngine;
   const realStorage = window.localStorage;
   const toast = $('#toast');
   let toastTimer = null;
   let selectedChannel = '';
   let articleQuery = '';
 
-  if (!E || !C || !F || !P || !R || !D || !V || !G || !S) {
-    document.body.innerHTML = '<main style="max-width:700px;margin:60px auto;padding:24px;font:14px system-ui"><h1>CALLORIA Live Floor could not start</h1><p>Required simulation engine files are missing. Copy the v6.7 Omnichannel Contact Handling overlay and keep the matching v6.5, v6.4, v6.3 and v6.1 dependencies in the public folder, then reload this page.</p></main>';
+  if (!E || !C || !F || !P || !R || !D || !V || !G || !S || !Q) {
+    document.body.innerHTML = '<main style="max-width:700px;margin:60px auto;padding:24px;font:14px system-ui"><h1>CALLORIA Live Floor could not start</h1><p>Required simulation engine files are missing. Copy the v6.8 Intelligent Routing overlay and keep the matching v6.7 through v6.0 Live Floor dependencies in the public folder, then reload this page.</p></main>';
     return;
   }
 
@@ -38,6 +39,13 @@
   }
   let progress = P.load(realStorage);
   let agentState = E.load(storageProxy);
+  let routingIdentity = {
+    name: state.shift && state.shift.agentName || $('#agent-name').value || 'Agent Trainee',
+    team: state.shift && state.shift.team || $('#agent-team').value || 'Customer Care'
+  };
+  let routingIdentityKey = Q.identityKey(routingIdentity);
+  let routingProfile = Q.loadProfile(realStorage, routingIdentity);
+  let queueSortMode = 'smart';
   if (state.active) {
     const restoredContact = E.getActiveContact(agentState);
     if (restoredContact && String(restoredContact.channel).toLowerCase() === 'voice') {
@@ -80,8 +88,78 @@
     if (String(priority).startsWith('P3')) return 'p3';
     return 'p4';
   }
+  function activeRoutingIdentity() {
+    return {
+      name: state.shift && state.shift.agentName || $('#agent-name').value || 'Agent Trainee',
+      team: state.shift && state.shift.team || $('#agent-team').value || 'Customer Care'
+    };
+  }
+  function syncRoutingProfile() {
+    const identity = activeRoutingIdentity();
+    const key = Q.identityKey(identity);
+    if (key !== routingIdentityKey) {
+      routingIdentity = identity;
+      routingIdentityKey = key;
+      routingProfile = Q.loadProfile(realStorage, routingIdentity);
+    }
+    return routingProfile;
+  }
   function getQueue() {
-    return E.queuedContacts(agentState, selectedChannel ? { channel: selectedChannel } : {});
+    syncRoutingProfile();
+    const contacts = E.queuedContacts(agentState, selectedChannel ? { channel: selectedChannel } : {});
+    return Q.routeQueue(contacts, routingProfile, { mode: queueSortMode, now: new Date() });
+  }
+  function renderRoutingProfile() {
+    const profile = syncRoutingProfile();
+    const controls = $('#routing-profile-controls');
+    const channelRows = Q.CHANNELS.map((channel) => `
+      <label class="routing-skill-row"><span>${escapeHtml(channel)}</span><select data-routing-skill-kind="channel" data-routing-skill-id="${escapeHtml(channel)}" aria-label="${escapeHtml(channel)} skill level">
+        ${[1, 2, 3].map((level) => `<option value="${level}" ${profile.channelSkills[channel] === level ? 'selected' : ''}>${Q.LEVELS[level]}</option>`).join('')}
+      </select></label>`).join('');
+    const productRows = Q.PRODUCTS.map((product) => `
+      <label class="routing-skill-row"><span>${escapeHtml(product.name)}</span><select data-routing-skill-kind="product" data-routing-skill-id="${escapeHtml(product.id)}" aria-label="${escapeHtml(product.name)} skill level">
+        ${[1, 2, 3].map((level) => `<option value="${level}" ${profile.productSkills[product.id] === level ? 'selected' : ''}>${Q.LEVELS[level]}</option>`).join('')}
+      </select></label>`).join('');
+    controls.innerHTML = `<div class="routing-skill-section"><strong>Channel handling</strong>${channelRows}</div><div class="routing-skill-section"><strong>Product knowledge</strong>${productRows}</div>`;
+    $('#routing-profile-saved').textContent = `Profile: ${routingIdentity.team} · saved on this device`;
+  }
+  function renderQueue() {
+    const queue = getQueue();
+    const allQueue = E.queuedContacts(agentState);
+    const allRanked = Q.routeQueue(allQueue, routingProfile, { mode: 'smart', now: new Date() });
+    const due = F.dueEvent(state);
+    const blocked = !F.isOnShift(state) || !!due || !!state.active;
+    $('#queue-count').textContent = String(queue.length);
+    $('#routing-mode-badge').textContent = queueSortMode === 'smart' ? 'SMART ROUTING' : queueSortMode === 'priority' ? 'PRIORITY FIRST' : 'OLDEST WAITING';
+    const recommended = queue[0];
+    if (recommended) {
+      $('#routing-next-title').textContent = `${recommended.contact.reference} · ${recommended.contact.subject}`;
+      $('#routing-next-reason').textContent = `${recommended.reason}. ${Q.formatSla(recommended)} · ${recommended.skillFitPct}% skill fit.`;
+    } else {
+      $('#routing-next-title').textContent = F.isOnShift(state) ? 'No queued contacts in this view' : 'Queue recommendation appears after sign-in';
+      $('#routing-next-reason').textContent = 'Routing considers priority, response deadlines, waiting time and your team skills.';
+    }
+    $('#routing-sla-count').textContent = `${allRanked.filter((item) => ['BREACHED', 'DUE SOON', 'AT RISK'].includes(item.slaState)).length} SLA at risk`;
+    $('#routing-skill-count').textContent = `${allRanked.filter((item) => item.skillMatch).length} skill matches`;
+    renderRoutingProfile();
+    const list = $('#queue-list');
+    if (!queue.length) {
+      list.innerHTML = `<div class="empty-note">${F.isOnShift(state) ? 'No queued contacts remain. End the shift when floor events are complete.' : 'Sign in to load your shift queue.'}</div>`;
+      return;
+    }
+    list.innerHTML = queue.map((route) => {
+      const contact = route.contact;
+      const slaClass = route.slaState === 'BREACHED' ? 'breached' : route.slaState === 'WITHIN SLA' ? 'within' : 'risk';
+      return `
+      <button type="button" class="queue-item queue-item-v68" data-contact-id="${escapeHtml(contact.id)}" ${blocked ? 'disabled' : ''}>
+        <span class="queue-line"><strong>${escapeHtml(contact.reference)}</strong><span class="priority-chip ${priorityClass(contact.priority)}">${escapeHtml(contact.priority.split(' - ')[0])}</span></span>
+        <p>${escapeHtml(contact.subject)}</p>
+        <span class="queue-meta"><span>${escapeHtml(contact.channel)} · ${escapeHtml(productLabel(contact.productId))}</span><span>${escapeHtml(contact.customerTone || 'Customer')}</span></span>
+        <span class="routing-contact-meta"><span class="routing-sla-chip ${slaClass}">${escapeHtml(route.slaState)} · ${escapeHtml(Q.formatSla(route))}</span><span class="routing-fit-chip ${route.skillMatch ? 'matched' : 'review'}">${route.skillFitPct}% skill fit</span></span>
+        <small class="routing-reason">${escapeHtml(route.reason)}</small>
+      </button>`;
+    }).join('');
+    list.querySelectorAll('[data-contact-id]').forEach((button) => button.addEventListener('click', () => acceptContact(button.dataset.contactId)));
   }
   function openCasesForCustomer(customerId) {
     const db = C.load(realStorage);
@@ -557,7 +635,7 @@
     }
     body.innerHTML = records.map((item) => `
       <tr><td><strong>${escapeHtml(item.reference)}</strong></td><td>${escapeHtml(item.channel)}</td><td>${escapeHtml(item.subject)}</td>
-      <td class="${item.qa >= 85 ? 'score-good' : item.qa >= 65 ? 'score-mid' : 'score-low'}">${item.qa}%</td><td>${item.csat}/5</td><td>${escapeHtml(item.disposition)}</td><td>${item.voiceMetrics ? `${escapeHtml(V.formatSeconds(item.voiceMetrics.durationSeconds))} talk · ${escapeHtml(V.formatSeconds(item.voiceMetrics.holdSeconds))} hold · ${item.voiceMetrics.muteCount} mutes${item.voiceMetrics.consultCount ? ` · ${item.voiceMetrics.consultCount} consults` : ''}${item.voiceMetrics.transferred ? ` · to ${escapeHtml(item.voiceMetrics.transferDestination)}` : ''}` : item.digitalMetrics ? (item.digitalMetrics.channel === 'Email' ? `Email quality ${item.digitalMetrics.qualityScore}/100 · ${item.digitalMetrics.slaBreached ? 'SLA missed' : 'SLA met'}` : `${item.digitalMetrics.replies} chat replies · ${item.digitalMetrics.averageResponseSeconds}s avg first response`) : item.messagingMetrics ? `${item.messagingMetrics.channel} · ${item.messagingMetrics.replies} replies · ${item.messagingMetrics.averageResponseSeconds}s avg · ${item.messagingMetrics.averageQuality}/100 quality` : '—'}</td></tr>`).join('');
+      <td class="${item.qa >= 85 ? 'score-good' : item.qa >= 65 ? 'score-mid' : 'score-low'}">${item.qa}%</td><td>${item.csat}/5</td><td>${escapeHtml(item.disposition)}</td><td>${item.voiceMetrics ? `${escapeHtml(V.formatSeconds(item.voiceMetrics.durationSeconds))} talk · ${escapeHtml(V.formatSeconds(item.voiceMetrics.holdSeconds))} hold · ${item.voiceMetrics.muteCount} mutes${item.voiceMetrics.consultCount ? ` · ${item.voiceMetrics.consultCount} consults` : ''}${item.voiceMetrics.transferred ? ` · to ${escapeHtml(item.voiceMetrics.transferDestination)}` : ''}` : item.digitalMetrics ? (item.digitalMetrics.channel === 'Email' ? `Email quality ${item.digitalMetrics.qualityScore}/100 · ${item.digitalMetrics.slaBreached ? 'SLA missed' : 'SLA met'}` : `${item.digitalMetrics.replies} chat replies · ${item.digitalMetrics.averageResponseSeconds}s avg first response`) : item.messagingMetrics ? `${item.messagingMetrics.channel} · ${item.messagingMetrics.replies} replies · ${item.messagingMetrics.averageResponseSeconds}s avg · ${item.messagingMetrics.averageQuality}/100 quality` : '—'}${item.routingMetrics ? ` · ${item.routingMetrics.mode} route · ${item.routingMetrics.waitingMinutes}m queue wait` : ''}</td></tr>`).join('');
   }
   function renderActivity() {
     const latest = state.activity.slice(0, 3).map((item) => item.message).join(' · ');
@@ -598,6 +676,14 @@
       ['Social / SMS / In-app replies', messagingReplies], ['Average messaging response time', messagingTimes.length ? `${avgMessagingResponse}s` : '—'],
       ['SMS segments used', smsRecords.reduce((sum, item) => sum + (item.messagingMetrics.smsSegments || 0), 0)]
     ];
+    const routedRecords = state.completedContacts.filter((item) => item.routingMetrics);
+    const averageQueueWait = routedRecords.length ? Math.round(routedRecords.reduce((sum, item) => sum + item.routingMetrics.waitingMinutes, 0) / routedRecords.length) : 0;
+    items.push(
+      ['Contacts routed with skills profile', routedRecords.length],
+      ['Average queue waiting time', routedRecords.length ? `${averageQueueWait} min` : '—'],
+      ['SLA breached at acceptance', routedRecords.filter((item) => item.routingMetrics.slaStateAtAcceptance === 'BREACHED').length],
+      ['Average routing skill fit', routedRecords.length ? `${Math.round(routedRecords.reduce((sum, item) => sum + item.routingMetrics.skillFitPct, 0) / routedRecords.length)}%` : '—']
+    );
     $('#report-grid').innerHTML = items.map(([label, value]) => `<div class="report-stat"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
     $('#report-note').textContent = `Briefings: morning ${report.attendedMorningBriefing ? 'attended' : 'missed'}, afternoon ${report.attendedAfternoonBriefing ? 'attended' : 'not due'}. Scheduled breaks ${report.attendedBreaks ? 'completed' : 'not both completed'}. This is a simulated performance record, not an employment decision.`;
     const summary = P.getSummary(progress, state.shift.agentName, state.shift.team);
@@ -624,7 +710,17 @@
   function acceptContact(contactId) {
     try {
       $('#decision-feedback').classList.add('hidden');
+      syncRoutingProfile();
+      const route = Q.findRoute(E.queuedContacts(agentState), routingProfile, contactId, { mode: queueSortMode, now: new Date() });
       const contact = F.beginContact(state, agentState, E, contactId, new Date());
+      if (route) contact.routingSnapshot = {
+        mode: queueSortMode, score: route.score, reason: route.reason,
+        waitingMinutes: route.waitingMinutes, slaState: route.slaState,
+        slaRemainingMinutes: route.slaRemainingMinutes, skillFitPct: route.skillFitPct,
+        channelSkill: route.channelSkill, productSkill: route.productSkill,
+        assignedAgent: state.shift.agentName, assignedTeam: state.shift.team,
+        acceptedAt: new Date().toISOString()
+      };
       if (String(contact.channel || '').toLowerCase() === 'voice') state.active.voiceSession = V.createSession(contact, new Date());
       if (G.isDigital(contact)) state.active.digitalSession = G.createSession(contact, state.shift.minutes, new Date());
       if (S.isSupported(contact)) state.active.socialMessagingSession = S.createSession(contact, new Date());
@@ -882,7 +978,18 @@
     try {
       const digitalMetrics = digitalSession ? G.finalise(digitalSession, state.shift.minutes, new Date()) : null;
       const messagingMetrics = messagingSession ? S.finalise(messagingSession, new Date()) : null;
+      const routingSnapshot = contact.routingSnapshot || null;
       const result = F.finishContact(state, agentState, E, C, realStorage, input, new Date());
+      if (routingSnapshot) result.record.routingMetrics = {
+        mode: routingSnapshot.mode,
+        score: routingSnapshot.score,
+        waitingMinutes: routingSnapshot.waitingMinutes,
+        slaStateAtAcceptance: routingSnapshot.slaState,
+        skillFitPct: routingSnapshot.skillFitPct,
+        channelSkill: routingSnapshot.channelSkill,
+        productSkill: routingSnapshot.productSkill,
+        assignedTeam: routingSnapshot.assignedTeam
+      };
       if (voiceSessionToFinalise) voiceMetrics = V.finalise(voiceSessionToFinalise, new Date());
       if (voiceMetrics) result.record.voiceMetrics = voiceMetrics;
       if (digitalMetrics) result.record.digitalMetrics = digitalMetrics;
@@ -962,6 +1069,25 @@
   $('#request-supervisor').addEventListener('click', requestSupervisorAssistance);
   $('#end-shift').addEventListener('click', finishShift);
   $('#queue-channel').addEventListener('change', (event) => { selectedChannel = event.target.value; renderQueue(); });
+  $('#queue-sort').addEventListener('change', (event) => { queueSortMode = ['smart', 'priority', 'oldest'].includes(event.target.value) ? event.target.value : 'smart'; renderQueue(); });
+  $('#routing-profile-controls').addEventListener('change', (event) => {
+    const select = event.target.closest('[data-routing-skill-kind]');
+    if (!select) return;
+    try {
+      routingProfile = Q.updateSkill(routingProfile, select.dataset.routingSkillKind, select.dataset.routingSkillId, select.value);
+      if (!Q.saveProfile(realStorage, routingIdentity, routingProfile, new Date())) throw new Error('The routing profile could not be saved in browser storage.');
+      renderQueue();
+      notify('Routing skill profile saved. Queue recommendations updated.');
+    } catch (error) { notify(error.message, true); }
+  });
+  $('#routing-profile-reset').addEventListener('click', () => {
+    routingProfile = Q.createDefaultProfile(routingIdentity);
+    if (!Q.saveProfile(realStorage, routingIdentity, routingProfile, new Date())) { notify('The default skill profile could not be saved.', true); return; }
+    renderQueue();
+    notify('Team routing skill defaults restored.');
+  });
+  $('#agent-name').addEventListener('change', renderQueue);
+  $('#agent-team').addEventListener('change', renderQueue);
   $('#knowledge-query').addEventListener('input', (event) => { articleQuery = event.target.value; const contact = state.active && E.getActiveContact(agentState); if (contact) renderKnowledge(contact); });
   $('#knowledge-search-button').addEventListener('click', () => { articleQuery = $('#knowledge-query').value; const contact = state.active && E.getActiveContact(agentState); if (contact) renderKnowledge(contact); });
   $('#case-action').addEventListener('change', updateCaseActionFields);
@@ -993,6 +1119,11 @@
   $('#digital-email-review').addEventListener('click', reviewEmailDraft);
   $('#digital-email-send').addEventListener('click', sendEmailReply);
   setInterval(updateVoiceClock, 1000);
+  setInterval(() => {
+    const profilePanel = $('#routing-profile-panel');
+    const editingProfile = profilePanel && profilePanel.contains(document.activeElement);
+    if (!state.active && !editingProfile) renderQueue();
+  }, 30000);
   renderAll();
-  window.CalloriaLiveFloor = { getState: () => state, getAgentState: () => agentState, getCareerProgress: () => progress, refresh: renderAll, engine: F, progressionEngine: P, digitalChannelEngine: G, socialMessagingEngine: S };
+  window.CalloriaLiveFloor = { getState: () => state, getAgentState: () => agentState, getCareerProgress: () => progress, getRoutingProfile: () => routingProfile, refresh: renderAll, engine: F, progressionEngine: P, digitalChannelEngine: G, socialMessagingEngine: S, queueRoutingEngine: Q };
 })();

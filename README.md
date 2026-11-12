@@ -1,52 +1,47 @@
-# CALLORIA v6.7 — Social, SMS & In-app Contact Handling
+# CALLORIA v6.8 — Intelligent Omnichannel Routing & SLA Control
 
 ## Purpose
 
-This upgrade completes the channel-specific customer-response workflows in the playable Live Floor. It extends the v6.6 Email and Live Chat workspaces with dedicated handling for Social, SMS and In-app contacts. Voice controls and the 3D office are retained.
+This upgrade improves how the existing Live Floor presents the synthetic customer queue. It adds team-aware skill profiles, explainable routing priority, SLA visibility and a recorded routing snapshot for each accepted contact. It keeps customer handling as the centre of gameplay; it does not turn CALLORIA into a finance or back-office simulator.
 
-## New channel gameplay
+## New gameplay
 
-### Social
-- First response is recorded as a **public reply** with a 280-character limit.
-- Later handling stages become **private follow-ups** with a 700-character limit.
-- Public replies are blocked when they contain apparent email addresses, phone numbers, long numeric identifiers or customer/case references.
-- Password, PIN, passcode and one-time-code requests are blocked in both public and private responses.
-- The workspace prompts the agent to move account-specific investigation into a private support route.
+### Explainable next-best-contact routing
+- Ranks the current queued contacts using priority, SLA pressure, time waiting and agent skill fit.
+- Highlights the recommended next contact and the reasons it is recommended.
+- Shows breached, at-risk, due-soon and within-target SLA states.
+- Displays estimated remaining or overdue response time, waiting age and channel/product skill fit.
+- Refreshes queue timing and recommendations every 30 seconds when no contact is active and the skill editor is not being used.
 
-### SMS
-- Dedicated service-SMS composer for each of the three customer-care stages.
-- Up to three estimated SMS segments: 459 UTF-16 code units for GSM-compatible text or 201 UTF-16 code units for Unicode text.
-- Approximate GSM-compatible / Unicode segment and character estimates are recorded with the interaction.
-- Promotional wording is blocked unless the contact record contains explicit `smsMarketingConsent: true` or `consent.smsMarketing: true`.
-- Support replies are kept separate from promotional campaigns. Do not assume marketing consent from a customer merely contacting support.
+### Team-aware skill profile
+- Loads a default skill profile from the selected team: Customer Care, Digital Support, Player Support, Technical Support, Service Recovery or General Enquiries.
+- Allows the player to adjust proficiency for all six contact channels and all seven RuffNeck products/services.
+- Skill levels: Basic, Working and Advanced.
+- Saves profiles locally per employee name and assigned team, so one player profile does not overwrite another employee's profile on the same browser.
+- Changes immediately update queue ordering and the recommendation explanation.
 
-### In-app
-- Dedicated in-product response workspace.
-- Opening response can acknowledge and orient the customer.
-- Later responses require a clear in-product action such as opening Settings, selecting a menu or refreshing a product view.
-- Agents are prompted to explain what result the customer should report back.
+### Queue controls
+- Smart routing (default), Priority first and Oldest waiting sorting modes.
+- Existing channel filtering is retained.
+- Skill suggestions are advisory: an agent can still choose any queued contact. The game does not lock the player out of a customer because a profile skill is low.
 
-## Shared workflow
-
-- The agent must prepare one safe customer-facing reply for each of the three service stages.
-- A service decision cannot be selected until the current response is prepared.
-- After the service decision, the authored reply replaces the generic scripted outbound text in the interaction transcript.
-- Drafts, response preparation, sent-stage records, route visibility, response timing and channel-specific quality evidence are saved with the active browser-local interaction.
-- All three replies are mandatory before wrap-up.
-- Completed contact rows and the end-of-shift report include Social, SMS and In-app activity; SMS segment estimates are also counted.
-- The existing Email and Live Chat workflows are preserved.
+### Performance evidence
+- Captures routing mode, score, skill fit, queue wait, SLA state at acceptance, channel/product proficiency and assigned team when a contact is accepted.
+- Adds routing evidence to completed contact records and the end-of-shift report.
+- Preserves the v6.7 Voice, Email, Live Chat, Social, SMS and In-app contact workflows, including the earlier customer dynamics, career and office routine integrations.
 
 ## Installation
 
-This is an additive overlay for the existing CALLORIA v6.6 Live Floor. Copy these files from the ZIP's `public/` folder into the repository's existing `public/` folder, replacing matching files:
+This is an additive overlay for the existing CALLORIA v6.7 Live Floor. Copy the following six files from the ZIP's `public/` folder into the repository's existing `public/` folder, replacing matching files:
 
 1. `live-floor.html`
 2. `live-floor.css`
 3. `live-floor.js`
-4. `social-messaging-engine.js` — new engine
-5. `digital-channel-engine.js` — unchanged v6.6 compatibility copy; retain the matching existing copy if it has local changes.
+4. `digital-channel-engine.js` — unchanged v6.6 compatibility copy; retain your matching existing copy if locally customised.
+5. `social-messaging-engine.js` — unchanged v6.7 compatibility copy; retain your matching existing copy if locally customised.
+6. `queue-routing-engine.js` — new v6.8 engine.
 
-Keep the existing dependencies and assets already required by the Live Floor:
+Keep all other Live Floor dependencies and assets already in your repository:
 
 - `agent-workbench-engine.js`
 - `customer-journey-engine.js`
@@ -54,38 +49,38 @@ Keep the existing dependencies and assets already required by the Live Floor:
 - `career-progression-engine.js`
 - `office-routine-engine.js`
 - `customer-dynamics-engine.js`
-- `voice-call-engine.js` (v6.5)
-- the complete `public/assets/models/` directory and 3D workplace files
+- `voice-call-engine.js`
+- the existing complete `public/assets/models/` directory and 3D workplace files
 
-Do not replace the Vite configuration, Supabase settings, office-floor page or unrelated modules. No new environment variables are required.
+Do not replace the Vite configuration, Supabase configuration, 3D office pages, or unrelated modules. No environment variables or external API keys are required.
 
 ## Route
 
-The existing route remains:
+The existing Live Floor route remains:
 
 `/live-floor.html`
 
-The new engine is served from:
+The new engine is served at:
 
-`/social-messaging-engine.js`
-
-Vite's existing `public/` handling should serve the file without a configuration change.
+`/queue-routing-engine.js`
 
 ## Verification performed
 
-- 83 focused and regression tests passed, including v6.6 Email/Live Chat and v6.5 voice regressions.
-- JavaScript syntax checks passed.
-- HTML duplicate-ID and controller-selector checks passed.
-- Social, SMS and In-app session, safety, preparation, transcript and finalisation rules passed.
+- **109 focused and regression tests passed, zero failed.** This includes the v6.5 voice regressions, v6.6 email/chat checks, v6.7 social/SMS/in-app checks, and new v6.8 routing/queue tests.
+- JavaScript syntax checks passed for all JavaScript files in the overlay.
+- HTML duplicate-ID check passed.
+- All 153 direct controller ID selectors were found in the HTML.
+- Local HTTP checks returned 200 for the Live Floor page, stylesheet, controller, new routing engine and required compatibility/runtime dependencies.
 - ZIP archive integrity passed.
-- Static local asset HTTP checks passed.
 
-A full repository Vite build, Vercel deployment, actual live-site test and full browser end-to-end gameplay test were not performed.
+A headless Chromium page-render attempt timed out in this environment. A complete repository Vite production build, deployment to Vercel and live-site browser verification were not performed.
 
 ## Boundaries
 
-This is a simulation, not a connected social inbox or messaging provider. It does not publish public social replies, send direct messages or SMS, open a real in-app support thread, contact a live customer or connect to external platform APIs. Customer replies remain scripted. All new state remains in browser local storage on the same browser and origin.
-
-SMS segmentation is an estimate, not a carrier billing calculation. The SMS promotional-content guard is a gameplay safety rule, not a substitute for a complete consent-management or legal compliance system. Public social privacy checks are pattern-based and cannot guarantee detection of every sensitive identifier. Human judgement remains necessary.
-
-No Groq key, external AI service, live microphone, telephone system or new third-party dependency is used.
+- The queue remains the ten synthetic demonstration contacts supplied by the existing Live Floor engine; this is not a connection to a live ACD/omnichannel platform.
+- Routing is single-player decision support. It does not assign contacts across multiple real agents, teams or organisations.
+- SLA clocks are simulated from the timestamps on the local queue records. The rules are a game model, not a contractual service-level engine.
+- Skill profiles and routing evidence remain in browser local storage on the current browser and origin. They are not synced to Supabase or a central HR/CRM database.
+- Skill-fit and priority scores are transparent game heuristics, not a certified workforce optimisation or Erlang-C model.
+- The agent retains contact choice; a low skill match displays a suggestion instead of blocking the contact.
+- No real calls, emails, messages, AI service, external queue, microphone, or customer records are accessed. No Groq key or new third-party service is used.

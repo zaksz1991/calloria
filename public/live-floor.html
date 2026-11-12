@@ -16,6 +16,7 @@
   <script defer src="/voice-call-engine.js"></script>
   <script defer src="/digital-channel-engine.js"></script>
   <script defer src="/social-messaging-engine.js"></script>
+  <script defer src="/queue-routing-engine.js"></script>
   <script defer src="/live-floor.js"></script>
 </head>
 <body>
@@ -27,7 +28,7 @@
     <div class="topbar-right">
       <a class="office-nav-link" href="/office-floor.html">3D WORKPLACE</a>
       <span class="live-badge"><i></i> SIMULATED FLOOR</span>
-      <span class="version-label">CORE GAMEPLAY · BUILD 6.7</span>
+      <span class="version-label">CORE GAMEPLAY · BUILD 6.8</span>
     </div>
   </header>
 
@@ -95,12 +96,23 @@
           <div><div class="eyebrow">INCOMING WORK</div><h2>Customer queue</h2></div>
           <span class="count-pill" id="queue-count">0</span>
         </div>
-        <div class="queue-filters">
-          <label class="sr-only" for="queue-channel">Filter queue by channel</label>
-          <select id="queue-channel"><option value="">All channels</option><option>Voice</option><option>Email</option><option>Live chat</option><option>Social</option><option>SMS</option><option>In-app</option></select>
+        <div class="queue-filters queue-filters-v68">
+          <label><span class="sr-only">Filter queue by channel</span><select id="queue-channel"><option value="">All channels</option><option>Voice</option><option>Email</option><option>Live chat</option><option>Social</option><option>SMS</option><option>In-app</option></select></label>
+          <label><span class="sr-only">Queue sorting method</span><select id="queue-sort"><option value="smart">Smart routing</option><option value="priority">Priority first</option><option value="oldest">Oldest waiting</option></select></label>
         </div>
+        <section id="routing-overview" class="routing-overview" aria-live="polite">
+          <div class="routing-overview-top"><span class="eyebrow">NEXT BEST CONTACT</span><span id="routing-mode-badge" class="routing-mode-badge">SMART ROUTING</span></div>
+          <strong id="routing-next-title">Queue recommendation appears after sign-in</strong>
+          <p id="routing-next-reason">Routing considers priority, response deadlines, waiting time and your team skills.</p>
+          <div class="routing-stats"><span id="routing-sla-count">0 SLA at risk</span><span id="routing-skill-count">0 skill matches</span></div>
+        </section>
+        <details id="routing-profile-panel" class="routing-profile-panel">
+          <summary><span>My channel & product skills</span><small>Team-specific local profile</small></summary>
+          <div id="routing-profile-controls" class="routing-profile-controls"><div class="empty-note">Sign in to load your routing skill profile.</div></div>
+          <div class="routing-profile-actions"><button id="routing-profile-reset" class="button button-secondary" type="button">Reset team defaults</button><span id="routing-profile-saved">Saved on this device</span></div>
+        </details>
         <div id="queue-list" class="queue-list"><div class="empty-note">Sign in to load your shift queue.</div></div>
-        <div class="queue-footer"><span class="dot dot-green"></span> Queue uses synthetic customer scenarios</div>
+        <div class="queue-footer"><span class="dot dot-green"></span> Synthetic queue · advisory routing · agent retains contact choice</div>
       </aside>
 
       <section class="panel work-panel">
@@ -289,7 +301,7 @@
     </section>
 
     <section class="activity-strip"><span>SIMULATION LOG</span><div id="activity-log">No activity recorded.</div><button id="end-shift" class="button button-secondary" type="button" disabled>End shift</button></section>
-    <footer class="page-foot">CALLORIA v6.7 · Omnichannel customer contact simulation · No real customer, telephone, email or messaging connections</footer>
+    <footer class="page-foot">CALLORIA v6.8 · Skill-based omnichannel routing simulation · No real customer, telephone, email or messaging connections</footer>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>

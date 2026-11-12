@@ -1,24 +1,19 @@
-# Changelog — CALLORIA v6.7
+# v6.8 Changelog
 
-## Added
-- Social response workspace with first-stage public reply and subsequent private follow-up stages.
-- Public social privacy gate for apparent email addresses, phone numbers, long numeric identifiers and case/customer references.
-- SMS service-response composer with character count and approximate GSM-compatible / Unicode segment estimates.
-- Promotional SMS consent gate requiring an explicit consent flag in the contact record.
-- In-app guided-support response composer with action-oriented instructions for later troubleshooting stages.
-- Three-response preparation and commit workflow for Social, SMS and In-app contacts.
-- Authored message write-through to the active interaction transcript, including public/private route metadata.
-- Per-channel response timing and quality evidence in completed-contact records and shift reporting.
-- Browser-local draft persistence and restoration for the new channels.
-- Responsive mobile controls for the new workspace.
+## Intelligent Omnichannel Routing & SLA Control
 
-## Changed
-- Live Floor accepts Social, SMS and In-app contacts only after a channel-safe customer-facing response is prepared for each service stage.
-- Completed-contact handling column is now named Channel handling to include voice and all digital channels.
-- Live Floor version label and footer updated to v6.7.
+- Added a dedicated queue-routing engine with team-aware skill profiles.
+- Added editable channel and product proficiency levels, saved per employee/team in browser storage.
+- Added explainable Smart Routing, Priority First and Oldest Waiting queue modes.
+- Added next-best-contact panel with reasons, response SLA state and skill fit.
+- Added 30-second recommendation/queue-time refresh when safe to refresh the idle queue.
+- Added routing acceptance snapshots and completed-contact / shift-report evidence.
+- Preserved v6.7 omnichannel interactions and previous Live Floor functionality.
+- Did not add external services, AI endpoints, API keys, database migrations or Vite configuration changes.
 
-## Preserved
-- v6.6 Email quality gate, simulated email SLA and three-stage Live Chat response workflow.
-- v6.5 simulated voice hold, mute, supervisor consultation and warm transfer.
-- v6.4 customer dynamics, v6.3 office routine, v6.1 career progression and existing Customer 360 / case write-through.
-- The existing 3D workplace, GLB assets, Vite configuration and Supabase configuration.
+## Known boundaries
+
+- Synthetic contacts only; no live ACD or multi-agent assignment.
+- Local browser storage only; no shared server persistence.
+- Heuristic SLA/routing scores, not contractual SLA or workforce optimisation.
+- Full Vite build, Vercel deployment and browser E2E were not verified.
