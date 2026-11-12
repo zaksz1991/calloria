@@ -1,7 +1,5 @@
-# CALLORIA v6.27 — Articulated Staff Idle
+# CALLORIA v6.28 — Adaptive Staff Idle
 
-This patch improves the idle motion of static-pose skinned staff models. When the cloned GLB contains recognised `head`, `neck`, `spine`/`chest`, or `shoulder` bones, CALLORIA applies tiny, local quaternion offsets. Rest quaternions are restored every update before the offsets are applied, preventing cumulative rotation drift.
+This patch builds on v6.27 articulated staff idle and reduces the amount of procedural pose work performed for static-pose staff. Procedural idle poses are recalculated at a maximum of 30 Hz rather than on every render frame. Controllers pause while the browser document is hidden or while the staff wrapper or any of its ancestors is invisible. Authored GLB animation clips are unaffected.
 
-Static-mesh models and rigs without recognised bone names retain the v6.26 root-motion fallback. Models with authored clips continue using those clips. Seated staff are not assigned static poses.
-
-This is procedural pose motion, not a new authored animation clip or a full locomotion/typing system. Actual appearance still depends on each model's rig naming, bone orientation, runtime placement, and the production browser scene.
+The cap applies only to the small procedural idle layer; it does not change the Three.js render loop, global frame rate, character movement, customer animation, or simulation time. The patch does not claim a measured FPS improvement; actual performance depends on the production scene and devices.

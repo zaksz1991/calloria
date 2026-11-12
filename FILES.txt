@@ -5,4 +5,5 @@ TESTS / FIXTURE (optional project-side regression suite)
 tests/calloria-v622-transform-aware-bounds.test.mjs
 tests/calloria-v623-runtime-diagnostics.test.mjs
 tests/calloria-v627-articulated-staff-idle.test.mjs
+tests/calloria-v628-adaptive-staff-idle.test.mjs
 tests/fixtures/glb-world-integration-v12.fixture.js

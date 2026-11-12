@@ -2,135 +2,183 @@ TAP version 13
 # Subtest: measures world dimensions after a giant local mesh is scaled by its scene node
 ok 1 - measures world dimensions after a giant local mesh is scaled by its scene node
   ---
-  duration_ms: 2.982321
+  duration_ms: 2.072947
   type: 'test'
   ...
 # Subtest: applies parent scale to a small child model through the scene hierarchy
 ok 2 - applies parent scale to a small child model through the scene hierarchy
   ---
-  duration_ms: 1.096528
+  duration_ms: 0.54167
   type: 'test'
   ...
 # Subtest: supports glTF matrix transforms and ignores unreachable mesh geometry for character bounds
 ok 3 - supports glTF matrix transforms and ignores unreachable mesh geometry for character bounds
   ---
-  duration_ms: 2.355698
+  duration_ms: 0.965521
   type: 'test'
   ...
 # Subtest: rejects cyclic scene hierarchies instead of looping during validation
 ok 4 - rejects cyclic scene hierarchies instead of looping during validation
   ---
-  duration_ms: 0.927684
+  duration_ms: 1.201809
   type: 'test'
   ...
 # Subtest: does not loosen the final world-space human proportion limits
 ok 5 - does not loosen the final world-space human proportion limits
   ---
-  duration_ms: 0.546832
+  duration_ms: 0.333165
   type: 'test'
   ...
 # Subtest: applies quaternion rotation when computing scene-space extents
 ok 6 - applies quaternion rotation when computing scene-space extents
   ---
-  duration_ms: 0.582994
+  duration_ms: 0.617324
   type: 'test'
   ...
 # Subtest: runtime report distinguishes unavailable assets from bundled assets
 ok 7 - runtime report distinguishes unavailable assets from bundled assets
   ---
-  duration_ms: 1.476599
+  duration_ms: 0.945201
   type: 'test'
   ...
 # Subtest: diagnostics page performs a bounded GLB range probe and avoids claiming scene rendering
 ok 8 - diagnostics page performs a bounded GLB range probe and avoids claiming scene rendering
   ---
-  duration_ms: 0.354839
+  duration_ms: 0.254716
   type: 'test'
   ...
 # Subtest: Vite plugin emits deployment JSON and HTML with observed integration failures
 ok 9 - Vite plugin emits deployment JSON and HTML with observed integration failures
   ---
-  duration_ms: 1.318257
+  duration_ms: 1.163541
   type: 'test'
   ...
 # Subtest: existing v1.2 staff integration source still transforms with the v6.23 diagnostic build
 ok 10 - existing v1.2 staff integration source still transforms with the v6.23 diagnostic build
   ---
-  duration_ms: 2.359005
+  duration_ms: 1.576976
   type: 'test'
   ...
 # Subtest: v6.27 retains the checked v1.2 staff-runtime integration and adds the new idle marker
 ok 11 - v6.27 retains the checked v1.2 staff-runtime integration and adds the new idle marker
   ---
-  duration_ms: 1.878269
+  duration_ms: 0.881685
   type: 'test'
   ...
 # Subtest: bone-aware idle is only collected for static skinned standing staff
 ok 12 - bone-aware idle is only collected for static skinned standing staff
   ---
-  duration_ms: 0.174724
+  duration_ms: 0.124789
   type: 'test'
   ...
 # Subtest: recognized head, neck, spine and shoulder names receive bounded local rotation channels
 ok 13 - recognized head, neck, spine and shoulder names receive bounded local rotation channels
   ---
-  duration_ms: 0.45245
+  duration_ms: 0.168955
   type: 'test'
   ...
 # Subtest: runtime motion restores rest quaternions before applying local bone offsets
 ok 14 - runtime motion restores rest quaternions before applying local bone offsets
   ---
-  duration_ms: 0.2514
+  duration_ms: 0.102135
   type: 'test'
   ...
 # Subtest: static meshes and unrecognised rigs retain the low-amplitude root fallback
 ok 15 - static meshes and unrecognised rigs retain the low-amplitude root fallback
   ---
-  duration_ms: 0.176402
+  duration_ms: 0.204249
   type: 'test'
   ...
 # Subtest: animated GLBs retain their authored clips and do not receive procedural idle
 ok 16 - animated GLBs retain their authored clips and do not receive procedural idle
   ---
-  duration_ms: 0.346924
+  duration_ms: 0.108555
   type: 'test'
   ...
 # Subtest: frame delta remains clamped and no second render loop is introduced
 ok 17 - frame delta remains clamped and no second render loop is introduced
   ---
-  duration_ms: 0.168519
+  duration_ms: 0.315878
   type: 'test'
   ...
 # Subtest: cleanup releases the controllers and restores hidden local staff
 ok 18 - cleanup releases the controllers and restores hidden local staff
   ---
-  duration_ms: 0.103046
+  duration_ms: 0.116647
   type: 'test'
   ...
 # Subtest: replacement status separates articulated and root-fallback idle counts
 ok 19 - replacement status separates articulated and root-fallback idle counts
   ---
-  duration_ms: 0.420905
+  duration_ms: 0.230398
   type: 'test'
   ...
 # Subtest: transform is idempotent when Vite revisits the same module
 ok 20 - transform is idempotent when Vite revisits the same module
   ---
-  duration_ms: 0.848223
+  duration_ms: 0.36999
   type: 'test'
   ...
 # Subtest: unknown source signatures fail closed
 ok 21 - unknown source signatures fail closed
   ---
-  duration_ms: 0.621308
+  duration_ms: 0.182106
   type: 'test'
   ...
-1..21
-# tests 21
+# Subtest: v6.28 keeps the v6.27 articulated idle and adds adaptive scheduling
+ok 22 - v6.28 keeps the v6.27 articulated idle and adds adaptive scheduling
+  ---
+  duration_ms: 0.789575
+  type: 'test'
+  ...
+# Subtest: procedural idle pauses while the document is hidden
+ok 23 - procedural idle pauses while the document is hidden
+  ---
+  duration_ms: 0.155735
+  type: 'test'
+  ...
+# Subtest: invisible staff and staff under invisible parents are not pose-updated
+ok 24 - invisible staff and staff under invisible parents are not pose-updated
+  ---
+  duration_ms: 0.102845
+  type: 'test'
+  ...
+# Subtest: idle poses update at no more than 30 Hz with bounded accumulated delta
+ok 25 - idle poses update at no more than 30 Hz with bounded accumulated delta
+  ---
+  duration_ms: 0.106471
+  type: 'test'
+  ...
+# Subtest: controller state is initialised and released with the staff runtime
+ok 26 - controller state is initialised and released with the staff runtime
+  ---
+  duration_ms: 0.316418
+  type: 'test'
+  ...
+# Subtest: rest quaternions are still restored before local pose offsets
+ok 27 - rest quaternions are still restored before local pose offsets
+  ---
+  duration_ms: 0.123457
+  type: 'test'
+  ...
+# Subtest: no second animation frame loop is added
+ok 28 - no second animation frame loop is added
+  ---
+  duration_ms: 0.310991
+  type: 'test'
+  ...
+# Subtest: transform remains idempotent and fails closed on unknown source signatures
+ok 29 - transform remains idempotent and fails closed on unknown source signatures
+  ---
+  duration_ms: 0.179211
+  type: 'test'
+  ...
+1..29
+# tests 29
 # suites 0
-# pass 21
+# pass 29
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 311.398279
+# duration_ms 242.80258

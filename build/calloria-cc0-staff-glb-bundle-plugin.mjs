@@ -394,7 +394,7 @@ function makeManifest(entries, totals, status) {
   const staticPose = models.filter((entry) => ['skinned-static-pose', 'static-mesh'].includes(entry.renderMode)).length;
   return {
     schemaVersion: 2,
-    buildIntegration: 'CALLORIA v6.27 transform-aware staff GLB validation and articulated static-pose idle',
+    buildIntegration: 'CALLORIA v6.28 transform-aware staff GLB validation and adaptive articulated static-pose idle',
     createdAt: new Date().toISOString(),
     status,
     source: 'Gobkit CC0 character pack direct GLB files; provenance recorded per model and pack.',
@@ -590,33 +590,51 @@ function addProceduralStaticStaffIdle(code) {
         basePositionY: wrapper.position.y,
         boneTargets: idleBoneTargets,
         elapsed: 0,
+        updateAccumulator: 0,
         phase: (replacements.length * 0.83) % (Math.PI * 2)
       });
     }`);
 
   next = next.replace('for (const mixer of mixers) mixer.update(step);', `for (const mixer of mixers) mixer.update(step);
-      for (const idle of proceduralIdleControllers) {
-        idle.elapsed += step;
-        const breath = Math.sin(idle.elapsed * 1.15 + idle.phase);
-        const sway = Math.sin(idle.elapsed * 0.72 + idle.phase);
-        if (idle.boneTargets?.length) {
-          for (const target of idle.boneTargets) {
-            target.bone.quaternion.copy(target.baseQuaternion);
-            for (const channel of target.channels) {
-              const angle = Math.sin(idle.elapsed * channel.speed + idle.phase + channel.phase) * channel.amplitude;
-              channel.deltaQuaternion.setFromAxisAngle(channel.axis, angle);
-              target.bone.quaternion.multiply(channel.deltaQuaternion);
-            }
+      // Static-pose staff do not need a bone pose recalculation on every render
+      // frame. Keep the idle layer at 30 Hz and pause it when the tab or any
+      // ancestor of the staff wrapper is hidden.
+      if (typeof document === 'undefined' || !document.hidden) {
+        for (const idle of proceduralIdleControllers) {
+          let visibleInScene = true;
+          for (let node = idle.wrapper; node; node = node.parent) {
+            if (node.visible === false) { visibleInScene = false; break; }
           }
-        } else {
-          // Static meshes or rigs without known bone names retain restrained root idle.
-          idle.wrapper.rotation.y = idle.baseRotationY + sway * 0.006;
-          idle.wrapper.rotation.z = idle.baseRotationZ + Math.sin(idle.elapsed * 0.55 + idle.phase) * 0.0025;
-          idle.wrapper.position.y = idle.basePositionY + breath * 0.0025;
+          if (!visibleInScene) continue;
+          idle.updateAccumulator += step;
+          if (idle.updateAccumulator < (1 / 30)) continue;
+          const idleStep = Math.min(idle.updateAccumulator, 0.1);
+          idle.updateAccumulator = 0;
+          idle.elapsed += idleStep;
+          const breath = Math.sin(idle.elapsed * 1.15 + idle.phase);
+          const sway = Math.sin(idle.elapsed * 0.72 + idle.phase);
+          if (idle.boneTargets?.length) {
+            for (const target of idle.boneTargets) {
+              target.bone.quaternion.copy(target.baseQuaternion);
+              for (const channel of target.channels) {
+                const angle = Math.sin(idle.elapsed * channel.speed + idle.phase + channel.phase) * channel.amplitude;
+                channel.deltaQuaternion.setFromAxisAngle(channel.axis, angle);
+                target.bone.quaternion.multiply(channel.deltaQuaternion);
+              }
+            }
+          } else {
+            // Static meshes or rigs without known bone names retain restrained root idle.
+            idle.wrapper.rotation.y = idle.baseRotationY + sway * 0.006;
+            idle.wrapper.rotation.z = idle.baseRotationZ + Math.sin(idle.elapsed * 0.55 + idle.phase) * 0.0025;
+            idle.wrapper.position.y = idle.basePositionY + breath * 0.0025;
+          }
         }
       }`);
 
-  next = next.replace("animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,", "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,\n        proceduralIdlePlaced: replacements.filter((entry) => entry.proceduralIdle).length,\n        articulatedIdlePlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'articulated-bone-idle').length,\n        rootIdleFallbackPlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'root-idle-fallback').length,");
+  next = next.replace(
+    "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,",
+    "animatedPlaced: replacements.filter((entry) => String(entry.renderMode || '').startsWith('animated-')).length,\n        proceduralIdlePlaced: replacements.filter((entry) => entry.proceduralIdle).length,\n        articulatedIdlePlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'articulated-bone-idle').length,\n        rootIdleFallbackPlaced: replacements.filter((entry) => entry.proceduralIdleMode === 'root-idle-fallback').length,\n        adaptiveIdleUpdateHz: 30,\n        idleVisibilityAware: true,"
+  );
   const pushAnchor = 'replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip) });';
   if (next.split(pushAnchor).length - 1 !== 1) return { code: null, warnings: ['Bone-aware staff idle motion was not added: replacement record did not match the verified staff runtime.'] };
   next = next.replace(pushAnchor, "replacements.push({ wrapper, mixer, person, assetId: selected.asset.id, clipName: clip?.name || null, renderMode: selectedRenderMode, animationActive: Boolean(clip), proceduralIdle: !clip && ['skinned-static-pose', 'static-mesh'].includes(selectedRenderMode), proceduralIdleMode });");
@@ -888,15 +906,15 @@ function createCalloriaCC0StaffGLBBundlePlugin(options = {}) {
         for (const warning of warnings) this.warn?.(`CALLORIA v6.23 staff runtime integration: ${warning}`);
         return null;
       }
-      runtimeDiagnostics.staff = { status: 'patched', source: target, warnings: [], message: `Staff runtime transform enabled for ${availableIds.length} validated model(s). Static-pose standing staff use conservative named-bone idle when a usable head/neck/spine/shoulder hierarchy is present, otherwise root-idle fallback; no source animation clip is claimed. Live scene placement still requires browser verification.` };
-      this.info?.(`CALLORIA v6.27 runtime integration enabled for ${availableIds.length} bundled staff GLB(s): ${Object.entries(renderModes).map(([id, mode]) => `${id}=${mode}`).join(', ')}. Static-pose staff are restricted to standing anchors and use conservative bone-aware idle when recognized rig nodes exist, with a small root-motion fallback otherwise.`);
+      runtimeDiagnostics.staff = { status: 'patched', source: target, warnings: [], message: `Staff runtime transform enabled for ${availableIds.length} validated model(s). Static-pose standing staff use conservative named-bone idle when a usable head/neck/spine/shoulder hierarchy is present, otherwise root-idle fallback. Procedural idle is visibility-aware and capped at 30 Hz; no source animation clip is claimed. Live scene placement still requires browser verification.` };
+      this.info?.(`CALLORIA v6.28 runtime integration enabled for ${availableIds.length} bundled staff GLB(s): ${Object.entries(renderModes).map(([id, mode]) => `${id}=${mode}`).join(', ')}. Static-pose staff are restricted to standing anchors and use conservative bone-aware idle when recognized rig nodes exist, with a small root-motion fallback otherwise.`);
       return { code: transformed.code, map: null };
     },
     generateBundle() {
       const payload = makeRuntimeDiagnosticsPayload({ entries: buildEntries, runtime: runtimeDiagnostics });
       this.emitFile?.({ type: 'asset', fileName: RUNTIME_DIAGNOSTICS_JSON, source: `${JSON.stringify(payload, null, 2)}\n` });
       this.emitFile?.({ type: 'asset', fileName: RUNTIME_DIAGNOSTICS_HTML, source: makeRuntimeDiagnosticsHtml() });
-      this.info?.(`CALLORIA v6.27 deployment audit emitted: /${RUNTIME_DIAGNOSTICS_HTML} and /${RUNTIME_DIAGNOSTICS_JSON}. The report distinguishes validated files from runtime scene placement.`);
+      this.info?.(`CALLORIA v6.28 deployment audit emitted: /${RUNTIME_DIAGNOSTICS_HTML} and /${RUNTIME_DIAGNOSTICS_JSON}. The report distinguishes validated files from runtime scene placement.`);
     },
     api: {
       getAvailableStaffIds() { return [...availableIds]; },

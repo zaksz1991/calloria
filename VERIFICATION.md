@@ -1,7 +1,7 @@
-# Verification
+# Verification — CALLORIA v6.28
 
-- Regression tests: see `test-output.txt` (all included v6.22, v6.23, and v6.27 tests passed).
-- `node --check build/calloria-cc0-staff-glb-bundle-plugin.mjs`: passed.
-- `node --check` on all included `.mjs` / `.js` test fixture files: passed.
-- ZIP integrity: verified after packaging.
-- Full Vite build, Vercel deployment, and real production-browser animation were not run because a complete current CALLORIA repository checkout is not available in this workspace.
+- 29/29 regression tests passed: v6.22 transform-aware bounds, v6.23 deployment/runtime diagnostics, v6.27 articulated idle, and v6.28 adaptive idle.
+- `node --check` passed for the Vite plugin, all included test modules, and the runtime fixture.
+- The transformed staff runtime generated from the included v1.2 fixture passed `node --check`.
+- ZIP integrity was checked after packaging.
+- Full Vite build, Vercel deployment, production browser rendering, device FPS, and visual character behaviour were not verified because a complete current CALLORIA repository checkout and production browser session were not available.
