@@ -1,7 +1,7 @@
-# v6.22
+# v6.23 — Staff GLB Deployment Audit
 
-- Replaced accessor-local dimension checks with active-scene, node-transform-aware bounds.
-- Added glTF matrix and TRS transform traversal with cycle protection.
-- Limited character-proportion measurement to meshes reachable from the active scene.
-- Preserved the existing Vite plugin identity and v6.15 office GLB transform.
-- Added regression coverage for scaled ancestors, tiny local models, matrix transforms, quaternion rotation, unreferenced meshes, cyclic nodes and unchanged proportion limits.
+- Added build-time tracking for staff and office world integration transforms.
+- Added production JSON diagnostics for build validation and transform results.
+- Added a mobile-responsive browser audit page with bounded same-origin GLB header checks.
+- Kept v6.22's world-transform-aware bounds validation and runtime placement logic unchanged.
+- Added regression tests for the report, page generation, plugin hooks, and v1.2 runtime transform fixture.

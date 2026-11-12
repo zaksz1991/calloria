@@ -1,7 +1,9 @@
-# v6.22 verification
+# v6.23 verification
 
-- 37 regression tests passed, 0 failed. This includes the available v6.13–v6.15 office/staff regression suite and six v6.22 bounds tests.
-- `node --check` passed for the replacement build plugin.
-- ZIP archive integrity checked after packaging.
-- The test suite uses generated GLB fixtures; the live Gobkit model files were not downloaded or visually inspected in this environment.
-- A full current-repository Vite production build, Vercel deployment and in-browser GLB rendering were not performed.
+- `node --check build/calloria-cc0-staff-glb-bundle-plugin.mjs`: passed.
+- Generated diagnostics page inline JavaScript syntax check: passed.
+- Node regression tests: 10 passed, 0 failed (6 inherited transform-aware bounds tests and 4 v6.23 diagnostics tests).
+- ZIP integrity: verified after packaging.
+- Full repository Vite build: not run; a complete current CALLORIA repository snapshot was not available in this patch workspace.
+- Vercel deployment and live browser asset checks: not run.
+- Actual staff-model scene placement/rendering: not claimed or verified by this patch.

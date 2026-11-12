@@ -1,19 +1,19 @@
-# CALLORIA v6.22 — Staff GLB Transform-Aware Validation
+# CALLORIA v6.23 — Staff GLB Deployment Audit
 
-This patch corrects staff-character dimension checks that previously measured raw POSITION accessor bounds without applying the active glTF scene's node hierarchy.
+This patch extends the existing v6.22 staff-GLB bundle plugin. It does not add another renderer, animation loop, asset loader, or runtime world.
 
 ## What changes
 
-- Computes character bounds from meshes reachable through the active/default glTF scene.
-- Applies each ancestor node's full transform, including matrix transforms and TRS translation, rotation and scale.
-- Avoids allowing an unreferenced mesh elsewhere in the GLB to distort the active character's reported dimensions.
-- Keeps the existing human-proportion limits, triangle limits, GLB size limits, skin validation and static-pose handling.
-- Rejects cyclic or invalid active-scene node hierarchies instead of risking unsafe traversal.
-- Includes effective scene-space dimensions in the build manifest and Vercel model log.
-- Preserves the existing Vite plugin name, factory API, staff asset destinations, staff runtime transform and v6.15 office-world transform.
+- Records whether the existing Vite build transformed `js/glb-world-integration.js` and `js/production-world.js`.
+- Preserves the exact warning text when either source transform is skipped because its checked source contract does not match.
+- Emits `calloria-staff-glb-diagnostics.json` into the production build.
+- Emits a self-contained `calloria-staff-glb-diagnostics.html` audit page.
+- The page checks each bundled model's production URL using a `Range: bytes=0-3` request and confirms the GLB `glTF` header without intentionally downloading the complete model.
+- Displays model validation state, render mode, measured world dimensions, triangle count, bones, animation clips, and deployment file availability.
+- Explicitly distinguishes build validation, source transformation, deployed file availability, and actual game-scene placement. It does not report a GLB as rendered merely because it was bundled or reachable.
 
-This is a validation correction, not a geometry rescaling operation. GLB transforms already encoded in the asset remain intact. Truly oversized or undersized characters still fail the existing proportion limits.
+## After deployment
 
-## Expected result
+Open `/calloria-staff-glb-diagnostics.html` on the deployed CALLORIA domain. The report makes it possible to identify whether the remaining issue is model bundling, source integration, or deployed asset availability without relying only on Vercel warning text.
 
-A model with large local accessor coordinates but a valid scale in its active scene hierarchy can now pass proportion validation. The Vercel log reports the measured scene-space bounds in metres so the result can be checked directly.
+The existing v6.22 transform-aware GLB validation remains intact. No Supabase, Groq, package, lockfile, Vite configuration, or existing game-world file is replaced.

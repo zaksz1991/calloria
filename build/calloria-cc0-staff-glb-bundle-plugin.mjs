@@ -562,7 +562,90 @@ export function transformOfficeWorldIntegration(source) {
   return { code, map: null, alreadyPatched: false, warnings: [] };
 }
 
-export function createCalloriaCC0StaffGLBBundlePlugin(options = {}) {
+export 
+const RUNTIME_DIAGNOSTICS_JSON = 'calloria-staff-glb-diagnostics.json';
+const RUNTIME_DIAGNOSTICS_HTML = 'calloria-staff-glb-diagnostics.html';
+
+/** Produce a browser-safe summary; never expose remote source URLs or build secrets. */
+function makeRuntimeDiagnosticsPayload({ entries = [], runtime = {}, generatedAt = new Date().toISOString() } = {}) {
+  const assets = entries.filter(Boolean).map((entry) => ({
+    id: entry.id,
+    name: entry.name,
+    role: entry.role,
+    output: entry.output,
+    status: entry.status,
+    sizeBytes: entry.sizeBytes || 0,
+    sha256: entry.sha256 || null,
+    renderMode: entry.renderMode || null,
+    dimensions: entry.dimensions || null,
+    boundsSource: entry.boundsSource || null,
+    meshCount: entry.meshCount ?? null,
+    triangleCount: entry.triangleCount ?? null,
+    boneCount: entry.boneCount ?? null,
+    animationCount: entry.animationCount ?? null,
+    animationNames: Array.isArray(entry.animationNames) ? entry.animationNames : [],
+    error: entry.error || null
+  }));
+  const normalizedRuntime = {};
+  for (const key of ['staff', 'office']) {
+    const value = runtime[key] || {};
+    normalizedRuntime[key] = {
+      status: String(value.status || 'not-observed'),
+      source: value.source || null,
+      warnings: Array.isArray(value.warnings) ? value.warnings.map(String) : [],
+      message: value.message || null
+    };
+  }
+  const bundled = assets.filter((asset) => asset.status !== 'unavailable');
+  return {
+    schemaVersion: 1,
+    product: 'CALLORIA',
+    generatedAt,
+    notice: 'This report checks build-time GLB validation, generated runtime transforms and deployed file availability. It does not prove that a model was placed or rendered in the live game scene.',
+    bundle: {
+      expectedAssets: CC0_STAFF_MODELS.length,
+      listedAssets: assets.length,
+      bundledAssets: bundled.length,
+      unavailableAssets: assets.length - bundled.length,
+      totalBytes: bundled.reduce((sum, asset) => sum + asset.sizeBytes, 0)
+    },
+    runtime: normalizedRuntime,
+    assets
+  };
+}
+
+/** Self-contained page for checking GLB deployment without developer tools. */
+function makeRuntimeDiagnosticsHtml() {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark"><title>CALLORIA — Staff GLB Runtime Audit</title>
+<style>
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;background:#09111f;color:#e8eef8;font-synthesis:none}*{box-sizing:border-box}body{margin:0;padding:28px;max-width:1180px;margin-inline:auto}header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}h1{font-size:clamp(25px,4vw,38px);margin:0 0 7px}p{color:#aab8cd;line-height:1.55}.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#83b9ff;font-weight:800}.sub{margin:0 0 22px}.notice{border:1px solid #66552d;background:#261f12;color:#f3dca8;border-radius:12px;padding:13px 16px;margin:18px 0 22px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;margin:18px 0}.card,.panel{background:#111d2f;border:1px solid #263750;border-radius:14px;padding:17px}.label{font-size:12px;color:#9fb0c8;text-transform:uppercase;letter-spacing:.08em}.value{font-size:25px;font-weight:800;margin-top:6px;overflow-wrap:anywhere}.state{display:inline-flex;align-items:center;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;background:#29364a;color:#dce8f8}.state.good{background:#123a2e;color:#8ff0c3}.state.bad{background:#49252a;color:#ffb1b8}.state.warn{background:#463718;color:#f4d78a}.panel{margin:12px 0 20px}.panel h2{margin:0 0 13px;font-size:17px}.runtime-row{display:grid;grid-template-columns:130px 1fr;gap:12px;padding:10px 0;border-top:1px solid #263750}.runtime-row:first-of-type{border-top:0}.runtime-row strong{font-size:13px}.runtime-row p{margin:3px 0 0;font-size:13px;overflow-wrap:anywhere}.table-wrap{overflow-x:auto;border:1px solid #263750;border-radius:14px;background:#111d2f}table{width:100%;border-collapse:collapse;min-width:780px}th,td{text-align:left;padding:13px 14px;border-bottom:1px solid #263750;font-size:13px}th{color:#9fb0c8;font-size:11px;text-transform:uppercase;letter-spacing:.08em}tr:last-child td{border-bottom:0}.asset-name{font-weight:750}.muted{color:#93a5be;font-size:12px;margin-top:3px}.error{color:#ffb1b8;max-width:280px;overflow-wrap:anywhere}.footer{font-size:12px;color:#91a2bb;margin-top:18px}.actions{display:flex;gap:8px;align-items:center}.button{background:#193a60;border:1px solid #315d8b;color:#e8f2ff;padding:9px 13px;border-radius:9px;font-weight:700;cursor:pointer}.button:disabled{opacity:.5;cursor:default}@media(max-width:600px){body{padding:16px}.runtime-row{grid-template-columns:1fr;gap:4px}}
+</style></head>
+<body>
+<header><div><div class="eyebrow">CALLORIA · Deployment diagnostics</div><h1>Staff GLB Runtime Audit</h1><p class="sub">Build validation, runtime source transformation and production file checks.</p></div><div class="actions"><span id="last-check" class="state">Loading</span><button class="button" id="refresh" type="button">Recheck files</button></div></header>
+<div class="notice" id="notice">Loading the build report. This page does not claim that a model has rendered in the game world.</div>
+<section class="grid" id="summary"><div class="card"><div class="label">Bundled assets</div><div class="value">—</div></div><div class="card"><div class="label">Files reachable</div><div class="value">—</div></div><div class="card"><div class="label">Staff transform</div><div class="value">—</div></div><div class="card"><div class="label">Office transform</div><div class="value">—</div></div></section>
+<section class="panel"><h2>Build runtime integration</h2><div id="runtime"><p>Waiting for report…</p></div></section>
+<h2>Staff model assets</h2><div class="table-wrap"><table><thead><tr><th>Model</th><th>Build validation</th><th>Render mode</th><th>World dimensions</th><th>Production file</th></tr></thead><tbody id="assets"><tr><td colspan="5">Waiting for report…</td></tr></tbody></table></div>
+<p class="footer" id="generated"></p>
+<script>
+const $=(id)=>document.getElementById(id);let report=null;let checking=false;
+function badge(text,kind=''){return '<span class="state '+kind+'">'+escapeHtml(text)+'</span>'}
+function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function kindFor(status){return ['patched','already-patched','reachable'].includes(status)?'good':['skipped','unavailable','missing','invalid'].includes(status)?'bad':'warn'}
+function dimensionText(value){if(!value)return 'Not recorded';return [value.x,value.y,value.z].map((n)=>Number(n).toFixed(2)).join(' × ')+' m'}
+async function probe(asset){if(!asset.output)return{status:'missing',detail:'No output path'};let response;try{response=await fetch(asset.output,{method:'GET',headers:{Range:'bytes=0-3'},cache:'no-store'});if(!response.ok)return{status:'missing',detail:'HTTP '+response.status};let bytes=new Uint8Array(0);if(response.body?.getReader){const reader=response.body.getReader();const first=await reader.read();if(first.value)bytes=first.value.slice(0,4);try{await reader.cancel()}catch{}}const magic=bytes.length===4&&bytes[0]===103&&bytes[1]===108&&bytes[2]===84&&bytes[3]===70;return magic?{status:'reachable',detail:'GLB header confirmed · HTTP '+response.status}:{status:'invalid',detail:'File responded but GLB header was not confirmed'}}catch(error){return{status:'missing',detail:String(error?.message||error)}}}
+function renderRuntime(){const rows=[];for(const key of ['staff','office']){const item=report.runtime[key]||{};const title=key==='staff'?'Staff world integration':'Office world integration';const warnings=(item.warnings||[]).join(' · ');const detail=item.message||warnings||item.source||'No additional details';rows.push('<div class="runtime-row"><strong>'+escapeHtml(title)+'</strong><div>'+badge(item.status,kindFor(item.status))+'<p>'+escapeHtml(detail)+'</p></div></div>')} $('runtime').innerHTML=rows.join('')}
+async function render(){if(!report)return;checking=true;$('refresh').disabled=true;const checks=await Promise.all(report.assets.map(probe));const ok=checks.filter((r)=>r.status==='reachable').length;const staff=report.runtime.staff.status;const office=report.runtime.office.status;$('summary').innerHTML=[['Bundled assets',report.bundle.bundledAssets+'/'+report.bundle.expectedAssets],['Files reachable',ok+'/'+report.assets.length],['Staff transform',staff],['Office transform',office]].map(([label,value])=>'<div class="card"><div class="label">'+escapeHtml(label)+'</div><div class="value">'+escapeHtml(value)+'</div></div>').join('');$('assets').innerHTML=report.assets.map((asset,index)=>{const check=checks[index];const dimensions=dimensionText(asset.dimensions);const mode=asset.renderMode||'Not classified';const meta=[asset.triangleCount?Number(asset.triangleCount).toLocaleString()+' triangles':null,asset.animationCount!=null?asset.animationCount+' clips':null,asset.boneCount!=null?asset.boneCount+' bones':null].filter(Boolean).join(' · ');const error=asset.error?'<div class="error">'+escapeHtml(asset.error)+'</div>':'';return '<tr><td><div class="asset-name">'+escapeHtml(asset.name||asset.id)+'</div><div class="muted">'+escapeHtml(asset.id)+' · '+escapeHtml(asset.role||'')+'</div></td><td>'+badge(asset.status,kindFor(asset.status))+'<div class="muted">'+escapeHtml(meta)+'</div>'+error+'</td><td>'+escapeHtml(mode)+'</td><td>'+escapeHtml(dimensions)+'<div class="muted">'+escapeHtml(asset.boundsSource||'')+'</div></td><td>'+badge(check.status,kindFor(check.status))+'<div class="muted">'+escapeHtml(check.detail)+'</div></td></tr>'}).join('')||'<tr><td colspan="5">No staff assets were recorded in this build.</td></tr>';$('last-check').textContent=ok+'/'+report.assets.length+' files reachable';$('last-check').className='state '+(ok===report.assets.length&&report.assets.length?'good':'warn');$('notice').textContent=report.notice;$('generated').textContent='Report generated '+new Date(report.generatedAt).toLocaleString()+' · Build bundle size '+Number(report.bundle.totalBytes||0).toLocaleString()+' bytes.';checking=false;$('refresh').disabled=false}
+async function load(){try{const response=await fetch('./calloria-staff-glb-diagnostics.json',{cache:'no-store'});if(!response.ok)throw new Error('Diagnostic JSON returned HTTP '+response.status);report=await response.json();renderRuntime();await render()}catch(error){$('notice').textContent='Could not load the build report: '+String(error?.message||error);$('last-check').textContent='Report unavailable';$('last-check').className='state bad';$('refresh').disabled=false}}
+$('refresh').addEventListener('click',()=>{if(!checking)render()});load();
+</script></body></html>`;
+}
+
+function createCalloriaCC0StaffGLBBundlePlugin(options = {}) {
   const rootDir = safeRoot(options.rootDir || process.cwd());
   const fetchImpl = options.fetchImpl || globalThis.fetch;
   const attempts = options.attempts ?? 2;
@@ -573,6 +656,10 @@ export function createCalloriaCC0StaffGLBBundlePlugin(options = {}) {
   let availableIds = [];
   let buildEntries = [];
   let renderModes = {};
+  const runtimeDiagnostics = {
+    staff: { status: 'not-observed', source: '/js/glb-world-integration.js', warnings: [], message: 'Vite has not reported a staff runtime transform for this build.' },
+    office: { status: 'not-observed', source: '/js/production-world.js', warnings: [], message: 'Vite has not reported an office runtime transform for this build.' }
+  };
 
   return {
     // Keep the original plugin name: existing Vite config registration is unchanged.
@@ -661,23 +748,46 @@ export function createCalloriaCC0StaffGLBBundlePlugin(options = {}) {
     transform(source, id) {
       const target = String(id || '').split('?')[0].replaceAll('\\', '/');
       if (target.endsWith(OFFICE_TARGET)) {
-        if (source.includes(OFFICE_MARKER)) return null;
-        const office = transformOfficeWorldIntegration(source);
-        if (!office?.code) {
-          for (const warning of office?.warnings || []) this.warn?.(`CALLORIA v6.22 office integration: ${warning}`);
+        if (source.includes(OFFICE_MARKER)) {
+          runtimeDiagnostics.office = { status: 'already-patched', source: target, warnings: [], message: 'The source already contains the office GLB runtime marker.' };
           return null;
         }
-        this.info?.('CALLORIA v6.22 office GLB runtime activation preserved: desks, computers, headsets and reception assets load into the existing production-world scene.');
+        const office = transformOfficeWorldIntegration(source);
+        if (!office?.code) {
+          const warnings = office?.warnings || ['Office runtime transform returned no code.'];
+          runtimeDiagnostics.office = { status: 'skipped', source: target, warnings, message: warnings.join(' ') };
+          for (const warning of warnings) this.warn?.(`CALLORIA v6.23 office integration: ${warning}`);
+          return null;
+        }
+        runtimeDiagnostics.office = { status: 'patched', source: target, warnings: [], message: 'Office GLB bootstrap was inserted into the existing production-world scene lifecycle.' };
+        this.info?.('CALLORIA v6.23 office GLB runtime activation preserved: desks, computers, headsets and reception assets load into the existing production-world scene.');
         return { code: office.code, map: null };
       }
-      if (!target.endsWith(TARGET) || source.includes(MARKER) || !availableIds.length) return null;
-      const transformed = transformStaffRuntimeIntegration(source, availableIds, renderModes);
-      if (!transformed?.code) {
-        for (const warning of transformed?.warnings || []) this.warn?.(`CALLORIA v6.22 staff runtime integration: ${warning}`);
+      if (!target.endsWith(TARGET)) return null;
+      if (source.includes(MARKER)) {
+        runtimeDiagnostics.staff = { status: 'already-patched', source: target, warnings: [], message: 'The source already contains the staff GLB runtime marker.' };
         return null;
       }
-      this.info?.(`CALLORIA v6.22 runtime integration enabled for ${availableIds.length} bundled staff GLB(s): ${Object.entries(renderModes).map(([id, mode]) => `${id}=${mode}`).join(', ')}. Static-pose models are restricted to standing staff anchors.`);
+      if (!availableIds.length) {
+        runtimeDiagnostics.staff = { status: 'skipped', source: target, warnings: ['No staff GLB passed build validation.'], message: 'No eligible staff GLB files were available to connect to the world runtime.' };
+        return null;
+      }
+      const transformed = transformStaffRuntimeIntegration(source, availableIds, renderModes);
+      if (!transformed?.code) {
+        const warnings = transformed?.warnings || ['Staff runtime transform returned no code.'];
+        runtimeDiagnostics.staff = { status: 'skipped', source: target, warnings, message: warnings.join(' ') };
+        for (const warning of warnings) this.warn?.(`CALLORIA v6.23 staff runtime integration: ${warning}`);
+        return null;
+      }
+      runtimeDiagnostics.staff = { status: 'patched', source: target, warnings: [], message: `Staff runtime transform enabled for ${availableIds.length} validated model(s). Live scene placement still requires browser verification.` };
+      this.info?.(`CALLORIA v6.23 runtime integration enabled for ${availableIds.length} bundled staff GLB(s): ${Object.entries(renderModes).map(([id, mode]) => `${id}=${mode}`).join(', ')}. Static-pose models are restricted to standing staff anchors.`);
       return { code: transformed.code, map: null };
+    },
+    generateBundle() {
+      const payload = makeRuntimeDiagnosticsPayload({ entries: buildEntries, runtime: runtimeDiagnostics });
+      this.emitFile?.({ type: 'asset', fileName: RUNTIME_DIAGNOSTICS_JSON, source: `${JSON.stringify(payload, null, 2)}\n` });
+      this.emitFile?.({ type: 'asset', fileName: RUNTIME_DIAGNOSTICS_HTML, source: makeRuntimeDiagnosticsHtml() });
+      this.info?.(`CALLORIA v6.23 deployment audit emitted: /${RUNTIME_DIAGNOSTICS_HTML} and /${RUNTIME_DIAGNOSTICS_JSON}. The report distinguishes validated files from runtime scene placement.`);
     },
     api: {
       getAvailableStaffIds() { return [...availableIds]; },
@@ -696,5 +806,7 @@ export const __calloriaCC0StaffGLBBundleTest = Object.freeze({
   REQUIRED_ANIMATIONS: Object.freeze([]), PREFERRED_ANIMATIONS, LICENSE,
   readGlbJsonAndChunks, parseGlb, sha256, fetchWithRetry, makeManifest,
   getNodeLocalMatrix, multiplyNodeMatrices, transformNodePoint, measureSceneNodeBounds,
-  transformStaffRuntimeIntegration, transformOfficeWorldIntegration
+  transformStaffRuntimeIntegration, transformOfficeWorldIntegration,
+  makeRuntimeDiagnosticsPayload, makeRuntimeDiagnosticsHtml,
+  RUNTIME_DIAGNOSTICS_JSON, RUNTIME_DIAGNOSTICS_HTML
 });
