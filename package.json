@@ -1,5 +1,23 @@
 {
-  "name": "calloria-v6-13-office-glb-runtime-repair",
+  "name": "calloria-contact-centre-simulator",
+  "version": "0.3.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "description": "CALLORIA — multi-industry contact-centre career and operations simulator.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "check": "node --check js/main.js && node --check js/production-world.js",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "three": "0.170.0"
+  },
+  "devDependencies": {
+    "vite": "6.4.5"
+  }
 }

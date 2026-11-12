@@ -1,17 +1,9 @@
-# v6.13 verification
+# Verification — v6.13.1
 
-Executed locally against the supplied package files:
+- JSON parsed successfully.
+- Required npm scripts (`dev`, `build`, `preview`, `check`, `test`) present.
+- Build command is exactly `vite build`.
+- Node engine and dependency pins match the logged CALLORIA toolchain (Node `>=22.12.0`, Vite `6.4.5`, Three.js `0.170.0`).
+- This patch does not include or modify Vite plugins or application source.
 
-- Focused Node tests: 8 passed, 0 failed.
-- JavaScript syntax: passed for both runtime modules.
-- Vite office transform anchor contract: passed for all five expected anchors.
-- ZIP integrity: passed.
-
-Not executed:
-
-- Full CALLORIA Vite production build.
-- Vercel deployment.
-- HTTP verification of the repository's four office GLB URLs.
-- Three.js browser rendering or Android visual QA.
-
-The actual office GLB files were not present in this workspace. The patch improves failure visibility and placement logic; it does not prove that the repository currently contains valid models or that the deployed site can fetch them.
+A full production build cannot be run from this one-file repair package because the complete repository source and `vite.config.js` are not present in this workspace. Vercel build success must be established by the next deployment log.
