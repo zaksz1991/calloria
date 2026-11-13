@@ -1,19 +1,26 @@
-# CALLORIA v6.42 — Inbound agent response capture
+# CALLORIA v6.43 — Live inbound customer dialogue
 
-## Integrated workflow
+## Player-facing change
 
-- Connects the existing microphone transcription and text-fallback panel to the currently active inbound call.
-- Adds an explicit **Log agent response to contact** action. Transcripts are not added to the case history until the agent chooses this action.
-- Applies a visible, rule-based communication check for empathy, ownership and a clear next step.
-- Flags direct requests for PINs, passwords, OTPs, security codes or full card numbers as a critical compliance breach.
-- Redacts long numeric sequences and security-token values before a logged response is retained.
-- Adds logged agent statements to the active call timeline and the completed inbound CRM case transcript.
-- Retains only the last 20 logged statements per active call.
+Active inbound calls now include a live text conversation panel alongside the existing operational decision points. The agent can write a response and receive a scripted customer reply based on communication markers. The panel displays the customer's current tone and keeps the most recent exchanges visible.
 
-## Privacy behaviour
+## Voice connection
 
-Raw microphone audio remains in the existing page-memory flow and is not placed in the CRM record. A transcript is saved only after the explicit log action. Because the application calls its existing cloud-employment save from `saveState()`, a logged transcript may sync when cloud save is enabled. The consent copy and privacy notice explain this.
+When the existing microphone/transcription panel has captured text, the player can send that transcript directly into the same customer conversation. Audio remains in the existing page-memory flow; the dialogue bridge stores text only.
 
-## Scope limits
+## Quality and compliance
 
-This is a deterministic practice rubric, not an AI evaluator and not a real telephony connection. Speech recognition depends on browser support and permission. Text fallback remains available. The feature is inbound-call-only in this milestone.
+- Evaluates empathy, ownership, approved verification, investigation and clear next-step language.
+- Adds a small quality adjustment to the active call score.
+- Detects direct requests for PINs, passwords, OTPs, security codes and full card numbers.
+- Flags a detected secret request as a compliance incident once per call and moves the call into the existing escalation-required path.
+- Redacts explicit credential values and long numeric sequences before retaining the agent statement.
+- Stores both sides of the dialogue in the active contact timeline and the completed CRM case's `dialogue` transcript field.
+
+## Simulation boundary
+
+Customer replies are deterministic scripted responses, not AI-generated. There is no real telephony, external customer messaging or external transcript request. The existing scenario decision flow remains in place as the operational assessment layer.
+
+## Integration
+
+The overlay includes the v6.42 voice-to-CRM plugin because the current public `main` branch Vite configuration does not register it. The supplied Vite configuration registers v6.42 first and v6.43 second.

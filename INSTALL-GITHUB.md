@@ -1,14 +1,20 @@
-# Install CALLORIA v6.42
+# Install CALLORIA v6.43
 
-Upload the files while preserving their paths:
+This is a ZIP overlay for the existing repository, not a complete project archive.
 
-1. Add `build/calloria-voice-response-workflow-v6-42.mjs`.
-2. Add `tests/calloria-v6-42-voice-response-workflow.test.mjs`.
-3. Add `tests/fixtures/calloria-v6-42-main-anchors.fixture.js`.
-4. Replace the repository's `vite.config.js` with the supplied version.
+1. Extract the ZIP.
+2. Add `build/calloria-voice-response-workflow-v6-42.mjs`.
+3. Add `build/calloria-inbound-customer-dialogue-v6-43.mjs`.
+4. Add the two test files under `tests/` and their fixtures under `tests/fixtures/`.
+5. Replace the repository's `vite.config.js` with the supplied version.
+6. Commit the changes to the `main` branch and review the Vercel build result.
 
-Commit the changes to the `main` branch. Vercel should then run the existing project build.
+The v6.42 build plugin and test fixture are included so that the new configuration can register the complete voice-to-CRM and live-dialogue sequence even when v6.42 was not previously added to the repository.
 
-No package dependencies, package lock, Supabase configuration, API keys, environment variables or GLB assets are changed. The Vite configuration is based on the current `main` branch configuration and registers this plugin as the final application transform.
+## In-game check
 
-After deployment, open an inbound call, give microphone consent, use live transcription or the text fallback, then select **Log agent response to contact**. The saved statement appears in the active interaction history and in the CRM case transcript after wrap-up.
+Start a shift, accept an inbound contact, and open the new **Live customer conversation** panel. Enter a response and send it. The scripted customer should reply, the tone indicator should update, and the exchange should appear in the contact history. Use the existing voice transcription controls and select **Send captured voice transcript** to send recognized speech through the same dialogue flow.
+
+## Preserved
+
+No package dependencies, package lock, Supabase migrations, credentials, API keys, environment variables or GLB assets are changed. The overlay only adds build plugins/tests and replaces Vite configuration to register them.

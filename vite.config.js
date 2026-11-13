@@ -20,6 +20,7 @@ import { calloriaFirstWorkingShiftV44Plugin } from './build/calloria-first-worki
 import { calloriaOutboundCampaignV45Plugin } from './build/calloria-outbound-campaign-v4-5-plugin.mjs';
 import { calloriaMobileResponsiveRepairPlugin } from './build/calloria-mobile-responsive-repair-v6-10.mjs';
 import { calloriaVoiceResponseWorkflowPlugin } from './build/calloria-voice-response-workflow-v6-42.mjs';
+import { calloriaInboundCustomerDialoguePlugin } from './build/calloria-inbound-customer-dialogue-v6-43.mjs';
 
 export default defineConfig({
   base: '/',
@@ -52,8 +53,9 @@ export default defineConfig({
     calloriaOutboundCampaignV45Plugin(),
     // Final post-transform: mobile first-person safety, responsive CSS and assessment controls.
     calloriaMobileResponsiveRepairPlugin(),
-    // Final post-transform: connect voice practice to inbound case history and QA.
-    calloriaVoiceResponseWorkflowPlugin()
+    // Voice transcript logging must run before the scripted customer dialogue bridge.
+    calloriaVoiceResponseWorkflowPlugin(),
+    calloriaInboundCustomerDialoguePlugin()
   ],
   build: {
     outDir: 'dist',
