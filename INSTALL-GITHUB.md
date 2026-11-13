@@ -1,19 +1,17 @@
-# Install CALLORIA v6.38
+# Install CALLORIA v6.39
 
-Apply on top of CALLORIA v6.37.
+Apply over CALLORIA v6.38.
 
-## Replace one file
+## Replace one production file
 
 Replace the complete contents of:
 
 `build/calloria-cc0-staff-glb-bundle-plugin.mjs`
 
-Use the identically named file in this ZIP. Do not replace `package.json`, `package-lock.json`, Vite configuration, Supabase settings, or any other production file.
+Use the identically named file in this ZIP. Do not replace `package.json`, `package-lock.json`, Vite configuration, Supabase settings, environment variables, or any other production file.
 
-The ZIP includes the existing regression suite plus the expanded v6.37 speech-bridge tests. The only production replacement is the build plugin.
+The ZIP also carries forward the complete regression suite and adds `tests/calloria-v639-staff-dialogue-adapter.test.mjs`.
 
-## API usage
+## After deployment
 
-Call `window.CalloriaStaffVoice.enqueue({ assetId, text, lang })` to add sequential dialogue. Use `pause()`, `resume()`, `clearQueue(assetId?)`, and `getQueueState()` for playback control. Direct `speak()` remains interruptive and clears pending queue entries.
-
-The actual contact-handling UI still must invoke this API. See `README.md` for examples.
+The browser runtime installs `window.CalloriaStaffDialogue` next to the existing `window.CalloriaStaffVoice` API. The actual contact-handling UI still must call the new API or dispatch the documented event. See `README.md` for the event schema and examples.

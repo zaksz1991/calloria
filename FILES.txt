@@ -1,11 +1,12 @@
 Production replacement:
 - build/calloria-cc0-staff-glb-bundle-plugin.mjs
 
-Verification:
-- tests/ (all carried forward; v6.37 speech-bridge tests extended)
+Regression suite:
+- tests/*.test.mjs
 - tests/fixtures/glb-world-integration-v12.fixture.js
+
 Documentation:
-- CHANGELOG.md
 - README.md
+- CHANGELOG.md
 - INSTALL-GITHUB.md
 - VERIFICATION.md

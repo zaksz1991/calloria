@@ -1287,12 +1287,194 @@ export function installCalloriaNativeSpeechBridge(hostWindow) {
   return api;
 }
 
+/**
+ * Domain-level dialogue adapter for contact, reception and scripted office events.
+ * It provides one stable event/API surface while retaining the native voice queue
+ * as the sole owner of speech playback and mouth-morph lifecycle events.
+ */
+export function installCalloriaStaffDialogueAdapter(hostWindow) {
+  if (!hostWindow || typeof hostWindow.dispatchEvent !== 'function'
+      || typeof hostWindow.addEventListener !== 'function'
+      || typeof hostWindow.removeEventListener !== 'function'
+      || typeof hostWindow.CustomEvent !== 'function') return null;
+
+  const existing = hostWindow.CalloriaStaffDialogue;
+  if (existing && typeof existing === 'object') return existing;
+
+  const voice = hostWindow.CalloriaStaffVoice;
+  if (!voice || typeof voice.enqueue !== 'function' || typeof voice.speak !== 'function') return null;
+
+  let sequence = 0;
+  let received = 0;
+  let completed = 0;
+  let failed = 0;
+  let lastAction = null;
+  let lastAssetId = null;
+  let lastError = null;
+  let disposed = false;
+  const pending = new Map();
+
+  const emitResult = (detail) => {
+    try {
+      hostWindow.dispatchEvent(new hostWindow.CustomEvent('calloria:staff-dialogue-result', { detail }));
+    } catch { /* A consumer may remove event plumbing during page teardown. */ }
+  };
+
+  const execute = async (detail = {}) => {
+    const settings = detail && typeof detail === 'object' ? detail : {};
+    const requestId = String(settings.requestId || `external-${++sequence}`).slice(0, 100);
+    const action = String(settings.action || 'enqueue').trim().toLowerCase();
+    const assetId = String(settings.assetId || settings.agentId || '').trim();
+    received += 1;
+    lastAction = action;
+    lastAssetId = assetId || null;
+    lastError = null;
+
+    try {
+      let result;
+      switch (action) {
+        case 'say':
+        case 'enqueue':
+          result = await voice.enqueue({ ...settings, assetId });
+          break;
+        case 'interrupt':
+        case 'speak':
+          result = await voice.speak({ ...settings, assetId });
+          break;
+        case 'stop':
+          result = voice.stop(assetId);
+          break;
+        case 'pause':
+          result = voice.pause();
+          break;
+        case 'resume':
+          result = voice.resume();
+          break;
+        case 'clear':
+        case 'clear-queue':
+          result = voice.clearQueue(assetId);
+          break;
+        default:
+          throw new TypeError(`Unsupported staff dialogue action: ${action || '(empty)'}.`);
+      }
+      completed += 1;
+      emitResult({ requestId, action, status: 'completed', result });
+      return result;
+    } catch (error) {
+      failed += 1;
+      lastError = String(error?.message || error);
+      emitResult({ requestId, action, status: 'error', error: lastError });
+      throw error;
+    }
+  };
+
+  const handleRequest = (event) => {
+    if (disposed) return;
+    const detail = event?.detail && typeof event.detail === 'object' ? event.detail : {};
+    const requestId = String(detail.requestId || `external-${++sequence}`).slice(0, 100);
+    void execute({ ...detail, requestId }).catch(() => {
+      // Errors are exposed through calloria:staff-dialogue-result and diagnostics.
+    });
+  };
+
+  const handleResult = (event) => {
+    const detail = event?.detail || {};
+    const waiter = pending.get(String(detail.requestId || ''));
+    if (!waiter) return;
+    pending.delete(String(detail.requestId));
+    if (detail.status === 'completed') waiter.resolve(detail.result);
+    else waiter.reject(new Error(String(detail.error || 'Staff dialogue request failed.')));
+  };
+
+  hostWindow.addEventListener('calloria:staff-dialogue-request', handleRequest);
+  hostWindow.addEventListener('calloria:staff-dialogue-result', handleResult);
+
+  const request = (payload = {}) => {
+    if (disposed) return Promise.reject(new Error('Staff dialogue adapter has been disposed.'));
+    const detail = payload && typeof payload === 'object' ? payload : {};
+    const requestId = `dialogue-${++sequence}`;
+    return new Promise((resolve, reject) => {
+      pending.set(requestId, { resolve, reject });
+      try {
+        hostWindow.dispatchEvent(new hostWindow.CustomEvent('calloria:staff-dialogue-request', {
+          detail: { ...detail, requestId }
+        }));
+      } catch (error) {
+        pending.delete(requestId);
+        reject(error);
+      }
+    });
+  };
+
+  const api = Object.freeze({
+    __calloriaStaffDialogueAdapter: true,
+    request,
+    say: (payload = {}) => request({ ...payload, action: 'enqueue' }),
+    interrupt: (payload = {}) => request({ ...payload, action: 'interrupt' }),
+    stop: (assetId = '') => request({ action: 'stop', assetId }),
+    pause: () => request({ action: 'pause' }),
+    resume: () => request({ action: 'resume' }),
+    clearQueue: (assetId = '') => request({ action: 'clear', assetId }),
+    getStatus: () => ({
+      received, completed, failed, pendingRequests: pending.size,
+      lastAction, lastAssetId, lastError,
+      voice: typeof voice.getQueueState === 'function' ? voice.getQueueState() : null,
+      supported: typeof voice.isSupported === 'function' ? voice.isSupported() : null
+    }),
+    dispose: () => {
+      if (disposed) return false;
+      disposed = true;
+      hostWindow.removeEventListener('calloria:staff-dialogue-request', handleRequest);
+      hostWindow.removeEventListener('calloria:staff-dialogue-result', handleResult);
+      for (const waiter of pending.values()) waiter.reject(new Error('Staff dialogue adapter has been disposed.'));
+      pending.clear();
+      try {
+        if (hostWindow.CalloriaStaffDialogue === api) delete hostWindow.CalloriaStaffDialogue;
+      } catch { /* Read-only host globals are tolerated. */ }
+      return true;
+    }
+  });
+
+  try {
+    hostWindow.CalloriaStaffDialogue = api;
+  } catch {
+    hostWindow.removeEventListener('calloria:staff-dialogue-request', handleRequest);
+    hostWindow.removeEventListener('calloria:staff-dialogue-result', handleResult);
+    return null;
+  }
+  return api;
+}
+
+const STAFF_DIALOGUE_ADAPTER_MARKER = '__CALLORIA_STAFF_DIALOGUE_EVENT_ADAPTER_V639__';
+
 const NATIVE_SPEECH_BRIDGE_MARKER = '__CALLORIA_NATIVE_SPEECH_SYNTHESIS_BRIDGE_V637__';
 function addNativeSpeechSynthesisBridge(code) {
   const original = String(code || '').replace(/\r\n?/g, '\n');
-  if (original.includes(NATIVE_SPEECH_BRIDGE_MARKER)) {
+  if (original.includes(STAFF_DIALOGUE_ADAPTER_MARKER)) {
     return { code: original, alreadyPatched: true, warnings: [] };
   }
+
+  const nativeCall = `(${installCalloriaNativeSpeechBridge.toString()})(window);`;
+  const dialogueCall = `(${installCalloriaStaffDialogueAdapter.toString()})(window);`;
+  const dialogueInstall = `\n  /* ${STAFF_DIALOGUE_ADAPTER_MARKER} */\n  if (typeof window !== 'undefined') {\n    ${dialogueCall}\n  }`;
+
+  // Upgrade a previously transformed v6.37+ runtime without duplicating the
+  // native speech bridge. The exact serialized helper call is our safe anchor.
+  if (original.includes(NATIVE_SPEECH_BRIDGE_MARKER)) {
+    if (original.split(nativeCall).length - 1 !== 1) {
+      return {
+        code: null,
+        alreadyPatched: false,
+        warnings: ['Staff dialogue adapter was not connected: the existing native voice installation anchor did not match.']
+      };
+    }
+    return {
+      code: original.replace(nativeCall, nativeCall + dialogueInstall),
+      alreadyPatched: false,
+      warnings: []
+    };
+  }
+
   const anchor = `  if (typeof window !== 'undefined' && window.addEventListener) {
     window.addEventListener('calloria:staff-speaking', handleCalloriaStaffSpeaking);
   }`;
@@ -1300,11 +1482,11 @@ function addNativeSpeechSynthesisBridge(code) {
     return {
       code: null,
       alreadyPatched: false,
-      warnings: ['Native staff voice was not connected: the checked staff-speaking event anchor did not match the current runtime.']
+      warnings: ['Native staff voice and dialogue adapter were not connected: the checked staff-speaking event anchor did not match the current runtime.']
     };
   }
-  const install = `\n  /* ${NATIVE_SPEECH_BRIDGE_MARKER} */\n  if (typeof window !== 'undefined') {\n    (${installCalloriaNativeSpeechBridge.toString()})(window);\n  }`;
-  const next = original.replace(anchor, anchor + install);
+  const nativeInstall = `\n  /* ${NATIVE_SPEECH_BRIDGE_MARKER} */\n  if (typeof window !== 'undefined') {\n    ${nativeCall}\n    ${dialogueCall}\n  }`;
+  const next = original.replace(anchor, anchor + nativeInstall + `\n  /* ${STAFF_DIALOGUE_ADAPTER_MARKER} */`);
   return { code: next, alreadyPatched: false, warnings: [] };
 }
 
@@ -1337,6 +1519,7 @@ export function transformStaffRuntimeIntegration(source, availableIds, renderMod
     eyeGazeMorphSupportAdded: !eyeGaze.alreadyPatched,
     staffSpeechMorphSupportAdded: !speech.alreadyPatched,
     nativeSpeechSynthesisBridgeAdded: !nativeVoice.alreadyPatched,
+    staffDialogueEventAdapterAdded: !nativeVoice.alreadyPatched,
     alreadyPatched: Boolean(base.alreadyPatched && scheduled.alreadyPatched && eyeGaze.alreadyPatched && speech.alreadyPatched && nativeVoice.alreadyPatched)
   };
 }

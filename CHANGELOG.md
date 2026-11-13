@@ -1,8 +1,9 @@
-# v6.38 — Staff Voice Queue & Playback Controls
+# CALLORIA v6.39 — Staff Dialogue Event Bridge
 
-- Added `enqueue()` for sequential agent dialogue without overlapping browser utterances.
-- Added queue pause/resume, targeted pending-line clearing and queue-state inspection.
-- Kept `speak()` as an immediate/interruptive call; it clears pending queue items before speaking.
-- Added a maximum of 30 pending queue entries and retained the existing 2,000-character per-utterance limit.
-- Kept mouth-morph events tied to native utterance start/end and targeted to the correct staff asset.
-- Preserved stop/cancel semantics and existing browser voice selection options.
+- Added `window.CalloriaStaffDialogue` as a stable game-level dialogue API layered over the native browser speech queue.
+- Added queued `say()`, interruptive `interrupt()`, `stop()`, `pause()`, `resume()` and targeted `clearQueue()` methods.
+- Added the `calloria:staff-dialogue-request` event contract for contact handling, reception, scripted scenarios and other game modules.
+- Added correlated `calloria:staff-dialogue-result` events and promise-based request completion/error handling.
+- Added runtime counters for received, completed and failed requests, queue state, last action and last target staff asset.
+- Preserved the existing `CalloriaStaffVoice` API and its browser speech / mouth-morph lifecycle.
+- Added idempotent installation and explicit disposal of adapter event listeners.

@@ -1,30 +1,66 @@
-# CALLORIA v6.38 — Staff Voice Queue & Playback Controls
+# CALLORIA v6.39 — Staff Dialogue Event Bridge
 
-Builds on v6.37. The browser-native speech bridge can now queue multiple staff lines sequentially, pause/resume playback, clear pending lines by staff asset ID, and report its current queue state.
+v6.39 provides a stable game-level interface for other CALLORIA modules to request spoken agent dialogue. It sits above the v6.38 native browser speech queue; it does not replace the queue or create a second audio system.
 
-## API
+## Game-level API
 
-Queue scripted dialogue without overlap:
-
-```js
-const firstLine = window.CalloriaStaffVoice.enqueue({
-  assetId: 'female-agent', text: 'Good morning. Thank you for contacting support.', lang: 'en-NG'
-});
-const secondLine = window.CalloriaStaffVoice.enqueue({
-  assetId: 'male-agent', text: 'I will take over from here.', lang: 'en-NG'
-});
-await Promise.all([firstLine, secondLine]);
-```
-
-Playback controls:
+Queue a staff line and wait for native speech playback to finish:
 
 ```js
-window.CalloriaStaffVoice.pause();
-window.CalloriaStaffVoice.resume();
-window.CalloriaStaffVoice.clearQueue('female-agent'); // omit ID to clear all pending lines
-window.CalloriaStaffVoice.getQueueState();
+await window.CalloriaStaffDialogue.say({
+  assetId: 'female-agent',
+  text: 'Good morning. Thank you for contacting RuffNeck support.',
+  lang: 'en-NG'
+});
 ```
 
-`enqueue()` accepts up to 30 pending lines. Each line retains the v6.37 2,000-character limit and installed browser voice options. `speak()` remains immediate: it clears pending lines and interrupts current playback. `stop()` stops the current utterance; queued lines continue afterwards unless separately cleared.
+Interrupt active speech with an urgent line:
 
-The contact-handling interface must still call this bridge. This patch does not modify the actual call UI or assert automatic integration. Browser playback and installed voices depend on device/browser policy; start audio from a user gesture where required.
+```js
+await window.CalloriaStaffDialogue.interrupt({
+  assetId: 'male-agent',
+  text: 'Please note that this service is temporarily unavailable.'
+});
+```
+
+Other controls:
+
+```js
+window.CalloriaStaffDialogue.pause();
+window.CalloriaStaffDialogue.resume();
+window.CalloriaStaffDialogue.stop('female-agent');
+window.CalloriaStaffDialogue.clearQueue('female-agent');
+window.CalloriaStaffDialogue.getStatus();
+```
+
+## Event contract
+
+A contact-handling or scenario module that prefers DOM events can dispatch:
+
+```js
+window.dispatchEvent(new CustomEvent('calloria:staff-dialogue-request', {
+  detail: {
+    requestId: 'crm-contact-1042-agent-reply-1',
+    action: 'enqueue',
+    assetId: 'female-agent',
+    text: 'I can help you update your account details.',
+    lang: 'en-NG'
+  }
+}));
+```
+
+Supported actions are `enqueue` (default), `interrupt`, `stop`, `pause`, `resume` and `clear`. Completion is returned in `calloria:staff-dialogue-result` with the same `requestId`; result details include `status: 'completed'` or `status: 'error'`.
+
+The adapter also exposes `request(payload)` to dispatch a request and receive a Promise:
+
+```js
+await window.CalloriaStaffDialogue.request({
+  action: 'enqueue', assetId: 'female-agent', text: 'How may I help you?'
+});
+```
+
+All dialogue requests still require a valid staff `assetId`. Text length, browser voice support, playback queue capacity, user-gesture restrictions and installed voice availability remain governed by v6.38.
+
+## Integration boundary
+
+This patch installs the adapter into the staff runtime, but it does **not** edit the existing CRM/call-handling screen to generate dialogue requests automatically. That screen or scenario controller must call `CalloriaStaffDialogue.say()` / `request()` or dispatch `calloria:staff-dialogue-request`. The existing call system is not claimed to be automatically voice-enabled by this patch alone.
