@@ -1,20 +1,14 @@
-# Install CALLORIA v6.43
+# Install CALLORIA v6.44
 
-This is a ZIP overlay for the existing repository, not a complete project archive.
+1. Extract this ZIP.
+2. In the CALLORIA repository, merge the included `build` folder into the existing `build` folder. Keep all existing project files.
+3. Replace the repository's `vite.config.js` with the one in this ZIP. It preserves the current plugin list and appends v6.44 after v6.42 and v6.43.
+4. Confirm these three files exist in `build`:
+   - `calloria-voice-response-workflow-v6-42.mjs`
+   - `calloria-inbound-customer-dialogue-v6-43.mjs`
+   - `calloria-inbound-conversation-wrapup-v6-44.mjs`
+5. Commit the merged files to the `main` branch using GitHub's web interface or GitHub Desktop. Vercel should then run its configured build.
 
-1. Extract the ZIP.
-2. Add `build/calloria-voice-response-workflow-v6-42.mjs`.
-3. Add `build/calloria-inbound-customer-dialogue-v6-43.mjs`.
-4. Add the two test files under `tests/` and their fixtures under `tests/fixtures/`.
-5. Replace the repository's `vite.config.js` with the supplied version.
-6. Commit the changes to the `main` branch and review the Vercel build result.
+Do not replace `package.json`, `package-lock.json`, `public/assets/models`, `.env` files, Supabase configuration or API keys. No SQL migration is required.
 
-The v6.42 build plugin and test fixture are included so that the new configuration can register the complete voice-to-CRM and live-dialogue sequence even when v6.42 was not previously added to the repository.
-
-## In-game check
-
-Start a shift, accept an inbound contact, and open the new **Live customer conversation** panel. Enter a response and send it. The scripted customer should reply, the tone indicator should update, and the exchange should appear in the contact history. Use the existing voice transcription controls and select **Send captured voice transcript** to send recognized speech through the same dialogue flow.
-
-## Preserved
-
-No package dependencies, package lock, Supabase migrations, credentials, API keys, environment variables or GLB assets are changed. The overlay only adds build plugins/tests and replaces Vite configuration to register them.
+The ZIP includes the v6.42 and v6.43 plugin modules so the three-step transform chain is present. It does not include the entire CALLORIA repository.

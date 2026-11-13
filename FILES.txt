@@ -1,10 +1,9 @@
+vite.config.js
 build/calloria-voice-response-workflow-v6-42.mjs
 build/calloria-inbound-customer-dialogue-v6-43.mjs
-tests/calloria-v6-42-voice-response-workflow.test.mjs
-tests/calloria-v6-43-inbound-customer-dialogue.test.mjs
-tests/fixtures/calloria-v6-42-main-anchors.fixture.js
-tests/fixtures/calloria-v6-43-main-anchors.fixture.js
-vite.config.js
+build/calloria-inbound-conversation-wrapup-v6-44.mjs
+tests/calloria-v6-44-inbound-conversation-wrapup.test.mjs
+tests/fixtures/calloria-v6-44-main-anchors.fixture.js
 CHANGELOG.md
 INSTALL-GITHUB.md
 VERIFICATION.md

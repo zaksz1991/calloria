@@ -1,15 +1,15 @@
-# CALLORIA v6.43 verification
+# Verification — CALLORIA v6.44
 
-## Passed locally
+- 8 focused integration tests passed.
+- Node syntax checks passed for the v6.44 plugin and replacement Vite configuration.
+- The v6.42 → v6.43 → v6.44 transform chain passed against a production-anchor fixture.
+- Tests cover inbound wrap-up transcript rendering, editable note drafting, CRM metadata, safe action routing, privacy scrubbing, dialogue metrics, prerequisite checks and idempotence.
 
-- 13 focused tests across v6.42 and v6.43 passed.
-- Plugin source syntax check passed.
-- Supplied Vite configuration syntax check passed.
-- Combined v6.42 + v6.43 transform applied to the integration fixture with zero warnings.
-- The transformed integration fixture passed `node --check`.
-- Security rubric checks cover direct secret requests and ensure protective warnings such as "never share your PIN" are not misclassified.
-- Repeat-transform and changed-anchor safety checks passed.
+Not verified in this environment:
 
-## Not verified
+- Full repository `npm test`.
+- Full Vite production build against the complete repository.
+- Browser rendering, real microphone capture or the deployed Vercel site.
+- Supabase persistence in a live account.
 
-The complete CALLORIA repository was not available in the working directory, so the full Vite production build, full project test suite, browser rendering, microphone permission flow, live deployment and CRM screen rendering were not executed. The patch anchors were checked against the current public `main` source, but the final integration still requires a Vercel build and in-browser check.
+The fixture validates exact source anchors observed in the public `main.js` workflow; it is not a substitute for a full production build.

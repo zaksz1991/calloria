@@ -1,26 +1,19 @@
-# CALLORIA v6.43 — Live inbound customer dialogue
+# CALLORIA v6.44 — Conversation-aware after-contact work
 
-## Player-facing change
+## What changes
 
-Active inbound calls now include a live text conversation panel alongside the existing operational decision points. The agent can write a response and receive a scripted customer reply based on communication markers. The panel displays the customer's current tone and keeps the most recent exchanges visible.
+- Adds a visible conversation record to inbound after-contact work.
+- Shows recorded agent/customer turn counts, customer tone, average dialogue score and communication markers.
+- Adds a collapsible, privacy-scrubbed transcript preview (latest eight turns).
+- Adds **Build case-note draft from conversation**. It creates editable notes from the latest customer and agent statements; it does not save automatically.
+- Saves privacy-scrubbed dialogue text, a concise conversation summary and dialogue quality metrics to the inbound CRM case.
+- Redacts PIN/password/OTP-style values, long numeric strings and email addresses from transcript copies.
+- Leaves outbound wrap-up and existing case-save/disposition logic unchanged.
 
-## Voice connection
+## Dependency and order
 
-When the existing microphone/transcription panel has captured text, the player can send that transcript directly into the same customer conversation. Audio remains in the existing page-memory flow; the dialogue bridge stores text only.
+Requires v6.42 and v6.43. Vite plugin order is v6.42 voice/CRM bridge → v6.43 live customer dialogue → v6.44 conversation-aware wrap-up.
 
-## Quality and compliance
+## Boundaries
 
-- Evaluates empathy, ownership, approved verification, investigation and clear next-step language.
-- Adds a small quality adjustment to the active call score.
-- Detects direct requests for PINs, passwords, OTPs, security codes and full card numbers.
-- Flags a detected secret request as a compliance incident once per call and moves the call into the existing escalation-required path.
-- Redacts explicit credential values and long numeric sequences before retaining the agent statement.
-- Stores both sides of the dialogue in the active contact timeline and the completed CRM case's `dialogue` transcript field.
-
-## Simulation boundary
-
-Customer replies are deterministic scripted responses, not AI-generated. There is no real telephony, external customer messaging or external transcript request. The existing scenario decision flow remains in place as the operational assessment layer.
-
-## Integration
-
-The overlay includes the v6.42 voice-to-CRM plugin because the current public `main` branch Vite configuration does not register it. The supplied Vite configuration registers v6.42 first and v6.43 second.
+Customer responses remain scripted by v6.43. This upgrade does not add an AI service, live telephony, external network calls, new database tables or Supabase migrations.

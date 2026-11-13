@@ -21,6 +21,7 @@ import { calloriaOutboundCampaignV45Plugin } from './build/calloria-outbound-cam
 import { calloriaMobileResponsiveRepairPlugin } from './build/calloria-mobile-responsive-repair-v6-10.mjs';
 import { calloriaVoiceResponseWorkflowPlugin } from './build/calloria-voice-response-workflow-v6-42.mjs';
 import { calloriaInboundCustomerDialoguePlugin } from './build/calloria-inbound-customer-dialogue-v6-43.mjs';
+import { calloriaInboundConversationWrapUpPlugin } from './build/calloria-inbound-conversation-wrapup-v6-44.mjs';
 
 export default defineConfig({
   base: '/',
@@ -55,7 +56,9 @@ export default defineConfig({
     calloriaMobileResponsiveRepairPlugin(),
     // Voice transcript logging must run before the scripted customer dialogue bridge.
     calloriaVoiceResponseWorkflowPlugin(),
-    calloriaInboundCustomerDialoguePlugin()
+    calloriaInboundCustomerDialoguePlugin(),
+    // Conversation-aware after-contact work runs after the v6.43 dialogue injection.
+    calloriaInboundConversationWrapUpPlugin()
   ],
   build: {
     outDir: 'dist',
