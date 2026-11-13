@@ -1,6 +1,11 @@
-build/calloria-cc0-staff-glb-bundle-plugin.mjs  PRODUCTION REPLACEMENT
-README.md
-CHANGELOG.md
-INSTALL-GITHUB.md
-VERIFICATION.md
-tests/  Regression suite carried from v6.36 plus v6.37 native voice tests.
+Production replacement:
+- build/calloria-cc0-staff-glb-bundle-plugin.mjs
+
+Verification:
+- tests/ (all carried forward; v6.37 speech-bridge tests extended)
+- tests/fixtures/glb-world-integration-v12.fixture.js
+Documentation:
+- CHANGELOG.md
+- README.md
+- INSTALL-GITHUB.md
+- VERIFICATION.md

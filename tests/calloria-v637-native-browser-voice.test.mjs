@@ -26,9 +26,13 @@ function createFakeBrowser({ supported = true, existingApi = null } = {}) {
   }
   const synthesis = supported ? {
     cancelCalls: 0,
+    pauseCalls: 0,
+    resumeCalls: 0,
     getVoices: () => voices,
     speak(utterance) { this.lastUtterance = utterance; },
-    cancel() { this.cancelCalls += 1; }
+    cancel() { this.cancelCalls += 1; },
+    pause() { this.pauseCalls += 1; },
+    resume() { this.resumeCalls += 1; }
   } : null;
   const hostWindow = {
     CustomEvent: FakeCustomEvent,
@@ -141,4 +145,117 @@ test('native bridge transform is idempotent and still fails closed on changed ru
   const invalid = transformStaffRuntimeIntegration('export function integrateCalloriaGLBStaff(){ return null; }', ids, modes);
   assert.equal(invalid.code, null);
   assert.ok(invalid.warnings?.length);
+});
+
+
+test('queued lines play sequentially and keep mouth events targeted to each speaker', async () => {
+  const browser = createFakeBrowser();
+  const api = installCalloriaNativeSpeechBridge(browser.hostWindow);
+  const first = api.enqueue({ assetId: 'female-agent', text: 'Good morning.' });
+  const second = api.enqueue({ assetId: 'male-agent', text: 'How can I help?' });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(browser.utterances.length, 1, 'only one queued utterance may run at a time');
+  assert.equal(browser.utterances[0].text, 'Good morning.');
+  assert.equal(api.getQueueState().queued, 1);
+  browser.utterances[0].onstart();
+  browser.utterances[0].onend();
+  assert.equal((await first).status, 'ended');
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(browser.utterances.length, 2);
+  assert.equal(browser.utterances[1].text, 'How can I help?');
+  browser.utterances[1].onstart();
+  assert.equal(browser.events.at(-1).detail.assetId, 'male-agent');
+  browser.utterances[1].onend();
+  assert.equal((await second).status, 'ended');
+  assert.deepEqual(api.getQueueState(), {
+    queued: 0, active: false, activeAssetId: null, paused: false, queuedAssetIds: []
+  });
+});
+
+test('queue pause holds pending lines and resume continues playback', async () => {
+  const browser = createFakeBrowser();
+  const api = installCalloriaNativeSpeechBridge(browser.hostWindow);
+  const first = api.enqueue({ assetId: 'female-agent', text: 'First.' });
+  const second = api.enqueue({ assetId: 'female-agent', text: 'Second.' });
+  api.pause();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(browser.utterances.length, 0);
+  assert.equal(api.getQueueState().paused, true);
+  api.resume();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(browser.synthesis.pauseCalls, 1);
+  assert.equal(browser.synthesis.resumeCalls, 1);
+  assert.equal(browser.utterances.length, 1);
+  browser.utterances[0].onend();
+  assert.equal((await first).status, 'ended');
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(browser.utterances.length, 2);
+  browser.utterances[1].onend();
+  assert.equal((await second).status, 'ended');
+});
+
+test('clearQueue can cancel pending lines for one staff member without clearing others', async () => {
+  const browser = createFakeBrowser();
+  const api = installCalloriaNativeSpeechBridge(browser.hostWindow);
+  const active = api.enqueue({ assetId: 'female-agent', text: 'Active.' });
+  const cancelled = api.enqueue({ assetId: 'male-agent', text: 'Remove me.' });
+  const retained = api.enqueue({ assetId: 'gp5-woman', text: 'Keep me.' });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(api.clearQueue('male-agent'), 1);
+  assert.deepEqual(await cancelled, { status: 'cancelled', assetId: 'male-agent', queueId: 2 });
+  assert.deepEqual(api.getQueueState().queuedAssetIds, ['gp5-woman']);
+  browser.utterances[0].onend();
+  await active;
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(browser.utterances.length, 2);
+  browser.utterances[1].onend();
+  assert.equal((await retained).status, 'ended');
+});
+
+test('direct speak interrupts queued playback and clears all waiting lines', async () => {
+  const browser = createFakeBrowser();
+  const api = installCalloriaNativeSpeechBridge(browser.hostWindow);
+  const queuedActive = api.enqueue({ assetId: 'female-agent', text: 'Queued current.' });
+  const queuedNext = api.enqueue({ assetId: 'female-agent', text: 'Queued next.' });
+  await new Promise((resolve) => setImmediate(resolve));
+  const immediate = api.speak({ assetId: 'male-agent', text: 'Urgent update.' });
+  assert.equal((await queuedActive).status, 'cancelled');
+  assert.equal((await queuedNext).status, 'cancelled');
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(browser.utterances.at(-1).text, 'Urgent update.');
+  browser.utterances.at(-1).onend();
+  assert.equal((await immediate).status, 'ended');
+});
+
+test('a failed queued utterance rejects its promise and the following line still runs', async () => {
+  const browser = createFakeBrowser();
+  const api = installCalloriaNativeSpeechBridge(browser.hostWindow);
+  const first = api.enqueue({ assetId: 'female-agent', text: 'This line will fail.' });
+  const second = api.enqueue({ assetId: 'male-agent', text: 'This line continues.' });
+  await new Promise((resolve) => setImmediate(resolve));
+  browser.utterances[0].onstart();
+  browser.utterances[0].onerror({ error: 'audio-hardware' });
+  await assert.rejects(first, /audio-hardware/);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(browser.utterances.length, 2);
+  browser.utterances[1].onstart();
+  browser.utterances[1].onend();
+  assert.equal((await second).status, 'ended');
+});
+
+test('queue enforces the 30-line pending limit and reports pending count', async () => {
+  const browser = createFakeBrowser();
+  const api = installCalloriaNativeSpeechBridge(browser.hostWindow);
+  const active = api.enqueue({ assetId: 'female-agent', text: 'Active line.' });
+  await new Promise((resolve) => setImmediate(resolve));
+  const pending = Array.from({ length: 30 }, (_, index) => api.enqueue({
+    assetId: 'female-agent', text: `Pending line ${index + 1}.`
+  }));
+  await assert.rejects(api.enqueue({ assetId: 'female-agent', text: 'Overflow.' }), /queue is full/);
+  assert.equal(api.getQueueState().queued, 30);
+  assert.equal(api.clearQueue(), 30);
+  const results = await Promise.all(pending);
+  assert.ok(results.every((result) => result.status === 'cancelled'));
+  api.stop('female-agent');
+  assert.equal((await active).status, 'cancelled');
 });

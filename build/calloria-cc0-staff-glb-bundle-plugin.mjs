@@ -1079,6 +1079,10 @@ export function installCalloriaNativeSpeechBridge(hostWindow) {
   if (existing && typeof existing === 'object') return existing;
 
   let activeSpeech = null;
+  const speechQueue = [];
+  let queueActive = false;
+  let queuePaused = false;
+  let nextQueueId = 1;
   const isSupported = () => typeof hostWindow.SpeechSynthesisUtterance === 'function'
     && Boolean(hostWindow.speechSynthesis)
     && typeof hostWindow.speechSynthesis.speak === 'function';
@@ -1111,7 +1115,7 @@ export function installCalloriaNativeSpeechBridge(hostWindow) {
     current.resolve?.({ status: 'cancelled', assetId: current.assetId });
     return true;
   };
-  const speak = (payload = {}) => {
+  const speakNow = (payload = {}) => {
     const settings = payload && typeof payload === 'object' ? payload : {};
     const assetId = String(settings.assetId || settings.agentId || '').trim();
     const text = String(settings.text || '').trim();
@@ -1181,11 +1185,97 @@ export function installCalloriaNativeSpeechBridge(hostWindow) {
     });
   };
 
+  // Explicit queue API for multi-sentence agent replies and short scripted
+  // dialogue. Direct speak() remains interruptive and clears any waiting jobs.
+  const clearQueue = (requestedAssetId = '') => {
+    const requested = String(requestedAssetId || '').trim();
+    let cleared = 0;
+    for (let index = speechQueue.length - 1; index >= 0; index -= 1) {
+      const entry = speechQueue[index];
+      if (requested && entry.assetId !== requested) continue;
+      speechQueue.splice(index, 1);
+      entry.resolve({ status: 'cancelled', assetId: entry.assetId, queueId: entry.id });
+      cleared += 1;
+    }
+    return cleared;
+  };
+
+  const pumpQueue = () => {
+    if (queueActive || queuePaused || !speechQueue.length) return;
+    const entry = speechQueue.shift();
+    queueActive = true;
+    Promise.resolve()
+      .then(() => {
+        // pause() can run synchronously after enqueue() and before this
+        // microtask. Put the line back without starting browser audio.
+        if (queuePaused) {
+          speechQueue.unshift(entry);
+          return { status: 'deferred' };
+        }
+        return speakNow(entry.payload);
+      })
+      .then((result) => {
+        if (result?.status === 'deferred') return;
+        entry.resolve({ ...result, queueId: entry.id });
+      }, entry.reject)
+      .finally(() => {
+        queueActive = false;
+        if (!queuePaused) pumpQueue();
+      });
+  };
+
+  const enqueue = (payload = {}) => {
+    const settings = payload && typeof payload === 'object' ? payload : {};
+    const assetId = String(settings.assetId || settings.agentId || '').trim();
+    const text = String(settings.text || '').trim();
+    if (!assetId) return Promise.reject(new TypeError('A staff assetId is required for queued speech.'));
+    if (!text || text.length > 2000) return Promise.reject(new RangeError('Queued speech text must contain between 1 and 2000 characters.'));
+    if (!isSupported()) return Promise.reject(new Error('Browser speech synthesis is not available in this browser.'));
+    if (speechQueue.length >= 30) return Promise.reject(new RangeError('The staff voice queue is full (30 pending lines).'));
+    return new Promise((resolve, reject) => {
+      speechQueue.push({ id: nextQueueId++, assetId, payload: { ...settings, assetId, text }, resolve, reject });
+      pumpQueue();
+    });
+  };
+
+  const speak = (payload = {}) => {
+    clearQueue();
+    return speakNow(payload);
+  };
+
+  const pause = () => {
+    if (!isSupported()) return false;
+    queuePaused = true;
+    try { hostWindow.speechSynthesis.pause?.(); } catch { /* Browser may not expose pause on this device. */ }
+    return true;
+  };
+
+  const resume = () => {
+    if (!isSupported()) return false;
+    queuePaused = false;
+    try { hostWindow.speechSynthesis.resume?.(); } catch { /* Browser may not expose resume on this device. */ }
+    pumpQueue();
+    return true;
+  };
+
+  const getQueueState = () => ({
+    queued: speechQueue.length,
+    active: Boolean(activeSpeech),
+    activeAssetId: activeSpeech?.assetId || null,
+    paused: queuePaused,
+    queuedAssetIds: speechQueue.map((entry) => entry.assetId)
+  });
+
   const api = Object.freeze({
     __calloriaNativeSpeechBridge: true,
     isSupported,
     getVoices,
     speak,
+    enqueue,
+    pause,
+    resume,
+    clearQueue,
+    getQueueState,
     stop,
     cancel: stop
   });

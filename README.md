@@ -1,51 +1,30 @@
-# CALLORIA v6.37 — Native Browser Staff Voice
+# CALLORIA v6.38 — Staff Voice Queue & Playback Controls
 
-Builds on v6.36 by adding a browser-native text-to-speech bridge that drives the existing staff mouth-morph event while spoken audio is actually playing.
+Builds on v6.37. The browser-native speech bridge can now queue multiple staff lines sequentially, pause/resume playback, clear pending lines by staff asset ID, and report its current queue state.
 
-## What changes
+## API
 
-- Installs `window.CalloriaStaffVoice` when the browser supports the required event APIs and no app-owned object already uses that name.
-- Uses the browser's native `SpeechSynthesis` and `SpeechSynthesisUtterance` APIs; it does not add a paid voice provider, API key, network request, microphone permission or server dependency.
-- Dispatches `calloria:staff-speaking` with `speaking: true` on the utterance's `onstart`, and `speaking: false` on `onend`, `onerror` or explicit stop.
-- Targets one staff member with `assetId` (or `agentId`), so only that model's compatible existing jaw/viseme morphs move.
-- Supports installed browser voice selection, language, rate, pitch, volume and bounded mouth-motion intensity.
-- Cancels the prior CALLORIA utterance when another staff member starts speaking; only one native utterance is active at a time.
-- Preserves an existing `window.CalloriaStaffVoice` app object rather than overwriting it.
-- Keeps v6.36's event receiver scoped to the staff runtime and removes its listener when that runtime is disposed.
-
-## Calling the voice bridge
-
-Call it from a user-initiated action or the existing agent-response handler after the selected agent's reply text is ready:
+Queue scripted dialogue without overlap:
 
 ```js
-await window.CalloriaStaffVoice.speak({
-  assetId: 'female-agent',
-  text: agentReply,
-  lang: 'en-NG',
-  rate: 0.98,
-  pitch: 1,
-  volume: 1,
-  intensity: 0.68
+const firstLine = window.CalloriaStaffVoice.enqueue({
+  assetId: 'female-agent', text: 'Good morning. Thank you for contacting support.', lang: 'en-NG'
 });
+const secondLine = window.CalloriaStaffVoice.enqueue({
+  assetId: 'male-agent', text: 'I will take over from here.', lang: 'en-NG'
+});
+await Promise.all([firstLine, secondLine]);
 ```
 
-Available installed browser voices can be inspected with:
+Playback controls:
 
 ```js
-window.CalloriaStaffVoice.getVoices();
-window.CalloriaStaffVoice.isSupported();
+window.CalloriaStaffVoice.pause();
+window.CalloriaStaffVoice.resume();
+window.CalloriaStaffVoice.clearQueue('female-agent'); // omit ID to clear all pending lines
+window.CalloriaStaffVoice.getQueueState();
 ```
 
-Stop the current utterance with:
+`enqueue()` accepts up to 30 pending lines. Each line retains the v6.37 2,000-character limit and installed browser voice options. `speak()` remains immediate: it clears pending lines and interrupts current playback. `stop()` stops the current utterance; queued lines continue afterwards unless separately cleared.
 
-```js
-window.CalloriaStaffVoice.stop('female-agent');
-```
-
-`assetId` must match a placed staff GLB, for example `female-agent`, `male-agent`, `gp5-woman`, `mr-r`, or `office-lady-character`. The API uses one active browser utterance at a time; starting another one cancels the current utterance. Browser voice names and language availability depend on the user's device and browser. Use a user gesture to start speech where the browser requires it.
-
-## Integration boundary
-
-The production build plugin now installs the native speech API and connects its playback lifecycle to the existing v6.36 mouth-motion event. This patch does **not** edit the separate contact-handling UI to call `CalloriaStaffVoice.speak()` automatically. The existing agent-response handler still needs to invoke the documented API; no claim is made that current call screens already do so.
-
-Models need compatible jaw/mouth/viseme morph targets for visible lip movement. Audio may play on a device even when a placed model does not contain those morphs.
+The contact-handling interface must still call this bridge. This patch does not modify the actual call UI or assert automatic integration. Browser playback and installed voices depend on device/browser policy; start audio from a user gesture where required.

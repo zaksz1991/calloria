@@ -1,10 +1,8 @@
-# v6.37 — Native Browser Staff Voice
+# v6.38 — Staff Voice Queue & Playback Controls
 
-- Added `window.CalloriaStaffVoice` using the browser-native SpeechSynthesis API.
-- Connected utterance `onstart`, `onend` and `onerror` lifecycle to the existing targeted `calloria:staff-speaking` morph event.
-- Added `speak`, `stop`, `cancel`, `getVoices` and `isSupported` methods.
-- Added bounded language, voice, rate, pitch, volume and mouth-intensity options.
-- Enforced one active CALLORIA utterance at a time and resolved cancelled utterance promises safely.
-- Preserved an existing app-owned `window.CalloriaStaffVoice` object.
-- Kept the v6.36 event receiver and all earlier staff idle/morph functionality intact.
-- The separate contact-handling UI is not automatically wired; it must call the documented API.
+- Added `enqueue()` for sequential agent dialogue without overlapping browser utterances.
+- Added queue pause/resume, targeted pending-line clearing and queue-state inspection.
+- Kept `speak()` as an immediate/interruptive call; it clears pending queue items before speaking.
+- Added a maximum of 30 pending queue entries and retained the existing 2,000-character per-utterance limit.
+- Kept mouth-morph events tied to native utterance start/end and targeted to the correct staff asset.
+- Preserved stop/cancel semantics and existing browser voice selection options.
