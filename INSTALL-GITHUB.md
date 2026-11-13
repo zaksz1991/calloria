@@ -1,6 +1,6 @@
-# Install CALLORIA v6.39
+# Install CALLORIA v6.40
 
-Apply over CALLORIA v6.38.
+Apply over CALLORIA v6.39.
 
 ## Replace one production file
 
@@ -8,10 +8,12 @@ Replace the complete contents of:
 
 `build/calloria-cc0-staff-glb-bundle-plugin.mjs`
 
-Use the identically named file in this ZIP. Do not replace `package.json`, `package-lock.json`, Vite configuration, Supabase settings, environment variables, or any other production file.
+Use the identically named file in this ZIP. Do not replace `package.json`, `package-lock.json`, Vite configuration, Supabase settings, environment variables, or unrelated production files.
 
-The ZIP also carries forward the complete regression suite and adds `tests/calloria-v639-staff-dialogue-adapter.test.mjs`.
+The ZIP carries forward the existing regression suite and adds:
+
+`tests/calloria-v640-contact-session-dialogue.test.mjs`
 
 ## After deployment
 
-The browser runtime installs `window.CalloriaStaffDialogue` next to the existing `window.CalloriaStaffVoice` API. The actual contact-handling UI still must call the new API or dispatch the documented event. See `README.md` for the event schema and examples.
+The staff runtime should install `window.CalloriaContactDialogue` after the existing browser voice and staff dialogue APIs. The CRM/call-handling page must still call this API or dispatch `calloria:contact-dialogue` events; this patch does not alter that page. Read `README.md` for the API, event payloads, lifecycle rules and integration boundary.

@@ -1,9 +1,12 @@
-# CALLORIA v6.39 Verification
+# v6.40 verification
 
-- Regression suite: **132 tests passed, 0 failed** (`node --test tests/*.test.mjs`).
-- Build-plugin JavaScript syntax check: passed (`node --check build/calloria-cc0-staff-glb-bundle-plugin.mjs`).
-- Transformed runtime syntax validation: passed in the regression suite.
-- New tests cover adapter installation, idempotent runtime transform, queued and interruptive dialogue routing, external DOM event requests, control actions, result correlation, failure reporting, diagnostics, application-owned API preservation, and listener disposal.
-- ZIP integrity: checked after packaging.
+- 146/146 regression tests passed across the carried-forward suite and new contact-session tests.
+- Build-plugin JavaScript syntax check passed.
+- Generated staff-runtime transform syntax check passed.
+- Contact-session lifecycle tests passed: start, say, interrupt, hold, resume, end and session replacement.
+- Held-session replay and stale-session ownership tests passed.
+- Event-based CRM integration, duplicate request protection, invalid-input handling and disposal tests passed.
+- v6.39-to-v6.40 upgrade and transform idempotence tests passed.
+- ZIP archive integrity verified.
 
-Not verified: complete Vite production build, Vercel deployment, production browser audio output, or automatic integration from the existing call-handling screen. The call-handling screen must invoke the new API or emit `calloria:staff-dialogue-request`.
+Not verified: a complete Vite production build, Vercel deployment, integration with the live CRM/call screen, real browser speech playback, or in-world GLB mouth animation. The call screen still needs to call the session API or emit the documented contact-dialogue events.

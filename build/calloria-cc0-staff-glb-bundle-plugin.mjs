@@ -1445,27 +1445,280 @@ export function installCalloriaStaffDialogueAdapter(hostWindow) {
   return api;
 }
 
+/**
+ * Session-aware contact dialogue controller.
+ *
+ * The call UI can use the stable window.CalloriaContactDialogue API or emit
+ * `calloria:contact-dialogue` CustomEvents. A single agent contact is active
+ * at a time, matching the independent-agent workstation workflow. Replacing
+ * or ending a session stops and clears speech belonging to the previous call.
+ */
+export function installCalloriaContactSessionDialogueBridge(hostWindow) {
+  if (!hostWindow || typeof hostWindow.dispatchEvent !== 'function'
+      || typeof hostWindow.addEventListener !== 'function'
+      || typeof hostWindow.removeEventListener !== 'function'
+      || typeof hostWindow.CustomEvent !== 'function') return null;
+
+  const existing = hostWindow.CalloriaContactDialogue;
+  if (existing && typeof existing === 'object') return existing;
+  const dialogue = hostWindow.CalloriaStaffDialogue;
+  if (!dialogue || typeof dialogue.say !== 'function'
+      || typeof dialogue.interrupt !== 'function') return null;
+
+  const MAX_TEXT_LENGTH = 3000;
+  const safeText = (value) => String(value ?? '').trim().slice(0, MAX_TEXT_LENGTH);
+  const safeToken = (value, label, max = 100) => {
+    const token = String(value ?? '').trim();
+    if (!token || token.length > max || !/^[a-zA-Z0-9_.:-]+$/.test(token)) {
+      throw new TypeError(`Invalid contact dialogue ${label}.`);
+    }
+    return token;
+  };
+  let sequence = 0;
+  let received = 0;
+  let completed = 0;
+  let failed = 0;
+  let disposed = false;
+  let active = null;
+  let lastError = null;
+  const seenRequestIds = new Set();
+
+  const emit = (type, detail = {}) => {
+    try { hostWindow.dispatchEvent(new hostWindow.CustomEvent(type, { detail })); }
+    catch { /* A host may be tearing down its event target. */ }
+  };
+  const snapshot = () => active ? Object.freeze({
+    sessionId: active.sessionId,
+    assetId: active.assetId,
+    state: active.state,
+    startedAt: active.startedAt,
+    utterances: active.utterances
+  }) : null;
+  const requireSession = (sessionId = '') => {
+    if (!active) throw new Error('No active contact dialogue session.');
+    if (sessionId && String(sessionId) !== active.sessionId) {
+      throw new Error('Contact dialogue session does not match the active call.');
+    }
+    return active;
+  };
+  const publishState = (reason) => emit('calloria:contact-dialogue-state', {
+    session: snapshot(), reason, received, completed, failed, lastError
+  });
+  const stopSessionVoice = async (session) => {
+    if (!session) return;
+    try { await dialogue.stop(session.assetId); } catch { /* Best-effort cancellation. */ }
+    try { await dialogue.clearQueue(session.assetId); } catch { /* Best-effort queue cleanup. */ }
+  };
+
+  const start = async (payload = {}) => {
+    if (disposed) throw new Error('Contact dialogue bridge has been disposed.');
+    const settings = payload && typeof payload === 'object' ? payload : {};
+    const sessionId = safeToken(settings.sessionId, 'session ID');
+    const assetId = safeToken(settings.assetId || settings.agentId, 'staff asset ID', 80);
+    if (active?.sessionId === sessionId && active.assetId === assetId) {
+      // Replayed connect events must not silently resume a held call.
+      publishState('session-refreshed');
+      return snapshot();
+    }
+    const previous = active;
+    active = null;
+    if (previous) await stopSessionVoice(previous);
+    active = {
+      sessionId, assetId, state: 'connected', startedAt: Date.now(), utterances: 0
+    };
+    lastError = null;
+    publishState(previous ? 'session-replaced' : 'session-started');
+    return snapshot();
+  };
+
+  const say = async (payload = {}) => {
+    if (disposed) throw new Error('Contact dialogue bridge has been disposed.');
+    const settings = payload && typeof payload === 'object' ? payload : {};
+    const session = requireSession(settings.sessionId || '');
+    if (session.state !== 'connected') throw new Error('Contact dialogue is not connected; resume the session before speaking.');
+    const text = safeText(settings.text);
+    if (!text) throw new TypeError('Contact dialogue text is required.');
+    received += 1;
+    session.utterances += 1;
+    lastError = null;
+    try {
+      const result = await dialogue.say({
+        ...settings,
+        sessionId: session.sessionId,
+        assetId: session.assetId,
+        text,
+        lang: String(settings.lang || 'en-NG').slice(0, 35)
+      });
+      completed += 1;
+      emit('calloria:contact-dialogue-utterance', {
+        sessionId: session.sessionId, assetId: session.assetId,
+        status: 'completed', result, utterance: session.utterances
+      });
+      publishState('utterance-completed');
+      return result;
+    } catch (error) {
+      failed += 1;
+      lastError = String(error?.message || error);
+      emit('calloria:contact-dialogue-utterance', {
+        sessionId: session.sessionId, assetId: session.assetId,
+        status: 'error', error: lastError, utterance: session.utterances
+      });
+      publishState('utterance-failed');
+      throw error;
+    }
+  };
+
+  const interrupt = async (payload = {}) => {
+    if (disposed) throw new Error('Contact dialogue bridge has been disposed.');
+    const settings = payload && typeof payload === 'object' ? payload : {};
+    const session = requireSession(settings.sessionId || '');
+    if (session.state !== 'connected') throw new Error('Contact dialogue is not connected; resume the session before speaking.');
+    const text = safeText(settings.text);
+    if (!text) throw new TypeError('Contact dialogue interruption text is required.');
+    received += 1;
+    session.utterances += 1;
+    try {
+      const result = await dialogue.interrupt({
+        ...settings, sessionId: session.sessionId, assetId: session.assetId,
+        text, lang: String(settings.lang || 'en-NG').slice(0, 35)
+      });
+      completed += 1;
+      publishState('utterance-interrupted');
+      return result;
+    } catch (error) {
+      failed += 1;
+      lastError = String(error?.message || error);
+      publishState('interruption-failed');
+      throw error;
+    }
+  };
+
+  const hold = async (sessionId = '') => {
+    const session = requireSession(sessionId);
+    if (session.state === 'ended') return false;
+    const result = await dialogue.pause();
+    session.state = 'held';
+    publishState('session-held');
+    return result;
+  };
+  const resume = async (sessionId = '') => {
+    const session = requireSession(sessionId);
+    const result = await dialogue.resume();
+    session.state = 'connected';
+    publishState('session-resumed');
+    return result;
+  };
+  const end = async (sessionId = '') => {
+    if (!active) return false;
+    const session = requireSession(sessionId);
+    active = null;
+    await stopSessionVoice(session);
+    publishState('session-ended');
+    return true;
+  };
+
+  const executeEvent = async (detail = {}) => {
+    const settings = detail && typeof detail === 'object' ? detail : {};
+    const requestId = String(settings.requestId || `contact-${++sequence}`).slice(0, 100);
+    if (seenRequestIds.has(requestId)) {
+      emit('calloria:contact-dialogue-result', { requestId, status: 'duplicate' });
+      return;
+    }
+    seenRequestIds.add(requestId);
+    if (seenRequestIds.size > 250) seenRequestIds.delete(seenRequestIds.values().next().value);
+    const action = String(settings.action || 'say').trim().toLowerCase();
+    try {
+      let result;
+      if (action === 'start') result = await start(settings);
+      else if (action === 'say' || action === 'enqueue') result = await say(settings);
+      else if (action === 'interrupt') result = await interrupt(settings);
+      else if (action === 'hold') result = await hold(settings.sessionId || '');
+      else if (action === 'resume') result = await resume(settings.sessionId || '');
+      else if (action === 'end') result = await end(settings.sessionId || '');
+      else throw new TypeError(`Unsupported contact dialogue action: ${action || '(empty)'}.`);
+      emit('calloria:contact-dialogue-result', { requestId, action, status: 'completed', result });
+    } catch (error) {
+      lastError = String(error?.message || error);
+      emit('calloria:contact-dialogue-result', { requestId, action, status: 'error', error: lastError });
+    }
+  };
+  const handleEvent = (event) => { if (!disposed) void executeEvent(event?.detail || {}); };
+  hostWindow.addEventListener('calloria:contact-dialogue', handleEvent);
+
+  const api = Object.freeze({
+    __calloriaContactDialogueBridge: true,
+    start,
+    say,
+    interrupt,
+    hold,
+    resume,
+    end,
+    getStatus: () => Object.freeze({
+      active: snapshot(), received, completed, failed, lastError,
+      speechSupported: typeof hostWindow.CalloriaStaffVoice?.isSupported === 'function'
+        ? hostWindow.CalloriaStaffVoice.isSupported() : null
+    }),
+    dispose: async () => {
+      if (disposed) return false;
+      disposed = true;
+      hostWindow.removeEventListener('calloria:contact-dialogue', handleEvent);
+      const previous = active;
+      active = null;
+      if (previous) await stopSessionVoice(previous);
+      try { if (hostWindow.CalloriaContactDialogue === api) delete hostWindow.CalloriaContactDialogue; }
+      catch { /* Read-only global objects are tolerated. */ }
+      return true;
+    }
+  });
+  try { hostWindow.CalloriaContactDialogue = api; }
+  catch {
+    hostWindow.removeEventListener('calloria:contact-dialogue', handleEvent);
+    return null;
+  }
+  return api;
+}
+
+
 const STAFF_DIALOGUE_ADAPTER_MARKER = '__CALLORIA_STAFF_DIALOGUE_EVENT_ADAPTER_V639__';
+const CONTACT_SESSION_DIALOGUE_MARKER = '__CALLORIA_CONTACT_SESSION_DIALOGUE_BRIDGE_V640__';
 
 const NATIVE_SPEECH_BRIDGE_MARKER = '__CALLORIA_NATIVE_SPEECH_SYNTHESIS_BRIDGE_V637__';
 function addNativeSpeechSynthesisBridge(code) {
   const original = String(code || '').replace(/\r\n?/g, '\n');
-  if (original.includes(STAFF_DIALOGUE_ADAPTER_MARKER)) {
+  if (original.includes(CONTACT_SESSION_DIALOGUE_MARKER)) {
     return { code: original, alreadyPatched: true, warnings: [] };
   }
 
   const nativeCall = `(${installCalloriaNativeSpeechBridge.toString()})(window);`;
   const dialogueCall = `(${installCalloriaStaffDialogueAdapter.toString()})(window);`;
-  const dialogueInstall = `\n  /* ${STAFF_DIALOGUE_ADAPTER_MARKER} */\n  if (typeof window !== 'undefined') {\n    ${dialogueCall}\n  }`;
+  const contactCall = `(${installCalloriaContactSessionDialogueBridge.toString()})(window);`;
+  const contactInstall = `\n  /* ${CONTACT_SESSION_DIALOGUE_MARKER} */\n  if (typeof window !== 'undefined') {\n    ${contactCall}\n  }`;
+  const dialogueInstall = `\n  /* ${STAFF_DIALOGUE_ADAPTER_MARKER} */\n  if (typeof window !== 'undefined') {\n    ${dialogueCall}\n    ${contactCall}\n  }`;
 
-  // Upgrade a previously transformed v6.37+ runtime without duplicating the
-  // native speech bridge. The exact serialized helper call is our safe anchor.
+  // Upgrade the v6.39 dialogue bridge by extending the same checked installer
+  // point. Do not duplicate the native speech or dialogue adapters.
+  if (original.includes(STAFF_DIALOGUE_ADAPTER_MARKER)) {
+    if (original.split(dialogueCall).length - 1 !== 1) {
+      return {
+        code: null,
+        alreadyPatched: false,
+        warnings: ['Contact session dialogue was not connected: the existing v6.39 dialogue installer anchor did not match.']
+      };
+    }
+    return {
+      code: original.replace(dialogueCall, dialogueCall + contactInstall),
+      alreadyPatched: false,
+      warnings: []
+    };
+  }
+
+  // Upgrade a v6.37 runtime that has native voice but no domain dialogue API.
   if (original.includes(NATIVE_SPEECH_BRIDGE_MARKER)) {
     if (original.split(nativeCall).length - 1 !== 1) {
       return {
         code: null,
         alreadyPatched: false,
-        warnings: ['Staff dialogue adapter was not connected: the existing native voice installation anchor did not match.']
+        warnings: ['Staff dialogue and contact session adapters were not connected: the native voice installer anchor did not match.']
       };
     }
     return {
@@ -1482,11 +1735,12 @@ function addNativeSpeechSynthesisBridge(code) {
     return {
       code: null,
       alreadyPatched: false,
-      warnings: ['Native staff voice and dialogue adapter were not connected: the checked staff-speaking event anchor did not match the current runtime.']
+      warnings: ['Native browser voice, staff dialogue and contact session adapters were not connected: the checked staff-speaking event anchor did not match the current runtime.']
     };
   }
-  const nativeInstall = `\n  /* ${NATIVE_SPEECH_BRIDGE_MARKER} */\n  if (typeof window !== 'undefined') {\n    ${nativeCall}\n    ${dialogueCall}\n  }`;
-  const next = original.replace(anchor, anchor + nativeInstall + `\n  /* ${STAFF_DIALOGUE_ADAPTER_MARKER} */`);
+  const nativeInstall = `\n  /* ${NATIVE_SPEECH_BRIDGE_MARKER} */\n  if (typeof window !== 'undefined') {\n    ${nativeCall}\n    ${dialogueCall}\n    ${contactCall}\n  }`;
+  const next = original.replace(anchor, anchor + nativeInstall
+    + `\n  /* ${STAFF_DIALOGUE_ADAPTER_MARKER} */\n  /* ${CONTACT_SESSION_DIALOGUE_MARKER} */`);
   return { code: next, alreadyPatched: false, warnings: [] };
 }
 
@@ -1520,6 +1774,7 @@ export function transformStaffRuntimeIntegration(source, availableIds, renderMod
     staffSpeechMorphSupportAdded: !speech.alreadyPatched,
     nativeSpeechSynthesisBridgeAdded: !nativeVoice.alreadyPatched,
     staffDialogueEventAdapterAdded: !nativeVoice.alreadyPatched,
+    contactSessionDialogueBridgeAdded: !nativeVoice.alreadyPatched,
     alreadyPatched: Boolean(base.alreadyPatched && scheduled.alreadyPatched && eyeGaze.alreadyPatched && speech.alreadyPatched && nativeVoice.alreadyPatched)
   };
 }
