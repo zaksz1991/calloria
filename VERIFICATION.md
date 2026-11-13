@@ -1,12 +1,18 @@
-# v6.40 verification
+# Verification
 
-- 146/146 regression tests passed across the carried-forward suite and new contact-session tests.
-- Build-plugin JavaScript syntax check passed.
-- Generated staff-runtime transform syntax check passed.
-- Contact-session lifecycle tests passed: start, say, interrupt, hold, resume, end and session replacement.
-- Held-session replay and stale-session ownership tests passed.
-- Event-based CRM integration, duplicate request protection, invalid-input handling and disposal tests passed.
-- v6.39-to-v6.40 upgrade and transform idempotence tests passed.
-- ZIP archive integrity verified.
+## Included automated checks
 
-Not verified: a complete Vite production build, Vercel deployment, integration with the live CRM/call screen, real browser speech playback, or in-world GLB mouth animation. The call screen still needs to call the session API or emit the documented contact-dialogue events.
+`tests/calloria-v6-41-contact-voice-bridge.test.mjs` checks the source transform for:
+
+- runtime-confirmed GLB asset ID publication;
+- inbound session startup;
+- automatic agent-line speech and manual replay control;
+- hold, resume, wrap-up and return-to-queue cleanup;
+- safe skip when source anchors change;
+- duplicate-transform protection.
+
+The plugin's transform tests are run against a post-v4.4 source fixture. They do not replace the full repository test suite.
+
+## Not verified in this patch environment
+
+The full current repository checkout and its installed dependencies were not available in the workspace. Therefore a full Vite production build, complete `npm test`, browser rendering, speech playback, GLB morph animation or Vercel deployment has not been claimed or verified. Vercel must complete the production build after the overlay is committed.

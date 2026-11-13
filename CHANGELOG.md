@@ -1,12 +1,18 @@
-# CALLORIA v6.40 — Contact Session Dialogue Bridge
+# CALLORIA v6.41 — Integrated inbound agent voice
 
-- Added `window.CalloriaContactDialogue` as a session-aware controller above the existing staff dialogue and browser speech APIs.
-- Added session start, queued agent speech, urgent interruption, hold, resume and end operations.
-- Added single-active-contact ownership so stale call UI cannot send speech through the wrong agent asset.
-- Automatically stops and clears the previous staff queue when a new contact session replaces it.
-- Added a held-state guard so new utterances are rejected until the contact resumes.
-- Added `calloria:contact-dialogue` request events with correlated result, state and utterance events.
-- Added duplicate request ID protection, bounded identifiers and a 3,000-character utterance limit.
-- Added status reporting and listener/audio cleanup on disposal.
-- Preserved the v6.38 native speech queue, v6.39 staff dialogue adapter, existing morph animation and authored GLB animations.
-- Upgraded existing v6.39 transformed runtime output without duplicating native voice or dialogue installers.
+This patch connects the existing live inbound conversation workflow (v4.4) to the existing GLB staff contact-dialogue runtime (v6.40).
+
+## Runtime changes
+
+- Captures only GLB staff asset IDs reported as actually placed by the production world's `onAssetsReady` status.
+- Starts a staff dialogue session when an inbound customer contact is accepted.
+- Speaks the agent's submitted response using the existing browser speech-synthesis bridge, with the associated GLB staff asset receiving the existing speech/mouth-motion event.
+- Adds a `Play agent voice` control to replay the latest submitted agent line.
+- Holds, resumes and ends the staff dialogue session with the existing call lifecycle.
+- Leaves the existing customer voice, CRM, case creation, queue, KPI and wrap-up paths in place.
+
+No GLB assets, Supabase configuration, API keys, package dependencies or customer data are modified.
+
+## Limits
+
+Speech uses the browser's native Speech Synthesis support. Availability and voice selection depend on the browser/device. It is simulated in-game voice, not a PSTN/VoIP connection. Staff mouth movement only occurs for supported morph targets on the selected loaded staff asset. The runtime uses the first actually placed staff GLB ID as its speaking visual target; it does not yet map a unique player workstation to a unique staff instance.

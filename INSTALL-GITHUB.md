@@ -1,19 +1,11 @@
-# Install CALLORIA v6.40
+# Install CALLORIA v6.41
 
-Apply over CALLORIA v6.39.
+Upload these three overlay files to the repository, preserving the folders:
 
-## Replace one production file
+1. `build/calloria-contact-voice-integration-v6-41.mjs`
+2. `tests/calloria-v6-41-contact-voice-bridge.test.mjs`
+3. Replace the repository's existing `vite.config.js` with the supplied `vite.config.js`.
 
-Replace the complete contents of:
+Commit to the `main` branch. Vercel should then run the existing project build. No environment variables, Supabase settings, API keys, GLB folders or package files need to be changed.
 
-`build/calloria-cc0-staff-glb-bundle-plugin.mjs`
-
-Use the identically named file in this ZIP. Do not replace `package.json`, `package-lock.json`, Vite configuration, Supabase settings, environment variables, or unrelated production files.
-
-The ZIP carries forward the existing regression suite and adds:
-
-`tests/calloria-v640-contact-session-dialogue.test.mjs`
-
-## After deployment
-
-The staff runtime should install `window.CalloriaContactDialogue` after the existing browser voice and staff dialogue APIs. The CRM/call-handling page must still call this API or dispatch `calloria:contact-dialogue` events; this patch does not alter that page. Read `README.md` for the API, event payloads, lifecycle rules and integration boundary.
+The Vite configuration in this patch is based on the current public `main` branch configuration and only adds the new final plugin import and registration.
