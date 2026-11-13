@@ -1,6 +1,8 @@
-build/calloria-contact-voice-integration-v6-41.mjs
-tests/calloria-v6-41-contact-voice-bridge.test.mjs
+build/calloria-voice-response-workflow-v6-42.mjs
+tests/calloria-v6-42-voice-response-workflow.test.mjs
+tests/fixtures/calloria-v6-42-main-anchors.fixture.js
 vite.config.js
 CHANGELOG.md
 INSTALL-GITHUB.md
 VERIFICATION.md
+FILES.txt

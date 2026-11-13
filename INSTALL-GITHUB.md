@@ -1,11 +1,14 @@
-# Install CALLORIA v6.41
+# Install CALLORIA v6.42
 
-Upload these three overlay files to the repository, preserving the folders:
+Upload the files while preserving their paths:
 
-1. `build/calloria-contact-voice-integration-v6-41.mjs`
-2. `tests/calloria-v6-41-contact-voice-bridge.test.mjs`
-3. Replace the repository's existing `vite.config.js` with the supplied `vite.config.js`.
+1. Add `build/calloria-voice-response-workflow-v6-42.mjs`.
+2. Add `tests/calloria-v6-42-voice-response-workflow.test.mjs`.
+3. Add `tests/fixtures/calloria-v6-42-main-anchors.fixture.js`.
+4. Replace the repository's `vite.config.js` with the supplied version.
 
-Commit to the `main` branch. Vercel should then run the existing project build. No environment variables, Supabase settings, API keys, GLB folders or package files need to be changed.
+Commit the changes to the `main` branch. Vercel should then run the existing project build.
 
-The Vite configuration in this patch is based on the current public `main` branch configuration and only adds the new final plugin import and registration.
+No package dependencies, package lock, Supabase configuration, API keys, environment variables or GLB assets are changed. The Vite configuration is based on the current `main` branch configuration and registers this plugin as the final application transform.
+
+After deployment, open an inbound call, give microphone consent, use live transcription or the text fallback, then select **Log agent response to contact**. The saved statement appears in the active interaction history and in the CRM case transcript after wrap-up.

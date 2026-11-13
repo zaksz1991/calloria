@@ -1,18 +1,19 @@
-# CALLORIA v6.41 — Integrated inbound agent voice
+# CALLORIA v6.42 — Inbound agent response capture
 
-This patch connects the existing live inbound conversation workflow (v4.4) to the existing GLB staff contact-dialogue runtime (v6.40).
+## Integrated workflow
 
-## Runtime changes
+- Connects the existing microphone transcription and text-fallback panel to the currently active inbound call.
+- Adds an explicit **Log agent response to contact** action. Transcripts are not added to the case history until the agent chooses this action.
+- Applies a visible, rule-based communication check for empathy, ownership and a clear next step.
+- Flags direct requests for PINs, passwords, OTPs, security codes or full card numbers as a critical compliance breach.
+- Redacts long numeric sequences and security-token values before a logged response is retained.
+- Adds logged agent statements to the active call timeline and the completed inbound CRM case transcript.
+- Retains only the last 20 logged statements per active call.
 
-- Captures only GLB staff asset IDs reported as actually placed by the production world's `onAssetsReady` status.
-- Starts a staff dialogue session when an inbound customer contact is accepted.
-- Speaks the agent's submitted response using the existing browser speech-synthesis bridge, with the associated GLB staff asset receiving the existing speech/mouth-motion event.
-- Adds a `Play agent voice` control to replay the latest submitted agent line.
-- Holds, resumes and ends the staff dialogue session with the existing call lifecycle.
-- Leaves the existing customer voice, CRM, case creation, queue, KPI and wrap-up paths in place.
+## Privacy behaviour
 
-No GLB assets, Supabase configuration, API keys, package dependencies or customer data are modified.
+Raw microphone audio remains in the existing page-memory flow and is not placed in the CRM record. A transcript is saved only after the explicit log action. Because the application calls its existing cloud-employment save from `saveState()`, a logged transcript may sync when cloud save is enabled. The consent copy and privacy notice explain this.
 
-## Limits
+## Scope limits
 
-Speech uses the browser's native Speech Synthesis support. Availability and voice selection depend on the browser/device. It is simulated in-game voice, not a PSTN/VoIP connection. Staff mouth movement only occurs for supported morph targets on the selected loaded staff asset. The runtime uses the first actually placed staff GLB ID as its speaking visual target; it does not yet map a unique player workstation to a unique staff instance.
+This is a deterministic practice rubric, not an AI evaluator and not a real telephony connection. Speech recognition depends on browser support and permission. Text fallback remains available. The feature is inbound-call-only in this milestone.

@@ -19,7 +19,8 @@ import { calloriaOJTGLBActivationPlugin } from './build/calloria-ojt-glb-activat
 import { calloriaFirstWorkingShiftV44Plugin } from './build/calloria-first-working-shift-v4-4-plugin.mjs';
 import { calloriaOutboundCampaignV45Plugin } from './build/calloria-outbound-campaign-v4-5-plugin.mjs';
 import { calloriaMobileResponsiveRepairPlugin } from './build/calloria-mobile-responsive-repair-v6-10.mjs';
-import { calloriaContactVoiceIntegrationPlugin } from './build/calloria-contact-voice-integration-v6-41.mjs';
+import { calloriaVoiceResponseWorkflowPlugin } from './build/calloria-voice-response-workflow-v6-42.mjs';
+
 export default defineConfig({
   base: '/',
   publicDir: 'public',
@@ -51,8 +52,8 @@ export default defineConfig({
     calloriaOutboundCampaignV45Plugin(),
     // Final post-transform: mobile first-person safety, responsive CSS and assessment controls.
     calloriaMobileResponsiveRepairPlugin(),
-    // Last post-transform: connect v6.40 GLB dialogue to real inbound call events.
-    calloriaContactVoiceIntegrationPlugin()
+    // Final post-transform: connect voice practice to inbound case history and QA.
+    calloriaVoiceResponseWorkflowPlugin()
   ],
   build: {
     outDir: 'dist',

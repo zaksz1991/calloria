@@ -1,18 +1,22 @@
-# Verification
+# Verification — CALLORIA v6.42
 
-## Included automated checks
+The included focused test suite covers:
 
-`tests/calloria-v6-41-contact-voice-bridge.test.mjs` checks the source transform for:
-
-- runtime-confirmed GLB asset ID publication;
-- inbound session startup;
-- automatic agent-line speech and manual replay control;
-- hold, resume, wrap-up and return-to-queue cleanup;
-- safe skip when source anchors change;
+- current main.js consent/privacy anchors;
+- the explicit agent-response action;
+- communication rubric and critical security-request handling;
+- CRM transcript and call-timeline persistence;
+- fail-closed behaviour when application anchors change;
 - duplicate-transform protection.
 
-The plugin's transform tests are run against a post-v4.4 source fixture. They do not replace the full repository test suite.
+The plugin and test files can be syntax-checked without installing project dependencies.
 
-## Not verified in this patch environment
+Not verified in this workspace:
 
-The full current repository checkout and its installed dependencies were not available in the workspace. Therefore a full Vite production build, complete `npm test`, browser rendering, speech playback, GLB morph animation or Vercel deployment has not been claimed or verified. Vercel must complete the production build after the overlay is committed.
+- the full Vite production build;
+- the complete repository test suite;
+- microphone permissions or live speech recognition in a browser;
+- mobile-device speech recognition;
+- a Vercel deployment or live production behaviour.
+
+The patch is based on the source anchors currently present in the public `main` branch. The transform validates all required anchors before making any change and skips without partial edits if the application source has drifted.
