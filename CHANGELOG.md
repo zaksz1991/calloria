@@ -1,7 +1,10 @@
-# CALLORIA v6.28 — Adaptive Staff Idle
+# v6.37 — Native Browser Staff Voice
 
-- Adds a 30 Hz update cap for procedural idle poses on static-pose staff models.
-- Pauses idle pose calculations when the browser tab is hidden.
-- Skips pose calculations for staff wrappers hidden directly or through an invisible ancestor.
-- Keeps rest-quaternion restoration, authored animation clips, seated-staff restrictions, and the existing render loop unchanged.
-- Adds runtime diagnostics for the idle update cap and visibility-aware scheduling.
+- Added `window.CalloriaStaffVoice` using the browser-native SpeechSynthesis API.
+- Connected utterance `onstart`, `onend` and `onerror` lifecycle to the existing targeted `calloria:staff-speaking` morph event.
+- Added `speak`, `stop`, `cancel`, `getVoices` and `isSupported` methods.
+- Added bounded language, voice, rate, pitch, volume and mouth-intensity options.
+- Enforced one active CALLORIA utterance at a time and resolved cancelled utterance promises safely.
+- Preserved an existing app-owned `window.CalloriaStaffVoice` object.
+- Kept the v6.36 event receiver and all earlier staff idle/morph functionality intact.
+- The separate contact-handling UI is not automatically wired; it must call the documented API.
