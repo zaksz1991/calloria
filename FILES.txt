@@ -1,20 +1,21 @@
-CALLORIA v6.48 Career Competency Passport cumulative overlay
+CUMULATIVE BUILD MODULES
+build/calloria-voice-response-workflow-v6-42.mjs
+build/calloria-inbound-customer-dialogue-v6-43.mjs
+build/calloria-inbound-conversation-wrapup-v6-44.mjs
+build/calloria-inbound-qa-review-bridge-v6-45.mjs
+build/calloria-qa-coaching-followthrough-v6-46.mjs
+build/calloria-guided-coaching-practice-v6-47.mjs
+build/calloria-career-competency-passport-v6-48.mjs
+build/calloria-promotion-readiness-dossier-v6-49.mjs
 
-build/
-  calloria-career-competency-passport-v6-48.mjs   [new]
-  calloria-guided-coaching-practice-v6-47.mjs      [carried forward]
-  calloria-qa-coaching-followthrough-v6-46.mjs     [carried forward]
-  calloria-inbound-qa-review-bridge-v6-45.mjs      [carried forward]
-  calloria-inbound-conversation-wrapup-v6-44.mjs   [carried forward]
-  calloria-inbound-customer-dialogue-v6-43.mjs     [carried forward]
-  calloria-voice-response-workflow-v6-42.mjs       [carried forward]
+Vite configuration
+vite.config.js
 
-tests/
-  calloria-v6-48-career-competency-passport.test.mjs [new]
-  focused tests for v6.42–v6.47                        [carried forward]
-  fixtures/                                             [carried forward + v6.48 career fixture]
+Tests
+All tests/calloria-v6-*.test.mjs files
+All tests/fixtures/ files required by those tests
 
-vite.config.js                                         [replacement cumulative plugin registration]
+Documentation
 README.md
 CHANGELOG.md
 INSTALL-GITHUB.md

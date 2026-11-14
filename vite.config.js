@@ -26,6 +26,7 @@ import { calloriaInboundQAReviewBridgePlugin } from './build/calloria-inbound-qa
 import { calloriaQACoachingFollowThroughPlugin } from './build/calloria-qa-coaching-followthrough-v6-46.mjs';
 import { calloriaGuidedCoachingPracticePlugin } from './build/calloria-guided-coaching-practice-v6-47.mjs';
 import { calloriaCareerCompetencyPassportPlugin } from './build/calloria-career-competency-passport-v6-48.mjs';
+import { calloriaPromotionReadinessDossierPlugin } from './build/calloria-promotion-readiness-dossier-v6-49.mjs';
 
 export default defineConfig({
   base: '/',
@@ -70,7 +71,9 @@ export default defineConfig({
     // Criterion-based practice sits inside the existing QA coaching action plans.
     calloriaGuidedCoachingPracticePlugin(),
     // Career profile consumes only human-confirmed QA coaching outcomes.
-    calloriaCareerCompetencyPassportPlugin()
+    calloriaCareerCompetencyPassportPlugin(),
+    // Promotion dossier reuses the exact Workforce promotion KPI and attempt rules.
+    calloriaPromotionReadinessDossierPlugin()
   ],
   build: {
     outDir: 'dist',
