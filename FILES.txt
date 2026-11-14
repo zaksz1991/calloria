@@ -1,24 +1,12 @@
-CUMULATIVE BUILD MODULES
-build/calloria-voice-response-workflow-v6-42.mjs
-build/calloria-inbound-customer-dialogue-v6-43.mjs
-build/calloria-inbound-conversation-wrapup-v6-44.mjs
-build/calloria-inbound-qa-review-bridge-v6-45.mjs
-build/calloria-qa-coaching-followthrough-v6-46.mjs
-build/calloria-guided-coaching-practice-v6-47.mjs
-build/calloria-career-competency-passport-v6-48.mjs
-build/calloria-promotion-readiness-dossier-v6-49.mjs
-
-Vite configuration
-vite.config.js
-
-Tests
-All tests/calloria-v6-*.test.mjs files
-All tests/fixtures/ files required by those tests
-
-Documentation
-README.md
-CHANGELOG.md
-INSTALL-GITHUB.md
-VERIFICATION.md
-TEST-RESULTS.txt
-FILES.txt
+Cumulative integration files, v6.42–v6.50:
+- build/calloria-voice-response-workflow-v6-42.mjs
+- build/calloria-inbound-customer-dialogue-v6-43.mjs
+- build/calloria-inbound-conversation-wrapup-v6-44.mjs
+- build/calloria-inbound-qa-review-bridge-v6-45.mjs
+- build/calloria-qa-coaching-followthrough-v6-46.mjs
+- build/calloria-guided-coaching-practice-v6-47.mjs
+- build/calloria-career-competency-passport-v6-48.mjs
+- build/calloria-promotion-readiness-dossier-v6-49.mjs (digital KPI/QA parity correction)
+- build/calloria-scenario-based-promotion-exam-v6-50.mjs
+- vite.config.js
+- tests/ and tests/fixtures/

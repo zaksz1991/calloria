@@ -1,17 +1,11 @@
-# Verification — v6.49
+# Verification — v6.50
 
-## Passed
+- 73 focused tests passed across the cumulative v6.42–v6.50 integration suite.
+- Scenario assessment: 12 questions, seven competency categories, complete-answer enforcement, mixed-score calculation and category breakdown passed.
+- Promotion readiness: digital-contact KPI and digital-QA parity tests passed.
+- Ordered v6.48 → v6.49 → v6.50 transform, idempotence, safe anchor failure and transformed-fixture syntax passed.
+- JavaScript syntax checks passed for all included build modules.
+- `vite.config.js` syntax check passed.
+- ZIP archive integrity checked after packaging.
 
-- 62 automated tests passed across the cumulative v6.42–v6.49 overlay.
-- 11 focused v6.49 tests passed, covering calculation parity, default metrics, organisation threshold, annual attempt lock, lifetime attempt cap, priority ordering, malformed-state handling, sequential transforms, idempotence, safe skip behaviour and read-only behaviour.
-- `node --check vite.config.js` passed.
-- `node --check` passed for every included build plugin module.
-- The v6.47 fixture was transformed sequentially by v6.48 and v6.49; the resulting JavaScript passed `node --check`.
-- ZIP integrity was checked after packaging.
-
-## Not verified
-
-- A full Vite production build was not run because the complete application repository and package installation are not present in this working environment.
-- Browser rendering, mobile layout, live gameplay and Vercel deployment were not tested.
-
-The new panel follows the current public `main.js` Workforce formula and Career renderer anchors. The dossier is read-only and does not change the existing promotion examination engine.
+A full Vite production build, browser exam session, authenticated cloud save and Vercel deployment were not run because this package does not contain the full application repository, dependencies, public assets or runtime configuration.

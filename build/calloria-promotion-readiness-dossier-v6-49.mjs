@@ -60,7 +60,8 @@ export function calloriaBuildPromotionReadinessV649(input = {}) {
   const yearValue = Number(input.year);
   const year = Number.isFinite(yearValue) ? Math.trunc(yearValue) : new Date().getFullYear();
 
-  // These formulas intentionally match renderWorkforce() in js/main.js.
+  // Mirrors the live Workforce exam rule, including resolved/escalated digital
+  // contacts and scored digital QA records.
   const callsHandled = Math.max(0, finiteNumber(state.callsHandled));
   const outboundCalls = Math.max(0, finiteNumber(state.outboundCalls));
   const qaCount = Math.max(0, finiteNumber(state.qaCount));
@@ -70,10 +71,21 @@ export function calloriaBuildPromotionReadinessV649(input = {}) {
   const level = Math.max(0, finiteNumber(state.level, 1));
   const totalQA = finiteNumber(state.totalQA);
   const totalCSAT = finiteNumber(state.totalCSAT);
+  const digitalMetrics = input.digitalMetrics && typeof input.digitalMetrics === 'object'
+    ? input.digitalMetrics
+    : (typeof digitalQueueMetrics === 'function'
+      ? digitalQueueMetrics(state.digitalQueue || [])
+      : { resolved: 0, escalated: 0, averageQA: null });
+  const completedDigital = Math.max(0, finiteNumber(digitalMetrics.resolved) + finiteNumber(digitalMetrics.escalated));
+  const digitalQaCount = digitalMetrics.averageQA === null
+    ? 0
+    : (Array.isArray(state.digitalQueue) ? state.digitalQueue.filter(item => Number.isFinite(item?.qaScore)).length : 0);
+  const combinedQaCount = qaCount + digitalQaCount;
+  const combinedTotalQA = totalQA + finiteNumber(digitalMetrics.averageQA) * digitalQaCount;
 
   const metrics = {
-    kpi: Math.min(100, Math.round((callsHandled + outboundCalls) * 5)),
-    qa: qaCount ? Math.round(totalQA / qaCount) : 75,
+    kpi: Math.min(100, Math.round((callsHandled + outboundCalls + completedDigital) * 5)),
+    qa: combinedQaCount ? Math.round(combinedTotalQA / combinedQaCount) : 75,
     csat: csatCount ? Math.round(totalCSAT / csatCount) : 75,
     knowledge: Math.min(100, 70 + experience),
     compliance: incidents ? Math.max(0, 100 - incidents * 12) : 95,
@@ -140,19 +152,19 @@ ${calloriaBuildPromotionReadinessV649.toString()}
 function calloriaEnsurePromotionReadinessStylesV649(){
   if(document.getElementById('calloriaPromotionReadinessStylesV649'))return;
   const style=document.createElement('style');style.id='calloriaPromotionReadinessStylesV649';
-  style.textContent='.calloria-promotion-dossier{margin-top:14px}.calloria-promotion-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.calloria-promotion-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0}.calloria-promotion-summary>div{padding:11px;border:1px solid rgba(148,163,184,.18);border-radius:10px;background:rgba(148,163,184,.055)}.calloria-promotion-summary strong{display:block;font-size:21px}.calloria-promotion-summary small{font-size:10px;color:var(--muted,#94a3b8)}.calloria-promotion-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.calloria-promotion-metric{min-width:0}.calloria-promotion-metric .data-row{font-size:12px}.calloria-promotion-track{height:7px;border-radius:99px;background:rgba(148,163,184,.18);overflow:hidden}.calloria-promotion-track span{display:block;height:100%;border-radius:99px;background:var(--success,#22c55e)}.calloria-promotion-priorities{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:12px}.calloria-promotion-priority{padding:11px;border:1px solid rgba(148,163,184,.18);border-radius:10px;background:rgba(148,163,184,.045);min-width:0}.calloria-promotion-priority strong{display:block;font-size:12px}.calloria-promotion-priority p{font-size:11px;color:var(--muted,#94a3b8);line-height:1.45;margin:7px 0 0}.calloria-promotion-reason{padding:12px;border-radius:10px;background:rgba(148,163,184,.07);font-size:12px;line-height:1.5;margin:12px 0}.calloria-promotion-history{margin-top:12px}.calloria-promotion-history .data-row{gap:8px;flex-wrap:wrap;font-size:11px}.calloria-promotion-note{margin-top:12px;font-size:11px;color:var(--muted,#94a3b8);line-height:1.5}@media(max-width:640px){.calloria-promotion-summary{grid-template-columns:1fr 1fr}.calloria-promotion-metrics{grid-template-columns:1fr}.calloria-promotion-priorities{grid-template-columns:1fr}.calloria-promotion-head{flex-direction:column}}';
+  style.textContent='.calloria-promotion-dossier{margin-top:14px}.calloria-promotion-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.calloria-promotion-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0}.calloria-promotion-summary>div{padding:11px;border:1px solid rgba(148,163,184,.18);border-radius:10px;background:rgba(148,163,184,.055)}.calloria-promotion-summary strong{display:block;font-size:21px}.calloria-promotion-summary small{font-size:10px;color:var(--muted,#94a3b8)}.calloria-promotion-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.calloria-promotion-metric{min-width:0}.calloria-promotion-metric .data-row{font-size:12px}.calloria-promotion-track{height:7px;border-radius:99px;background:rgba(148,163,184,.18);overflow:hidden}.calloria-promotion-track span{display:block;height:100%;border-radius:99px;background:var(--success,#22c55e)}.calloria-promotion-priorities{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:12px}.calloria-promotion-priority{padding:11px;border:1px solid rgba(148,163,184,.18);border-radius:10px;background:rgba(148,163,184,.045);min-width:0}.calloria-promotion-priority strong{display:block;font-size:12px}.calloria-promotion-priority p{font-size:11px;color:var(--muted,#94a3b8);line-height:1.45;margin:7px 0 0}.calloria-promotion-reason{padding:12px;border-radius:10px;background:rgba(148,163,184,.07);font-size:12px;line-height:1.5;margin:12px 0}.calloria-promotion-history{margin-top:12px}.calloria-promotion-history .data-row{gap:8px;flex-wrap:wrap;font-size:11px}.calloria-promotion-history-detail{margin:6px 0 12px 10px;font-size:11px}.calloria-promotion-history-detail summary{cursor:pointer;color:var(--accent,#38bdf8);padding:4px 0}.calloria-promotion-note{margin-top:12px;font-size:11px;color:var(--muted,#94a3b8);line-height:1.5}@media(max-width:640px){.calloria-promotion-summary{grid-template-columns:1fr 1fr}.calloria-promotion-metrics{grid-template-columns:1fr}.calloria-promotion-priorities{grid-template-columns:1fr}.calloria-promotion-head{flex-direction:column}}';
   document.head.append(style);
 }
 function calloriaRenderPromotionReadinessV649(){
   calloriaEnsurePromotionReadinessStylesV649();
   const policy=typeof getActiveOrganization==='function'?getActiveOrganization(state.organizationWorkspace)?.policy:null;
-  const model=calloriaBuildPromotionReadinessV649({state,minimumScore:policy?.promotionThreshold??75});
+  const model=calloriaBuildPromotionReadinessV649({state,minimumScore:policy?.promotionThreshold??75,digitalMetrics:digitalQueueMetrics(state.digitalQueue||[])});
   const metricCards=Object.entries(model.metrics).map(([key,value])=>{
     const label=METRIC_GUIDANCE_V649[key]?.label||key.toUpperCase();
     return '<div class="calloria-promotion-metric"><div class="data-row"><span>'+escapeHTML(label)+'</span><strong>'+value+'/100</strong></div><div class="calloria-promotion-track"><span style="width:'+Math.max(0,Math.min(100,value))+'%"></span></div><small class="muted-note">Weight '+model.weights[key]+'%</small></div>';
   }).join('');
   const priorityCards=model.priorities.map((item,index)=>'<article class="calloria-promotion-priority"><span class="subtle-label">PRIORITY '+(index+1)+' · '+item.value+'/100</span><strong>'+escapeHTML(item.label)+'</strong><p>'+escapeHTML(item.action)+'</p></article>').join('');
-  const history=model.attemptHistory.slice(0,4).map(item=>'<div class="data-row"><span>'+escapeHTML(String(item.year||'—'))+' · '+escapeHTML(String(item.examScore??'—'))+'% exam</span><strong>'+escapeHTML(String(item.status||'recorded').replaceAll('_',' ').toUpperCase())+'</strong></div>').join('')||'<p class="muted-note">No annual promotion examination attempts recorded.</p>';
+  const history=model.attemptHistory.slice(0,4).map(item=>{const summary='<div class="data-row"><span>'+escapeHTML(String(item.year||'—'))+' · '+escapeHTML(String(item.examScore??'—'))+'% exam</span><strong>'+escapeHTML(String(item.status||'recorded').replaceAll('_',' ').toUpperCase())+'</strong></div>';const detail=item.examBreakdown?'<details class="calloria-promotion-history-detail"><summary>View scenario competency breakdown</summary>'+Object.entries(item.examBreakdown).map(([label,value])=>'<div class="data-row"><span>'+escapeHTML(label)+'</span><strong>'+escapeHTML(String(value.score??'—'))+'%</strong></div>').join('')+'</details>':'';return summary+detail;}).join('')||'<p class="muted-note">No annual promotion examination attempts recorded.</p>';
   const latest=model.latestAttempt?'<div class="muted-note">Latest attempt: '+escapeHTML(String(model.latestAttempt.year||'—'))+' · '+escapeHTML(String(model.latestAttempt.examScore??'—'))+'% · '+escapeHTML(String(model.latestAttempt.status||'recorded').replaceAll('_',' '))+'</div>':'';
   const pill=model.eligible?'green':'amber';
   return '<section class="panel calloria-promotion-dossier"><div class="calloria-promotion-head"><div><span class="subtle-label">CAREER DEVELOPMENT · '+model.year+'</span><h3>Promotion readiness dossier</h3><p class="muted-note">A live summary of the same KPI formula, threshold and annual examination limits used by Workforce.</p></div><span class="pill '+pill+'">'+escapeHTML(model.status)+'</span></div><div class="calloria-promotion-summary"><div><strong>'+model.score.toFixed(1)+'%</strong><small>Weighted promotion score</small></div><div><strong>'+model.minimumScore+'%</strong><small>Organisation threshold</small></div><div><strong>'+model.attemptsRemaining+'/3</strong><small>Examination attempts remaining</small></div></div><div class="calloria-promotion-reason">'+escapeHTML(model.reason)+'</div><h4>Current promotion dimensions</h4><div class="calloria-promotion-metrics">'+metricCards+'</div><h4 style="margin-top:18px">Development priorities</h4><p class="muted-note">These are the three lowest current dimensions. They are coaching priorities, not separate pass/fail gates.</p><div class="calloria-promotion-priorities">'+priorityCards+'</div><div class="calloria-promotion-history"><h4>Annual examination history</h4>'+history+latest+'</div><p class="calloria-promotion-note">One examination attempt is permitted per calendar year, up to three total attempts. The examination pass mark remains 70%. Human-reviewed coaching evidence is shown separately in the Career competency passport; it does not alter the official KPI formula or automatically grant a promotion. Submit an examination through Workforce when eligible.</p></section>';

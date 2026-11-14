@@ -27,6 +27,7 @@ import { calloriaQACoachingFollowThroughPlugin } from './build/calloria-qa-coach
 import { calloriaGuidedCoachingPracticePlugin } from './build/calloria-guided-coaching-practice-v6-47.mjs';
 import { calloriaCareerCompetencyPassportPlugin } from './build/calloria-career-competency-passport-v6-48.mjs';
 import { calloriaPromotionReadinessDossierPlugin } from './build/calloria-promotion-readiness-dossier-v6-49.mjs';
+import { calloriaScenarioBasedPromotionExamPlugin } from './build/calloria-scenario-based-promotion-exam-v6-50.mjs';
 
 export default defineConfig({
   base: '/',
@@ -73,7 +74,9 @@ export default defineConfig({
     // Career profile consumes only human-confirmed QA coaching outcomes.
     calloriaCareerCompetencyPassportPlugin(),
     // Promotion dossier reuses the exact Workforce promotion KPI and attempt rules.
-    calloriaPromotionReadinessDossierPlugin()
+    calloriaPromotionReadinessDossierPlugin(),
+    // The scenario exam replaces self-entered marks and records scored response evidence.
+    calloriaScenarioBasedPromotionExamPlugin()
   ],
   build: {
     outDir: 'dist',

@@ -1,23 +1,24 @@
-# CALLORIA v6.49 — Promotion Readiness Dossier
+# CALLORIA v6.50 — Scenario-based Promotion Examination
 
-A new live **Promotion readiness dossier** appears in the employee Career profile, directly beneath the v6.48 Career competency passport.
+This cumulative overlay replaces the self-entered numeric promotion exam mark with a twelve-scenario assessment. It uses scored operational decisions across security/privacy, customer communication, operational judgement, case ownership, CRM documentation, ethical sales and team leadership.
 
-## What it shows
+## How the examination works
 
-- The six promotion dimensions already used by Workforce: KPI, QA, CSAT, product knowledge, compliance and leadership.
-- The same 30/20/15/15/10/10 weighting and weighted score.
-- The active organisation's configured promotion threshold, or the existing 75% default.
-- Whether the employee can sit the annual examination in the current calendar year.
-- Examination attempts used and remaining under the existing three-attempt lifetime cap.
-- Recorded examination history, including pass/fail status.
-- The three lowest performance dimensions, each with a practical development action.
+- The existing Workforce eligibility threshold, one-attempt-per-calendar-year rule, three-attempt lifetime limit and 70% pass mark remain authoritative.
+- The candidate must answer all twelve scenarios before submission.
+- The score is computed from the selected responses; there is no manual score input.
+- The existing `recordPromotionExam()` engine still records the official attempt and pass/fail outcome.
+- The attempt now also retains question identifiers, category scores and response points for review. The Career dossier exposes a collapsible competency breakdown for recorded attempts. It does not store free-text or personal customer data.
+- The assessment is a local simulation exercise, not a proctored or externally accredited examination.
 
-## Policy boundaries
+## Corrected promotion readiness metrics
 
-This is a read-only career guidance panel. It does not submit an examination, change a score, update a KPI, modify salary or XP, or award a promotion. One examination attempt per calendar year, the three-attempt cap and the existing 70% exam pass mark remain unchanged. The dossier mirrors the current Workforce calculations; it does not replace them.
+The v6.49 dossier and Workforce eligibility display now include completed digital contacts in KPI and scored digital interactions in QA, matching the metrics already used when the existing Workforce exam handler validates an attempt. This removes an inconsistency between the readiness profile, Workforce eligibility display and examination submission. The formula now counts resolved and escalated digital contacts in KPI and includes the digital QA mean only when there are scored digital QA records.
 
-Human-reviewed coaching evidence remains separate from the official promotion score and is displayed in the v6.48 competency passport.
+## Install
 
-## Cumulative contents
+Merge the contents into the repository. Replace `vite.config.js` with the included cumulative configuration. Keep the existing application, public assets, package files, Supabase configuration and environment variables. This overlay adds build-time transformations and tests; it does not include the full application source or GLB assets.
 
-The ZIP includes the v6.42–v6.48 integration modules, v6.49, their focused tests and the cumulative Vite configuration. It does not include application source, assets, package files, credentials or database migrations.
+## Verification boundary
+
+Focused Node tests, transformed-fixture syntax and Vite configuration syntax are checked in this package. A full production build, browser exam session, cloud save and Vercel deployment require the complete current repository and have not been verified in this environment.
