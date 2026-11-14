@@ -1,15 +1,20 @@
-CALLORIA v6.46 overlay contents
-- vite.config.js (replacement; retains all existing v6.45 plugins and adds v6.46 last)
-- build/calloria-qa-coaching-followthrough-v6-46.mjs (new integration plugin)
-- build/calloria-voice-response-workflow-v6-42.mjs (required prior integration)
-- build/calloria-inbound-customer-dialogue-v6-43.mjs (required prior integration)
-- build/calloria-inbound-conversation-wrapup-v6-44.mjs (required prior integration)
-- build/calloria-inbound-qa-review-bridge-v6-45.mjs (required prior integration)
-- tests/calloria-v6-46-qa-coaching-followthrough.test.mjs
-- tests/calloria-v6-45-inbound-qa-review-bridge.test.mjs
-- tests/fixtures/calloria-v6-45-main-anchors.fixture.js (updated current-workflow fixture)
-- tests/fixtures/calloria-v6-42-main-anchors.fixture.js
-- tests/fixtures/calloria-v6-43-main-anchors.fixture.js
-- tests/fixtures/calloria-v6-44-main-anchors.fixture.js
-- prior v6.42–v6.45 focused test files
-- README.md, CHANGELOG.md, INSTALL-GITHUB.md, VERIFICATION.md
+CALLORIA v6.47 Guided Coaching Practice overlay
+
+build/
+  calloria-guided-coaching-practice-v6-47.mjs      [new]
+  v6.42–v6.46 integration modules                  [carried forward]
+  existing project build plugins are not replaced unless present in the overlay
+
+ tests/
+  calloria-v6-47-guided-coaching-practice.test.mjs  [new]
+  v6.42–v6.46 focused integration tests             [carried forward]
+  fixtures/generated-v6-46-main.js                  [v6.47 transform fixture]
+  prior version fixtures                            [carried forward]
+
+vite.config.js                                      [replacement]
+README.md
+CHANGELOG.md
+INSTALL-GITHUB.md
+VERIFICATION.md
+TEST-RESULTS.txt
+FILES.txt

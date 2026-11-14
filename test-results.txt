@@ -1,9 +1,8 @@
-CALLORIA v6.46 focused test summary
+CALLORIA v6.47 focused verification
 
-Command: node --test tests/calloria-v6-*.test.mjs
-Result: 36 passed, 0 failed.
-Coverage: v6.42–v6.46 voice-to-CRM, scripted customer dialogue, wrap-up transcript, inbound human-QA queue, coaching action creation, delivery and evidence-based follow-up.
+Command: node --test tests/*.test.mjs
+Result: 43 tests passed, 0 failed.
 
-Additional checks: JavaScript syntax checks passed for the five build integration modules and vite.config.js. The transformed main.js fixture parses as JavaScript.
+Coverage includes carried-forward v6.42–v6.46 integrations plus v6.47 guided coaching practice: prerequisite handling, idempotency, scenario selection, practice scoring, state persistence, redaction, timeline event recording, verified-plan protection, safe rendering and JavaScript syntax.
 
-Not tested: full application build, browser/device runtime, real microphone/audio output, Supabase cloud persistence or Vercel deployment.
+Full repository Vite build, browser testing and Vercel deployment are not verified by this test run.

@@ -1,17 +1,19 @@
-# v6.46 Verification
+# v6.47 Verification
 
 ## Passed
-- 36 Node tests passed across v6.42–v6.46.
-- QA form transformation creates linked coaching plans for low-rated criteria and critical compliance flags.
-- Duplicate plan creation is prevented for the same human QA review.
-- Coaching-plan creation and delivery are added to the operations event timeline. Delivery must be recorded before follow-up; insufficient evidence or reviewer identification is rejected.
-- Positive follow-up marks a plan verified; further practice reopens it.
-- Mobile layout rules, escaped content, idempotency and safe-skip behaviour are covered by tests.
-- JavaScript syntax checks passed for the new build plugin and Vite configuration.
-- ZIP integrity checked after packaging.
+
+- 43 automated tests passed across the carried-forward v6.42–v6.47 integration suite.
+- v6.47 safely requires the v6.46 coaching workflow and skips already transformed source.
+- Criterion mapping verified for compliance, empathy/listening, ownership and CRM documentation scenarios.
+- Practice scoring, repeat attempts, redacted response storage, timeline recording and human-review boundary verified.
+- Short, unknown and already verified coaching actions are rejected for practice.
+- Rendered practice form and result output preserve escaped text.
+- Transformed fixture parses as valid JavaScript.
+- Vite configuration syntax checked and v6.47 plugin registration order verified.
+- ZIP integrity checked.
 
 ## Not verified
-- Full Vite production build against the complete current repository.
-- Live browser rendering, deployed interactions, Supabase multi-user persistence or Vercel deployment.
 
-The focused fixtures were updated to preserve the current QA renderer signature and selector syntax observed in the public `main.js` workflow. They are aligned to the v6.45 plugin output. They are not a substitute for running `npm test` and `npm run build` in the full repository.
+- Full Vite production build against the complete CALLORIA repository.
+- Live browser/mobile rendering, deployed state persistence or Vercel deployment.
+- Whether a real supervisor's qualitative assessment matches the deterministic practice checklist. The checklist is intentionally formative and must not be treated as the QA score.

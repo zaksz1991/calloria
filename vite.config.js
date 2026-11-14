@@ -24,6 +24,7 @@ import { calloriaInboundCustomerDialoguePlugin } from './build/calloria-inbound-
 import { calloriaInboundConversationWrapUpPlugin } from './build/calloria-inbound-conversation-wrapup-v6-44.mjs';
 import { calloriaInboundQAReviewBridgePlugin } from './build/calloria-inbound-qa-review-bridge-v6-45.mjs';
 import { calloriaQACoachingFollowThroughPlugin } from './build/calloria-qa-coaching-followthrough-v6-46.mjs';
+import { calloriaGuidedCoachingPracticePlugin } from './build/calloria-guided-coaching-practice-v6-47.mjs';
 
 export default defineConfig({
   base: '/',
@@ -64,7 +65,9 @@ export default defineConfig({
     // Completed inbound cases enter the existing evidence-based human QA workspace.
     calloriaInboundQAReviewBridgePlugin(),
     // QA review outcomes now create trackable coaching actions with evidence-based follow-up.
-    calloriaQACoachingFollowThroughPlugin()
+    calloriaQACoachingFollowThroughPlugin(),
+    // Criterion-based practice sits inside the existing QA coaching action plans.
+    calloriaGuidedCoachingPracticePlugin()
   ],
   build: {
     outDir: 'dist',

@@ -255,8 +255,9 @@ function calloriaCreateQACoachingPlansV646(review){
   for(const task of tasks.slice(0,13)){
     try{
       const record=createCoachingRecord(records,{coach:String(review.reviewer||'QA reviewer').slice(0,80),topic:task.topic,feedback:task.feedback,actionPlan:task.actionPlan,score:task.score,followUpDate});
-      Object.assign(record,{source:'qa-human-review-v646',sourceReviewId:review.id,sourceInteractionId:String(review.interactionId||''),criterionId:task.criterionId,evidenceQuote:task.evidenceQuote,priority:task.priority,status:'action_plan_open',deliveredAt:null,deliveredBy:'',followUp:null});
+      Object.assign(record,{source:'qa-human-review-v646',sourceReviewId:review.id,sourceInteractionId:String(review.interactionId||''),criterionId:task.criterionId,evidenceQuote:task.evidenceQuote,priority:task.priority,status:'action_plan_open',deliveredAt:null,deliveredBy:'',followUp:null,deliveryHistory:[],followUps:[]});
       created.push(record);
+      pushOperationEvent('coaching',record.id,'QA action plan created: '+record.topic+'.',record.priority==='critical'?'mandatory_remediation':'action_plan_open',{sourceReviewId:record.sourceReviewId,sourceInteractionId:record.sourceInteractionId,criterionId:record.criterionId});
     }catch(error){console.warn('CALLORIA QA coaching plan could not be created:',error);}
   }
   return created;
@@ -264,7 +265,8 @@ function calloriaCreateQACoachingPlansV646(review){
 function calloriaUpdateQACoachingDeliveryV646(id){
   const record=calloriaEnsureQACoachingStateV646().find(item=>item?.id===id&&item.source==='qa-human-review-v646');
   if(!record||!['action_plan_open','reopened'].includes(record.status))return false;
-  record.status='delivered';record.deliveredAt=new Date().toISOString();record.deliveredBy=String(state.applicantName||'Reviewer').slice(0,80);
+  record.status='delivered';record.deliveredAt=new Date().toISOString();record.deliveredBy=String(record.coach||'Reviewer').slice(0,80);
+  record.deliveryHistory=Array.isArray(record.deliveryHistory)?record.deliveryHistory:[];record.deliveryHistory.push({deliveredAt:record.deliveredAt,deliveredBy:record.deliveredBy});
   pushOperationEvent('coaching',record.id,'QA-directed coaching delivery recorded.','delivered',{sourceReviewId:record.sourceReviewId,sourceInteractionId:record.sourceInteractionId});
   return true;
 }
@@ -272,9 +274,12 @@ function calloriaRecordQACoachingFollowUpV646({id,outcome,note,reviewer}){
   const record=calloriaEnsureQACoachingStateV646().find(item=>item?.id===id&&item.source==='qa-human-review-v646');
   if(!record||record.status!=='delivered')throw new Error('Only delivered QA coaching plans can receive a follow-up outcome.');
   const cleanNote=String(note||'').trim();
+  const reviewerName=String(reviewer||'').trim();
   if(cleanNote.length<20||cleanNote.length>600)throw new RangeError('Follow-up evidence must contain 20 to 600 characters.');
+  if(reviewerName.length<2||reviewerName.length>80)throw new RangeError('Reviewer name must contain 2 to 80 characters.');
   if(!['improved','needs_more_practice'].includes(outcome))throw new TypeError('Choose a valid follow-up outcome.');
-  record.followUp={outcome,note:cleanNote,reviewer:String(reviewer||state.applicantName||'Reviewer').trim().slice(0,80),recordedAt:new Date().toISOString()};
+  record.followUp={outcome,note:cleanNote,reviewer:reviewerName,recordedAt:new Date().toISOString()};
+  record.followUps=Array.isArray(record.followUps)?record.followUps:[];record.followUps.push(record.followUp);
   record.status=outcome==='improved'?'verified':'reopened';
   pushOperationEvent('coaching',record.id,outcome==='improved'?'QA coaching follow-up verified improvement.':'QA coaching follow-up requires further practice.',record.status,{sourceReviewId:record.sourceReviewId,sourceInteractionId:record.sourceInteractionId});
   return record;
@@ -287,8 +292,11 @@ function calloriaRenderQACoachingFollowThroughV646(){
   const cards=records.slice().reverse().slice(0,16).map(item=>{
     const critical=item.priority==='critical';
     const status=String(item.status||'action_plan_open').replaceAll('_',' ').toUpperCase();
-    const due=item.followUpDate?new Date(item.followUpDate+'T00:00:00').toLocaleDateString():'Not scheduled';
-    const follow=item.followUp?('<div class="calloria-qa-followup-result"><strong>'+(item.followUp.outcome==='improved'?'IMPROVEMENT VERIFIED':'FURTHER PRACTICE REQUIRED')+'</strong><p>'+escapeHTML(item.followUp.note)+'</p><small>'+escapeHTML(item.followUp.reviewer||'Reviewer')+' · '+escapeHTML(new Date(item.followUp.recordedAt).toLocaleString())+'</small></div>'):'';
+    const dueDate=item.followUpDate?new Date(item.followUpDate+'T00:00:00'):null;
+    const overdue=dueDate&&dueDate.getTime()<new Date(new Date().toDateString()).getTime()&&item.status!=='verified';
+    const due=dueDate?dueDate.toLocaleDateString()+(overdue?' · OVERDUE':''):'Not scheduled';
+    const history=Array.isArray(item.followUps)?item.followUps:(item.followUp?[item.followUp]:[]);
+    const follow=history.map(entry=>'<div class="calloria-qa-followup-result"><strong>'+(entry.outcome==='improved'?'IMPROVEMENT VERIFIED':'FURTHER PRACTICE REQUIRED')+'</strong><p>'+escapeHTML(entry.note)+'</p><small>'+escapeHTML(entry.reviewer||'Reviewer')+' · '+escapeHTML(new Date(entry.recordedAt).toLocaleString())+'</small></div>').join('');
     const delivery=['action_plan_open','reopened'].includes(item.status)?('<button class="btn outline" type="button" data-action="qa-coaching-delivered" data-coaching-id="'+escapeHTML(item.id)+'">Mark coaching delivered</button>'):'';
     const verify=item.status==='delivered'?('<form class="calloria-qa-followup-form" data-qa-coaching-followup><input type="hidden" name="coachingId" value="'+escapeHTML(item.id)+'"><label>FOLLOW-UP OUTCOME<select name="outcome"><option value="improved">Improvement demonstrated</option><option value="needs_more_practice">Further practice required</option></select></label><label>FOLLOW-UP EVIDENCE<textarea name="note" minlength="20" maxlength="600" required placeholder="Describe the practice check, observed behaviour and evidence."></textarea></label><label>REVIEWER<input name="reviewer" minlength="2" maxlength="80" required value="'+escapeHTML(state.applicantName||'')+'"></label><button class="btn primary" type="submit">Record follow-up result</button></form>'):'';
     return '<article class="calloria-qa-coaching-card"><div class="calloria-qa-coaching-head"><div><strong>'+escapeHTML(item.topic||'QA coaching action')+'</strong><small>Review '+escapeHTML(item.sourceReviewId||'')+' · '+escapeHTML(item.sourceInteractionId||'')+' · Follow-up due '+escapeHTML(due)+'</small></div><span class="pill '+(critical?'red':item.status==='verified'?'green':item.status==='delivered'?'amber':'blue')+'">'+(critical?'CRITICAL · ':'')+escapeHTML(status)+'</span></div><p>'+escapeHTML(item.actionPlan||'')+'</p>'+(item.evidenceQuote?'<small class="calloria-qa-coaching-evidence">Evidence: “'+escapeHTML(item.evidenceQuote)+'”</small>':'')+follow+delivery+verify+'</article>';
@@ -319,7 +327,7 @@ function renderQAWorkspace(){
       ${renderAIAssistPanel(reviewable)}
       ${calloriaRenderInboundQAPendingV645(pendingInboundReview)}
       ${calloriaRenderQACoachingFollowThroughV646()}
-    <div class="grid two qa-workspace-grid">
+     <div class="grid two qa-workspace-grid">
       <section class="panel">Review workspace fixture</section>
     </div>`;
 }
