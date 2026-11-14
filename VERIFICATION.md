@@ -1,17 +1,17 @@
-# v6.45 Verification
+# v6.46 Verification
 
 ## Passed
-- 29 automated Node tests across the v6.42, v6.43, v6.44 and v6.45 plugin transforms.
-- v6.45 transform ordering, required-anchor checks, idempotency and safe skip behaviour.
-- Inbound case-to-QA queue handoff, duplicate prevention and outbound exclusion.
-- Transcript construction, credential/email/long-number scrubbing and case-note evidence.
-- Critical breach records are marked for mandatory human review without creating an automatic human score.
-- `node --check` passed for `vite.config.js` and all bundled build `.mjs` modules.
-- ZIP archive integrity checked after packaging.
+- 36 Node tests passed across v6.42–v6.46.
+- QA form transformation creates linked coaching plans for low-rated criteria and critical compliance flags.
+- Duplicate plan creation is prevented for the same human QA review.
+- Coaching-plan creation and delivery are added to the operations event timeline. Delivery must be recorded before follow-up; insufficient evidence or reviewer identification is rejected.
+- Positive follow-up marks a plan verified; further practice reopens it.
+- Mobile layout rules, escaped content, idempotency and safe-skip behaviour are covered by tests.
+- JavaScript syntax checks passed for the new build plugin and Vite configuration.
+- ZIP integrity checked after packaging.
 
 ## Not verified
-- Full Vite production build against the complete repository.
-- Browser rendering, end-to-end gameplay or live Vercel deployment.
-- Supabase cloud-save behaviour across multiple users or devices.
+- Full Vite production build against the complete current repository.
+- Live browser rendering, deployed interactions, Supabase multi-user persistence or Vercel deployment.
 
-Tests use focused source fixtures aligned with the current public `main.js` and the existing v6.42–v6.44 transforms. They are not a substitute for a full repository build or deployed-browser test.
+The focused fixtures were updated to preserve the current QA renderer signature and selector syntax observed in the public `main.js` workflow. They are aligned to the v6.45 plugin output. They are not a substitute for running `npm test` and `npm run build` in the full repository.

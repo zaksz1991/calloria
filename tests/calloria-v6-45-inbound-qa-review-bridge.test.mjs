@@ -111,7 +111,7 @@ test('transformation is idempotent and fails safely on changed main.js anchors',
   const {d}=fullTransform();
   assert.ok(d);
   assert.equal(api.transformMain(context(),d.code),null);
-  const changed=base.replace('function renderQAWorkspace(){','function renderQAWorkspaceChanged(){');
+  const changed=base.replace('function renderQAWorkspace() {','function renderQAWorkspaceChanged() {');
   const prior=fullTransform(changed);
   assert.equal(prior.d,null);
   assert.equal(prior.ctx.warnings.length,1);

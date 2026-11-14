@@ -1,19 +1,15 @@
-vite.config.js
-build/calloria-voice-response-workflow-v6-42.mjs
-build/calloria-inbound-customer-dialogue-v6-43.mjs
-build/calloria-inbound-conversation-wrapup-v6-44.mjs
-build/calloria-inbound-qa-review-bridge-v6-45.mjs
-tests/calloria-v6-42-voice-response-workflow.test.mjs
-tests/calloria-v6-43-inbound-customer-dialogue.test.mjs
-tests/calloria-v6-44-inbound-conversation-wrapup.test.mjs
-tests/calloria-v6-45-inbound-qa-review-bridge.test.mjs
-tests/fixtures/calloria-v6-42-main-anchors.fixture.js
-tests/fixtures/calloria-v6-43-main-anchors.fixture.js
-tests/fixtures/calloria-v6-44-main-anchors.fixture.js
-tests/fixtures/calloria-v6-45-main-anchors.fixture.js
-README.md
-CHANGELOG.md
-INSTALL-GITHUB.md
-VERIFICATION.md
-FILES.txt
-TEST-RESULTS.txt
+CALLORIA v6.46 overlay contents
+- vite.config.js (replacement; retains all existing v6.45 plugins and adds v6.46 last)
+- build/calloria-qa-coaching-followthrough-v6-46.mjs (new integration plugin)
+- build/calloria-voice-response-workflow-v6-42.mjs (required prior integration)
+- build/calloria-inbound-customer-dialogue-v6-43.mjs (required prior integration)
+- build/calloria-inbound-conversation-wrapup-v6-44.mjs (required prior integration)
+- build/calloria-inbound-qa-review-bridge-v6-45.mjs (required prior integration)
+- tests/calloria-v6-46-qa-coaching-followthrough.test.mjs
+- tests/calloria-v6-45-inbound-qa-review-bridge.test.mjs
+- tests/fixtures/calloria-v6-45-main-anchors.fixture.js (updated current-workflow fixture)
+- tests/fixtures/calloria-v6-42-main-anchors.fixture.js
+- tests/fixtures/calloria-v6-43-main-anchors.fixture.js
+- tests/fixtures/calloria-v6-44-main-anchors.fixture.js
+- prior v6.42–v6.45 focused test files
+- README.md, CHANGELOG.md, INSTALL-GITHUB.md, VERIFICATION.md

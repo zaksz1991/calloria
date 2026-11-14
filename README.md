@@ -1,12 +1,7 @@
-# CALLORIA v6.45
+# CALLORIA v6.46 — QA Coaching Follow-through
 
-**Milestone:** Completed inbound interactions now enter the existing human QA review workspace.
+This overlay connects completed human QA reviews to a measurable coaching cycle. Low-rated review criteria and critical compliance flags create linked action plans. Supervisors/reviewers record delivery and then record the observed follow-up result. Failed practice checks reopen the plan instead of being marked complete.
 
-After an inbound contact is saved, CALLORIA creates a reviewable interaction record and places it in the QA queue. The record contains the simulated customer opening, dialogue turns, explicitly logged agent voice replies, available workflow choices when there is no free-text dialogue, and the final factual case note. Sensitive values are scrubbed before the transcript is copied into the QA record.
+The feature uses the existing local employment save and QA/coaching engines. It does not automatically score, fail, discipline or promote an employee. It does not alter Supabase or provider credentials.
 
-The QA workspace shows how many inbound records are awaiting review and how many require mandatory review. The reviewer then uses the existing scorecard, selects exact transcript evidence for every criterion, records coaching notes and saves a human review. Existing QA dispute and calibration workflows remain in place.
-
-A critical breach is routed as mandatory review. This patch does not calculate a final human QA score, pass/fail an employee, or change promotion eligibility by itself.
-
-## Files
-See `FILES.txt` for the complete overlay contents.
+See `INSTALL-GITHUB.md` and `VERIFICATION.md` before applying the overlay.

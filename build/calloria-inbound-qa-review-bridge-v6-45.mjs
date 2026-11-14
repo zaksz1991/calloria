@@ -10,10 +10,10 @@
 const TARGET = '/js/main.js';
 const MARKER = '__CALLORIA_INBOUND_QA_REVIEW_BRIDGE_V645__';
 
-const QA_RENDER_ANCHOR = 'function renderQAWorkspace(){';
+const QA_RENDER_ANCHOR = 'function renderQAWorkspace() {';
 const REVIEWABLE_ANCHOR = "  const reviewable = (state.customerQaHistory || []).filter(item => Array.isArray(item.transcript) && item.transcript.length);";
 const SELECTED_ANCHOR = '  const selectedInteraction = reviewable.find(item => item.id === state.qaSelectedInteractionId) || reviewable.at(-1) || null;';
-const OPTIONS_ANCHOR = '  const interactionOptions = reviewable.map(item => `<option value="${escapeHTML(item.id)}" ${item.id===state.qaSelectedInteractionId?\'selected\':\'\'}>${escapeHTML(item.id)} · ${escapeHTML(item.issueId)} · ${escapeHTML(item.channel)}</option>`).join(\'\');';
+const OPTIONS_ANCHOR = '  const interactionOptions = reviewable.map(item => `<option value="${escapeHTML(item.id)}" ${item.id === selectedInteraction?.id ? \'selected\' : \'\'}>${escapeHTML(item.id)} · ${escapeHTML(item.issueId)} · ${escapeHTML(item.channel)}</option>`).join(\'\');';
 const AI_PANEL_ANCHOR = '      ${renderAIAssistPanel(reviewable)}';
 const CRM_PUSH_ANCHOR = '    state.cases.push(record);';
 
@@ -133,7 +133,7 @@ export function transformMain(context, input) {
     return null;
   }
   let code=original;
-  code=checkedReplace(context,code,QA_RENDER_ANCHOR,`${HELPERS}\nfunction renderQAWorkspace(){`,'human QA workspace renderer');
+  code=checkedReplace(context,code,QA_RENDER_ANCHOR,`${HELPERS}\n${QA_RENDER_ANCHOR}`,'human QA workspace renderer');
   if(code===null)return null;
   code=checkedReplace(context,code,REVIEWABLE_ANCHOR,
     `${REVIEWABLE_ANCHOR}\n  const reviewedInteractionIds=new Set((state.humanQaReviews||[]).map(item=>item.interactionId));\n  const pendingReview=reviewable.filter(item=>!reviewedInteractionIds.has(item.id));\n  const pendingInboundReview=pendingReview.filter(item=>item.sourceType==='inbound-operations');\n  calloriaEnsureInboundQAStylesV645();`,

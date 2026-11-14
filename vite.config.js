@@ -23,6 +23,7 @@ import { calloriaVoiceResponseWorkflowPlugin } from './build/calloria-voice-resp
 import { calloriaInboundCustomerDialoguePlugin } from './build/calloria-inbound-customer-dialogue-v6-43.mjs';
 import { calloriaInboundConversationWrapUpPlugin } from './build/calloria-inbound-conversation-wrapup-v6-44.mjs';
 import { calloriaInboundQAReviewBridgePlugin } from './build/calloria-inbound-qa-review-bridge-v6-45.mjs';
+import { calloriaQACoachingFollowThroughPlugin } from './build/calloria-qa-coaching-followthrough-v6-46.mjs';
 
 export default defineConfig({
   base: '/',
@@ -61,7 +62,9 @@ export default defineConfig({
     // Conversation-aware after-contact work runs after the v6.43 dialogue injection.
     calloriaInboundConversationWrapUpPlugin(),
     // Completed inbound cases enter the existing evidence-based human QA workspace.
-    calloriaInboundQAReviewBridgePlugin()
+    calloriaInboundQAReviewBridgePlugin(),
+    // QA review outcomes now create trackable coaching actions with evidence-based follow-up.
+    calloriaQACoachingFollowThroughPlugin()
   ],
   build: {
     outDir: 'dist',

@@ -1,18 +1,20 @@
-# Install CALLORIA v6.45 (GitHub GUI)
+# Install CALLORIA v6.46 (GitHub GUI)
 
-1. Download and extract `CALLORIA_v6_45_Inbound_QA_Review_Bridge.zip`.
-2. Open the `zaksz1991/calloria` repository on GitHub and select the `main` branch.
-3. Add the files from this overlay, preserving the `build/` and `tests/` folder paths.
-4. Replace the repository's `vite.config.js` with the one in this overlay. It retains the existing plugin chain and registers v6.42, v6.43, v6.44 and v6.45 in the required order.
+1. Download and extract `CALLORIA_v6_46_QA_Coaching_Followthrough.zip`.
+2. Open `zaksz1991/calloria` on GitHub and select the `main` branch.
+3. Add/merge the files from this overlay, preserving the `build/` and `tests/` folder paths.
+4. Replace the repository's `vite.config.js` with the one in this overlay. It retains the v6.45 plugin chain and registers v6.46 after the inbound QA review bridge.
 5. Commit the changes to `main` and allow Vercel to build the commit.
 
-Do not upload or replace `package.json`, `package-lock.json`, `.env` files, Supabase credentials, Groq keys, or any GLB assets. The patch introduces no new package dependency or database migration.
+Do not upload or replace `package.json`, `package-lock.json`, `.env` files, Supabase credentials, Groq keys, or GLB assets. This patch adds no package dependency or database migration. Keep the existing v6.42–v6.45 modules in `build/`; the archive carries these required integration files as well.
 
-## After deployment
-- Complete an inbound contact and save its after-contact record.
-- Open Quality Assurance → Human QA & calibration.
-- Confirm the contact appears in **Inbound interaction review queue**.
-- Select the interaction, complete each scorecard rating and attach transcript evidence before saving the human review.
-- A contact with a recorded breach should be labelled **MANDATORY REVIEW**.
+## Test the feature after deployment
 
-The review queue is local simulation data and follows the app's existing save/sync behaviour. It is not a server-enforced supervisor work queue.
+1. Complete and save an inbound contact.
+2. Open Quality Assurance → Human QA & calibration.
+3. Select the completed interaction and save a human scorecard review with one or more low-rated criteria (0–3), or review an interaction marked for mandatory compliance review.
+4. Confirm the review creates linked action plans in **QA coaching follow-through**.
+5. Select **Mark coaching delivered** after a coaching session has actually taken place.
+6. Enter the result of a practice check. “Improvement demonstrated” marks the plan verified; “Further practice required” reopens it.
+
+The register uses CALLORIA's existing local save/cloud-employment snapshot behaviour. It is a simulated workflow, not a server-enforced supervisor approval system or a production HR record.

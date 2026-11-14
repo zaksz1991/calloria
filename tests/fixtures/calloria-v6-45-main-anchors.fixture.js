@@ -20,17 +20,19 @@ function renderInbound(){
   const supervisorOpen=state.supervisorRequests.some(item=>item.contactId===call.queueContactId&&item.status==='open');
   viewRoot.innerHTML = `</p><div class="panel-head" style="margin:16px 0 11px"></div>`;
 }
-function renderQAWorkspace(){
+function renderQAWorkspace() {
   const reviewable = (state.customerQaHistory || []).filter(item => Array.isArray(item.transcript) && item.transcript.length);
   const selectedInteraction = reviewable.find(item => item.id === state.qaSelectedInteractionId) || reviewable.at(-1) || null;
-  const interactionOptions = reviewable.map(item => `<option value="${escapeHTML(item.id)}" ${item.id===state.qaSelectedInteractionId?'selected':''}>${escapeHTML(item.id)} · ${escapeHTML(item.issueId)} · ${escapeHTML(item.channel)}</option>`).join('');
+  const interactionOptions = reviewable.map(item => `<option value="${escapeHTML(item.id)}" ${item.id === selectedInteraction?.id ? 'selected' : ''}>${escapeHTML(item.id)} · ${escapeHTML(item.issueId)} · ${escapeHTML(item.channel)}</option>`).join('');
   const evidenceOptions = '<option>Select an exact transcript line</option>';
   const qaReviewButton = 'Save human QA review';
   const reviews = state.humanQaReviews || [];
   const metrics = humanQAMetrics(reviews, state.qaDisputes || [], state.qaCalibrations || []);
-  viewRoot.innerHTML = `<section>
+  viewRoot.innerHTML = `
       ${renderAIAssistPanel(reviewable)}
-    </section>`;
+     <div class="grid two qa-workspace-grid">
+      <section class="panel">Review workspace fixture</section>
+    </div>`;
 }
 function renderWrapUp(){
   const wrap=state.wrapUp;
@@ -44,12 +46,15 @@ function handleAction(action,event={}){
   switch(action){
     case 'clear-voice-practice':clearVoicePractice();break;
     case 'save-wrap-up':saveWrapUp();break;
+    case 'back-knowledge':state.viewedArticle=null;renderView();break;
   }
 }
+document.addEventListener('click',e=>{const action=e.target.closest('[data-action]');if(action){handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId,system:action.dataset.system,text:action.dataset.text,contactId:action.dataset.contactId,memberId:action.dataset.memberId,nextStatus:action.dataset.nextStatus});return;}});
 function saveWrapUp(){
   const record={reference:wrap.reference,contactId:wrap.contactId,customer:wrap.customer,title:wrap.title,channel:'Inbound',status,disposition,notes,qa:wrap.qa,acwSeconds,createdAt,owner:state.applicantName||'Agent',timeline:contact.timeline.slice()};
     state.cases.push(record);
 }
 document.addEventListener('submit',async e=>{
   if(e.target.id==='customerLabReplyForm'){e.preventDefault();submitCustomerTurn(state.customerLabSession,String(new FormData(e.target).get('reply')||''));return;}
+  if(e.target.id==='humanQaReviewForm'){e.preventDefault();const review={id:'HQA-1',interactionId:'INB-1',reviewer:'QA reviewer',coaching:[]};state.humanQaReviews.push(review);return;}
 });
