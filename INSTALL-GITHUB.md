@@ -1,13 +1,14 @@
-# Installation — GitHub web interface
+# Install CALLORIA v6.53 in GitHub
 
-1. Download and extract `CALLORIA_v6_52_Platform_Support_Case_Desk.zip`.
-2. Open the `CALLORIA_v6_52_Platform_Support_Case_Desk` folder.
-3. In the CALLORIA GitHub repository, merge the included `build/` and `tests/` folders with the existing folders. Do not delete the older project plugins or tests.
-4. Replace the repository's root `vite.config.js` with the included `vite.config.js`.
-5. Commit the merged files to the `main` branch and allow Vercel to build the commit.
+This is a cumulative build-integration overlay. It is not a full project ZIP.
 
-The ZIP includes the incremental build plugins and tests from v6.42–v6.52. It assumes the original CALLORIA repository files are still present. Do not replace `package.json`, `package-lock.json`, `.env` files, Supabase settings, `public/assets/models` or other existing project assets.
+1. Download and extract `CALLORIA_v6_53_Support_SLA_Command_Centre.zip`.
+2. In the extracted folder, open `build/` and upload all included files into the repository's existing `build/` folder. Keep existing unrelated build plugins.
+3. Open `tests/` and upload/merge the included tests and fixtures into the repository's existing `tests/` folder. Do not delete unrelated tests.
+4. Replace the repository-root `vite.config.js` with the included `vite.config.js`.
+5. Commit the merged files to the `main` branch.
+6. Review the Vercel deployment log. The production build is not verified by this overlay's focused tests.
 
-After deployment, open Workforce → RuffNeck services, select a service, and use the RuffNeck support case desk below its playbook. Opened tickets should also appear in CRM & case management. All records are local browser simulation data, not external support tickets.
+Do not replace `package.json`, `package-lock.json`, `.env` values, Supabase settings, API keys, `public/assets/models/` or existing GLB assets. No new package dependency is required.
 
-If the GitHub repository already contains some of the listed versioned files, keep one copy of each file and merge without duplicating imports in `vite.config.js`.
+The replacement Vite configuration registers the cumulative v6.42–v6.53 plugin chain. Install the cumulative `build/` files and configuration together; do not upload only the v6.53 plugin.

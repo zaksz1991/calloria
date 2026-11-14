@@ -30,6 +30,7 @@ import { calloriaPromotionReadinessDossierPlugin } from './build/calloria-promot
 import { calloriaScenarioBasedPromotionExamPlugin } from './build/calloria-scenario-based-promotion-exam-v6-50.mjs';
 import { calloriaRuffNeckPlatformSupportPlugin } from './build/calloria-ruffneck-platform-support-v6-51.mjs';
 import { calloriaPlatformSupportCaseDeskPluginV652 } from './build/calloria-platform-support-case-desk-v6-52.mjs';
+import { calloriaSupportSlaCommandCentrePluginV653 } from './build/calloria-support-sla-command-centre-v6-53.mjs';
 
 export default defineConfig({
   base: '/',
@@ -82,7 +83,9 @@ export default defineConfig({
     // Service directory and RuffNeck customer-support practice run after the Workforce exam transforms.
     calloriaRuffNeckPlatformSupportPlugin(),
     // The v6.52 ticket desk extends the service playbooks into CRM-backed case handling.
-    calloriaPlatformSupportCaseDeskPluginV652()
+    calloriaPlatformSupportCaseDeskPluginV652(),
+    // Cross-platform SLA ageing and breach escalation run after the v6.52 case desk.
+    calloriaSupportSlaCommandCentrePluginV653()
   ],
   build: {
     outDir: 'dist',

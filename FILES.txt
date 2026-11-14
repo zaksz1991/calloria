@@ -10,8 +10,9 @@ Cumulative build integration files:
 - build/calloria-scenario-based-promotion-exam-v6-50.mjs
 - build/calloria-ruffneck-platform-support-v6-51.mjs
 - build/calloria-platform-support-case-desk-v6-52.mjs
+- build/calloria-support-sla-command-centre-v6-53.mjs
 - vite.config.js
 
 Tests:
-- tests/ and tests/fixtures/ contain the cumulative integration tests for v6.42–v6.52.
+- tests/ and tests/fixtures/ contain cumulative integration tests for v6.42–v6.53.
 - TEST-RESULTS.txt contains the complete automated test run summary.

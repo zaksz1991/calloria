@@ -1,16 +1,16 @@
 # Changelog
 
-## v6.52 — RuffNeck Platform Support Case Desk
+## v6.53 — Support SLA Command Centre
 
-- Added a synthetic support-case intake form to each selected RuffNeck service workspace.
-- Added priority-based simulated response targets and automatic initial escalation for Critical cases.
-- Added In Progress, Escalated and Resolved status updates with required evidence notes and a bounded case history.
-- Copied platform-support cases into the existing local CRM case list and operations timeline.
-- Added service, priority and SLA metadata to CRM case details.
-- Shows `N/A` rather than a fabricated QA percentage for support-only cases.
-- Redacts password/PIN/OTP-like strings, long numeric sequences, email addresses and phone numbers before notes are saved.
-- Added responsive case-desk layout and 14 focused v6.52 tests.
+- Added one cross-platform support queue across the six RuffNeck service workspaces.
+- Added active, due-soon, overdue, escalated and resolved queue filters.
+- Added service and priority filters with nearest-SLA, newest and oldest sorting.
+- Added SLA ageing bars, remaining-time and overdue-time labels, and workload summary metrics.
+- Added automatic escalation for unclosed Open or In Progress tickets after the simulated response deadline.
+- Mirrored automatic escalation status and evidence into CRM and local system/operations histories.
+- Added a 30-second visible-tab watchdog and immediate deadline check on tab reactivation.
+- Added responsive command-centre layout and 16 focused v6.53 tests.
 
 ## Included prior integrations
 
-The cumulative overlay retains v6.42–v6.51 build plugins and their tests.
+The cumulative overlay retains v6.42–v6.52 build plugins and tests.
