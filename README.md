@@ -1,27 +1,34 @@
-# CALLORIA v6.55 — Public Experience Hub
+# CALLORIA v6.56 — RuffNeck Discovery Guide
 
-CALLORIA is positioned as a public-facing RuffNeck Entertainment gateway with three primary outcomes:
+CALLORIA is a public-facing RuffNeck Entertainment gateway for three visitor journeys:
 
-1. **Entertainment:** visitors can immediately play CALLORIA as a guest.
-2. **Education:** visitors can move into learning topics, practical guidance and supported help without first applying for a job or creating an account.
-3. **Product discovery and conversion:** visitors can inspect the six existing RuffNeck product destinations, visit the relevant platform, or ask about services, access, plans and quotations when ready.
+1. **Entertainment:** play CALLORIA as a guest and discover the Kano Run and Kano Keke experiences.
+2. **Education:** explore learning, customer-care knowledge and general practical guidance.
+3. **Product discovery:** identify the RuffNeck service relevant to a visitor's goal, open its official site, or ask a question before committing.
 
-## User-facing changes
+## v6.56 user experience
 
-- Rewrites the launch message so new visitors are not led to believe CALLORIA is only a recruitment portal.
-- Retains the existing `PLAY NOW` 3D entry and adds a clearly labelled lightweight mode.
-- Gives direct next steps for learning/guidance, RuffNeck discovery and purchase/service enquiries.
-- Keeps the experience guest-first and makes optional cloud-save registration explicit.
-- Adds a `GUIDES & PRODUCTS` link to the immersive HUD. It opens Customer Care in a new tab so the active game session stays open.
-- Makes the existing Customer Care link visible in the normal sidebar.
-- Adds deep-link anchors for learning topics, service quotations and ready-to-start enquiries.
-- Renames the Customer Care staff-only route to `Staff sign-in` so ordinary visitors are less likely to enter a restricted tool by mistake.
-- Keeps the existing six RuffNeck product links: LMS, Prospector, Connect, Social Hub, Kano Run and Kano Keke.
+A visitor entering Customer Care no longer has to know the product names or guess which platform to open. They select a simple goal and receive a short, relevant shortlist:
 
-## Sales boundary
+- Play and be entertained → Kano Run / Kano Life and Kano Keke.
+- Learn and grow → RuffNeck Learn (LMS).
+- Grow a business → Prospector and Social Hub.
+- Connect with people → Connect.
+- Work with social media → Social Hub.
+- Explore everything → all six official destinations.
 
-CALLORIA is the discovery, education and referral layer. The owning RuffNeck platform remains responsible for its own registration, product access and payment process. CALLORIA does not invent prices, promise availability or impersonate a checkout. The enquiry path helps an interested visitor identify the official next step.
+Each result includes a plain-language purpose, a first-step description, an **Open official destination** action and an **Ask before I start** action. The latter prepares a question in the existing Customer Care composer; the visitor still chooses whether to send it.
+
+The launch-screen **Discover RuffNeck** path now opens the chooser instead of skipping straight to a list of product links.
+
+## Low-friction and privacy boundaries
+
+- No account or contact detail is required to use the guide.
+- No new cookies, browser storage, analytics calls or personal-data collection are introduced.
+- Official product destinations open in a new tab, preserving the CALLORIA page.
+- CALLORIA does not simulate checkout or claim to process registrations, payments or subscriptions.
+- Product-specific prices, access requirements, plan availability and account status must be confirmed on the owning platform.
 
 ## Package contents
 
-This is a cumulative overlay containing the v6.42–v6.54 build modules and tests from the previous cumulative package, plus the v6.55 public experience plugin and tests, and a Vite configuration that registers the chain in order.
+This is a cumulative overlay based on the v6.55 package. It includes the v6.42–v6.55 build modules and tests, adds the v6.56 discovery plugin and tests, and supplies a replacement Vite configuration that registers the full overlay sequence.

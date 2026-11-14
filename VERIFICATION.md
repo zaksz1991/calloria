@@ -1,14 +1,15 @@
-# Verification — CALLORIA v6.55
+# Verification — CALLORIA v6.56
 
-- Cumulative Node test suite (v6.42–v6.55): **136 passed, 0 failed**.
-- New v6.55 focused tests: **8 passed**.
-- New plugin JavaScript syntax: passed.
+- Cumulative Node test suite (v6.42–v6.56): **148 passed, 0 failed**.
+- New v6.56 focused tests: **12 passed**.
+- v6.56 plugin syntax: passed.
 - Replacement Vite configuration syntax: passed.
-- HTML transform idempotence: passed.
-- Existing six RuffNeck product destinations retained: passed.
-- Existing 3D and lightweight launch controls retained: passed.
-- Full Vite production build: not run; the complete application repository and its installed dependencies were not available in this patch workspace.
-- Browser, mobile-device, keyboard and screen-reader interaction: not run.
-- Vercel deployment: not run.
+- Transformed discovery-guide inline JavaScript syntax: passed.
+- Combined v6.55 → v6.56 customer-care HTML transform: passed.
+- Landing-page Discover RuffNeck deep link now targets the guided chooser: passed.
+- Product mapping covers all six current official RuffNeck destinations: passed.
+- Accessibility markup, reduced-motion handling and mobile breakpoints: static checks passed.
+- Transformation idempotence and unrelated-page preservation: passed.
+- ZIP integrity: passed.
 
-The tests exercise the integration modules and reduced HTML fixtures modelled on the current public `main` HTML anchors. They are not a substitute for the full production build or browser verification.
+Not verified: full Vite production build, interactive browser/mobile behavior, screen-reader behavior on actual devices, and Vercel deployment. The complete application repository and installed production dependencies were not present in this patch workspace, so those checks are not claimed.

@@ -33,6 +33,7 @@ import { calloriaPlatformSupportCaseDeskPluginV652 } from './build/calloria-plat
 import { calloriaSupportSlaCommandCentrePluginV653 } from './build/calloria-support-sla-command-centre-v6-53.mjs';
 import { calloriaSupportCaseOwnershipPluginV654 } from './build/calloria-support-case-ownership-v6-54.mjs';
 import { calloriaPublicExperienceHubPlugin } from './build/calloria-public-experience-hub-v6-55.mjs';
+import { calloriaRuffNeckDiscoveryGuidePlugin } from './build/calloria-ruffneck-discovery-guide-v6-56.mjs';
 
 export default defineConfig({
   base: '/',
@@ -91,7 +92,9 @@ export default defineConfig({
     // Adds agent ownership, product-specialist routing and supervisor queue controls.
     calloriaSupportCaseOwnershipPluginV654(),
     // Last: visitor-facing HTML and navigation only; gameplay logic remains unchanged.
-    calloriaPublicExperienceHubPlugin()
+    calloriaPublicExperienceHubPlugin(),
+    // Guided visitor intent selection routes people to the most relevant official RuffNeck destination.
+    calloriaRuffNeckDiscoveryGuidePlugin()
   ],
   build: {
     outDir: 'dist',

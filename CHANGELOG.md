@@ -1,21 +1,25 @@
-# CALLORIA v6.55 — Public Experience Hub
+# CALLORIA v6.56 — RuffNeck Discovery Guide
 
 ## Objective
 
-Position CALLORIA as a low-friction public gateway for three different visitor intents: entertainment, learning/guidance, and discovery of RuffNeck products and services. The career simulator remains available, but it is no longer the only message presented to new visitors.
+Reduce the gap between a visitor's intent and the RuffNeck destination that can serve it. The guide supports CALLORIA's three public roles: entertainment, education and product/service discovery.
 
 ## Changes
 
-- Repositions the launch copy around play, practical learning and discovery.
-- Adds four clear visitor paths: Play & explore; Learn & get guidance; Discover RuffNeck; and service/access enquiries.
-- Preserves the existing guest-first game launch and existing lightweight Operations Desk.
-- Clarifies that an account is optional and only needed for explicitly account-dependent features.
-- Adds a guide/product shortcut inside the immersive game; it opens customer care in a separate tab so play is not lost.
-- Exposes the existing Customer Care link in the standard navigation, where it had been hidden by the base stylesheet.
-- Adds stable anchors to the learning topics and six-product directory on Customer Care.
-- Explains that product access, plans and payment are completed by the owning RuffNeck platform; CALLORIA does not pretend to be a checkout for those services.
-- Uses responsive cards, keyboard focus states, safe-area spacing and reduced-motion support.
+- Adds a short, no-registration intent chooser to Customer Care.
+- Offers six plain-language goals: play, learn, grow a business, connect with communities, work with social media, or explore all destinations.
+- Recommends only the relevant official RuffNeck destinations for the selected goal.
+- Adds an immediate official-site action for each recommendation; destinations open in a protected new tab so CALLORIA remains available.
+- Adds an optional “Ask before I start” action that prepares a question in the existing Customer Care composer without sending it automatically.
+- Routes the landing-page “Discover RuffNeck” button to the guided chooser instead of dropping visitors onto the raw platform list.
+- Provides screen-reader labels, pressed-state feedback, keyboard focus states, reduced-motion support and narrow-screen layouts.
+- Collects no name, email, phone number, account credential or payment information. It adds no tracking calls, storage, account requirement or checkout simulation.
+- Keeps the existing product directory, support-case workflow, learning topics, game launch and immersive guidance link intact.
 
-## Existing product destinations retained
+## Official destinations
 
-RuffNeck LMS, Prospector, Connect, Social Hub, Kano Run and Kano Keke. Their links remain sourced from the existing Customer Care catalogue.
+RuffNeck Learn (LMS), Prospector, Connect, Social Hub, Kano Run / Kano Life and Kano Keke. The guide reuses the same destination URLs already listed in Customer Care.
+
+## Purchase boundary
+
+CALLORIA helps visitors understand which destination to open and how to ask a pre-purchase question. Product registration, access, prices, plans and payment remain with the owning RuffNeck product. No price or availability is invented.
