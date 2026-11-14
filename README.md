@@ -1,24 +1,19 @@
-# CALLORIA v6.50 — Scenario-based Promotion Examination
+# CALLORIA v6.51 — RuffNeck Platform Support Directory
 
-This cumulative overlay replaces the self-entered numeric promotion exam mark with a twelve-scenario assessment. It uses scored operational decisions across security/privacy, customer communication, operational judgement, case ownership, CRM documentation, ethical sales and team leadership.
+This cumulative overlay adds a visible product-support directory to the Workforce screen and corrects the default recruitment track. It is intended to replace the currently deployed Workforce systems sandbox with a multi-service RuffNeck support workspace.
 
-## How the examination works
+## Included services
 
-- The existing Workforce eligibility threshold, one-attempt-per-calendar-year rule, three-attempt lifetime limit and 70% pass mark remain authoritative.
-- The candidate must answer all twelve scenarios before submission.
-- The score is computed from the selected responses; there is no manual score input.
-- The existing `recordPromotionExam()` engine still records the official attempt and pass/fail outcome.
-- The attempt now also retains question identifiers, category scores and response points for review. The Career dossier exposes a collapsible competency breakdown for recorded attempts. It does not store free-text or personal customer data.
-- The assessment is a local simulation exercise, not a proctored or externally accredited examination.
+RuffNeck LMS, Prospector, Connect, Social Hub, Kano Run and Kano Keke each receive a live service link, customer request catalogue, self-service checks, agent handling workflow, escalation criteria, relevant cross-service recommendation guidance and one interactive practice scenario. The practice records only the selected response, score and rationale. It does not alter employee KPIs, QA marks, salary, XP or promotion status.
 
-## Corrected promotion readiness metrics
+The existing ICC, CRM, optional banking tools, JIRA and FCQA entries remain available. Finacle is removed from the simulated systems list. Existing Finacle event entries in older browser saves are filtered out of the visible activity list, not deleted.
 
-The v6.49 dossier and Workforce eligibility display now include completed digital contacts in KPI and scored digital interactions in QA, matching the metrics already used when the existing Workforce exam handler validates an attempt. This removes an inconsistency between the readiness profile, Workforce eligibility display and examination submission. The formula now counts resolved and escalated digital contacts in KPI and includes the digital QA mean only when there are scored digital QA records.
+## General customer-experience default
 
-## Install
+New candidates now start on the General Customer Experience track. A legacy profile is changed only when it is still an empty, unsubmitted applicant using the old untouched Banking Operations default. Submitted applications and explicit track selections are preserved. Banking remains an optional recruitment track.
 
-Merge the contents into the repository. Replace `vite.config.js` with the included cumulative configuration. Keep the existing application, public assets, package files, Supabase configuration and environment variables. This overlay adds build-time transformations and tests; it does not include the full application source or GLB assets.
+## Cumulative installation
 
-## Verification boundary
+Merge the included `build/`, `tests/` and configuration files into the repository. Replace `vite.config.js` with the included cumulative config. It registers the existing v6.42–v6.50 build plugins and the new v6.51 plugin in sequence. Do not replace `package.json`, `package-lock.json`, `public/assets/models`, Supabase settings or environment variables.
 
-Focused Node tests, transformed-fixture syntax and Vite configuration syntax are checked in this package. A full production build, browser exam session, cloud save and Vercel deployment require the complete current repository and have not been verified in this environment.
+The package does not include the full application source or GLB assets. External service links open the existing RuffNeck sites in a separate browser tab; this simulator does not read their account data or authenticate users into them.

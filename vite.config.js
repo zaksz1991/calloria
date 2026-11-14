@@ -28,6 +28,7 @@ import { calloriaGuidedCoachingPracticePlugin } from './build/calloria-guided-co
 import { calloriaCareerCompetencyPassportPlugin } from './build/calloria-career-competency-passport-v6-48.mjs';
 import { calloriaPromotionReadinessDossierPlugin } from './build/calloria-promotion-readiness-dossier-v6-49.mjs';
 import { calloriaScenarioBasedPromotionExamPlugin } from './build/calloria-scenario-based-promotion-exam-v6-50.mjs';
+import { calloriaRuffNeckPlatformSupportPlugin } from './build/calloria-ruffneck-platform-support-v6-51.mjs';
 
 export default defineConfig({
   base: '/',
@@ -76,7 +77,9 @@ export default defineConfig({
     // Promotion dossier reuses the exact Workforce promotion KPI and attempt rules.
     calloriaPromotionReadinessDossierPlugin(),
     // The scenario exam replaces self-entered marks and records scored response evidence.
-    calloriaScenarioBasedPromotionExamPlugin()
+    calloriaScenarioBasedPromotionExamPlugin(),
+    // Service directory and RuffNeck customer-support practice run after the Workforce exam transforms.
+    calloriaRuffNeckPlatformSupportPlugin()
   ],
   build: {
     outDir: 'dist',

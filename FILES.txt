@@ -1,4 +1,4 @@
-Cumulative integration files, v6.42–v6.50:
+Cumulative build integration: v6.42–v6.51
 - build/calloria-voice-response-workflow-v6-42.mjs
 - build/calloria-inbound-customer-dialogue-v6-43.mjs
 - build/calloria-inbound-conversation-wrapup-v6-44.mjs
@@ -6,7 +6,8 @@ Cumulative integration files, v6.42–v6.50:
 - build/calloria-qa-coaching-followthrough-v6-46.mjs
 - build/calloria-guided-coaching-practice-v6-47.mjs
 - build/calloria-career-competency-passport-v6-48.mjs
-- build/calloria-promotion-readiness-dossier-v6-49.mjs (digital KPI/QA parity correction)
+- build/calloria-promotion-readiness-dossier-v6-49.mjs
 - build/calloria-scenario-based-promotion-exam-v6-50.mjs
+- build/calloria-ruffneck-platform-support-v6-51.mjs
 - vite.config.js
 - tests/ and tests/fixtures/

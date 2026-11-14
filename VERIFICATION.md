@@ -1,11 +1,20 @@
-# Verification — v6.50
+# Verification — CALLORIA v6.51
 
-- 73 focused tests passed across the cumulative v6.42–v6.50 integration suite.
-- Scenario assessment: 12 questions, seven competency categories, complete-answer enforcement, mixed-score calculation and category breakdown passed.
-- Promotion readiness: digital-contact KPI and digital-QA parity tests passed.
-- Ordered v6.48 → v6.49 → v6.50 transform, idempotence, safe anchor failure and transformed-fixture syntax passed.
-- JavaScript syntax checks passed for all included build modules.
-- `vite.config.js` syntax check passed.
-- ZIP archive integrity checked after packaging.
+## Completed checks
 
-A full Vite production build, browser exam session, authenticated cloud save and Vercel deployment were not run because this package does not contain the full application repository, dependencies, public assets or runtime configuration.
+- 80 automated Node.js tests passed across the cumulative v6.42–v6.51 integration suite.
+- The v6.51 plugin passes `node --check`.
+- The transformed Workforce system registry passes a JavaScript syntax check.
+- The transformed main.js fixture passes a JavaScript syntax check.
+- The replacement cumulative `vite.config.js` passes a JavaScript syntax check.
+- ZIP archive integrity check passed.
+- Exact integration anchors were checked against the current public `main.js` and `workforce-engine.js` source structure before packaging.
+
+## Not completed
+
+- A full Vite production build was not run because this overlay does not contain the complete CALLORIA application source or project dependency installation.
+- No browser session was available to verify the rendered Workforce directory, external platform links or practice flow.
+- No Vercel deployment was performed or verified.
+- External product URLs are included as the known RuffNeck service addresses; their live status was not checked as part of this build.
+
+These checks establish the plugin transforms, syntax, focused feature tests and archive integrity. They do not establish a successful production deployment.
