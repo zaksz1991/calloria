@@ -1,4 +1,4 @@
-Cumulative build integration files:
+Cumulative build integrations:
 - build/calloria-voice-response-workflow-v6-42.mjs
 - build/calloria-inbound-customer-dialogue-v6-43.mjs
 - build/calloria-inbound-conversation-wrapup-v6-44.mjs
@@ -11,8 +11,14 @@ Cumulative build integration files:
 - build/calloria-ruffneck-platform-support-v6-51.mjs
 - build/calloria-platform-support-case-desk-v6-52.mjs
 - build/calloria-support-sla-command-centre-v6-53.mjs
-- vite.config.js
+- build/calloria-support-case-ownership-v6-54.mjs
 
-Tests:
-- tests/ and tests/fixtures/ contain cumulative integration tests for v6.42–v6.53.
-- TEST-RESULTS.txt contains the complete automated test run summary.
+Also included:
+- vite.config.js (cumulative plugin registration)
+- tests/ (cumulative integration tests and fixtures)
+- README.md
+- CHANGELOG.md
+- INSTALL-GITHUB.md
+- VERIFICATION.md
+- TEST-RESULTS.txt
+- FILES.txt

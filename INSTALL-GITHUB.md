@@ -1,14 +1,16 @@
-# Install CALLORIA v6.53 in GitHub
+# Install CALLORIA v6.54
 
-This is a cumulative build-integration overlay. It is not a full project ZIP.
+This is a **cumulative overlay**, not a standalone application ZIP.
 
-1. Download and extract `CALLORIA_v6_53_Support_SLA_Command_Centre.zip`.
-2. In the extracted folder, open `build/` and upload all included files into the repository's existing `build/` folder. Keep existing unrelated build plugins.
-3. Open `tests/` and upload/merge the included tests and fixtures into the repository's existing `tests/` folder. Do not delete unrelated tests.
+1. Download and extract the ZIP.
+2. In the GitHub repository `zaksz1991/calloria`, merge the included `build/` files into the existing `build/` folder. Keep all existing build files; do not delete files that are not in this archive.
+3. Merge the included `tests/` files into the existing `tests/` folder.
 4. Replace the repository-root `vite.config.js` with the included `vite.config.js`.
-5. Commit the merged files to the `main` branch.
-6. Review the Vercel deployment log. The production build is not verified by this overlay's focused tests.
+5. Commit and push the merged changes to `main`.
+6. Review the Vercel deployment result before treating the feature as live.
 
-Do not replace `package.json`, `package-lock.json`, `.env` values, Supabase settings, API keys, `public/assets/models/` or existing GLB assets. No new package dependency is required.
+The replacement Vite configuration registers the cumulative v6.42–v6.54 plugin chain. Do not install only the new v6.54 plugin: it requires the v6.52 support case desk and v6.53 SLA command centre.
 
-The replacement Vite configuration registers the cumulative v6.42–v6.53 plugin chain. Install the cumulative `build/` files and configuration together; do not upload only the v6.53 plugin.
+## Important
+
+This archive does not include the full source repository, `.env` files, Supabase credentials, API keys or GLB models. It does not modify those items. A complete production build and browser check cannot be certified from this overlay alone.

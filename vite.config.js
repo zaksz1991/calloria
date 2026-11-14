@@ -31,6 +31,7 @@ import { calloriaScenarioBasedPromotionExamPlugin } from './build/calloria-scena
 import { calloriaRuffNeckPlatformSupportPlugin } from './build/calloria-ruffneck-platform-support-v6-51.mjs';
 import { calloriaPlatformSupportCaseDeskPluginV652 } from './build/calloria-platform-support-case-desk-v6-52.mjs';
 import { calloriaSupportSlaCommandCentrePluginV653 } from './build/calloria-support-sla-command-centre-v6-53.mjs';
+import { calloriaSupportCaseOwnershipPluginV654 } from './build/calloria-support-case-ownership-v6-54.mjs';
 
 export default defineConfig({
   base: '/',
@@ -85,7 +86,9 @@ export default defineConfig({
     // The v6.52 ticket desk extends the service playbooks into CRM-backed case handling.
     calloriaPlatformSupportCaseDeskPluginV652(),
     // Cross-platform SLA ageing and breach escalation run after the v6.52 case desk.
-    calloriaSupportSlaCommandCentrePluginV653()
+    calloriaSupportSlaCommandCentrePluginV653(),
+    // Adds agent ownership, product-specialist routing and supervisor queue controls.
+    calloriaSupportCaseOwnershipPluginV654()
   ],
   build: {
     outDir: 'dist',
