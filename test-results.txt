@@ -2,447 +2,573 @@ TAP version 13
 # Subtest: connects the existing voice-consent panel to an explicit CRM response action
 ok 1 - connects the existing voice-consent panel to an explicit CRM response action
   ---
-  duration_ms: 0.946342
+  duration_ms: 1.979714
   type: 'test'
   ...
 # Subtest: adds communication rubric scoring and security-request escalation to active inbound calls
 ok 2 - adds communication rubric scoring and security-request escalation to active inbound calls
   ---
-  duration_ms: 0.27918
+  duration_ms: 0.449056
   type: 'test'
   ...
 # Subtest: writes explicitly logged agent statements into the permanent inbound CRM case transcript
 ok 3 - writes explicitly logged agent statements into the permanent inbound CRM case transcript
   ---
-  duration_ms: 0.170196
+  duration_ms: 0.365321
   type: 'test'
   ...
 # Subtest: skips safely if current application anchors have changed
 ok 4 - skips safely if current application anchors have changed
   ---
-  duration_ms: 0.187211
+  duration_ms: 0.72868
   type: 'test'
   ...
 # Subtest: does not apply the transform twice
 ok 5 - does not apply the transform twice
   ---
-  duration_ms: 0.217878
+  duration_ms: 0.362867
   type: 'test'
   ...
 # Subtest: adds a live dialogue panel to the active inbound call, not the queue screen
 ok 6 - adds a live dialogue panel to the active inbound call, not the queue screen
   ---
-  duration_ms: 1.240986
+  duration_ms: 1.876
   type: 'test'
   ...
 # Subtest: routes free-text replies and captured voice transcripts into the same customer conversation
 ok 7 - routes free-text replies and captured voice transcripts into the same customer conversation
   ---
-  duration_ms: 0.997459
+  duration_ms: 4.046256
   type: 'test'
   ...
 # Subtest: scores communication quality and records both sides of the scripted exchange
 ok 8 - scores communication quality and records both sides of the scripted exchange
   ---
-  duration_ms: 0.210407
+  duration_ms: 0.273855
   type: 'test'
   ...
 # Subtest: flags requests for authentication secrets once and keeps the local scripted boundary explicit
 ok 9 - flags requests for authentication secrets once and keeps the local scripted boundary explicit
   ---
-  duration_ms: 0.201323
+  duration_ms: 0.21592
   type: 'test'
   ...
 # Subtest: skips safely when the current inbound rendering or submit anchors change
 ok 10 - skips safely when the current inbound rendering or submit anchors change
   ---
-  duration_ms: 0.182174
+  duration_ms: 0.316179
   type: 'test'
   ...
 # Subtest: v6.42 voice-CRM patch and v6.43 dialogue patch can transform in sequence
 ok 11 - v6.42 voice-CRM patch and v6.43 dialogue patch can transform in sequence
   ---
-  duration_ms: 0.813493
+  duration_ms: 1.258605
   type: 'test'
   ...
 # Subtest: does not apply the same transform twice
 ok 12 - does not apply the same transform twice
   ---
-  duration_ms: 0.177847
+  duration_ms: 0.244753
   type: 'test'
   ...
 # Subtest: the runtime rubric catches explicit secret requests without flagging protective warnings
 ok 13 - the runtime rubric catches explicit secret requests without flagging protective warnings
   ---
-  duration_ms: 5.884464
+  duration_ms: 5.8507
   type: 'test'
   ...
 # Subtest: requires the v6.43 dialogue bridge and safely skips an unprepared source
 ok 14 - requires the v6.43 dialogue bridge and safely skips an unprepared source
   ---
-  duration_ms: 1.116959
+  duration_ms: 1.291463
   type: 'test'
   ...
 # Subtest: adds a conversation review panel only to inbound after-contact work
 ok 15 - adds a conversation review panel only to inbound after-contact work
   ---
-  duration_ms: 1.37124
+  duration_ms: 2.378375
   type: 'test'
   ...
 # Subtest: adds a wrap-up action that creates an editable draft without saving automatically
 ok 16 - adds a wrap-up action that creates an editable draft without saving automatically
   ---
-  duration_ms: 0.769908
+  duration_ms: 0.933543
   type: 'test'
   ...
 # Subtest: persists privacy-scrubbed dialogue, summary and quality metrics in inbound CRM cases
 ok 17 - persists privacy-scrubbed dialogue, summary and quality metrics in inbound CRM cases
   ---
-  duration_ms: 1.50387
+  duration_ms: 0.361866
   type: 'test'
   ...
 # Subtest: routes note drafting through the existing action dispatcher and preserves existing save action
 ok 18 - routes note drafting through the existing action dispatcher and preserves existing save action
   ---
-  duration_ms: 0.734154
+  duration_ms: 0.695691
   type: 'test'
   ...
 # Subtest: scrubs secrets, long numeric strings and email addresses from transcript copies
 ok 19 - scrubs secrets, long numeric strings and email addresses from transcript copies
   ---
-  duration_ms: 2.150251
+  duration_ms: 10.950147
   type: 'test'
   ...
 # Subtest: dialogue metrics count both speakers, average response score and compliance flags
 ok 20 - dialogue metrics count both speakers, average response score and compliance flags
   ---
-  duration_ms: 1.545172
+  duration_ms: 2.204687
   type: 'test'
   ...
 # Subtest: transformation is idempotent and skips safely if the wrap-up markup changes
 ok 21 - transformation is idempotent and skips safely if the wrap-up markup changes
   ---
-  duration_ms: 0.997168
+  duration_ms: 1.590778
   type: 'test'
   ...
 # Subtest: requires the preceding voice, dialogue and wrap-up integrations
 ok 22 - requires the preceding voice, dialogue and wrap-up integrations
   ---
-  duration_ms: 0.980834
+  duration_ms: 1.049896
   type: 'test'
   ...
 # Subtest: connects successfully saved inbound cases to the existing QA review register
 ok 23 - connects successfully saved inbound cases to the existing QA review register
   ---
-  duration_ms: 2.008459
+  duration_ms: 3.476182
   type: 'test'
   ...
 # Subtest: routes reviewable contacts into the existing evidence selector and prioritises pending records
 ok 24 - routes reviewable contacts into the existing evidence selector and prioritises pending records
   ---
-  duration_ms: 0.852802
+  duration_ms: 3.103349
   type: 'test'
   ...
 # Subtest: creates privacy-scrubbed transcript evidence from the opening, live dialogue and case notes
 ok 25 - creates privacy-scrubbed transcript evidence from the opening, live dialogue and case notes
   ---
-  duration_ms: 0.844849
+  duration_ms: 1.933005
   type: 'test'
   ...
 # Subtest: critical breaches enter mandatory-review state without generating an automatic employee score
 ok 26 - critical breaches enter mandatory-review state without generating an automatic employee score
   ---
-  duration_ms: 3.730968
+  duration_ms: 7.483539
   type: 'test'
   ...
 # Subtest: does not enqueue outbound contacts and does not duplicate an already queued inbound case
 ok 27 - does not enqueue outbound contacts and does not duplicate an already queued inbound case
   ---
-  duration_ms: 1.122036
+  duration_ms: 2.285798
   type: 'test'
   ...
 # Subtest: redacts credentials, long number sequences and email addresses
 ok 28 - redacts credentials, long number sequences and email addresses
   ---
-  duration_ms: 1.644471
+  duration_ms: 2.197517
   type: 'test'
   ...
 # Subtest: transformation is idempotent and fails safely on changed main.js anchors
 ok 29 - transformation is idempotent and fails safely on changed main.js anchors
   ---
-  duration_ms: 1.136788
+  duration_ms: 1.920286
   type: 'test'
   ...
 # Subtest: requires v6.45 and all review, rendering and form anchors; skips safely otherwise
 ok 30 - requires v6.45 and all review, rendering and form anchors; skips safely otherwise
   ---
-  duration_ms: 3.780412
+  duration_ms: 5.686316
   type: 'test'
   ...
 # Subtest: human QA reviews generate linked action plans for low-rated criteria and critical compliance flags
 ok 31 - human QA reviews generate linked action plans for low-rated criteria and critical compliance flags
   ---
-  duration_ms: 5.059203
+  duration_ms: 6.555464
   type: 'test'
   ...
 # Subtest: delivery must be recorded before a follow-up can be verified
 ok 32 - delivery must be recorded before a follow-up can be verified
   ---
-  duration_ms: 2.062901
+  duration_ms: 3.654515
   type: 'test'
   ...
 # Subtest: follow-up requiring further practice reopens the action plan
 ok 33 - follow-up requiring further practice reopens the action plan
   ---
-  duration_ms: 15.39584
+  duration_ms: 20.303707
   type: 'test'
   ...
 # Subtest: workspace includes mobile-friendly review follow-up controls and escapes stored content
 ok 34 - workspace includes mobile-friendly review follow-up controls and escapes stored content
   ---
-  duration_ms: 1.745664
+  duration_ms: 1.90984
   type: 'test'
   ...
 # Subtest: plugin is idempotent and transforms only js/main.js
 ok 35 - plugin is idempotent and transforms only js/main.js
   ---
-  duration_ms: 1.017128
+  duration_ms: 0.948305
   type: 'test'
   ...
 # Subtest: transformed application source remains valid JavaScript and Vite registers v6.46 after v6.45
 ok 36 - transformed application source remains valid JavaScript and Vite registers v6.46 after v6.45
   ---
-  duration_ms: 8.248177
+  duration_ms: 6.932984
   type: 'test'
   ...
 # Subtest: requires v6.46, installs after its QA renderer, and skips already transformed source
 ok 37 - requires v6.46, installs after its QA renderer, and skips already transformed source
   ---
-  duration_ms: 5.516872
+  duration_ms: 5.66152
   type: 'test'
   ...
 # Subtest: selects a criterion-specific role-play for compliance, empathy, ownership and documentation
 ok 38 - selects a criterion-specific role-play for compliance, empathy, ownership and documentation
   ---
-  duration_ms: 3.529545
+  duration_ms: 2.36858
   type: 'test'
   ...
 # Subtest: practice response receives checklist feedback and is stored without changing the QA coaching status
 ok 39 - practice response receives checklist feedback and is stored without changing the QA coaching status
   ---
-  duration_ms: 2.218845
+  duration_ms: 2.43616
   type: 'test'
   ...
 # Subtest: formative practice identifies missed points and keeps the response redacted
 ok 40 - formative practice identifies missed points and keeps the response redacted
   ---
-  duration_ms: 1.744292
+  duration_ms: 1.693389
   type: 'test'
   ...
 # Subtest: rejects short responses, unknown plans and verified plans
 ok 41 - rejects short responses, unknown plans and verified plans
   ---
-  duration_ms: 1.313494
+  duration_ms: 1.305515
   type: 'test'
   ...
 # Subtest: renders practice feedback safely and preserves the human-review boundary
 ok 42 - renders practice feedback safely and preserves the human-review boundary
   ---
-  duration_ms: 1.570651
+  duration_ms: 1.581213
   type: 'test'
   ...
 # Subtest: transformed application remains valid JavaScript and leaves the existing follow-up handler intact
 ok 43 - transformed application remains valid JavaScript and leaves the existing follow-up handler intact
   ---
-  duration_ms: 1.597891
+  duration_ms: 1.146699
   type: 'test'
   ...
 # Subtest: maps all defined QA criterion families to the intended competencies
 ok 44 - maps all defined QA criterion families to the intended competencies
   ---
-  duration_ms: 1.751572
+  duration_ms: 1.426634
   type: 'test'
   ...
 # Subtest: counts only human-confirmed improvement as verified
 ok 45 - counts only human-confirmed improvement as verified
   ---
-  duration_ms: 1.027774
+  duration_ms: 0.677234
   type: 'test'
   ...
 # Subtest: does not treat 100% guided practice as qualification evidence
 ok 46 - does not treat 100% guided practice as qualification evidence
   ---
-  duration_ms: 0.222354
+  duration_ms: 0.223822
   type: 'test'
   ...
 # Subtest: ignores unrelated coaching history and non-QA records
 ok 47 - ignores unrelated coaching history and non-QA records
   ---
-  duration_ms: 0.174072
+  duration_ms: 0.16187
   type: 'test'
   ...
 # Subtest: renders every passport competency even before QA evidence exists
 ok 48 - renders every passport competency even before QA evidence exists
   ---
-  duration_ms: 0.166421
+  duration_ms: 0.164053
   type: 'test'
   ...
 # Subtest: transforms current career renderer once and adds the passport after existing employment panels
 ok 49 - transforms current career renderer once and adds the passport after existing employment panels
   ---
-  duration_ms: 32.776642
+  duration_ms: 30.721725
   type: 'test'
   ...
 # Subtest: safely skips when v6.47 or any exact career anchor is missing
 ok 50 - safely skips when v6.47 or any exact career anchor is missing
   ---
-  duration_ms: 1.384401
+  duration_ms: 1.213738
   type: 'test'
   ...
 # Subtest: Vite registration runs v6.48 after v6.47 and retains all earlier project plugins
 ok 51 - Vite registration runs v6.48 after v6.47 and retains all earlier project plugins
   ---
-  duration_ms: 1.928248
+  duration_ms: 2.160592
   type: 'test'
   ...
 # Subtest: matches the Workforce KPI formulas and 30/20/15/15/10/10 promotion weights
 ok 52 - matches the Workforce KPI formulas and 30/20/15/15/10/10 promotion weights
   ---
-  duration_ms: 1.55724
+  duration_ms: 1.945053
   type: 'test'
   ...
 # Subtest: uses the exact existing Workforce baseline values before activity is recorded
 ok 53 - uses the exact existing Workforce baseline values before activity is recorded
   ---
-  duration_ms: 0.214613
+  duration_ms: 0.245303
   type: 'test'
   ...
 # Subtest: respects the organisation-configured threshold without silently changing the policy
 ok 54 - respects the organisation-configured threshold without silently changing the policy
   ---
-  duration_ms: 0.203106
+  duration_ms: 0.222039
   type: 'test'
   ...
 # Subtest: allows only one annual examination attempt per calendar year
 ok 55 - allows only one annual examination attempt per calendar year
   ---
-  duration_ms: 0.216015
+  duration_ms: 0.211323
   type: 'test'
   ...
 # Subtest: preserves the three-attempt lifetime cap even when the weighted score is high
 ok 56 - preserves the three-attempt lifetime cap even when the weighted score is high
   ---
-  duration_ms: 0.301984
+  duration_ms: 0.191573
   type: 'test'
   ...
 # Subtest: orders the three weakest development dimensions and attaches specific action guidance
 ok 57 - orders the three weakest development dimensions and attaches specific action guidance
   ---
-  duration_ms: 0.316595
+  duration_ms: 0.26363
   type: 'test'
   ...
 # Subtest: uses policy defaults safely and tolerates malformed state arrays and numeric values
 ok 58 - uses policy defaults safely and tolerates malformed state arrays and numeric values
   ---
-  duration_ms: 0.322455
+  duration_ms: 0.139767
   type: 'test'
   ...
 # Subtest: transforms after v6.48, renders a live dossier and remains idempotent
 ok 59 - transforms after v6.48, renders a live dossier and remains idempotent
   ---
-  duration_ms: 43.937386
+  duration_ms: 45.337964
   type: 'test'
   ...
 # Subtest: skips safely if the v6.48 passport or exact Career insertion point is absent
 ok 60 - skips safely if the v6.48 passport or exact Career insertion point is absent
   ---
-  duration_ms: 1.860516
+  duration_ms: 1.846426
   type: 'test'
   ...
 # Subtest: dossier is read-only and does not award promotions or mutate examination history
 ok 61 - dossier is read-only and does not award promotions or mutate examination history
   ---
-  duration_ms: 0.543356
+  duration_ms: 0.498048
   type: 'test'
   ...
 # Subtest: registers v6.49 after v6.48 while preserving the cumulative project build plugins
 ok 62 - registers v6.49 after v6.48 while preserving the cumulative project build plugins
   ---
-  duration_ms: 1.557
+  duration_ms: 0.860224
   type: 'test'
   ...
 # Subtest: contains twelve scenario questions across seven operational competency areas
 ok 63 - contains twelve scenario questions across seven operational competency areas
   ---
-  duration_ms: 1.269108
+  duration_ms: 1.9838
   type: 'test'
   ...
 # Subtest: scores all best-practice responses at 100 and records category breakdown
 ok 64 - scores all best-practice responses at 100 and records category breakdown
   ---
-  duration_ms: 0.367963
+  duration_ms: 0.461735
   type: 'test'
   ...
 # Subtest: scores the lowest-scored response set at zero
 ok 65 - scores the lowest-scored response set at zero
   ---
-  duration_ms: 0.326471
+  duration_ms: 0.374085
   type: 'test'
   ...
 # Subtest: calculates the actual weighted percentage from mixed response quality
 ok 66 - calculates the actual weighted percentage from mixed response quality
   ---
-  duration_ms: 0.189555
+  duration_ms: 0.274377
   type: 'test'
   ...
 # Subtest: rejects missing or invalid answers so incomplete exams cannot be submitted
 ok 67 - rejects missing or invalid answers so incomplete exams cannot be submitted
   ---
-  duration_ms: 0.174522
+  duration_ms: 0.394634
   type: 'test'
   ...
 # Subtest: readiness KPI and QA calculations include completed digital contacts and scored digital QA
 ok 68 - readiness KPI and QA calculations include completed digital contacts and scored digital QA
   ---
-  duration_ms: 0.391138
+  duration_ms: 1.114732
   type: 'test'
   ...
 # Subtest: readiness uses the live digital score helper when an injected runtime function exists
 ok 69 - readiness uses the live digital score helper when an injected runtime function exists
   ---
-  duration_ms: 0.829276
+  duration_ms: 0.341586
   type: 'test'
   ...
 # Subtest: transforms v6.48 and v6.49 before adding the scenario exam, then remains idempotent
 ok 70 - transforms v6.48 and v6.49 before adding the scenario exam, then remains idempotent
   ---
-  duration_ms: 33.539158
+  duration_ms: 44.134781
   type: 'test'
   ...
 # Subtest: fails closed when the v6.49 prerequisite or any required main.js anchor is missing
 ok 71 - fails closed when the v6.49 prerequisite or any required main.js anchor is missing
   ---
-  duration_ms: 1.878494
+  duration_ms: 1.995407
   type: 'test'
   ...
 # Subtest: records scenario evidence but leaves promotion decision and policy to existing Workforce engine
 ok 72 - records scenario evidence but leaves promotion decision and policy to existing Workforce engine
   ---
-  duration_ms: 1.537201
+  duration_ms: 2.078821
   type: 'test'
   ...
 # Subtest: registers the new exam plugin after the readiness dossier and retains earlier plugins
 ok 73 - registers the new exam plugin after the readiness dossier and retains earlier plugins
   ---
-  duration_ms: 1.634377
+  duration_ms: 1.131978
   type: 'test'
   ...
-1..73
-# tests 73
+# Subtest: platform registry removes Finacle and retains internal operations systems
+ok 74 - platform registry removes Finacle and retains internal operations systems
+  ---
+  duration_ms: 1.372754
+  type: 'test'
+  ...
+# Subtest: catalog contains all six RuffNeck service platforms with URLs and support routes
+ok 75 - catalog contains all six RuffNeck service platforms with URLs and support routes
+  ---
+  duration_ms: 0.281778
+  type: 'test'
+  ...
+# Subtest: scores only valid product-support choices and returns the scenario rationale
+ok 76 - scores only valid product-support choices and returns the scenario rationale
+  ---
+  duration_ms: 0.336078
+  type: 'test'
+  ...
+# Subtest: transforms the current Workforce page with support guides and local practice recording
+ok 77 - transforms the current Workforce page with support guides and local practice recording
+  ---
+  duration_ms: 36.205762
+  type: 'test'
+  ...
+# Subtest: new applicant defaults to general customer experience and migrates only empty legacy applicants
+ok 78 - new applicant defaults to general customer experience and migrates only empty legacy applicants
+  ---
+  duration_ms: 1.361347
+  type: 'test'
+  ...
+# Subtest: fails closed when a required UI anchor has drifted
+ok 79 - fails closed when a required UI anchor has drifted
+  ---
+  duration_ms: 0.85674
+  type: 'test'
+  ...
+# Subtest: registers v6.51 after the cumulative v6.42–v6.50 plugin chain
+ok 80 - registers v6.51 after the cumulative v6.42–v6.50 plugin chain
+  ---
+  duration_ms: 2.077598
+  type: 'test'
+  ...
+# Subtest: creates a valid RuffNeck support case with priority-based SLA and CRM-safe fields
+ok 81 - creates a valid RuffNeck support case with priority-based SLA and CRM-safe fields
+  ---
+  duration_ms: 2.192349
+  type: 'test'
+  ...
+# Subtest: critical requests automatically enter the escalation queue and use a 30-minute SLA
+ok 82 - critical requests automatically enter the escalation queue and use a 30-minute SLA
+  ---
+  duration_ms: 0.490436
+  type: 'test'
+  ...
+# Subtest: high and low priorities use the configured simulated response targets
+ok 83 - high and low priorities use the configured simulated response targets
+  ---
+  duration_ms: 0.235559
+  type: 'test'
+  ...
+# Subtest: rejects unsupported services, invalid request types, non-synthetic references and incomplete details
+ok 84 - rejects unsupported services, invalid request types, non-synthetic references and incomplete details
+  ---
+  duration_ms: 0.563075
+  type: 'test'
+  ...
+# Subtest: redacts credentials, card-like number strings, email addresses and phone numbers
+ok 85 - redacts credentials, card-like number strings, email addresses and phone numbers
+  ---
+  duration_ms: 0.259194
+  type: 'test'
+  ...
+# Subtest: records case status updates and a required resolution note in the case history
+ok 86 - records case status updates and a required resolution note in the case history
+  ---
+  duration_ms: 1.154621
+  type: 'test'
+  ...
+# Subtest: rejects missing case, invalid status and resolution without a substantive note
+ok 87 - rejects missing case, invalid status and resolution without a substantive note
+  ---
+  duration_ms: 0.281958
+  type: 'test'
+  ...
+# Subtest: transforms the v6.51 service directory into a ticket desk and connects the ticket to CRM
+ok 88 - transforms the v6.51 service directory into a ticket desk and connects the ticket to CRM
+  ---
+  duration_ms: 10.045306
+  type: 'test'
+  ...
+# Subtest: keeps platform support tickets outside the QA score and displays the platform metadata in CRM
+ok 89 - keeps platform support tickets outside the QA score and displays the platform metadata in CRM
+  ---
+  duration_ms: 3.495239
+  type: 'test'
+  ...
+# Subtest: injects the case desk after the v6.51 playbook and activates responsive case styling
+ok 90 - injects the case desk after the v6.51 playbook and activates responsive case styling
+  ---
+  duration_ms: 4.261284
+  type: 'test'
+  ...
+# Subtest: fails closed when any required v6.51 or CRM anchor has drifted
+ok 91 - fails closed when any required v6.51 or CRM anchor has drifted
+  ---
+  duration_ms: 1.160731
+  type: 'test'
+  ...
+# Subtest: transformed application remains valid JavaScript
+ok 92 - transformed application remains valid JavaScript
+  ---
+  duration_ms: 24.474888
+  type: 'test'
+  ...
+# Subtest: registers v6.52 after the v6.51 platform directory and preserves the earlier plugin chain
+ok 93 - registers v6.52 after the v6.51 platform directory and preserves the earlier plugin chain
+  ---
+  duration_ms: 0.888947
+  type: 'test'
+  ...
+# Subtest: plugin transforms only main.js and is safe to register repeatedly
+ok 94 - plugin transforms only main.js and is safe to register repeatedly
+  ---
+  duration_ms: 1.401777
+  type: 'test'
+  ...
+1..94
+# tests 94
 # suites 0
-# pass 73
+# pass 94
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 706.96846
+# duration_ms 949.454134

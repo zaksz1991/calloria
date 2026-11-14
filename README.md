@@ -1,19 +1,24 @@
-# CALLORIA v6.51 — RuffNeck Platform Support Directory
+# CALLORIA v6.52 — RuffNeck Platform Support Case Desk
 
-This cumulative overlay adds a visible product-support directory to the Workforce screen and corrects the default recruitment track. It is intended to replace the currently deployed Workforce systems sandbox with a multi-service RuffNeck support workspace.
+## What this adds
 
-## Included services
+The v6.51 Workforce service directory becomes an operational support-case workspace for each of the six RuffNeck services: LMS, Prospector, Connect, Social Hub, Kano Run and Kano Keke.
 
-RuffNeck LMS, Prospector, Connect, Social Hub, Kano Run and Kano Keke each receive a live service link, customer request catalogue, self-service checks, agent handling workflow, escalation criteria, relevant cross-service recommendation guidance and one interactive practice scenario. The practice records only the selected response, score and rationale. It does not alter employee KPIs, QA marks, salary, XP or promotion status.
+An agent can open a synthetic case with a customer reference, request type, priority and issue evidence. Each case receives a simulated response target:
 
-The existing ICC, CRM, optional banking tools, JIRA and FCQA entries remain available. Finacle is removed from the simulated systems list. Existing Finacle event entries in older browser saves are filtered out of the visible activity list, not deleted.
+- Critical: 30 minutes and automatic escalation.
+- High: 2 hours.
+- Normal: 24 hours.
+- Low: 48 hours.
 
-## General customer-experience default
+Agents can move cases to In Progress, Escalated or Resolved. Each update requires a written action or resolution note and is retained in the case history. New cases are copied to the existing local CRM case list and the operations timeline. CRM displays the service, priority and due time. These support records are marked as not QA-scored so they do not create a false quality percentage.
 
-New candidates now start on the General Customer Experience track. A legacy profile is changed only when it is still an empty, unsubmitted applicant using the old untouched Banking Operations default. Submitted applications and explicit track selections are preserved. Banking remains an optional recruitment track.
+Credential-like values, long number strings, email addresses and phone numbers are redacted from case notes before they are saved.
 
-## Cumulative installation
+## Data and integration boundaries
 
-Merge the included `build/`, `tests/` and configuration files into the repository. Replace `vite.config.js` with the included cumulative config. It registers the existing v6.42–v6.50 build plugins and the new v6.51 plugin in sequence. Do not replace `package.json`, `package-lock.json`, `public/assets/models`, Supabase settings or environment variables.
+This is a browser-local simulation. It does not read or change RuffNeck production platform data, send external tickets, call APIs, create real service commitments or write these synthetic cases to Supabase. The SLA values are training targets only. External service links remain informational and open separately.
 
-The package does not include the full application source or GLB assets. External service links open the existing RuffNeck sites in a separate browser tab; this simulator does not read their account data or authenticate users into them.
+## Cumulative overlay
+
+This ZIP carries the CALLORIA build plugins and tests from v6.42 through v6.52, plus the matching replacement `vite.config.js`. It does not contain the full application source, package files, Supabase configuration or GLB models. Keep the existing core project files and assets.

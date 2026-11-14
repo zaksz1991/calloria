@@ -31,3 +31,11 @@ function handleAction(action,event){switch(action){case 'launch-system': {
 document.addEventListener('click',e=>{
   const template=e.target.closest('[data-digital-template]');if(template){return;}
 });
+
+function renderCRM(){
+  viewRoot.innerHTML = `<table><tbody><tr><td>${c.reference}</td><td>${c.qa}%</td></tr></tbody></table><div><p><strong>Issue:</strong> ${escapeHTML(c.title)}</p><p><strong>Disposition:</strong> ${escapeHTML(c.status)}</p></div>`;
+}
+document.addEventListener('submit',async e=>{
+  if(e.target.id==='existingForm'){e.preventDefault();}
+});
+function initClock(){}

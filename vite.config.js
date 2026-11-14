@@ -29,6 +29,7 @@ import { calloriaCareerCompetencyPassportPlugin } from './build/calloria-career-
 import { calloriaPromotionReadinessDossierPlugin } from './build/calloria-promotion-readiness-dossier-v6-49.mjs';
 import { calloriaScenarioBasedPromotionExamPlugin } from './build/calloria-scenario-based-promotion-exam-v6-50.mjs';
 import { calloriaRuffNeckPlatformSupportPlugin } from './build/calloria-ruffneck-platform-support-v6-51.mjs';
+import { calloriaPlatformSupportCaseDeskPluginV652 } from './build/calloria-platform-support-case-desk-v6-52.mjs';
 
 export default defineConfig({
   base: '/',
@@ -79,7 +80,9 @@ export default defineConfig({
     // The scenario exam replaces self-entered marks and records scored response evidence.
     calloriaScenarioBasedPromotionExamPlugin(),
     // Service directory and RuffNeck customer-support practice run after the Workforce exam transforms.
-    calloriaRuffNeckPlatformSupportPlugin()
+    calloriaRuffNeckPlatformSupportPlugin(),
+    // The v6.52 ticket desk extends the service playbooks into CRM-backed case handling.
+    calloriaPlatformSupportCaseDeskPluginV652()
   ],
   build: {
     outDir: 'dist',
