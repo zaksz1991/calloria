@@ -1,19 +1,21 @@
-# v6.47 Verification
+# v6.48 Verification
 
 ## Passed
 
-- 43 automated tests passed across the carried-forward v6.42–v6.47 integration suite.
-- v6.47 safely requires the v6.46 coaching workflow and skips already transformed source.
-- Criterion mapping verified for compliance, empathy/listening, ownership and CRM documentation scenarios.
-- Practice scoring, repeat attempts, redacted response storage, timeline recording and human-review boundary verified.
-- Short, unknown and already verified coaching actions are rejected for practice.
-- Rendered practice form and result output preserve escaped text.
-- Transformed fixture parses as valid JavaScript.
-- Vite configuration syntax checked and v6.47 plugin registration order verified.
+- 51 automated tests passed across v6.42–v6.48 focused integration tests.
+- Competency classification covered security, communication, ownership, CRM, product knowledge, ethical sales and general service.
+- Only a currently `verified` plan with a latest `improved` follow-up counts as verified.
+- Practice attempts are counted separately and never count as qualification evidence.
+- Reopened and delivered plans remain active, not verified.
+- Non-QA coaching records are excluded.
+- Seven competencies render even when there is no QA evidence yet.
+- Career profile transform, idempotency, safe skip behaviour and transformed fixture syntax passed.
+- Vite plugin registration order and syntax passed.
 - ZIP integrity checked.
 
 ## Not verified
 
-- Full Vite production build against the complete CALLORIA repository.
-- Live browser/mobile rendering, deployed state persistence or Vercel deployment.
-- Whether a real supervisor's qualitative assessment matches the deterministic practice checklist. The checklist is intentionally formative and must not be treated as the QA score.
+- Full Vite production build against the complete current CALLORIA repository.
+- Browser/mobile rendering against live employee state.
+- Vercel deployment.
+- Any changes to employee progression; this feature deliberately makes none.

@@ -1,17 +1,20 @@
-CALLORIA v6.47 Guided Coaching Practice overlay
+CALLORIA v6.48 Career Competency Passport cumulative overlay
 
 build/
-  calloria-guided-coaching-practice-v6-47.mjs      [new]
-  v6.42–v6.46 integration modules                  [carried forward]
-  existing project build plugins are not replaced unless present in the overlay
+  calloria-career-competency-passport-v6-48.mjs   [new]
+  calloria-guided-coaching-practice-v6-47.mjs      [carried forward]
+  calloria-qa-coaching-followthrough-v6-46.mjs     [carried forward]
+  calloria-inbound-qa-review-bridge-v6-45.mjs      [carried forward]
+  calloria-inbound-conversation-wrapup-v6-44.mjs   [carried forward]
+  calloria-inbound-customer-dialogue-v6-43.mjs     [carried forward]
+  calloria-voice-response-workflow-v6-42.mjs       [carried forward]
 
- tests/
-  calloria-v6-47-guided-coaching-practice.test.mjs  [new]
-  v6.42–v6.46 focused integration tests             [carried forward]
-  fixtures/generated-v6-46-main.js                  [v6.47 transform fixture]
-  prior version fixtures                            [carried forward]
+tests/
+  calloria-v6-48-career-competency-passport.test.mjs [new]
+  focused tests for v6.42–v6.47                        [carried forward]
+  fixtures/                                             [carried forward + v6.48 career fixture]
 
-vite.config.js                                      [replacement]
+vite.config.js                                         [replacement cumulative plugin registration]
 README.md
 CHANGELOG.md
 INSTALL-GITHUB.md

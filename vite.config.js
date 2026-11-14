@@ -25,6 +25,7 @@ import { calloriaInboundConversationWrapUpPlugin } from './build/calloria-inboun
 import { calloriaInboundQAReviewBridgePlugin } from './build/calloria-inbound-qa-review-bridge-v6-45.mjs';
 import { calloriaQACoachingFollowThroughPlugin } from './build/calloria-qa-coaching-followthrough-v6-46.mjs';
 import { calloriaGuidedCoachingPracticePlugin } from './build/calloria-guided-coaching-practice-v6-47.mjs';
+import { calloriaCareerCompetencyPassportPlugin } from './build/calloria-career-competency-passport-v6-48.mjs';
 
 export default defineConfig({
   base: '/',
@@ -67,7 +68,9 @@ export default defineConfig({
     // QA review outcomes now create trackable coaching actions with evidence-based follow-up.
     calloriaQACoachingFollowThroughPlugin(),
     // Criterion-based practice sits inside the existing QA coaching action plans.
-    calloriaGuidedCoachingPracticePlugin()
+    calloriaGuidedCoachingPracticePlugin(),
+    // Career profile consumes only human-confirmed QA coaching outcomes.
+    calloriaCareerCompetencyPassportPlugin()
   ],
   build: {
     outDir: 'dist',

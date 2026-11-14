@@ -1,21 +1,31 @@
-# CALLORIA v6.47 — Guided Coaching Practice
+# CALLORIA v6.48 — Career Competency Passport
 
-v6.47 adds interactive, criterion-based customer role-play exercises to the existing v6.46 QA coaching action cards.
+This overlay adds an evidence-based competency passport to the existing employee **Career profile**. It connects the human QA coaching cycle (v6.46) and guided practice (v6.47) to the employee's career page.
 
-## What the user can do
+## What it displays
 
-- Launch a guided practice activity from an open, reopened or delivered QA coaching plan.
-- Practise a targeted customer interaction for compliance, empathy/listening, ownership, CRM documentation, knowledge accuracy, sales/cross-selling or general customer care.
-- Submit a written response and receive a deterministic three-point checklist showing demonstrated and missed behaviours.
-- Review the latest practice attempt and a privacy-scrubbed copy of the response.
-- Repeat practice before a supervisor records a follow-up decision.
+- Security and privacy
+- Customer communication
+- Ownership and resolution
+- CRM and documentation
+- Product and policy knowledge
+- Ethical sales and cross-selling
+- Service quality foundations
 
-## Boundaries
+Each competency shows human QA coaching plans, supervisor-verified improvements, open/delivered actions, guided-practice attempts and the latest review reference.
 
-Practice feedback is formative. It does not alter the original human QA score, employee performance score, coaching status, promotion eligibility or employment outcome. A practice result cannot close a coaching plan. A human reviewer must still record coaching delivery and the follow-up evidence through the existing v6.46 workflow.
+## Evidence rules
 
-The checklist is deterministic phrase/rule matching, not an AI evaluator. It does not generate customer dialogue dynamically and it does not replace a supervisor's judgement. Response copies are redacted for credential-like values, long number sequences and email addresses before being stored in the coaching record.
+Only a QA coaching action currently marked `verified` with the last follow-up outcome `improved` counts as verified. Guided practice, including a 100% checklist match, remains separate and does not qualify as supervisor-confirmed competence. Reopened actions are not counted as verified.
 
-No Supabase migration, API key, package dependency, Groq integration or GLB asset change is included.
+The passport is a development record. It does not award XP, change salary, alter KPIs or bypass the existing annual promotion examination and eligibility rules.
 
-See `INSTALL-GITHUB.md` and `VERIFICATION.md` before applying the overlay.
+## Installation
+
+Use the GitHub GUI installation instructions in `INSTALL-GITHUB.md`. This is a cumulative overlay: it carries the v6.42–v6.47 modules required by the replacement Vite configuration as well as the new v6.48 module.
+
+No package dependency, database migration, Supabase setting, API key or GLB asset is changed.
+
+## Verification boundary
+
+The carried-forward and v6.48 focused integration suite contains 51 tests; all 51 pass. Plugin syntax, Vite configuration syntax, transformed fixture syntax and ZIP integrity are checked. The complete repository production build, live browser rendering and Vercel deployment have not been run from this environment.
