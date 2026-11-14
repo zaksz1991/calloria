@@ -1,23 +1,27 @@
-# CALLORIA v6.54 — Support Case Ownership and Routing
+# CALLORIA v6.55 — Public Experience Hub
 
-This cumulative overlay adds an actionable ownership workflow to the RuffNeck support-ticket queue.
+CALLORIA is positioned as a public-facing RuffNeck Entertainment gateway with three primary outcomes:
 
-## What is added
+1. **Entertainment:** visitors can immediately play CALLORIA as a guest.
+2. **Education:** visitors can move into learning topics, practical guidance and supported help without first applying for a job or creating an account.
+3. **Product discovery and conversion:** visitors can inspect the six existing RuffNeck product destinations, visit the relevant platform, or ask about services, access, plans and quotations when ready.
 
-- Explicit ownership metadata for each support case: assignee type, owner, specialist team, assignment time and assigning agent.
-- Specialist routing for RuffNeck LMS, Prospector, Connect, Social Hub, Kano Run and Kano Keke.
-- A Workforce ownership queue with filters for all active cases, cases owned by the player, unassigned cases, specialist queue and supervisor queue.
-- **Claim for me**, **Route to specialist**, **Supervisor review** and **Release** actions.
-- Supervisor routing marks the case Escalated and mirrors the owner/status into the existing CRM case record.
-- A bounded assignment audit trail records who changed ownership, the previous owner and the new owner.
-- Existing SLA due times are preserved during reassignment.
-- One-time migration of existing support records into the ownership model.
-- Responsive layout for smaller screens.
+## User-facing changes
 
-## Simulation boundary
+- Rewrites the launch message so new visitors are not led to believe CALLORIA is only a recruitment portal.
+- Retains the existing `PLAY NOW` 3D entry and adds a clearly labelled lightweight mode.
+- Gives direct next steps for learning/guidance, RuffNeck discovery and purchase/service enquiries.
+- Keeps the experience guest-first and makes optional cloud-save registration explicit.
+- Adds a `GUIDES & PRODUCTS` link to the immersive HUD. It opens Customer Care in a new tab so the active game session stays open.
+- Makes the existing Customer Care link visible in the normal sidebar.
+- Adds deep-link anchors for learning topics, service quotations and ready-to-start enquiries.
+- Renames the Customer Care staff-only route to `Staff sign-in` so ordinary visitors are less likely to enter a restricted tool by mistake.
+- Keeps the existing six RuffNeck product links: LMS, Prospector, Connect, Social Hub, Kano Run and Kano Keke.
 
-All assignments are local simulation records. Specialist and supervisor queues are role queues, not live employee accounts. No real RuffNeck platform, external ticketing service or Supabase table is contacted by this feature.
+## Sales boundary
 
-## Included files
+CALLORIA is the discovery, education and referral layer. The owning RuffNeck platform remains responsible for its own registration, product access and payment process. CALLORIA does not invent prices, promise availability or impersonate a checkout. The enquiry path helps an interested visitor identify the official next step.
 
-This is a cumulative build-plugin overlay containing integrations v6.42–v6.54, the related tests and a replacement root `vite.config.js`. It does not include the full CALLORIA application repository or the project's existing GLB assets.
+## Package contents
+
+This is a cumulative overlay containing the v6.42–v6.54 build modules and tests from the previous cumulative package, plus the v6.55 public experience plugin and tests, and a Vite configuration that registers the chain in order.

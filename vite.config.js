@@ -32,6 +32,7 @@ import { calloriaRuffNeckPlatformSupportPlugin } from './build/calloria-ruffneck
 import { calloriaPlatformSupportCaseDeskPluginV652 } from './build/calloria-platform-support-case-desk-v6-52.mjs';
 import { calloriaSupportSlaCommandCentrePluginV653 } from './build/calloria-support-sla-command-centre-v6-53.mjs';
 import { calloriaSupportCaseOwnershipPluginV654 } from './build/calloria-support-case-ownership-v6-54.mjs';
+import { calloriaPublicExperienceHubPlugin } from './build/calloria-public-experience-hub-v6-55.mjs';
 
 export default defineConfig({
   base: '/',
@@ -88,7 +89,9 @@ export default defineConfig({
     // Cross-platform SLA ageing and breach escalation run after the v6.52 case desk.
     calloriaSupportSlaCommandCentrePluginV653(),
     // Adds agent ownership, product-specialist routing and supervisor queue controls.
-    calloriaSupportCaseOwnershipPluginV654()
+    calloriaSupportCaseOwnershipPluginV654(),
+    // Last: visitor-facing HTML and navigation only; gameplay logic remains unchanged.
+    calloriaPublicExperienceHubPlugin()
   ],
   build: {
     outDir: 'dist',

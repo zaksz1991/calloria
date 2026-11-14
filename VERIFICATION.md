@@ -1,20 +1,14 @@
-# Verification — v6.54
+# Verification — CALLORIA v6.55
 
-## Passed
+- Cumulative Node test suite (v6.42–v6.55): **136 passed, 0 failed**.
+- New v6.55 focused tests: **8 passed**.
+- New plugin JavaScript syntax: passed.
+- Replacement Vite configuration syntax: passed.
+- HTML transform idempotence: passed.
+- Existing six RuffNeck product destinations retained: passed.
+- Existing 3D and lightweight launch controls retained: passed.
+- Full Vite production build: not run; the complete application repository and its installed dependencies were not available in this patch workspace.
+- Browser, mobile-device, keyboard and screen-reader interaction: not run.
+- Vercel deployment: not run.
 
-- 127 automated tests passed across the cumulative v6.42–v6.54 suite.
-- 16 focused v6.54 tests passed.
-- Plugin JavaScript syntax checks passed.
-- Replacement `vite.config.js` syntax check passed.
-- Sequential v6.51 → v6.52 → v6.53 → v6.54 transformation passed against the included integration fixture.
-- Transformed fixture JavaScript syntax check passed.
-- ZIP archive integrity check passed.
-
-## Not verified
-
-- Full Vite production build against the complete CALLORIA repository.
-- Browser rendering, form interactions or mobile device behaviour.
-- Supabase persistence or multi-device synchronization.
-- Vercel deployment and live-site behaviour.
-
-The included fixture reproduces the required integration anchors; it is not the full application. Do not interpret the focused integration suite as proof of a successful production deployment.
+The tests exercise the integration modules and reduced HTML fixtures modelled on the current public `main` HTML anchors. They are not a substitute for the full production build or browser verification.
