@@ -1,106 +1,184 @@
 TAP version 13
-# Subtest: live floor HTML contains unique IDs
-ok 1 - live floor HTML contains unique IDs
+# Subtest: connects the existing voice-consent panel to an explicit CRM response action
+ok 1 - connects the existing voice-consent panel to an explicit CRM response action
   ---
-  duration_ms: 1.161793
+  duration_ms: 1.036899
   type: 'test'
   ...
-# Subtest: all literal DOM selectors in the controller exist in the page
-ok 2 - all literal DOM selectors in the controller exist in the page
+# Subtest: adds communication rubric scoring and security-request escalation to active inbound calls
+ok 2 - adds communication rubric scoring and security-request escalation to active inbound calls
   ---
-  duration_ms: 0.755904
+  duration_ms: 0.241847
   type: 'test'
   ...
-# Subtest: all required local engine scripts load in dependency order
-ok 3 - all required local engine scripts load in dependency order
+# Subtest: writes explicitly logged agent statements into the permanent inbound CRM case transcript
+ok 3 - writes explicitly logged agent statements into the permanent inbound CRM case transcript
   ---
-  duration_ms: 0.226099
+  duration_ms: 0.168338
   type: 'test'
   ...
-# Subtest: the page includes the required shift, queue, decision and wrap-up controls
-ok 4 - the page includes the required shift, queue, decision and wrap-up controls
+# Subtest: skips safely if current application anchors have changed
+ok 4 - skips safely if current application anchors have changed
   ---
-  duration_ms: 0.205378
+  duration_ms: 0.220556
   type: 'test'
   ...
-# Subtest: responsive layouts exist for tablet and mobile screens
-ok 5 - responsive layouts exist for tablet and mobile screens
+# Subtest: does not apply the transform twice
+ok 5 - does not apply the transform twice
   ---
-  duration_ms: 0.148182
+  duration_ms: 0.166025
   type: 'test'
   ...
-# Subtest: creates a fresh shift with the 07:30 briefing due
-ok 6 - creates a fresh shift with the 07:30 briefing due
+# Subtest: adds a live dialogue panel to the active inbound call, not the queue screen
+ok 6 - adds a live dialogue panel to the active inbound call, not the queue screen
   ---
-  duration_ms: 2.438759
+  duration_ms: 1.866263
   type: 'test'
   ...
-# Subtest: blocks customer contacts until the morning briefing is attended
-ok 7 - blocks customer contacts until the morning briefing is attended
+# Subtest: routes free-text replies and captured voice transcripts into the same customer conversation
+ok 7 - routes free-text replies and captured voice transcripts into the same customer conversation
   ---
-  duration_ms: 1.09294
+  duration_ms: 1.30823
   type: 'test'
   ...
-# Subtest: runs a three-stage customer interaction and records its transcript
-ok 8 - runs a three-stage customer interaction and records its transcript
+# Subtest: scores communication quality and records both sides of the scripted exchange
+ok 8 - scores communication quality and records both sides of the scripted exchange
   ---
-  duration_ms: 0.721783
+  duration_ms: 0.205974
   type: 'test'
   ...
-# Subtest: blocks scheduled breaks while a customer interaction is still active
-ok 9 - blocks scheduled breaks while a customer interaction is still active
+# Subtest: flags requests for authentication secrets once and keeps the local scripted boundary explicit
+ok 9 - flags requests for authentication secrets once and keeps the local scripted boundary explicit
   ---
-  duration_ms: 0.203285
+  duration_ms: 0.208097
   type: 'test'
   ...
-# Subtest: records a customer note and a linked Customer 360 case at wrap-up
-ok 10 - records a customer note and a linked Customer 360 case at wrap-up
+# Subtest: skips safely when the current inbound rendering or submit anchors change
+ok 10 - skips safely when the current inbound rendering or submit anchors change
   ---
-  duration_ms: 3.339691
+  duration_ms: 0.241776
   type: 'test'
   ...
-# Subtest: knowledge use is attached to the interaction and adds a small QA credit
-ok 11 - knowledge use is attached to the interaction and adds a small QA credit
+# Subtest: v6.42 voice-CRM patch and v6.43 dialogue patch can transform in sequence
+ok 11 - v6.42 voice-CRM patch and v6.43 dialogue patch can transform in sequence
   ---
-  duration_ms: 0.742474
+  duration_ms: 1.675562
   type: 'test'
   ...
-# Subtest: unsafe password or one-time-code request creates a critical compliance breach
-ok 12 - unsafe password or one-time-code request creates a critical compliance breach
+# Subtest: does not apply the same transform twice
+ok 12 - does not apply the same transform twice
   ---
-  duration_ms: 0.905778
+  duration_ms: 0.180035
   type: 'test'
   ...
-# Subtest: scheduled routine runs in morning break, lunch and afternoon briefing order
-ok 13 - scheduled routine runs in morning break, lunch and afternoon briefing order
+# Subtest: the runtime rubric catches explicit secret requests without flagging protective warnings
+ok 13 - the runtime rubric catches explicit secret requests without flagging protective warnings
   ---
-  duration_ms: 0.437246
+  duration_ms: 5.495256
   type: 'test'
   ...
-# Subtest: does not allow shift closure with an active interaction or due floor event
-ok 14 - does not allow shift closure with an active interaction or due floor event
+# Subtest: requires the v6.43 dialogue bridge and safely skips an unprepared source
+ok 14 - requires the v6.43 dialogue bridge and safely skips an unprepared source
   ---
-  duration_ms: 0.70664
+  duration_ms: 0.868371
   type: 'test'
   ...
-# Subtest: ends shift and produces clear performance totals
-ok 15 - ends shift and produces clear performance totals
+# Subtest: adds a conversation review panel only to inbound after-contact work
+ok 15 - adds a conversation review panel only to inbound after-contact work
   ---
-  duration_ms: 1.03272
+  duration_ms: 2.018288
   type: 'test'
   ...
-# Subtest: starts another shift with a fresh queue and archives the prior shift report
-ok 16 - starts another shift with a fresh queue and archives the prior shift report
+# Subtest: adds a wrap-up action that creates an editable draft without saving automatically
+ok 16 - adds a wrap-up action that creates an editable draft without saving automatically
   ---
-  duration_ms: 8.587283
+  duration_ms: 1.4849
   type: 'test'
   ...
-1..16
-# tests 16
+# Subtest: persists privacy-scrubbed dialogue, summary and quality metrics in inbound CRM cases
+ok 17 - persists privacy-scrubbed dialogue, summary and quality metrics in inbound CRM cases
+  ---
+  duration_ms: 0.396435
+  type: 'test'
+  ...
+# Subtest: routes note drafting through the existing action dispatcher and preserves existing save action
+ok 18 - routes note drafting through the existing action dispatcher and preserves existing save action
+  ---
+  duration_ms: 0.990351
+  type: 'test'
+  ...
+# Subtest: scrubs secrets, long numeric strings and email addresses from transcript copies
+ok 19 - scrubs secrets, long numeric strings and email addresses from transcript copies
+  ---
+  duration_ms: 3.659849
+  type: 'test'
+  ...
+# Subtest: dialogue metrics count both speakers, average response score and compliance flags
+ok 20 - dialogue metrics count both speakers, average response score and compliance flags
+  ---
+  duration_ms: 4.351169
+  type: 'test'
+  ...
+# Subtest: transformation is idempotent and skips safely if the wrap-up markup changes
+ok 21 - transformation is idempotent and skips safely if the wrap-up markup changes
+  ---
+  duration_ms: 1.452182
+  type: 'test'
+  ...
+# Subtest: requires the preceding voice, dialogue and wrap-up integrations
+ok 22 - requires the preceding voice, dialogue and wrap-up integrations
+  ---
+  duration_ms: 1.149015
+  type: 'test'
+  ...
+# Subtest: connects successfully saved inbound cases to the existing QA review register
+ok 23 - connects successfully saved inbound cases to the existing QA review register
+  ---
+  duration_ms: 2.639083
+  type: 'test'
+  ...
+# Subtest: routes reviewable contacts into the existing evidence selector and prioritises pending records
+ok 24 - routes reviewable contacts into the existing evidence selector and prioritises pending records
+  ---
+  duration_ms: 1.908335
+  type: 'test'
+  ...
+# Subtest: creates privacy-scrubbed transcript evidence from the opening, live dialogue and case notes
+ok 25 - creates privacy-scrubbed transcript evidence from the opening, live dialogue and case notes
+  ---
+  duration_ms: 2.268657
+  type: 'test'
+  ...
+# Subtest: critical breaches enter mandatory-review state without generating an automatic employee score
+ok 26 - critical breaches enter mandatory-review state without generating an automatic employee score
+  ---
+  duration_ms: 6.372721
+  type: 'test'
+  ...
+# Subtest: does not enqueue outbound contacts and does not duplicate an already queued inbound case
+ok 27 - does not enqueue outbound contacts and does not duplicate an already queued inbound case
+  ---
+  duration_ms: 2.577342
+  type: 'test'
+  ...
+# Subtest: redacts credentials, long number sequences and email addresses
+ok 28 - redacts credentials, long number sequences and email addresses
+  ---
+  duration_ms: 2.702937
+  type: 'test'
+  ...
+# Subtest: transformation is idempotent and fails safely on changed main.js anchors
+ok 29 - transformation is idempotent and fails safely on changed main.js anchors
+  ---
+  duration_ms: 1.474185
+  type: 'test'
+  ...
+1..29
+# tests 29
 # suites 0
-# pass 16
+# pass 29
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 165.999603
+# duration_ms 302.564285

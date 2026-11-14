@@ -1,19 +1,19 @@
-# CALLORIA v6.44 — Conversation-aware after-contact work
+# CALLORIA v6.45 — Inbound QA Review Bridge
 
-## What changes
+## Added
+- Completed inbound call records are added to the existing Human QA workspace review register.
+- The QA workspace now shows a separate inbound review queue with pending and mandatory-review counts.
+- The newest pending interaction is selected by default, while an existing reviewer selection is preserved.
+- Reviewable evidence is built from the scenario opening, saved live customer/agent dialogue, explicitly logged voice replies, agent workflow choices when no dialogue exists, and the factual case note.
+- Duplicate queue records are prevented using the originating contact ID.
+- Transcript copies redact credential values, long numeric sequences and email addresses.
+- Breached inbound interactions are marked for mandatory review; no automatic human QA score or employee outcome is generated.
 
-- Adds a visible conversation record to inbound after-contact work.
-- Shows recorded agent/customer turn counts, customer tone, average dialogue score and communication markers.
-- Adds a collapsible, privacy-scrubbed transcript preview (latest eight turns).
-- Adds **Build case-note draft from conversation**. It creates editable notes from the latest customer and agent statements; it does not save automatically.
-- Saves privacy-scrubbed dialogue text, a concise conversation summary and dialogue quality metrics to the inbound CRM case.
-- Redacts PIN/password/OTP-style values, long numeric strings and email addresses from transcript copies.
-- Leaves outbound wrap-up and existing case-save/disposition logic unchanged.
+## Preserved
+- Existing Customer Lab QA records and scorecards.
+- Human evidence selection, weighted scorecards, reviewer notes, coaching actions, disputes and calibration.
+- Existing inbound case, callback, escalation, queue, KPI and wrap-up flow.
+- Existing Supabase settings, API keys, GLB assets and package dependencies.
 
-## Dependency and order
-
-Requires v6.42 and v6.43. Vite plugin order is v6.42 voice/CRM bridge → v6.43 live customer dialogue → v6.44 conversation-aware wrap-up.
-
-## Boundaries
-
-Customer responses remain scripted by v6.43. This upgrade does not add an AI service, live telephony, external network calls, new database tables or Supabase migrations.
+## Scope boundary
+This is a local simulation workflow. It does not create a live telephony QA system, enforce shared supervisor permissions, or make certified employment decisions.
