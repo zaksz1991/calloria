@@ -1,24 +1,11 @@
-# CALLORIA v6.57 — Seamless Product-to-Support Handoff
+# CALLORIA v6.57.1 — Vercel Build Repair
 
-## Public visitor journey
+This is a corrective release for the v6.57 product-to-support handoff. It addresses the Vercel production-build failure caused when the support-router module transform could not find one exact final render-call string.
 
-- Adds two product-aware actions to every guided discovery result: **Access / pricing** and **Product support**.
-- Sends visitors to the existing support router with the matching RuffNeck product preselected.
-- Prefills Sales & Service Enquiry or Product Support according to the selected action.
-- Retains the existing official-site and Ask CALLORIA actions.
+Changes:
+- Removes the brittle dependency on the exact text `renderPlatforms(); renderSelectedHelp();`.
+- Appends the prefill bridge at the end of the support-router workbench module after verifying the expected lexical bindings and form selectors.
+- Skips the prefill bridge with a Vite warning when the module shape is unexpected, rather than throwing and failing the entire production build.
+- Keeps the existing customer-care discovery-card links, product IDs, consent checks and support-router templates unchanged.
 
-## Support-router handoff
-
-- Adds a URL-prefill bridge to the existing `js/support-router-workbench.js` module.
-- Accepts only product IDs found in the existing `PLATFORMS` registry.
-- Accepts only the allowlisted sales, platform support, account access and technical support intents.
-- Generates product-specific editable subjects and request summaries.
-- Preserves language choice, explicit storage consent, submit controls, one-time access codes and request tracking.
-- Never auto-submits the form.
-
-## Experience and safety
-
-- Adds responsive action wrapping for narrow screens and visible focus treatment.
-- States that request details are prefilled for review and are not sent automatically.
-- Does not collect new personal details, add tracking, modify storage, or change product/payment flows.
-- No Supabase migration, API key or environment-variable change.
+No Supabase schema, secrets, environment variables, package dependencies, public GLB assets or gameplay files are changed.

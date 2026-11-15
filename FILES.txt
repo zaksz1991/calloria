@@ -1,9 +1,18 @@
-CALLORIA v6.57 cumulative upgrade overlay
+CALLORIA v6.57.1 Vercel Build Repair — cumulative overlay
 
-Repository-relative package contents:
-- build/calloria-voice-response-workflow-v6-42.mjs through build/calloria-seamless-product-handoff-v6-57.mjs
-- tests/ cumulative integration tests and test fixtures
-- vite.config.js replacement registering the cumulative v6.42-v6.57 plugin sequence
-- README.md, CHANGELOG.md, INSTALL-GITHUB.md, VERIFICATION.md, TEST-RESULTS.txt
+Root:
+- vite.config.js
+- README.md
+- CHANGELOG.md
+- INSTALL-GITHUB.md
+- VERIFICATION.md
+- TEST-RESULTS.txt
+- FILES.txt
 
-This is an integration overlay, not the complete CALLORIA repository. Keep all pre-existing application files, static assets, package manifests, Supabase configuration and secrets. The replacement Vite config expects the existing base build plugins from the current application repository to remain present.
+build/: cumulative CALLORIA plugins v6.42–v6.57.1
+  - v6.57 plugin file is replaced with the resilient v6.57.1 implementation.
+
+tests/: cumulative integration tests and fixtures v6.42–v6.57
+  - v6.57 test file is updated to verify safe source-shape handling.
+
+This archive is a cumulative build-plugin overlay, not the complete CALLORIA application source repository.

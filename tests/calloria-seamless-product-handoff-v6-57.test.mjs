@@ -76,9 +76,21 @@ test('unknown module paths are not transformed', () => {
   assert.equal(transformCalloriaSupportRouterWorkbench(routerFixture, '/repo/js/other.js'), null);
 });
 
-test('missing v6.56 or source anchors fail loudly rather than silently dropping the handoff', () => {
+test('missing v6.56 HTML still fails clearly, while an unexpected module shape skips without breaking Vercel', () => {
   assert.throws(() => transformCalloriaSeamlessProductHandoffHtml('<section id="calloria-discovery-guide"></section>'), /v6.56 product-card action block/);
-  assert.throws(() => transformCalloriaSupportRouterWorkbench('const unrelated = true;', '/repo/js/support-router-workbench.js'), /support-router initial render call/);
+  assert.equal(transformCalloriaSupportRouterWorkbench('const unrelated = true;', '/repo/js/support-router-workbench.js'), null);
+});
+
+test('support-router prefill survives a changed final render-call layout', () => {
+  const changedLayout = routerFixture.replace('renderPlatforms(); renderSelectedHelp();', 'renderPlatforms();\nrenderSelectedHelp();');
+  const result = transformCalloriaSupportRouterWorkbench(changedLayout, '/repo/js/support-router-workbench.js');
+  assert.match(result, /CALLORIA v6\.57 support-router prefill bridge/);
+  assert.ok(result.indexOf('renderSelectedHelp();') < result.indexOf('CALLORIA v6.57 support-router prefill bridge'));
+});
+
+test('support-router proxy code is skipped instead of throwing a build error', () => {
+  const proxy = 'import \"/js/support-router-workbench.js\";\nexport default true;';
+  assert.equal(transformCalloriaSupportRouterWorkbench(proxy, '/repo/js/support-router-workbench.js'), null);
 });
 
 test('HTML and module transformations are idempotent', () => {
@@ -102,7 +114,7 @@ test('CSS preserves mobile wrapping and accessible focus indication', () => {
 
 test('Vite plugin registers both the customer-care handoff and support-router module bridge', () => {
   const plugin = calloriaSeamlessProductHandoffPlugin();
-  assert.equal(plugin.name, 'calloria-seamless-product-handoff-v6-57');
+  assert.equal(plugin.name, 'calloria-seamless-product-handoff-v6-57-1');
   assert.equal(plugin.enforce, 'post');
   assert.equal(plugin.transformIndexHtml.order, 'post');
   assert.equal(typeof plugin.transform, 'function');

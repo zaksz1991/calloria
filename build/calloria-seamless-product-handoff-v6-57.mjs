@@ -138,23 +138,44 @@ const PREFILL_BRIDGE = `
   }
 })();`;
 
+function isSupportRouterWorkbenchModule(code) {
+  // Validate the module contract rather than depending on one exact final-line layout.
+  // Vite and other HTML/module transforms can preserve the module under a different
+  // source wrapper, so the bridge is appended only when its lexical dependencies exist.
+  return /\bPLATFORMS\b/.test(code)
+    && /\bselectedPlatform\b/.test(code)
+    && /\brenderPlatforms\s*\(/.test(code)
+    && /\brenderSelectedHelp\s*\(/.test(code)
+    && /#platform-options/.test(code)
+    && /#route-form/.test(code)
+    && /#selected-platform-help/.test(code);
+}
+
 export function transformCalloriaSupportRouterWorkbench(code, id = '') {
   if (typeof code !== 'string') throw new TypeError('Expected JavaScript source text.');
   const normalizedId = String(id).split('?')[0].replace(/\\/g, '/');
   if (!normalizedId.endsWith(MODULE_SUFFIX)) return null;
   if (code.includes(SCRIPT_MARKER)) return code;
-  const anchor = 'renderPlatforms(); renderSelectedHelp();';
-  const insertion = code.lastIndexOf(anchor);
-  if (insertion < 0) throw new Error('[CALLORIA v6.57] Could not find the final support-router initial render call. The current support-router workbench source may have changed.');
-  return code.slice(0, insertion) + anchor + `\n${PREFILL_BRIDGE}` + code.slice(insertion + anchor.length);
+
+  // Appending after the complete workbench module is order-safe: its normal initial
+  // render and event listeners have already been defined, and the prefill bridge can
+  // then select the product and populate the form. Never fail the production build
+  // merely because an earlier transform changed whitespace or the final render anchor.
+  if (!isSupportRouterWorkbenchModule(code)) return null;
+  return `${code.trimEnd()}\n\n${PREFILL_BRIDGE}\n`;
 }
 
 export function calloriaSeamlessProductHandoffPlugin() {
   return {
-    name: 'calloria-seamless-product-handoff-v6-57',
+    name: 'calloria-seamless-product-handoff-v6-57-1',
     enforce: 'post',
     transform(code, id) {
-      return transformCalloriaSupportRouterWorkbench(code, id);
+      const normalizedId = String(id).split('?')[0].replace(/\\/g, '/');
+      const result = transformCalloriaSupportRouterWorkbench(code, id);
+      if (result === null && normalizedId.endsWith(MODULE_SUFFIX) && !code.includes(SCRIPT_MARKER)) {
+        this.warn('[CALLORIA v6.57.1] Support-router prefill was skipped safely because the transformed module did not expose the expected workbench bindings. The build will continue; visitors can still select a product and intent manually.');
+      }
+      return result;
     },
     transformIndexHtml: {
       order: 'post',
