@@ -1,24 +1,9 @@
-Cumulative build integrations:
-- build/calloria-voice-response-workflow-v6-42.mjs
-- build/calloria-inbound-customer-dialogue-v6-43.mjs
-- build/calloria-inbound-conversation-wrapup-v6-44.mjs
-- build/calloria-inbound-qa-review-bridge-v6-45.mjs
-- build/calloria-qa-coaching-followthrough-v6-46.mjs
-- build/calloria-guided-coaching-practice-v6-47.mjs
-- build/calloria-career-competency-passport-v6-48.mjs
-- build/calloria-promotion-readiness-dossier-v6-49.mjs
-- build/calloria-scenario-based-promotion-exam-v6-50.mjs
-- build/calloria-ruffneck-platform-support-v6-51.mjs
-- build/calloria-platform-support-case-desk-v6-52.mjs
-- build/calloria-support-sla-command-centre-v6-53.mjs
-- build/calloria-support-case-ownership-v6-54.mjs
+CALLORIA v6.57 cumulative upgrade overlay
 
-Also included:
-- vite.config.js (cumulative plugin registration)
-- tests/ (cumulative integration tests and fixtures)
-- README.md
-- CHANGELOG.md
-- INSTALL-GITHUB.md
-- VERIFICATION.md
-- TEST-RESULTS.txt
-- FILES.txt
+Repository-relative package contents:
+- build/calloria-voice-response-workflow-v6-42.mjs through build/calloria-seamless-product-handoff-v6-57.mjs
+- tests/ cumulative integration tests and test fixtures
+- vite.config.js replacement registering the cumulative v6.42-v6.57 plugin sequence
+- README.md, CHANGELOG.md, INSTALL-GITHUB.md, VERIFICATION.md, TEST-RESULTS.txt
+
+This is an integration overlay, not the complete CALLORIA repository. Keep all pre-existing application files, static assets, package manifests, Supabase configuration and secrets. The replacement Vite config expects the existing base build plugins from the current application repository to remain present.

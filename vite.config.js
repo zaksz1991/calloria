@@ -34,6 +34,7 @@ import { calloriaSupportSlaCommandCentrePluginV653 } from './build/calloria-supp
 import { calloriaSupportCaseOwnershipPluginV654 } from './build/calloria-support-case-ownership-v6-54.mjs';
 import { calloriaPublicExperienceHubPlugin } from './build/calloria-public-experience-hub-v6-55.mjs';
 import { calloriaRuffNeckDiscoveryGuidePlugin } from './build/calloria-ruffneck-discovery-guide-v6-56.mjs';
+import { calloriaSeamlessProductHandoffPlugin } from './build/calloria-seamless-product-handoff-v6-57.mjs';
 
 export default defineConfig({
   base: '/',
@@ -94,7 +95,9 @@ export default defineConfig({
     // Last: visitor-facing HTML and navigation only; gameplay logic remains unchanged.
     calloriaPublicExperienceHubPlugin(),
     // Guided visitor intent selection routes people to the most relevant official RuffNeck destination.
-    calloriaRuffNeckDiscoveryGuidePlugin()
+    calloriaRuffNeckDiscoveryGuidePlugin(),
+    // Product cards now prefill the existing consent-based human support router for interested visitors.
+    calloriaSeamlessProductHandoffPlugin()
   ],
   build: {
     outDir: 'dist',

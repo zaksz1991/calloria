@@ -1,25 +1,24 @@
-# CALLORIA v6.56 — RuffNeck Discovery Guide
+# CALLORIA v6.57 — Seamless Product-to-Support Handoff
 
-## Objective
+## Public visitor journey
 
-Reduce the gap between a visitor's intent and the RuffNeck destination that can serve it. The guide supports CALLORIA's three public roles: entertainment, education and product/service discovery.
+- Adds two product-aware actions to every guided discovery result: **Access / pricing** and **Product support**.
+- Sends visitors to the existing support router with the matching RuffNeck product preselected.
+- Prefills Sales & Service Enquiry or Product Support according to the selected action.
+- Retains the existing official-site and Ask CALLORIA actions.
 
-## Changes
+## Support-router handoff
 
-- Adds a short, no-registration intent chooser to Customer Care.
-- Offers six plain-language goals: play, learn, grow a business, connect with communities, work with social media, or explore all destinations.
-- Recommends only the relevant official RuffNeck destinations for the selected goal.
-- Adds an immediate official-site action for each recommendation; destinations open in a protected new tab so CALLORIA remains available.
-- Adds an optional “Ask before I start” action that prepares a question in the existing Customer Care composer without sending it automatically.
-- Routes the landing-page “Discover RuffNeck” button to the guided chooser instead of dropping visitors onto the raw platform list.
-- Provides screen-reader labels, pressed-state feedback, keyboard focus states, reduced-motion support and narrow-screen layouts.
-- Collects no name, email, phone number, account credential or payment information. It adds no tracking calls, storage, account requirement or checkout simulation.
-- Keeps the existing product directory, support-case workflow, learning topics, game launch and immersive guidance link intact.
+- Adds a URL-prefill bridge to the existing `js/support-router-workbench.js` module.
+- Accepts only product IDs found in the existing `PLATFORMS` registry.
+- Accepts only the allowlisted sales, platform support, account access and technical support intents.
+- Generates product-specific editable subjects and request summaries.
+- Preserves language choice, explicit storage consent, submit controls, one-time access codes and request tracking.
+- Never auto-submits the form.
 
-## Official destinations
+## Experience and safety
 
-RuffNeck Learn (LMS), Prospector, Connect, Social Hub, Kano Run / Kano Life and Kano Keke. The guide reuses the same destination URLs already listed in Customer Care.
-
-## Purchase boundary
-
-CALLORIA helps visitors understand which destination to open and how to ask a pre-purchase question. Product registration, access, prices, plans and payment remain with the owning RuffNeck product. No price or availability is invented.
+- Adds responsive action wrapping for narrow screens and visible focus treatment.
+- States that request details are prefilled for review and are not sent automatically.
+- Does not collect new personal details, add tracking, modify storage, or change product/payment flows.
+- No Supabase migration, API key or environment-variable change.

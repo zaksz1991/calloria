@@ -1,30 +1,30 @@
-# Installation — CALLORIA v6.56
+# Install CALLORIA v6.57 through GitHub
 
-This ZIP is a cumulative build overlay, not the complete CALLORIA repository. It includes the v6.42–v6.55 integration modules and tests, the new v6.56 plugin and test, and a Vite configuration registering the modules in sequence.
+Repository: `zaksz1991/calloria`  
+Branch: `main`
 
-## GitHub installation
+This ZIP is a **cumulative upgrade overlay**, not a full export of the application repository. It contains the v6.42–v6.57 integration modules, tests and replacement Vite configuration. Keep the existing application source, public assets, package files and environment settings.
 
-1. Extract the ZIP.
-2. Merge the included `build/` folder into the repository's existing `build/` folder.
-3. Merge the included `tests/` folder into the repository's existing `tests/` folder.
-4. Replace the repository-root `vite.config.js` with the one in this ZIP.
-5. Commit and push to `main`.
-6. Check the Vercel deployment result before treating the changes as live.
+## GitHub browser workflow
 
-No manual changes to `index.html` or `customer-care.html` are required. The Vite plugins add the guide at build time and update the landing-page discovery route.
+1. Download and extract this ZIP on your computer.
+2. Open the repository's `main` branch on GitHub.
+3. Merge the included `build/` files into the repository's existing `build/` directory. Keep unrelated existing build plugins.
+4. Merge the included `tests/` files into the repository's existing `tests/` directory. Keep unrelated tests.
+5. Replace the repository-root `vite.config.js` with the supplied `vite.config.js`.
+6. Commit the changes to `main` and let Vercel create a deployment.
 
-## Important integration note
+Do not upload the enclosing `calloria-v6-57/` folder as a new project directory. The paths inside it are repository-relative.
 
-The public `main` branch Vite configuration checked while preparing this package registered integrations through v6.53. It did not yet register v6.54 or v6.55. Therefore, do not upload only the new v6.56 plugin. Use the replacement `vite.config.js` and all included build modules so the cumulative chain is registered.
+## What not to change
 
-## Preserved
+- Do not replace `package.json` or `package-lock.json` for this upgrade.
+- Do not change Supabase URL, keys, edge-function secrets or database settings.
+- Do not change Groq credentials or other existing API keys.
+- Do not remove the existing `js/support-router-workbench.js` or `js/routing-engine.js` files.
 
-- Guest-first CALLORIA launch and optional cloud-save account.
-- 3D game and lightweight mode entry controls.
-- Existing customer-care assistant, topic prompts, case creation and case tracking.
-- Existing six official RuffNeck product destinations.
-- Existing Supabase settings, Groq integration, API keys, packages, GLB assets and product/payment backends.
+## After deployment
 
-## Scope
+Open Customer Care, choose a discovery goal and select a product. Test both **Access / pricing** and **Product support**. Each should open the support router with that product and request category selected and a draft summary filled in. Confirm that the visitor can edit the draft, choose a language, and must actively tick the existing storage-consent box and press Submit.
 
-The discovery guide only recommends destinations and prepares a draft question. It does not collect leads, store visitor activity, create accounts, submit questions automatically, take payment or promise product availability. Product access and transaction flows remain on the official RuffNeck platforms.
+The test suite and syntax checks in `VERIFICATION.md` were run locally against the included fixtures. A full production build, deployed-browser test and Vercel deployment have not been verified in this package.
