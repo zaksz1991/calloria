@@ -1,18 +1,26 @@
-CALLORIA v6.57.1 Vercel Build Repair — cumulative overlay
+Cumulative CALLORIA v6.58 integration package
 
 Root:
-- vite.config.js
-- README.md
-- CHANGELOG.md
-- INSTALL-GITHUB.md
-- VERIFICATION.md
-- TEST-RESULTS.txt
-- FILES.txt
+  vite.config.js — cumulative plugin registration through v6.58
+  README.md
+  CHANGELOG.md
+  INSTALL-GITHUB.md
+  VERIFICATION.md
+  TEST-RESULTS.txt
+  FILES.txt
 
-build/: cumulative CALLORIA plugins v6.42–v6.57.1
-  - v6.57 plugin file is replaced with the resilient v6.57.1 implementation.
+build/:
+  cumulative CALLORIA integration modules v6.42 through v6.58
 
-tests/: cumulative integration tests and fixtures v6.42–v6.57
-  - v6.57 test file is updated to verify safe source-shape handling.
+Important:
+  The original CALLORIA repository's world, customer, office, GLB, OJT, shift, and gameplay plugin files are not included in this overlay. Keep those existing repository files. Merge this package's build/ directory into the existing build/ directory; do not replace the whole folder.
 
-This archive is a cumulative build-plugin overlay, not the complete CALLORIA application source repository.
+tests/:
+  cumulative integration tests and test fixtures packaged with the v6.57.1 baseline
+  calloria-try-it-studio-v6-58.test.mjs
+
+Not included:
+  full application source (including js/main.js and HTML source pages)
+  public assets or GLB models
+  package.json or package-lock.json
+  Supabase migrations, environment variables, API keys, or database exports

@@ -1,11 +1,16 @@
-# CALLORIA v6.57.1 — Vercel Build Repair
+# CALLORIA v6.58 — RuffNeck Try-It Studio
 
-This is a corrective release for the v6.57 product-to-support handoff. It addresses the Vercel production-build failure caused when the support-router module transform could not find one exact final render-call string.
+## Added
 
-Changes:
-- Removes the brittle dependency on the exact text `renderPlatforms(); renderSelectedHelp();`.
-- Appends the prefill bridge at the end of the support-router workbench module after verifying the expected lexical bindings and form selectors.
-- Skips the prefill bridge with a Vite warning when the module shape is unexpected, rather than throwing and failing the entire production build.
-- Keeps the existing customer-care discovery-card links, product IDs, consent checks and support-router templates unchanged.
+- Six short, interactive, fictional product previews for RuffNeck Learn, Prospector, Connect, Social Hub, Kano Run / Kano Life, and Kano Keke.
+- Two scenario decisions per preview with immediate explanations and a completion score.
+- A guest-first progress strip and an all-previews shortcut.
+- Browser-local completion progress; no preview response is sent to a server.
+- Product-specific calls to action to open the official destination or prepare an access/pricing enquiry in the existing support router.
+- Mobile-friendly modal layout, keyboard focus handling, Escape/backdrop close, and reduced-motion-aware styling.
 
-No Supabase schema, secrets, environment variables, package dependencies, public GLB assets or gameplay files are changed.
+## Boundaries
+
+- Previews use fictional scenarios and do not claim to connect to live RuffNeck product accounts or services.
+- No payment, account registration, lead submission, or support request is automatically performed.
+- Existing game, workforce, CRM, Supabase configuration, secrets, package dependencies, and GLB assets are unchanged.

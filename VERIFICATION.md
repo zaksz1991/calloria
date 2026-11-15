@@ -1,24 +1,19 @@
-# Verification — CALLORIA v6.57.1
+# Verification — CALLORIA v6.58
 
-## Completed locally
+## Automated checks completed locally
 
-- v6.57 handoff tests updated for resilient workbench transformation.
-- Cumulative fixture suite: 163 passed, 0 failed.
-- Transformed support-router module: JavaScript syntax check passed.
-- Vite configuration and replacement plugin: JavaScript syntax checks passed.
-- Support-router plugin syntax check: passed after running the suite.
-- Replacement Vite configuration syntax check: passed after running the suite.
-- Cumulative Node test suite results are recorded in `TEST-RESULTS.txt`.
-- ZIP integrity: checked after packaging.
-
-## What this fixes
-
-The v6.57 transformer previously threw when it could not find one exact final source string. v6.57.1 verifies the expected support-router module bindings and appends its bridge after the module instead. If those bindings are absent, it warns and skips the optional prefill bridge without stopping the Vercel build.
+- Cumulative Node test suite: **173 passed, 0 failed**.
+- New v6.58 tests: **10 passed**.
+- v6.58 build plugin syntax: passed.
+- Cumulative Vite configuration syntax: passed.
+- The existing Customer Care fixture was transformed sequentially through v6.55, v6.56, v6.57.1 and v6.58; all four integration markers were present.
+- All injected discovery, handoff and Try-It browser scripts in that sequential fixture passed JavaScript syntax parsing.
+- v6.58 idempotency and safe-skip tests passed.
 
 ## Not verified
 
-- Full `npm run build` against the complete production repository.
-- Vercel deployment after this patch.
-- Live Supabase request submission or browser/mobile behaviour.
+- Full `npm run build` against the complete current CALLORIA repository.
+- Live browser rendering, microphone/3D gameplay, mobile-device interaction, or accessibility testing with assistive technology.
+- Live support-router submission, Supabase persistence, or Vercel deployment.
 
-The supplied build log also reports that v6.42–v6.54 transformations were skipped because their `main.js` source anchors do not match. This repair does not claim to reactivate those unrelated integrations. They need separate source-aligned integration work after the deployment is building again.
+The cumulative integration tests use the packaged fixtures and plugin transforms. They are not a substitute for a full build or a deployed-browser test. The production `main.js`, game assets, and customer-care runtime must be present in the repository when Vercel runs the complete application build.
