@@ -1,9 +1,21 @@
-# CALLORIA v6.62 — Unified Agent Workload & Digital Concurrency
+# CALLORIA v6.63 — Digital First-Response SLA Control
 
-A cumulative upgrade built on the supplied v6.61 source snapshot. v6.62 turns digital contacts into a multi-item agent workload: agents can work several assigned email, live-chat and social conversations concurrently, subject to global and channel-specific capacity, while preserving customer-waiting threads and supervisor visibility. v6.59 live voice queues, v6.60 supervisor controls and v6.61 automatic digital demand remain in the cumulative source.
+A cumulative upgrade built on the supplied v6.62 source snapshot. v6.63 adds a first-response SLA clock for synthetic Email, Live chat and Social contacts, with risk/breach/met tracking shared by the agent workbench and Supervisor Operations. It uses the accelerated shift clock, stores one-time contact and operations timeline events, and preserves the existing v6.62 concurrent agent workload, v6.61 automatic digital demand, v6.60 supervisor controls and v6.59 inbound voice queue.
 
 The recruitment and assessment pathway remains the employment entry gate. The main gameplay remains employed agent work: queue handling, customer conversations, CRM and case records, service tools, after-contact work, QA, supervisor assistance and career progression. This is not a training-only conversion.
 
+
+
+## v6.63 digital first-response SLA control
+
+- Digital contacts keep a first-response deadline based on their saved response target. Default fallback targets are Email 240 minutes, Live chat 2 minutes and Social 20 minutes; valid targets already stored on a contact take precedence.
+- At 75% of the response target elapsed, an unanswered contact enters Due soon. If the deadline passes, it becomes SLA breached. The first agent reply ends the timer and permanently records Met target or First response late.
+- The same calculation appears on agent assigned-work tabs, the active digital conversation banner, waiting queue rows, supervisor triage rows and supervisor breach totals.
+- The engine adds one-time risk/breach/met entries to the contact timeline, digital events and operations timeline. Repeated shift ticks do not duplicate those events.
+- The SLA clock uses the existing accelerated shift simulation time. Follow-up customer replies do not restart the first-response timer.
+- These are fictional local gameplay targets, not live provider clocks or contractual service levels. No database migration, secret, environment variable, external provider or new package dependency is added.
+
+The v6.63 test and verification record is in `TEST-RESULTS-v6.63.txt` and `VERIFICATION-v6.63.md`; GUI merge steps are in `INSTALL-GITHUB-v6.63.md`. Raw new-test, selected-regression, syntax, full-suite and build logs plus the direct v6.62 baseline comparison are included in the archive.
 
 ## v6.62 unified agent workload and digital concurrency
 
@@ -86,15 +98,18 @@ The v6.58 visitor-preview behaviour, v6.59 live voice queue and v6.60 supervisor
 
 ## Package contents
 
+- `js/digital-sla-engine.js`: v6.63 first-response deadline, risk/breach/met transitions, response-outcome metrics and compact labels.
 - `js/agent-workload-engine.js`: v6.62 multi-contact worklist, capacity policy and assignment/resumption guards.
-- `js/main.js`: v6.62 state migration, assigned-work tabs, multi-contact digital queue acceptance, thread switching, response/follow-up/completion integration and agent status recalculation.
-- `js/supervisor-queue-engine.js`: supervisor counts for concurrent active digital work and customer-waiting assignments.
-- `styles.css`: responsive work tabs, queue controls and workload/capacity indicators.
-- `tests/agent-workload-engine-v662.test.mjs` and `tests/agent-workload-ui-v662.test.mjs`: 32 new engine and integration tests.
-- `docs/CALLORIA-v6.62-UNIFIED-AGENT-WORKLOAD.md`, `INSTALL-GITHUB-v6.62.md`, `TEST-RESULTS-v6.62.txt` and `VERIFICATION-v6.62.md`: release and acceptance documentation.
+- `js/main.js`: cumulative recruitment/operations application, v6.62 assigned-work tabs and multi-contact workload integration, plus v6.63 accelerated-clock SLA monitoring, event capture and agent/supervisor indicators.
+- `js/supervisor-queue-engine.js`: supervisor counts for concurrent active digital work and customer-waiting assignments, plus first-response risk and breach status.
+- `styles.css`: responsive work tabs, queue controls, workload/capacity indicators and digital SLA states.
+- `tests/digital-sla-engine-v663.test.mjs`, `tests/digital-sla-ui-v663.test.mjs` and `tests/supervisor-sla-integration-v663.test.mjs`: 30 v6.63 engine and integration tests.
+- `tests/agent-workload-engine-v662.test.mjs` and `tests/agent-workload-ui-v662.test.mjs`: 32 v6.62 engine and integration tests.
+- `docs/CALLORIA-v6.63-DIGITAL-FIRST-RESPONSE-SLA.md`, `INSTALL-GITHUB-v6.63.md`, `TEST-RESULTS-v6.63.txt` and `VERIFICATION-v6.63.md`: release and acceptance documentation.
+- `docs/CALLORIA-v6.62-UNIFIED-AGENT-WORKLOAD.md`, `INSTALL-GITHUB-v6.62.md`, `TEST-RESULTS-v6.62.txt` and `VERIFICATION-v6.62.md`: v6.62 release documentation.
 - v6.61 digital arrival engine and tests, v6.60 supervisor controls and tests, v6.59 inbound voice queue and tests, v6.58 Try-It Studio, and the existing recruitment, employment, 3D workplace runtime, operations, CRM, multichannel, voice, QA, career, organisation, Supabase and Vite configuration are retained from the supplied cumulative source snapshot.
 
-This is a cumulative replacement for the supplied v6.61 repository snapshot. The source archive did not include `public/assets/` or its GLB binaries; keep those files from the actual GitHub checkout when merging. Keep the hidden `.git` directory and local environment files. No credentials, provider secrets or database exports are included.
+This is a cumulative replacement for the supplied v6.62 repository snapshot. The source archive did not include `public/assets/` or its GLB binaries; keep those files from the actual GitHub checkout when merging. Keep the hidden `.git` directory and local environment files. No credentials, provider secrets or database exports are included.
 
 ## Commercial readiness boundary
 

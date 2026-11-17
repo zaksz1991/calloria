@@ -1,0 +1,33 @@
+CALLORIA v6.63 — TEST RESULTS
+Date: 17 November 2026
+Base: uploaded cumulative v6.62 source
+
+NEW RELEASE TESTS
+- Digital SLA engine: 17 passed, 0 failed.
+- Agent UI/integration: 10 passed, 0 failed.
+- Supervisor SLA integration: 5 passed, 0 failed.
+- Total new v6.63 tests: 32 passed, 0 failed.
+
+SELECTED CUMULATIVE REGRESSION
+- 156 passed, 0 failed.
+- Includes current queue, supervisor, digital arrivals, agent workload, operations, multichannel and v6.63 first-response SLA regression tests.
+
+SYNTAX
+- npm run check: passed.
+
+FULL REPOSITORY SUITE
+- v6.63: 1,899 tests; 1,355 passed; 544 failed.
+- Exact v6.62 backup recheck: 1,867 tests; 1,323 passed; 544 failed.
+- Failure comparison: identical 526 distinct failing test names; no new failing name.
+- The full suite remains partially failing; the existing failures are not claimed as fixed.
+
+PRODUCTION BUILD
+- npm run build attempted.
+- Not verified: vite: not found (dependencies are not installed in the supplied workspace).
+
+DEPLOYMENT / BROWSER
+- No Vercel deployment performed.
+- No browser playthrough or physical mobile-device test performed.
+
+ASSET NOTE
+- Supplied source archive omitted public/assets/ and GLB binaries. Keep the actual public/assets/ directory from the GitHub checkout when merging.

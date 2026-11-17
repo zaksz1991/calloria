@@ -1,0 +1,946 @@
+TAP version 13
+# Subtest: v6.62 workload engine publishes the expected version and concurrency policy
+ok 1 - v6.62 workload engine publishes the expected version and concurrency policy
+  ---
+  duration_ms: 1.907024
+  type: 'test'
+  ...
+# Subtest: assigned worklist contains only open work assigned to the requested agent
+ok 2 - assigned worklist contains only open work assigned to the requested agent
+  ---
+  duration_ms: 11.071349
+  type: 'test'
+  ...
+# Subtest: awaiting-customer threads remain assigned without consuming an active slot
+ok 3 - awaiting-customer threads remain assigned without consuming an active slot
+  ---
+  duration_ms: 0.804304
+  type: 'test'
+  ...
+# Subtest: empty workload reports all three digital slots available
+ok 4 - empty workload reports all three digital slots available
+  ---
+  duration_ms: 0.219275
+  type: 'test'
+  ...
+# Subtest: an available agent can accept a queued email contact
+ok 5 - an available agent can accept a queued email contact
+  ---
+  duration_ms: 0.610395
+  type: 'test'
+  ...
+# Subtest: an available agent can accept a queued live chat contact
+ok 6 - an available agent can accept a queued live chat contact
+  ---
+  duration_ms: 0.239786
+  type: 'test'
+  ...
+# Subtest: an available agent can accept a queued social contact
+ok 7 - an available agent can accept a queued social contact
+  ---
+  duration_ms: 0.329111
+  type: 'test'
+  ...
+# Subtest: an agent can accept a second contact while busy only because of active digital work
+ok 8 - an agent can accept a second contact while busy only because of active digital work
+  ---
+  duration_ms: 0.324513
+  type: 'test'
+  ...
+# Subtest: global active digital concurrency is capped at three
+ok 9 - global active digital concurrency is capped at three
+  ---
+  duration_ms: 0.784932
+  type: 'test'
+  ...
+# Subtest: email channel concurrency is capped at two
+ok 10 - email channel concurrency is capped at two
+  ---
+  duration_ms: 0.974476
+  type: 'test'
+  ...
+# Subtest: live-chat concurrency is capped at two
+ok 11 - live-chat concurrency is capped at two
+  ---
+  duration_ms: 0.357987
+  type: 'test'
+  ...
+# Subtest: social concurrency is capped at one
+ok 12 - social concurrency is capped at one
+  ---
+  duration_ms: 0.134648
+  type: 'test'
+  ...
+# Subtest: voice interaction blocks digital acceptance
+ok 13 - voice interaction blocks digital acceptance
+  ---
+  duration_ms: 0.091429
+  type: 'test'
+  ...
+# Subtest: outbound interaction blocks digital acceptance
+ok 14 - outbound interaction blocks digital acceptance
+  ---
+  duration_ms: 0.067476
+  type: 'test'
+  ...
+# Subtest: after-contact wrap-up blocks digital acceptance
+ok 15 - after-contact wrap-up blocks digital acceptance
+  ---
+  duration_ms: 0.212557
+  type: 'test'
+  ...
+# Subtest: acceptance requires an active shift and scheduled shift window
+ok 16 - acceptance requires an active shift and scheduled shift window
+  ---
+  duration_ms: 0.09404
+  type: 'test'
+  ...
+# Subtest: agent busy for a non-digital reason cannot accept work
+ok 17 - agent busy for a non-digital reason cannot accept work
+  ---
+  duration_ms: 0.074334
+  type: 'test'
+  ...
+# Subtest: only queued contacts can be newly accepted
+ok 18 - only queued contacts can be newly accepted
+  ---
+  duration_ms: 0.095729
+  type: 'test'
+  ...
+# Subtest: unknown channels are refused rather than assigned without a limit
+ok 19 - unknown channels are refused rather than assigned without a limit
+  ---
+  duration_ms: 0.305092
+  type: 'test'
+  ...
+# Subtest: awaiting-customer work can resume when capacity is available and ownership matches
+ok 20 - awaiting-customer work can resume when capacity is available and ownership matches
+  ---
+  duration_ms: 0.257078
+  type: 'test'
+  ...
+# Subtest: an agent cannot resume another agent customer thread
+ok 21 - an agent cannot resume another agent customer thread
+  ---
+  duration_ms: 0.087327
+  type: 'test'
+  ...
+# Subtest: awaiting-customer thread cannot resume when global slots are full
+ok 22 - awaiting-customer thread cannot resume when global slots are full
+  ---
+  duration_ms: 0.147141
+  type: 'test'
+  ...
+# Subtest: workload policy can set zero concurrency to stop all digital assignment
+ok 23 - workload policy can set zero concurrency to stop all digital assignment
+  ---
+  duration_ms: 0.332136
+  type: 'test'
+  ...
+# Subtest: snapshot keeps channel counts separate
+ok 24 - snapshot keeps channel counts separate
+  ---
+  duration_ms: 0.135266
+  type: 'test'
+  ...
+# Subtest: v6.62 workload rules are imported by the main application
+ok 25 - v6.62 workload rules are imported by the main application
+  ---
+  duration_ms: 0.8378
+  type: 'test'
+  ...
+# Subtest: legacy single selected digital contact migrates into the multi-contact worklist
+ok 26 - legacy single selected digital contact migrates into the multi-contact worklist
+  ---
+  duration_ms: 0.769298
+  type: 'test'
+  ...
+# Subtest: digital workspace renders assigned-thread tabs and a separate waiting queue
+ok 27 - digital workspace renders assigned-thread tabs and a separate waiting queue
+  ---
+  duration_ms: 0.385189
+  type: 'test'
+  ...
+# Subtest: digital assignment action evaluates workload capacity before accepting a contact
+ok 28 - digital assignment action evaluates workload capacity before accepting a contact
+  ---
+  duration_ms: 0.275537
+  type: 'test'
+  ...
+# Subtest: digital reply and follow-up transitions recalculate the active agent workload
+ok 29 - digital reply and follow-up transitions recalculate the active agent workload
+  ---
+  duration_ms: 0.324787
+  type: 'test'
+  ...
+# Subtest: after-contact work blocks unsafe channel overlap with active voice or outbound work
+ok 30 - after-contact work blocks unsafe channel overlap with active voice or outbound work
+  ---
+  duration_ms: 0.126502
+  type: 'test'
+  ...
+# Subtest: package syntax check includes the workload engine
+ok 31 - package syntax check includes the workload engine
+  ---
+  duration_ms: 0.078196
+  type: 'test'
+  ...
+# Subtest: supervisor board counts concurrent assigned digital response work
+ok 32 - supervisor board counts concurrent assigned digital response work
+  ---
+  duration_ms: 0.742161
+  type: 'test'
+  ...
+# Subtest: v6.59 runtime is connected to the existing agent application entry point
+ok 33 - v6.59 runtime is connected to the existing agent application entry point
+  ---
+  duration_ms: 1.227862
+  type: 'test'
+  ...
+# Subtest: shift start and persisted active-shift migration initialise the live queue clock
+ok 34 - shift start and persisted active-shift migration initialise the live queue clock
+  ---
+  duration_ms: 0.412102
+  type: 'test'
+  ...
+# Subtest: one accelerated shift-clock tick advances arrivals, abandonment and queue audit events
+ok 35 - one accelerated shift-clock tick advances arrivals, abandonment and queue audit events
+  ---
+  duration_ms: 0.775865
+  type: 'test'
+  ...
+# Subtest: agent and supervisor queue screens use the accelerated queue timestamp
+ok 36 - agent and supervisor queue screens use the accelerated queue timestamp
+  ---
+  duration_ms: 0.513891
+  type: 'test'
+  ...
+# Subtest: agent call acceptance computes queue waiting time on the same accelerated clock
+ok 37 - agent call acceptance computes queue waiting time on the same accelerated clock
+  ---
+  duration_ms: 0.371297
+  type: 'test'
+  ...
+# Subtest: the shift stops generating contacts after closure and resets cleanly on a new workday
+ok 38 - the shift stops generating contacts after closure and resets cleanly on a new workday
+  ---
+  duration_ms: 0.269309
+  type: 'test'
+  ...
+# Subtest: existing recruitment, customer handling, wrap-up and career progression remain in the main app
+ok 39 - existing recruitment, customer handling, wrap-up and career progression remain in the main app
+  ---
+  duration_ms: 0.380568
+  type: 'test'
+  ...
+# Subtest: v6.58 Try-It Studio remains registered as the prior release
+ok 40 - v6.58 Try-It Studio remains registered as the prior release
+  ---
+  duration_ms: 0.106903
+  type: 'test'
+  ...
+# Subtest: v6.59 is documented as a synthetic operational queue, not real telephony
+ok 41 - v6.59 is documented as a synthetic operational queue, not real telephony
+  ---
+  duration_ms: 0.534796
+  type: 'test'
+  ...
+# Subtest: digital live queue starts with deterministic channel-specific arrival schedules
+ok 42 - digital live queue starts with deterministic channel-specific arrival schedules
+  ---
+  duration_ms: 2.699812
+  type: 'test'
+  ...
+# Subtest: one advance creates automatic email, live-chat and social contacts when each channel is due
+ok 43 - one advance creates automatic email, live-chat and social contacts when each channel is due
+  ---
+  duration_ms: 2.189915
+  type: 'test'
+  ...
+# Subtest: automatic arrivals use configured organisation digital response target
+ok 44 - automatic arrivals use configured organisation digital response target
+  ---
+  duration_ms: 0.852496
+  type: 'test'
+  ...
+# Subtest: waiting capacity is channel-specific and overflow is recorded without creating a contact
+ok 45 - waiting capacity is channel-specific and overflow is recorded without creating a contact
+  ---
+  duration_ms: 0.624591
+  type: 'test'
+  ...
+# Subtest: active and resolved digital contacts do not consume waiting-channel capacity
+ok 46 - active and resolved digital contacts do not consume waiting-channel capacity
+  ---
+  duration_ms: 0.722501
+  type: 'test'
+  ...
+# Subtest: demand profiles adjust subsequent digital arrival intervals within safe bounds
+ok 47 - demand profiles adjust subsequent digital arrival intervals within safe bounds
+  ---
+  duration_ms: 0.442836
+  type: 'test'
+  ...
+# Subtest: same-minute calls do not replay missed arrivals as a catch-up burst
+ok 48 - same-minute calls do not replay missed arrivals as a catch-up burst
+  ---
+  duration_ms: 1.691883
+  type: 'test'
+  ...
+# Subtest: closed digital intake never creates new contacts
+ok 49 - closed digital intake never creates new contacts
+  ---
+  duration_ms: 0.181664
+  type: 'test'
+  ...
+# Subtest: legacy or malformed saved digital queue state is safely normalised
+ok 50 - legacy or malformed saved digital queue state is safely normalised
+  ---
+  duration_ms: 0.512578
+  type: 'test'
+  ...
+# Subtest: a different workday receives a clean schedule and counters
+ok 51 - a different workday receives a clean schedule and counters
+  ---
+  duration_ms: 0.357814
+  type: 'test'
+  ...
+# Subtest: snapshot reports independent per-channel arrivals, overflow and the next due contact
+ok 52 - snapshot reports independent per-channel arrivals, overflow and the next due contact
+  ---
+  duration_ms: 0.713021
+  type: 'test'
+  ...
+# Subtest: missing digital live queue state is reported as stopped, not active
+ok 53 - missing digital live queue state is reported as stopped, not active
+  ---
+  duration_ms: 0.140783
+  type: 'test'
+  ...
+# Subtest: digital live arrival engine is imported into the primary application
+ok 54 - digital live arrival engine is imported into the primary application
+  ---
+  duration_ms: 2.079305
+  type: 'test'
+  ...
+# Subtest: digital live arrivals advance from the same accelerated in-game shift clock
+ok 55 - digital live arrivals advance from the same accelerated in-game shift clock
+  ---
+  duration_ms: 0.449922
+  type: 'test'
+  ...
+# Subtest: automatic digital events are recorded in the digital and operations timelines
+ok 56 - automatic digital events are recorded in the digital and operations timelines
+  ---
+  duration_ms: 0.438326
+  type: 'test'
+  ...
+# Subtest: supervisor demand profiles affect future digital arrivals while voice pause remains separate
+ok 57 - supervisor demand profiles affect future digital arrivals while voice pause remains separate
+  ---
+  duration_ms: 0.609868
+  type: 'test'
+  ...
+# Subtest: digital queue timestamps and SLA snapshots use the simulation clock consistently
+ok 58 - digital queue timestamps and SLA snapshots use the simulation clock consistently
+  ---
+  duration_ms: 0.752166
+  type: 'test'
+  ...
+# Subtest: the opening digital batch is seeded only once per shift and then automatic demand takes over
+ok 59 - the opening digital batch is seeded only once per shift and then automatic demand takes over
+  ---
+  duration_ms: 0.222145
+  type: 'test'
+  ...
+# Subtest: digital live demand is visible in the agent desk and supervisor command centre
+ok 60 - digital live demand is visible in the agent desk and supervisor command centre
+  ---
+  duration_ms: 0.393406
+  type: 'test'
+  ...
+# Subtest: mobile styling is supplied for the digital live demand panel
+ok 61 - mobile styling is supplied for the digital live demand panel
+  ---
+  duration_ms: 0.217744
+  type: 'test'
+  ...
+# Subtest: package syntax checks include the digital live queue engine
+ok 62 - package syntax checks include the digital live queue engine
+  ---
+  duration_ms: 0.281646
+  type: 'test'
+  ...
+# Subtest: v6.63 exposes a bounded digital first-response SLA policy
+ok 63 - v6.63 exposes a bounded digital first-response SLA policy
+  ---
+  duration_ms: 1.472335
+  type: 'test'
+  ...
+# Subtest: new unresponded contact begins on track with its target deadline
+ok 64 - new unresponded contact begins on track with its target deadline
+  ---
+  duration_ms: 0.657301
+  type: 'test'
+  ...
+# Subtest: risk window begins at the configured 75 percent threshold
+ok 65 - risk window begins at the configured 75 percent threshold
+  ---
+  duration_ms: 0.2017
+  type: 'test'
+  ...
+# Subtest: SLA breaches at the deadline and reports overdue time
+ok 66 - SLA breaches at the deadline and reports overdue time
+  ---
+  duration_ms: 0.117256
+  type: 'test'
+  ...
+# Subtest: a first response inside target meets SLA even when the assessment runs later
+ok 67 - a first response inside target meets SLA even when the assessment runs later
+  ---
+  duration_ms: 0.231272
+  type: 'test'
+  ...
+# Subtest: a late first response remains a recorded breach after the customer replies
+ok 68 - a late first response remains a recorded breach after the customer replies
+  ---
+  duration_ms: 0.120442
+  type: 'test'
+  ...
+# Subtest: channel target is used when a saved contact has no valid explicit target
+ok 69 - channel target is used when a saved contact has no valid explicit target
+  ---
+  duration_ms: 0.10059
+  type: 'test'
+  ...
+# Subtest: future receipt times do not create negative elapsed or overdue values
+ok 70 - future receipt times do not create negative elapsed or overdue values
+  ---
+  duration_ms: 0.098532
+  type: 'test'
+  ...
+# Subtest: malformed receipt timestamps return unavailable rather than fabricated risk
+ok 71 - malformed receipt timestamps return unavailable rather than fabricated risk
+  ---
+  duration_ms: 0.262324
+  type: 'test'
+  ...
+# Subtest: monitor records risk once and advances the contact status
+ok 72 - monitor records risk once and advances the contact status
+  ---
+  duration_ms: 0.655401
+  type: 'test'
+  ...
+# Subtest: monitor records a breach once even when advanced repeatedly
+ok 73 - monitor records a breach once even when advanced repeatedly
+  ---
+  duration_ms: 1.080007
+  type: 'test'
+  ...
+# Subtest: a contact responded within target does not receive a breach event
+ok 74 - a contact responded within target does not receive a breach event
+  ---
+  duration_ms: 0.283734
+  type: 'test'
+  ...
+# Subtest: a late first response creates one breach audit event
+ok 75 - a late first response creates one breach audit event
+  ---
+  duration_ms: 0.246441
+  type: 'test'
+  ...
+# Subtest: awaiting-customer contact with no first response is not monitored as an active response
+ok 76 - awaiting-customer contact with no first response is not monitored as an active response
+  ---
+  duration_ms: 0.074991
+  type: 'test'
+  ...
+# Subtest: metrics separate current open risk from completed first-response outcomes
+ok 77 - metrics separate current open risk from completed first-response outcomes
+  ---
+  duration_ms: 0.394116
+  type: 'test'
+  ...
+# Subtest: customer follow-up does not restart an already recorded first-response SLA
+ok 78 - customer follow-up does not restart an already recorded first-response SLA
+  ---
+  duration_ms: 0.126648
+  type: 'test'
+  ...
+# Subtest: completed and escalated contacts are excluded from the open response backlog
+ok 79 - completed and escalated contacts are excluded from the open response backlog
+  ---
+  duration_ms: 0.113206
+  type: 'test'
+  ...
+# Subtest: v6.63 SLA engine is imported by the main application
+ok 80 - v6.63 SLA engine is imported by the main application
+  ---
+  duration_ms: 2.360129
+  type: 'test'
+  ...
+# Subtest: digital SLA monitor runs from the accelerated active-shift clock
+ok 81 - digital SLA monitor runs from the accelerated active-shift clock
+  ---
+  duration_ms: 0.343478
+  type: 'test'
+  ...
+# Subtest: first agent response is assessed immediately after reply recording
+ok 82 - first agent response is assessed immediately after reply recording
+  ---
+  duration_ms: 0.308769
+  type: 'test'
+  ...
+# Subtest: agent work tabs and active contact banner display SLA status
+ok 83 - agent work tabs and active contact banner display SLA status
+  ---
+  duration_ms: 0.220089
+  type: 'test'
+  ...
+# Subtest: both agent queue views show per-contact first-response status
+ok 84 - both agent queue views show per-contact first-response status
+  ---
+  duration_ms: 0.382312
+  type: 'test'
+  ...
+# Subtest: supervisor queue board exposes digital SLA status and breach totals
+ok 85 - supervisor queue board exposes digital SLA status and breach totals
+  ---
+  duration_ms: 0.272048
+  type: 'test'
+  ...
+# Subtest: SLA transition events are written into the existing operations and digital timelines
+ok 86 - SLA transition events are written into the existing operations and digital timelines
+  ---
+  duration_ms: 0.528131
+  type: 'test'
+  ...
+# Subtest: SLA styles include risk, breach and met states with phone layout handling
+ok 87 - SLA styles include risk, breach and met states with phone layout handling
+  ---
+  duration_ms: 0.385062
+  type: 'test'
+  ...
+# Subtest: project syntax check includes the new digital SLA engine
+ok 88 - project syntax check includes the new digital SLA engine
+  ---
+  duration_ms: 0.29706
+  type: 'test'
+  ...
+# Subtest: supervisor digital SLA totals cover open work and target labels remain explicit defaults
+ok 89 - supervisor digital SLA totals cover open work and target labels remain explicit defaults
+  ---
+  duration_ms: 0.529263
+  type: 'test'
+  ...
+# Subtest: v6.59 engine identifies the live queue release and has bounded demand policy
+ok 90 - v6.59 engine identifies the live queue release and has bounded demand policy
+  ---
+  duration_ms: 0.913961
+  type: 'test'
+  ...
+# Subtest: customer patience differs by priority
+ok 91 - customer patience differs by priority
+  ---
+  duration_ms: 0.153017
+  type: 'test'
+  ...
+# Subtest: opening contacts are stamped against the accelerated shift clock
+ok 92 - opening contacts are stamped against the accelerated shift clock
+  ---
+  duration_ms: 1.562983
+  type: 'test'
+  ...
+# Subtest: no automatic arrival is generated before the scheduled first arrival
+ok 93 - no automatic arrival is generated before the scheduled first arrival
+  ---
+  duration_ms: 0.634116
+  type: 'test'
+  ...
+# Subtest: an automatic contact enters the queue at the scheduled arrival time
+ok 94 - an automatic contact enters the queue at the scheduled arrival time
+  ---
+  duration_ms: 0.324491
+  type: 'test'
+  ...
+# Subtest: the same initial seed produces the same arrival schedule and priority sequence
+ok 95 - the same initial seed produces the same arrival schedule and priority sequence
+  ---
+  duration_ms: 1.347309
+  type: 'test'
+  ...
+# Subtest: an unserved low-priority customer abandons after the patience threshold
+ok 96 - an unserved low-priority customer abandons after the patience threshold
+  ---
+  duration_ms: 0.473881
+  type: 'test'
+  ...
+# Subtest: the simulator applies a hard waiting-queue capacity and records overflow
+ok 97 - the simulator applies a hard waiting-queue capacity and records overflow
+  ---
+  duration_ms: 0.444894
+  type: 'test'
+  ...
+# Subtest: a large clock jump is bounded to three arrivals per engine advance
+ok 98 - a large clock jump is bounded to three arrivals per engine advance
+  ---
+  duration_ms: 1.497105
+  type: 'test'
+  ...
+# Subtest: queue state migration resets a prior day but preserves current-day counters
+ok 99 - queue state migration resets a prior day but preserves current-day counters
+  ---
+  duration_ms: 0.520086
+  type: 'test'
+  ...
+# Subtest: queue automatically closes at the end of the scheduled nine-hour shift
+ok 100 - queue automatically closes at the end of the scheduled nine-hour shift
+  ---
+  duration_ms: 0.264765
+  type: 'test'
+  ...
+# Subtest: a closed shift cannot create arrivals or abandon customers
+ok 101 - a closed shift cannot create arrivals or abandon customers
+  ---
+  duration_ms: 0.140166
+  type: 'test'
+  ...
+# Subtest: opening, automatic and manual arrivals are reported as separate workload sources
+ok 102 - opening, automatic and manual arrivals are reported as separate workload sources
+  ---
+  duration_ms: 0.160669
+  type: 'test'
+  ...
+# Subtest: manual demand surges are admitted only up to the same 24-contact waiting cap
+ok 103 - manual demand surges are admitted only up to the same 24-contact waiting cap
+  ---
+  duration_ms: 0.397489
+  type: 'test'
+  ...
+# Subtest: digital channel catalogue defines different response targets
+ok 104 - digital channel catalogue defines different response targets
+  ---
+  duration_ms: 1.465824
+  type: 'test'
+  ...
+# Subtest: queue creation creates bounded synthetic records with channel-specific fields
+ok 105 - queue creation creates bounded synthetic records with channel-specific fields
+  ---
+  duration_ms: 0.870655
+  type: 'test'
+  ...
+# Subtest: queue prioritisation puts critical social complaints before lower-priority messages
+ok 106 - queue prioritisation puts critical social complaints before lower-priority messages
+  ---
+  duration_ms: 0.564286
+  type: 'test'
+  ...
+# Subtest: accepting a contact assigns it once and rejects duplicate acceptance
+ok 107 - accepting a contact assigns it once and rejects duplicate acceptance
+  ---
+  duration_ms: 0.526684
+  type: 'test'
+  ...
+# Subtest: reply workflow blocks credential solicitation and full card-number patterns
+ok 108 - reply workflow blocks credential solicitation and full card-number patterns
+  ---
+  duration_ms: 1.699115
+  type: 'test'
+  ...
+# Subtest: reply workflow validates length, records first response and calculates rule-based QA
+ok 109 - reply workflow validates length, records first response and calculates rule-based QA
+  ---
+  duration_ms: 0.985992
+  type: 'test'
+  ...
+# Subtest: safety disclaimers are not incorrectly treated as credential requests
+ok 110 - safety disclaimers are not incorrectly treated as credential requests
+  ---
+  duration_ms: 0.678031
+  type: 'test'
+  ...
+# Subtest: public social response requires privacy-safe private-channel direction for full QA
+ok 111 - public social response requires privacy-safe private-channel direction for full QA
+  ---
+  duration_ms: 0.555605
+  type: 'test'
+  ...
+# Subtest: customer follow-up returns contact to active state exactly once
+ok 112 - customer follow-up returns contact to active state exactly once
+  ---
+  duration_ms: 0.835043
+  type: 'test'
+  ...
+# Subtest: completion requires an agent response, factual notes and a valid disposition
+ok 113 - completion requires an agent response, factual notes and a valid disposition
+  ---
+  duration_ms: 1.061275
+  type: 'test'
+  ...
+# Subtest: pending and escalated dispositions are separately represented
+ok 114 - pending and escalated dispositions are separately represented
+  ---
+  duration_ms: 1.781813
+  type: 'test'
+  ...
+# Subtest: metrics report workload by channel, response time, QA and SLA risk
+ok 115 - metrics report workload by channel, response time, QA and SLA risk
+  ---
+  duration_ms: 0.855019
+  type: 'test'
+  ...
+# Subtest: digital event history is bounded and records channel context
+ok 116 - digital event history is bounded and records channel context
+  ---
+  duration_ms: 0.273981
+  type: 'test'
+  ...
+# Subtest: social-channel privacy check changes after the customer moves to private support
+ok 117 - social-channel privacy check changes after the customer moves to private support
+  ---
+  duration_ms: 0.33952
+  type: 'test'
+  ...
+# Subtest: organisation digital response target can override new synthetic contact SLA values
+ok 118 - organisation digital response target can override new synthetic contact SLA values
+  ---
+  duration_ms: 0.483894
+  type: 'test'
+  ...
+# Subtest: inbound queue creation produces valid unique contact records
+ok 119 - inbound queue creation produces valid unique contact records
+  ---
+  duration_ms: 2.855085
+  type: 'test'
+  ...
+# Subtest: queue routing prioritises critical contacts before normal contacts
+ok 120 - queue routing prioritises critical contacts before normal contacts
+  ---
+  duration_ms: 0.308091
+  type: 'test'
+  ...
+# Subtest: contact lifecycle enforces valid transitions and blocks invalid transitions
+ok 121 - contact lifecycle enforces valid transitions and blocks invalid transitions
+  ---
+  duration_ms: 0.652341
+  type: 'test'
+  ...
+# Subtest: queue metrics report wait age and queue count
+ok 122 - queue metrics report wait age and queue count
+  ---
+  duration_ms: 0.333716
+  type: 'test'
+  ...
+# Subtest: outbound suppression blocks repeat campaign contact
+ok 123 - outbound suppression blocks repeat campaign contact
+  ---
+  duration_ms: 0.306254
+  type: 'test'
+  ...
+# Subtest: callbacks require a future time and cannot be duplicated while scheduled
+ok 124 - callbacks require a future time and cannot be duplicated while scheduled
+  ---
+  duration_ms: 0.294601
+  type: 'test'
+  ...
+# Subtest: completed inbound callback is closed by contact ID after handling
+ok 125 - completed inbound callback is closed by contact ID after handling
+  ---
+  duration_ms: 0.216863
+  type: 'test'
+  ...
+# Subtest: completed outbound callback is closed by callback ID without requiring an inbound contact
+ok 126 - completed outbound callback is closed by callback ID without requiring an inbound contact
+  ---
+  duration_ms: 0.104467
+  type: 'test'
+  ...
+# Subtest: callback completion is a no-op when no active callback exists
+ok 127 - callback completion is a no-op when no active callback exists
+  ---
+  duration_ms: 0.399283
+  type: 'test'
+  ...
+# Subtest: v6.60 engine exposes supervisor queue controls and bounded demand modes
+ok 128 - v6.60 engine exposes supervisor queue controls and bounded demand modes
+  ---
+  duration_ms: 1.901278
+  type: 'test'
+  ...
+# Subtest: control state defaults to standard intake and normalizes invalid persisted fields safely
+ok 129 - control state defaults to standard intake and normalizes invalid persisted fields safely
+  ---
+  duration_ms: 0.357206
+  type: 'test'
+  ...
+# Subtest: pausing intake records a reason and does not mark the shift queue as closed
+ok 130 - pausing intake records a reason and does not mark the shift queue as closed
+  ---
+  duration_ms: 0.675741
+  type: 'test'
+  ...
+# Subtest: resuming intake reopens arrivals and keeps an auditable control history
+ok 131 - resuming intake reopens arrivals and keeps an auditable control history
+  ---
+  duration_ms: 1.444365
+  type: 'test'
+  ...
+# Subtest: control changes require a meaningful supervisor reason
+ok 132 - control changes require a meaningful supervisor reason
+  ---
+  duration_ms: 0.585495
+  type: 'test'
+  ...
+# Subtest: intake demand profile changes are validated and recorded
+ok 133 - intake demand profile changes are validated and recorded
+  ---
+  duration_ms: 0.560129
+  type: 'test'
+  ...
+# Subtest: repeated identical control values are no-ops and do not create duplicate audit events
+ok 134 - repeated identical control values are no-ops and do not create duplicate audit events
+  ---
+  duration_ms: 0.207073
+  type: 'test'
+  ...
+# Subtest: inbound triage changes only queued contacts and records before/after values
+ok 135 - inbound triage changes only queued contacts and records before/after values
+  ---
+  duration_ms: 1.025679
+  type: 'test'
+  ...
+# Subtest: inbound triage rejects an unknown contact and a contact no longer waiting
+ok 136 - inbound triage rejects an unknown contact and a contact no longer waiting
+  ---
+  duration_ms: 0.772675
+  type: 'test'
+  ...
+# Subtest: triage rejects invalid priority, route and missing reason
+ok 137 - triage rejects invalid priority, route and missing reason
+  ---
+  duration_ms: 0.855505
+  type: 'test'
+  ...
+# Subtest: digital triage updates the channel route and preserves the contact conversation timeline
+ok 138 - digital triage updates the channel route and preserves the contact conversation timeline
+  ---
+  duration_ms: 0.355065
+  type: 'test'
+  ...
+# Subtest: digital triage rejects active or completed work
+ok 139 - digital triage rejects active or completed work
+  ---
+  duration_ms: 0.160693
+  type: 'test'
+  ...
+# Subtest: supervisor board aggregates voice, digital, SLA risk, escalations and active work
+ok 140 - supervisor board aggregates voice, digital, SLA risk, escalations and active work
+  ---
+  duration_ms: 0.959902
+  type: 'test'
+  ...
+# Subtest: board excludes non-waiting contacts and preserves voice and digital clocks independently
+ok 141 - board excludes non-waiting contacts and preserves voice and digital clocks independently
+  ---
+  duration_ms: 0.306925
+  type: 'test'
+  ...
+# Subtest: paused live queue stops automatic arrivals but still processes existing customer patience
+ok 142 - paused live queue stops automatic arrivals but still processes existing customer patience
+  ---
+  duration_ms: 0.727982
+  type: 'test'
+  ...
+# Subtest: intake mode multiplier changes the next scheduled arrival interval
+ok 143 - intake mode multiplier changes the next scheduled arrival interval
+  ---
+  duration_ms: 1.485205
+  type: 'test'
+  ...
+# Subtest: supervisor queue engine is connected to the primary CALLORIA application
+ok 144 - supervisor queue engine is connected to the primary CALLORIA application
+  ---
+  duration_ms: 1.819185
+  type: 'test'
+  ...
+# Subtest: supervisor view renders real voice and digital queue triage forms
+ok 145 - supervisor view renders real voice and digital queue triage forms
+  ---
+  duration_ms: 0.532316
+  type: 'test'
+  ...
+# Subtest: intake pause/resume and mode controls are wired to persisted live queue state
+ok 146 - intake pause/resume and mode controls are wired to persisted live queue state
+  ---
+  duration_ms: 0.333828
+  type: 'test'
+  ...
+# Subtest: supervisor changes and triage decisions enter the operation timeline and audit history
+ok 147 - supervisor changes and triage decisions enter the operation timeline and audit history
+  ---
+  duration_ms: 0.325782
+  type: 'test'
+  ...
+# Subtest: legacy saved profiles migrate control state without losing their existing queue records
+ok 148 - legacy saved profiles migrate control state without losing their existing queue records
+  ---
+  duration_ms: 0.121226
+  type: 'test'
+  ...
+# Subtest: new shift resets intake controls to standard open mode while preserving previous audit entries
+ok 149 - new shift resets intake controls to standard open mode while preserving previous audit entries
+  ---
+  duration_ms: 0.296543
+  type: 'test'
+  ...
+# Subtest: supervisor command centre has desktop and phone responsive layout rules
+ok 150 - supervisor command centre has desktop and phone responsive layout rules
+  ---
+  duration_ms: 0.258186
+  type: 'test'
+  ...
+# Subtest: package check includes new supervisor and live queue engine syntax checks
+ok 151 - package check includes new supervisor and live queue engine syntax checks
+  ---
+  duration_ms: 0.196463
+  type: 'test'
+  ...
+# Subtest: supervisor board labels a digital queue item on track with remaining first-response time
+ok 152 - supervisor board labels a digital queue item on track with remaining first-response time
+  ---
+  duration_ms: 2.176789
+  type: 'test'
+  ...
+# Subtest: supervisor board isolates the 75 percent SLA risk window
+ok 153 - supervisor board isolates the 75 percent SLA risk window
+  ---
+  duration_ms: 0.298103
+  type: 'test'
+  ...
+# Subtest: supervisor board separately counts breached digital response targets
+ok 154 - supervisor board separately counts breached digital response targets
+  ---
+  duration_ms: 0.174461
+  type: 'test'
+  ...
+# Subtest: supervisor board distinguishes a completed timely first response from an open queue breach
+ok 155 - supervisor board distinguishes a completed timely first response from an open queue breach
+  ---
+  duration_ms: 0.339574
+  type: 'test'
+  ...
+# Subtest: supervisor risk and breach totals include active digital work as well as waiting contacts
+ok 156 - supervisor risk and breach totals include active digital work as well as waiting contacts
+  ---
+  duration_ms: 0.259103
+  type: 'test'
+  ...
+1..156
+# tests 156
+# suites 0
+# pass 156
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1033.103209

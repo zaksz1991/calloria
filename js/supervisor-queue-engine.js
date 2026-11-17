@@ -5,6 +5,7 @@
  */
 
 import { DIGITAL_CHANNELS, DIGITAL_STATUS } from './multichannel-engine.js';
+import { assessDigitalSla, digitalSlaDisplay } from './digital-sla-engine.js';
 
 export const SUPERVISOR_QUEUE_VERSION = '6.60.0';
 
@@ -207,8 +208,19 @@ export function supervisorQueueBoard({
   const digital = (Array.isArray(digitalQueue) ? digitalQueue : []).filter(item => item?.status === 'queued').map(item => {
     const receivedAt = Date.parse(item.receivedAt || '');
     const waitSeconds = Number.isFinite(receivedAt) ? Math.max(0, Math.floor((digitalNow - receivedAt) / 1000)) : 0;
-    const slaSeconds = Math.max(60, safeNumber(item.slaMinutes, 1) * 60);
-    return { ...item, waitSeconds, slaSeconds, slaAtRisk: waitSeconds >= Math.floor(slaSeconds * 0.75) };
+    const sla = assessDigitalSla(item, digitalNow);
+    const slaSeconds = Math.max(60, safeNumber(sla.targetMinutes, 1) * 60);
+    return {
+      ...item,
+      waitSeconds,
+      slaSeconds,
+      slaStatus: sla.status,
+      slaDisplay: digitalSlaDisplay(sla),
+      slaRemainingSeconds: Math.ceil(Math.max(0, sla.remainingMs || 0) / 1000),
+      slaOverdueSeconds: Math.ceil(Math.max(0, sla.overdueMs || 0) / 1000),
+      slaAtRisk: sla.status === 'at_risk' || sla.status === 'breached',
+      slaBreached: sla.status === 'breached'
+    };
   }).sort((a, b) => (SUPERVISOR_PRIORITIES.indexOf(a.priority) - SUPERVISOR_PRIORITIES.indexOf(b.priority)) || (b.waitSeconds - a.waitSeconds));
 
   const priorityCounts = Object.fromEntries(SUPERVISOR_PRIORITIES.map(priority => [priority, voice.filter(item => item.priority === priority).length + digital.filter(item => item.priority === priority).length]));
@@ -216,7 +228,12 @@ export function supervisorQueueBoard({
   const escalatedCases = (Array.isArray(cases) ? cases : []).filter(item => /escalated|review|required/i.test(String(item?.status || '')));
   const activeDigitalItems = (Array.isArray(digitalQueue) ? digitalQueue : []).filter(item => item?.status === DIGITAL_STATUS.ACTIVE);
   const awaitingCustomerItems = (Array.isArray(digitalQueue) ? digitalQueue : []).filter(item => item?.status === DIGITAL_STATUS.AWAITING_CUSTOMER);
-  const riskCount = voice.filter(item => item.slaAtRisk).length + digital.filter(item => item.slaAtRisk).length;
+  const openDigitalSla = (Array.isArray(digitalQueue) ? digitalQueue : [])
+    .filter(item => [DIGITAL_STATUS.QUEUED, DIGITAL_STATUS.ACTIVE].includes(item?.status))
+    .map(item => assessDigitalSla(item, digitalNow));
+  const digitalSlaAtRisk = openDigitalSla.filter(item => item.status === 'at_risk').length;
+  const digitalSlaBreached = openDigitalSla.filter(item => item.status === 'breached').length;
+  const riskCount = voice.filter(item => item.slaAtRisk).length + openDigitalSla.filter(item => ['at_risk', 'breached'].includes(item.status)).length;
   const oldestVoiceWait = voice.length ? Math.max(...voice.map(item => item.waitSeconds)) : 0;
   const oldestDigitalWait = digital.length ? Math.max(...digital.map(item => item.waitSeconds)) : 0;
   const legacySelectedDigital = digitalActiveId && !(Array.isArray(digitalQueue) ? digitalQueue : []).some(item => item?.id === digitalActiveId && [DIGITAL_STATUS.ACTIVE, DIGITAL_STATUS.AWAITING_CUSTOMER].includes(item.status)) ? 1 : 0;
@@ -230,6 +247,8 @@ export function supervisorQueueBoard({
     digitalWaiting: digital.length,
     totalWaiting: voice.length + digital.length,
     slaAtRisk: riskCount,
+    digitalSlaAtRisk,
+    digitalSlaBreached,
     openRequests: openRequests.length,
     escalatedCases: escalatedCases.length,
     activeDigital,

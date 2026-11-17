@@ -1,26 +1,36 @@
-CALLORIA v6.62 — Complete cumulative repository snapshot
+CALLORIA v6.63 — COMPLETE CUMULATIVE REPOSITORY SNAPSHOT
 
-Release: Unified Agent Workload & Digital Concurrency
-Base: supplied cumulative v6.61 source archive
+Release: Digital First-Response SLA Control
+Base: supplied cumulative v6.62 source archive
 
-New v6.62 files:
-  js/agent-workload-engine.js
-  tests/agent-workload-engine-v662.test.mjs
-  tests/agent-workload-ui-v662.test.mjs
-  docs/CALLORIA-v6.62-UNIFIED-AGENT-WORKLOAD.md
-  INSTALL-GITHUB-v6.62.md
-  TEST-RESULTS-v6.62.txt
-  VERIFICATION-v6.62.md
+New v6.63 files:
+  js/digital-sla-engine.js
+  tests/digital-sla-engine-v663.test.mjs
+  tests/digital-sla-ui-v663.test.mjs
+  tests/supervisor-sla-integration-v663.test.mjs
+  docs/CALLORIA-v6.63-DIGITAL-FIRST-RESPONSE-SLA.md
+  INSTALL-GITHUB-v6.63.md
+  TEST-RESULTS-v6.63.txt
+  VERIFICATION-v6.63.md
+  CHECK-LOG-v6.63.txt
+  FOCUSED-TEST-LOG-v6.63.txt
+  FULL-TEST-LOG-v6.63.txt
+  NEW-TEST-LOG-v6.63.txt
+  BUILD-LOG-v6.63.txt
+  BASELINE-FULL-TEST-LOG-v6.62.txt
+  BASELINE-COMPARE-v6.62-v6.63.txt
 
 Updated integration files:
   js/main.js
   js/supervisor-queue-engine.js
   styles.css
   package.json
-  CHANGELOG.md
+  tests/package-manifest.test.mjs
   README.md
+  CHANGELOG.md
 
 Previous cumulative releases retained:
+  v6.62 Unified Agent Workload & Digital Concurrency
   v6.61 Automatic Multichannel Digital Demand
   v6.60 Supervisor Live Operations Command Centre
   v6.59 Live Queue Operations
@@ -28,14 +38,16 @@ Previous cumulative releases retained:
   Existing recruitment, employment, 3D workplace runtime, simulated operations, CRM, customer dialogue, voice, digital channels, QA, career progression, organisation/workforce, Supabase, tests, assets present in supplied snapshot and Vite application configuration.
 
 Verification:
-  32 new v6.62 tests passed.
-  Selected cumulative v6.58–v6.62 tests: 119 passed, 0 failed.
+  32 new v6.63 tests passed.
+  Selected cumulative regression suite: 156 passed, 0 failed.
   npm run check passed.
-  Full suite: 1,867 tests; 1,323 passed; 544 failed. The 544 failing records comprise the same 526 distinct failing test names found in the v6.61 baseline; no new failing name was introduced.
-  Vite build not verified: vite is not installed in the supplied workspace.
-  No browser playthrough or Vercel deployment claimed.
+  Full suite: 1,899 tests; 1,355 passed; 544 failed.
+  Exact v6.62 backup baseline: 1,867 tests; 1,323 passed; 544 failed.
+  Failure comparison: same 526 distinct failing test names; no new failing test name introduced.
+  Vite production build not verified: vite is not installed in supplied workspace.
+  No browser walkthrough or Vercel deployment claimed.
 
 Asset boundary:
-  The provided source archive omitted public/assets/ and GLB binaries. No substitute models are invented. Preserve the actual public/assets/ directory and models from the user's GitHub checkout when merging.
+  The supplied source archive omitted public/assets/ and GLB binaries. No replacement models are invented. Preserve public/assets/ and the GLB files from the actual GitHub checkout when merging.
 
-No secrets, environment values, database exports, new migrations or live provider credentials are included.
+No new database migration, secret, environment variable, external provider or package dependency is added.

@@ -1,3 +1,21 @@
+# CALLORIA v6.63 — Digital First-Response SLA Control
+
+## Added
+
+- A deterministic first-response SLA engine for simulated Email, Live chat and Social contacts, using each contact's saved response target and channel-default fallbacks where needed.
+- A 75% first-response risk window, explicit due-soon/breached/met/late states, one-time contact timeline events and event-driven operations history.
+- Agent work-tab, active-thread and waiting-queue SLA indicators; agent first-response outcome metrics; supervisor queue risk and breach visibility.
+- Accelerated shift-clock integration so response timers advance at the same pace as the existing simulated shift and automatic digital arrival system.
+- Focused engine, UI and supervisor regression tests, plus release verification and GUI installation documentation.
+
+## Boundaries
+
+- All contacts and response targets remain synthetic local game data. The targets are defaults for simulation, not contractual or regulatory SLAs.
+- No live provider connection, notification, database migration, secret, environment variable or package dependency is added.
+- v6.62 concurrent digital workload and earlier cumulative releases remain preserved. Recruitment continues to be the entry gate; the main gameplay remains agent operations and career progression.
+
+---
+
 # CALLORIA v6.62 — Unified Agent Workload & Digital Concurrency
 
 ## Added

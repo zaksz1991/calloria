@@ -1,0 +1,202 @@
+TAP version 13
+# Subtest: v6.63 exposes a bounded digital first-response SLA policy
+ok 1 - v6.63 exposes a bounded digital first-response SLA policy
+  ---
+  duration_ms: 2.088183
+  type: 'test'
+  ...
+# Subtest: new unresponded contact begins on track with its target deadline
+ok 2 - new unresponded contact begins on track with its target deadline
+  ---
+  duration_ms: 1.075726
+  type: 'test'
+  ...
+# Subtest: risk window begins at the configured 75 percent threshold
+ok 3 - risk window begins at the configured 75 percent threshold
+  ---
+  duration_ms: 0.249025
+  type: 'test'
+  ...
+# Subtest: SLA breaches at the deadline and reports overdue time
+ok 4 - SLA breaches at the deadline and reports overdue time
+  ---
+  duration_ms: 0.129249
+  type: 'test'
+  ...
+# Subtest: a first response inside target meets SLA even when the assessment runs later
+ok 5 - a first response inside target meets SLA even when the assessment runs later
+  ---
+  duration_ms: 0.245314
+  type: 'test'
+  ...
+# Subtest: a late first response remains a recorded breach after the customer replies
+ok 6 - a late first response remains a recorded breach after the customer replies
+  ---
+  duration_ms: 0.223857
+  type: 'test'
+  ...
+# Subtest: channel target is used when a saved contact has no valid explicit target
+ok 7 - channel target is used when a saved contact has no valid explicit target
+  ---
+  duration_ms: 0.141784
+  type: 'test'
+  ...
+# Subtest: future receipt times do not create negative elapsed or overdue values
+ok 8 - future receipt times do not create negative elapsed or overdue values
+  ---
+  duration_ms: 0.122153
+  type: 'test'
+  ...
+# Subtest: malformed receipt timestamps return unavailable rather than fabricated risk
+ok 9 - malformed receipt timestamps return unavailable rather than fabricated risk
+  ---
+  duration_ms: 0.31219
+  type: 'test'
+  ...
+# Subtest: monitor records risk once and advances the contact status
+ok 10 - monitor records risk once and advances the contact status
+  ---
+  duration_ms: 1.021784
+  type: 'test'
+  ...
+# Subtest: monitor records a breach once even when advanced repeatedly
+ok 11 - monitor records a breach once even when advanced repeatedly
+  ---
+  duration_ms: 1.698561
+  type: 'test'
+  ...
+# Subtest: a contact responded within target does not receive a breach event
+ok 12 - a contact responded within target does not receive a breach event
+  ---
+  duration_ms: 0.3528
+  type: 'test'
+  ...
+# Subtest: a late first response creates one breach audit event
+ok 13 - a late first response creates one breach audit event
+  ---
+  duration_ms: 0.270905
+  type: 'test'
+  ...
+# Subtest: awaiting-customer contact with no first response is not monitored as an active response
+ok 14 - awaiting-customer contact with no first response is not monitored as an active response
+  ---
+  duration_ms: 0.085798
+  type: 'test'
+  ...
+# Subtest: metrics separate current open risk from completed first-response outcomes
+ok 15 - metrics separate current open risk from completed first-response outcomes
+  ---
+  duration_ms: 0.477849
+  type: 'test'
+  ...
+# Subtest: customer follow-up does not restart an already recorded first-response SLA
+ok 16 - customer follow-up does not restart an already recorded first-response SLA
+  ---
+  duration_ms: 0.093921
+  type: 'test'
+  ...
+# Subtest: completed and escalated contacts are excluded from the open response backlog
+ok 17 - completed and escalated contacts are excluded from the open response backlog
+  ---
+  duration_ms: 0.107591
+  type: 'test'
+  ...
+# Subtest: v6.63 SLA engine is imported by the main application
+ok 18 - v6.63 SLA engine is imported by the main application
+  ---
+  duration_ms: 2.303731
+  type: 'test'
+  ...
+# Subtest: digital SLA monitor runs from the accelerated active-shift clock
+ok 19 - digital SLA monitor runs from the accelerated active-shift clock
+  ---
+  duration_ms: 0.384025
+  type: 'test'
+  ...
+# Subtest: first agent response is assessed immediately after reply recording
+ok 20 - first agent response is assessed immediately after reply recording
+  ---
+  duration_ms: 0.247461
+  type: 'test'
+  ...
+# Subtest: agent work tabs and active contact banner display SLA status
+ok 21 - agent work tabs and active contact banner display SLA status
+  ---
+  duration_ms: 0.250418
+  type: 'test'
+  ...
+# Subtest: both agent queue views show per-contact first-response status
+ok 22 - both agent queue views show per-contact first-response status
+  ---
+  duration_ms: 0.536505
+  type: 'test'
+  ...
+# Subtest: supervisor queue board exposes digital SLA status and breach totals
+ok 23 - supervisor queue board exposes digital SLA status and breach totals
+  ---
+  duration_ms: 0.160948
+  type: 'test'
+  ...
+# Subtest: SLA transition events are written into the existing operations and digital timelines
+ok 24 - SLA transition events are written into the existing operations and digital timelines
+  ---
+  duration_ms: 0.647203
+  type: 'test'
+  ...
+# Subtest: SLA styles include risk, breach and met states with phone layout handling
+ok 25 - SLA styles include risk, breach and met states with phone layout handling
+  ---
+  duration_ms: 0.320384
+  type: 'test'
+  ...
+# Subtest: project syntax check includes the new digital SLA engine
+ok 26 - project syntax check includes the new digital SLA engine
+  ---
+  duration_ms: 0.27183
+  type: 'test'
+  ...
+# Subtest: supervisor digital SLA totals cover open work and target labels remain explicit defaults
+ok 27 - supervisor digital SLA totals cover open work and target labels remain explicit defaults
+  ---
+  duration_ms: 1.110332
+  type: 'test'
+  ...
+# Subtest: supervisor board labels a digital queue item on track with remaining first-response time
+ok 28 - supervisor board labels a digital queue item on track with remaining first-response time
+  ---
+  duration_ms: 2.360871
+  type: 'test'
+  ...
+# Subtest: supervisor board isolates the 75 percent SLA risk window
+ok 29 - supervisor board isolates the 75 percent SLA risk window
+  ---
+  duration_ms: 0.505087
+  type: 'test'
+  ...
+# Subtest: supervisor board separately counts breached digital response targets
+ok 30 - supervisor board separately counts breached digital response targets
+  ---
+  duration_ms: 0.544039
+  type: 'test'
+  ...
+# Subtest: supervisor board distinguishes a completed timely first response from an open queue breach
+ok 31 - supervisor board distinguishes a completed timely first response from an open queue breach
+  ---
+  duration_ms: 0.807499
+  type: 'test'
+  ...
+# Subtest: supervisor risk and breach totals include active digital work as well as waiting contacts
+ok 32 - supervisor risk and breach totals include active digital work as well as waiting contacts
+  ---
+  duration_ms: 0.377322
+  type: 'test'
+  ...
+1..32
+# tests 32
+# suites 0
+# pass 32
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 241.511412

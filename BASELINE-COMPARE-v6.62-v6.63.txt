@@ -1,0 +1,14 @@
+CALLORIA FULL-SUITE BASELINE COMPARISON
+
+Source baseline: exact v6.62 package copied to CALLORIA-BACKUP-BEFORE-v6.63.zip and re-tested before v6.63 changes.
+Current source: v6.63 working tree after adding 32 v6.63 tests.
+
+v6.62: 1,867 total; 1,323 passed; 544 failed; 526 distinct failing test names.
+v6.63: 1,899 total; 1,355 passed; 544 failed; 526 distinct failing test names.
+
+New failing test names: 0
+Resolved failing test names: 0
+
+Result: the full suite retains exactly the same 526 distinct failing test names. The total suite gained 32 tests, and those new v6.63 tests pass. Existing failures are not represented as fixed. The full test suite is not clean.
+
+The raw logs are included as BASELINE-FULL-TEST-LOG-v6.62.txt and FULL-TEST-LOG-v6.63.txt.

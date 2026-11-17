@@ -1,0 +1,4 @@
+
+> calloria-contact-centre-simulator@0.3.0 check
+> node --check js/main.js && node --check js/production-world.js && node --check js/live-queue-engine.js && node --check js/supervisor-queue-engine.js && node --check js/digital-live-queue-engine.js && node --check js/agent-workload-engine.js && node --check js/digital-sla-engine.js
+
