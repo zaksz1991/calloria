@@ -1,24 +1,33 @@
-CALLORIA v6.60 — Complete cumulative repository snapshot
+CALLORIA v6.61 — Complete cumulative repository snapshot
 
-The archive contains the full source tree supplied in `calloria.zip`, with the previous v6.59 Live Queue Operations upgrade preserved and the v6.60 Supervisor Live Operations Command Centre added.
+This archive contains the uploaded CALLORIA repository source with v6.59 Live Queue Operations and v6.60 Supervisor Live Operations retained, plus v6.61 Automatic Multichannel Digital Demand.
 
-Key v6.60 files:
-  js/supervisor-queue-engine.js
-  js/live-queue-engine.js
+Key v6.61 files:
+  js/digital-live-queue-engine.js
   js/main.js
   styles.css
-  tests/supervisor-queue-engine-v660.test.mjs
-  tests/supervisor-queue-ui-v660.test.mjs
-  docs/CALLORIA-v6.60-SUPERVISOR-QUEUE-COMMAND-CENTRE.md
-  VERIFICATION-v6.60.md
-  TEST-RESULTS-v6.60.txt
+  package.json
+  tests/digital-live-queue-engine-v661.test.mjs
+  tests/digital-live-queue-ui-v661.test.mjs
+  tests/package-manifest.test.mjs
+  docs/CALLORIA-v6.61-AUTOMATIC-MULTICHANNEL-DEMAND.md
+  INSTALL-GITHUB-v6.61.md
+  VERIFICATION-v6.61.md
+  TEST-RESULTS-v6.61.txt
 
 Previous releases retained:
-  v6.59 live queue operations and regression tests
-  v6.58 RuffNeck Try-It Studio plugin and tests
-  Existing game, recruitment, workplace, GLB runtime, operations, CRM, voice, digital-channel, QA, career, organisation, workforce, Supabase and Vite source files included in the uploaded repository.
+  v6.60 supervisor live operations engine, interface and tests
+  v6.59 automatic inbound voice queue engine and tests
+  v6.58 RuffNeck Try-It Studio and tests
+  Existing recruitment, employment, 3D workplace runtime, operations, CRM, multichannel contact, voice, QA, career, organisation/workforce, Supabase and Vite files supplied in the source ZIP.
+
+Verification:
+  21 new v6.61 tests passed; 87 combined focused v6.58–v6.61 regression tests passed.
+  npm run check passed.
+  Full suite: 1,835 tests; 1,291 passed; 544 legacy failures; no new failing test name versus v6.60.
+  Vite production build not verified (vite dependency absent in preparation workspace).
 
 Asset boundary:
-  The supplied upload did not contain public/assets/ or GLB binary files. All other public/ files present in the upload are retained. Preserve the user's actual public/assets/ folder when merging into a checkout that contains it.
+  The supplied upload omitted public/assets/ and GLB binary files. No replacement assets are invented. Preserve the user's actual public/assets/ directory and model files when merging into the GitHub checkout.
 
-No private keys, secrets, environment values, Supabase database exports or unprovided model binaries are included.
+No private keys, secrets, environment values, database exports or unprovided model binaries are included.

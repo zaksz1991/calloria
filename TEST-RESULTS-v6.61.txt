@@ -1,0 +1,30 @@
+CALLORIA v6.61 — AUTOMATIC MULTICHANNEL DIGITAL DEMAND
+Verification date: 17 November 2026
+Runtime: Node.js v22.16.0
+
+FOCUSED RELEASE TESTS
+New v6.61 tests: 21 passed; 0 failed.
+Combined v6.58-v6.61 focused regression selection: 87 passed; 0 failed.
+Includes the digital automatic-arrival engine, agent/supervisor integration, supervisor controls, voice queue and Try-It Studio regression coverage.
+
+SYNTAX
+npm run check: passed
+- js/main.js
+- js/production-world.js
+- js/live-queue-engine.js
+- js/supervisor-queue-engine.js
+- js/digital-live-queue-engine.js
+
+FULL REPOSITORY TEST SUITE
+v6.60 baseline: 1,814 tests; 1,269 passed; 545 failed; 527 distinct failing test names.
+v6.61: 1,835 tests; 1,291 passed; 544 failed; 526 distinct failing test names.
+No new failing test name was introduced. One prior asset/roadmap documentation test failure is resolved. The remaining failures are legacy repository failures; see VERIFICATION-v6.61.md.
+
+BUILD
+npm run build: attempted; stopped because Vite is not installed in this source workspace (`vite: not found`). No successful production build is claimed.
+
+DEPLOYMENT / LIVE PROVIDERS
+No Vercel deployment, browser walkthrough, physical-device run, Supabase write, live email, live chat, social provider or telephony integration is claimed.
+
+ASSETS
+The provided repository upload omitted public/assets/ and GLB binaries. No substitute assets were created. Preserve the existing public/assets/ folder and GLBs from the actual GitHub checkout when merging.

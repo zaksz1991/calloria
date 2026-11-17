@@ -1,3 +1,35 @@
+# CALLORIA v6.61 — Automatic Multichannel Digital Demand
+
+## Added
+
+- Automatic synthetic arrivals for email, live chat and social-media work during an active agent shift.
+- Independent, deterministic arrival schedules for each digital channel, sharing the same accelerated shift clock used by inbound voice.
+- Per-channel waiting-capacity limits. Demand beyond a channel's waiting limit is counted as overflow rather than creating an unbounded queue.
+- Per-channel arrival and overflow counters, next-arrival estimates and a digital live-demand panel in the agent workspace.
+- Digital automatic-arrival and overflow events recorded in the digital activity log and main operations timeline.
+- Supervisor demand profiles now adjust the future arrival intervals for voice and digital queues. The existing pause/resume action remains limited to voice intake; digital arrivals continue independently.
+- Existing organisation-configured digital response target is applied to automatic arrivals.
+- One opening digital batch is seeded per shift. After that, queues are replenished by automatic demand or the explicit manual batch control; opening contacts are no longer silently re-seeded whenever the queue becomes empty.
+- Digital wait-age, first-response and supervisor SLA-risk calculations now use the accelerated shift clock consistently with automatically generated digital work.
+- Safe migration for older local saves and clean digital intake shutdown when a shift closes.
+- Responsive live-demand summary for phone and desktop layouts.
+
+## Verification
+
+- New v6.61 digital engine and UI tests: **21 passed, 0 failed**; combined v6.58–v6.61 focused regression run: **87 passed, 0 failed**.
+- `npm run check`: **passed**, including the new digital live queue engine.
+- Full suite: **1,835 tests; 1,291 passed; 544 failed**. Compared with v6.60, no new failing test name was introduced; one previous asset/roadmap documentation test now passes. The remaining failures are legacy repository failures; see `VERIFICATION-v6.61.md`.
+- `npm run build` was attempted but Vite is not installed in the supplied source workspace (`vite: not found`). No successful production build or Vercel deployment is claimed.
+
+## Boundaries
+
+- Automatic email, chat and social contacts are fictional local game events. No live email provider, social account, customer inbox, telephone provider or customer system is connected.
+- Channel intervals, capacity limits and response targets are illustrative game-balancing values, not approved contractual SLAs.
+- Voice pause remains separate from digital intake; demand profiles affect future voice and digital intervals.
+- No database migration, provider secret, environment variable or external package dependency is added.
+- v6.60 supervisor operations, v6.59 voice live queue, v6.58 Try-It Studio and the recruitment-to-employment/career gameplay foundation remain preserved.
+
+
 # CALLORIA v6.60 — Supervisor Live Operations Command Centre
 
 ## Added

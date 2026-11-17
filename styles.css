@@ -459,3 +459,16 @@ body.calloria-game-launch .world-vignette{position:absolute;inset:0;z-index:2;ba
 .supervisor-triage-row button{white-space:nowrap}
 @media(max-width:1100px){.supervisor-triage-row{grid-template-columns:repeat(3,minmax(0,1fr))}.supervisor-contact-copy{grid-column:1/-1}.supervisor-reason{grid-column:span 2}}
 @media(max-width:680px){.supervisor-control-grid{grid-template-columns:1fr}.supervisor-mode-list{grid-template-columns:1fr}.supervisor-mode-button{min-height:56px}.supervisor-intake-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.supervisor-triage-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.supervisor-contact-copy{grid-column:1/-1}.supervisor-reason{grid-column:1/-1}.supervisor-triage-row .pill{justify-self:start}.supervisor-queue-grid{grid-template-columns:1fr}}
+
+/* v6.61 — live digital demand visibility */
+.digital-live-intake-panel { margin-top: 14px; }
+.digital-live-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
+.digital-live-summary > div { min-width: 0; border: 1px solid #e3eaf1; border-radius: 9px; padding: 11px 12px; background: #f7f9fc; }
+.digital-live-summary span { display: block; color: #718398; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.digital-live-summary strong { display: block; margin-top: 5px; color: #1d354d; font-size: 20px; font-variant-numeric: tabular-nums; }
+.digital-live-intake-panel .muted-note { margin: 8px 0 0; line-height: 1.5; }
+@media (max-width: 680px) {
+  .digital-live-summary { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .digital-live-summary > div { padding: 9px; }
+  .digital-live-summary strong { font-size: 18px; }
+}

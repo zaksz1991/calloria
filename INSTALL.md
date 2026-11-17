@@ -1,7 +1,7 @@
-# CALLORIA v6.60 — Installation
+# CALLORIA v6.61 — Installation
 
-Use the complete GUI installation and acceptance instructions in [`INSTALL-GITHUB.md`](INSTALL-GITHUB.md).
+Use the GUI merge and in-game acceptance instructions in [`INSTALL-GITHUB-v6.61.md`](INSTALL-GITHUB-v6.61.md).
 
-The v6.60 archive is cumulative: it retains the uploaded repository source, v6.59 Live Queue Operations and v6.58 Try-It Studio, then adds the Supervisor Live Operations Command Centre. Keep the existing GitHub/Vercel project, preserve private environment configuration and do not remove any existing `public/assets/` folder or GLB models.
+The v6.61 archive is cumulative: it retains the supplied repository files, the saved v6.59 Live Queue Operations and v6.60 Supervisor Live Operations upgrades, then adds automatic email, live-chat and social demand during an active simulated shift. Preserve the real repository's hidden `.git` folder and existing `public/assets/` GLB files; the supplied source ZIP did not contain that folder.
 
-Release verification: [`VERIFICATION-v6.60.md`](VERIFICATION-v6.60.md) and [`TEST-RESULTS-v6.60.txt`](TEST-RESULTS-v6.60.txt).
+Release verification: [`VERIFICATION-v6.61.md`](VERIFICATION-v6.61.md) and [`TEST-RESULTS-v6.61.txt`](TEST-RESULTS-v6.61.txt).

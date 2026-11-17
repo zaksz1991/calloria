@@ -54,6 +54,11 @@
 The supplied repository now includes the first operational demand-flow increment toward deeper contact-centre simulation: deterministic inbound arrivals during a shift, priority-based customer patience, abandonment, queue capacity and supervisor queue telemetry. This is a partial delivery of richer customer arrival flows, not completion of the broader deeper-simulation roadmap. Real telephony, production dialler integration, enterprise data connectivity, multiplayer and multi-organisation administration remain separate work.
 
 
+## Runtime delivery note — CALLORIA v6.61
+
+The active shift now generates synthetic email, live-chat and social contacts automatically on separate schedules. Each channel has a waiting-capacity limit and records excess demand as overflow. The agent and supervisor workspaces expose per-channel arrival counters, queue totals and next-arrival information. Standard, Busy period and Recovery demand profiles affect future voice and digital arrivals; the voice pause control remains separate. All simulated digital wait-time and service-risk calculations share the accelerated shift clock. This is an incremental multichannel demand simulation, not a live external inbox, contractual SLA or completion of v0.2 Advanced Contact Centre Operations.
+
+
 ## Runtime delivery note — CALLORIA v6.60
 
 The supervisor workspace now provides local simulated control over the v6.59 inbound arrival flow, a cross-channel voice/digital waiting-work snapshot, SLA-risk indicators, reason-required priority and route triage, and an audit trail. Pausing intake does not freeze waiting-customer patience. This is a meaningful supervisor-operations increment, not a live external call-centre control plane and not completion of v0.2 Advanced Contact Centre Operations. Real provider channels, real-time workforce management, multi-organisation administration and multiplayer remain separate work.

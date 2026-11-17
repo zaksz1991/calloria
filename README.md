@@ -1,8 +1,20 @@
-# CALLORIA v6.60 — Supervisor Live Operations Command Centre
+# CALLORIA v6.61 — Automatic Multichannel Digital Demand
 
-A cumulative upgrade built from the supplied `calloria.zip` repository snapshot and the saved v6.59 cumulative release. v6.60 turns the Supervisor view into an actionable command centre for the same simulated workload the agent handles: supervisors can pause or resume new arrivals, adjust demand pace, inspect voice and digital service risk, change waiting-contact priority and route group, and review an auditable history of decisions.
+A cumulative upgrade built on the v6.60 Supervisor Live Operations release. v6.61 adds automatic in-shift email, live-chat and social arrivals, per-channel capacity and overflow accounting, and a live digital-demand panel. The same accelerated shift clock now drives voice and digital waiting-time/SLA calculations.
 
 The recruitment and assessment pathway remains the employment entry gate. The main gameplay remains employed agent work: queue handling, customer conversations, CRM and case records, service tools, after-contact work, QA, supervisor assistance and career progression. This is not a training-only conversion.
+
+## v6.61 automatic multichannel digital demand
+
+- Email, live-chat and social contacts arrive automatically during active shifts, each on its own deterministic schedule.
+- Every digital channel has a bounded waiting capacity; additional simulated demand is counted as overflow.
+- The agent workspace shows per-channel automatic arrivals, total digital intake, overflow and the next expected arrival.
+- The supervisor command centre now tracks digital arrival and overflow metrics alongside voice queue metrics.
+- Standard, Busy period and Recovery demand profiles adjust future voice and digital arrival intervals. Pause/resume remains a voice-intake control; digital arrivals continue independently.
+- Automatic arrivals use the organisation-configured illustrative digital response target and the same accelerated simulation clock as the shift.
+- The first digital queue is seeded once per shift. Later demand comes from automatic arrivals or the explicit manual batch control.
+
+All digital contacts remain fictional local simulation records. They are not received from or sent to live email, social or messaging services.
 
 ## v6.60 supervisor live operations
 
@@ -57,16 +69,24 @@ Each preview has two short decisions, explanations for the choices, a score, and
 - The access/pricing link opens the existing support router with a product and enquiry intent preselected. The visitor reviews the request and remains responsible for consent and submission.
 - Official product navigation opens the relevant existing RuffNeck destination in a new tab.
 
-The v6.58 visitor-preview behaviour and v6.59 live inbound queue engine remain preserved. v6.60 extends the existing supervisor screen and queue state; it does not replace recruitment, customer dialogue, wrap-up, CRM, QA or career modules.
+The v6.58 visitor-preview behaviour, v6.59 live voice queue and v6.60 supervisor command centre remain preserved. v6.61 extends digital demand; it does not replace recruitment, customer dialogue, wrap-up, CRM, QA or career modules. The full regression/build status is in `VERIFICATION-v6.61.md`; installation steps are in `INSTALL-GITHUB-v6.61.md`.
 
 ## Package contents
 
+- `js/digital-live-queue-engine.js`: v6.61 independent digital-channel arrival schedules, bounded channel capacity, overflow accounting and persisted demand state.
 - `js/supervisor-queue-engine.js`: v6.60 intake controls, voice/digital triage, unified queue metrics and supervisor audit state.
 - `js/live-queue-engine.js`: v6.59 arrival engine with pause-aware intake and bounded demand-profile intervals; customer patience still runs during intake pause.
-- `js/main.js`: supervisor command-centre screen, persisted controls, triage submissions, operation timeline and safe migration.
+- `js/main.js`: persistent live voice/digital intake, digital demand dashboard, supervisor command-centre screen, triage submissions, operation timeline and safe migration.
 - `styles.css`: responsive supervisor queue-control and triage layouts.
+- `tests/digital-live-queue-engine-v661.test.mjs` and `tests/digital-live-queue-ui-v661.test.mjs`: v6.61 engine and application integration regression tests.
 - `tests/supervisor-queue-engine-v660.test.mjs` and `tests/supervisor-queue-ui-v660.test.mjs`: v6.60 engine and application integration regression tests.
 - v6.59 live queue tests, v6.58 Try-It Studio files/tests, existing game, office, GLB runtime, recruitment, operations, CRM, digital channels, voice, QA, career, organisation, Supabase and Vite configuration are retained from the supplied source snapshot.
-- `docs/CALLORIA-v6.60-SUPERVISOR-QUEUE-COMMAND-CENTRE.md`, `VERIFICATION-v6.60.md`, and `TEST-RESULTS-v6.60.txt` describe the release and verification boundary.
+- `docs/CALLORIA-v6.61-AUTOMATIC-MULTICHANNEL-DEMAND.md`, `VERIFICATION-v6.61.md`, and `TEST-RESULTS-v6.61.txt` describe the current release and verification boundary.
+- The v6.60 supervisor and v6.59 voice-queue release documentation, tests and engines remain included.
 
-The archive is a complete cumulative replacement for the repository snapshot supplied for this upgrade, including the v6.59 changes from the immediately preceding release. The upload did not contain `public/assets/` or its GLB binaries. The ZIP therefore cannot restore those missing files. Preserve the existing `public/assets/` folder in the actual GitHub checkout when copying this upgrade into place. Other files under `public/` that were present in the upload are retained. Environment files, private secrets and Supabase credentials are not included.
+This is a complete cumulative replacement for the supplied repository snapshot plus the saved v6.59 and v6.60 updates. The uploaded repository did not contain `public/assets/` or its GLB binaries, so the ZIP cannot restore those missing files. Preserve the existing `public/assets/` folder, GLB models and hidden `.git` directory from your actual GitHub checkout when applying this release. Other files under `public/` that were present in the upload are retained. Environment files, private secrets and Supabase credentials are not included. See `INSTALL-GITHUB-v6.61.md` for the GUI merge procedure.
+
+
+## Commercial readiness boundary
+
+CALLORIA is a contact-centre career and operations simulator, but this source snapshot is not a finished commercial product. It still needs production service integrations where approved, end-to-end browser acceptance, representative physical-device QA, full asset verification, security/privacy review and organisation-approved operating targets. The recruitment assessment is an employment entry gate; it is not the main gameplay.

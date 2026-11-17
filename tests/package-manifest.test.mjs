@@ -20,7 +20,7 @@ test('development and preview scripts are preserved', () => {
 });
 
 test('check and test scripts are present', () => {
-  assert.equal(manifest.scripts.check, 'node --check js/main.js && node --check js/production-world.js && node --check js/live-queue-engine.js && node --check js/supervisor-queue-engine.js');
+  assert.equal(manifest.scripts.check, 'node --check js/main.js && node --check js/production-world.js && node --check js/live-queue-engine.js && node --check js/supervisor-queue-engine.js && node --check js/digital-live-queue-engine.js');
   assert.equal(manifest.scripts.test, 'node --test tests/*.test.mjs');
 });
 
