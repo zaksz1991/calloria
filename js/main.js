@@ -3,6 +3,10 @@ import {
   transitionContact, addInteractionEvent, countQueuedContacts, queueMetrics,
   addSuppression, isContactSuppressed, scheduleCallback, completeActiveCallback
 } from './operations-engine.js';
+import {
+  createLiveQueueState, normalizeLiveQueueState, stampInboundQueue,
+  advanceLiveQueue, liveQueueSnapshot, addManualDemandSurge
+} from './live-queue-engine.js';
 import { DEPARTMENTS, SYSTEMS, briefingFor, recordBriefingAttendance, promotionEligibility, recordPromotionExam, recordCrossSell, recordCommendation, createSystemEvent } from './workforce-engine.js';
 import { AGENT_STATES, createShiftRecord, recordAgentState, calculateShiftAdherence, expectedShiftMode, nextScheduledBreak, closeShift, createCoachingRecord } from './shift-engine.js';
 import { speechRecognitionAvailable, mediaRecordingAvailable, createVoiceSession, appendVoiceTranscript, finishVoiceSession, sanitizeTranscript } from './voice-engine.js';
@@ -78,7 +82,7 @@ const initialState = () => ({
   nameInitials: 'AP',
   viewedArticle: null,
   workforceDepartment: 'inbound',
-  shiftRecord: null, shiftElapsedMinutes: 0, agentStatus: 'offline', shiftHistory: [], coachingSessions: [], simulationClockSeconds: 7 * 3600, lastShiftDay: 0,
+  shiftRecord: null, shiftElapsedMinutes: 0, shiftSimulationEpochMs: null, liveQueueSimulation: null, agentStatus: 'offline', shiftHistory: [], coachingSessions: [], simulationClockSeconds: 7 * 3600, lastShiftDay: 0,
   briefingAttendance: [], promotionAttempts: [], crossSellRecords: [], commendations: [], systemEvents: [], digitalQueue: [], digitalSequence: 0, digitalActiveId: null, digitalChannelFilter: 'all', digitalEvents: [], customerLabSession: null, customerQaHistory: [], qaScorecards: [], humanQaReviews: [], qaDisputes: [], qaCalibrations: [], aiQaSuggestions: [], qaSelectedInteractionId: '', qaSelectedScorecardId: '', organizationWorkspace: null
 });
 
@@ -116,6 +120,16 @@ function loadState() {
     if (!Number.isFinite(migrated.callQueue)) migrated.callQueue = 6;
     if (migrated.shiftActive && (!migrated.shiftRecord || migrated.shiftRecord.status !== 'active')) migrated.shiftRecord = createShiftRecord({ day: migrated.day || 1 });
     if (!Number.isFinite(migrated.shiftElapsedMinutes)) migrated.shiftElapsedMinutes = 0;
+    if (migrated.shiftActive) {
+      if (!Number.isFinite(migrated.shiftSimulationEpochMs)) migrated.shiftSimulationEpochMs = Date.now() - migrated.shiftElapsedMinutes * 60_000;
+      migrated.liveQueueSimulation = normalizeLiveQueueState(migrated.liveQueueSimulation, {
+        day: migrated.day || 1,
+        elapsedMinute: migrated.shiftElapsedMinutes,
+        seed: migrated.queueSequence || 1
+      });
+    } else if (migrated.liveQueueSimulation && typeof migrated.liveQueueSimulation === 'object') {
+      migrated.liveQueueSimulation = { ...migrated.liveQueueSimulation, active: false };
+    }
     if (!Number.isFinite(migrated.lastShiftDay)) migrated.lastShiftDay = 0;
     if (!Number.isFinite(migrated.digitalSequence)) migrated.digitalSequence = 0;
     if (!migrated.qaScorecards.length) migrated.qaScorecards = [JSON.parse(JSON.stringify(DEFAULT_QA_SCORECARD))];
@@ -137,20 +151,35 @@ function syncQueueCount() {
   state.callQueue = countQueuedContacts(state.inboundQueueItems);
   $('#inboundCount').textContent = state.callQueue;
 }
+function queueSimulationNowMs() {
+  const epoch = Number(state.shiftSimulationEpochMs);
+  if (state.shiftActive && Number.isFinite(epoch)) return epoch + Math.max(0, Number(state.shiftElapsedMinutes) || 0) * 60_000;
+  return Date.now();
+}
+function currentLiveQueueSnapshot() {
+  if (!state.liveQueueSimulation) return { arrivals: 0, openingContacts: 0, manualContacts: 0, totalArrivals: 0, abandoned: 0, overflowed: 0, nextArrivalInMinutes: null, active: false };
+  return liveQueueSnapshot(state.liveQueueSimulation, state.shiftElapsedMinutes);
+}
 function pushOperationEvent(type, reference, message, status = 'recorded', details = {}) {
   return addInteractionEvent(state.interactionTimeline, { type, reference, message, status, details });
 }
 function ensureInboundQueue(count = 6) {
   if (!Array.isArray(state.inboundQueueItems)) state.inboundQueueItems = [];
+  if (state.shiftActive && !state.liveQueueSimulation) {
+    state.liveQueueSimulation = createLiveQueueState({ day: state.day || 1, elapsedMinute: state.shiftElapsedMinutes, seed: state.queueSequence + 1 });
+  }
+  const queueCanSeed = state.shiftActive && state.liveQueueSimulation?.active !== false;
   const waiting = countQueuedContacts(state.inboundQueueItems);
-  if (waiting === 0 && state.callQueue > 0 && state.inboundQueueItems.length === 0) {
-    const items = createInboundQueue(inboundScenarios, Math.min(30, state.callQueue), { sequence: state.queueSequence });
-    state.inboundQueueItems.push(...items);
-    state.queueSequence += items.length;
-  } else if (waiting === 0 && count > 0 && state.inboundQueueItems.length === 0) {
-    const items = createInboundQueue(inboundScenarios, count, { sequence: state.queueSequence });
-    state.inboundQueueItems.push(...items);
-    state.queueSequence += items.length;
+  if (queueCanSeed && waiting === 0 && state.inboundQueueItems.length === 0) {
+    const requested = state.callQueue > 0 ? Math.min(30, state.callQueue) : count;
+    if (requested > 0) {
+      const now = queueSimulationNowMs();
+      const items = createInboundQueue(inboundScenarios, requested, { sequence: state.queueSequence, now });
+      stampInboundQueue(items, { now, elapsedMinute: state.shiftElapsedMinutes, source: 'opening_queue' });
+      state.inboundQueueItems.push(...items);
+      state.queueSequence += items.length;
+      if (state.liveQueueSimulation) state.liveQueueSimulation.openingContacts += items.length;
+    }
   }
   syncQueueCount();
 }
@@ -159,7 +188,7 @@ function findQueueContact(contactId) {
 }
 function addCallTimeline(call, event, details = {}) {
   const contact = call?.queueContactId ? findQueueContact(call.queueContactId) : null;
-  if (contact) { contact.timeline = Array.isArray(contact.timeline) ? contact.timeline : []; contact.timeline.push({ at: new Date().toISOString(), event, status: contact.status, ...details }); }
+  if (contact) { contact.timeline = Array.isArray(contact.timeline) ? contact.timeline : []; contact.timeline.push({ at: new Date(queueSimulationNowMs()).toISOString(), event, status: contact.status, ...details }); }
   pushOperationEvent('call', contact?.id || call?.scenarioId || '', event, contact?.status || 'recorded', details);
 }
 function formatWait(seconds) {
@@ -810,10 +839,13 @@ function renderInbound() {
   }
   if (!state.currentCall) {
     ensureInboundQueue(6);
-    const queue=sortQueuedContacts(state.inboundQueueItems);
-    const metrics=queueMetrics(state.inboundQueueItems);
+    const queueNow = queueSimulationNowMs();
+    const queue=sortQueuedContacts(state.inboundQueueItems, queueNow);
+    const metrics=queueMetrics(state.inboundQueueItems, queueNow);
+    const liveQueue = currentLiveQueueSnapshot();
+    const nextArrivalLabel = liveQueue.nextArrivalInMinutes === null ? 'Stopped' : `${Math.ceil(liveQueue.nextArrivalInMinutes)} simulated min`;
     const callbackRows=state.callbacks.filter(item=>item.status==='scheduled'&&item.type!=='outbound').slice().sort((a,b)=>Date.parse(a.dueAt)-Date.parse(b.dueAt));
-    viewRoot.innerHTML = `<div class="ops-summary-grid">${metricCard('WAITING CONTACTS',metrics.waiting,'Prioritised inbound queue','↙')}${metricCard('LONGEST WAIT',formatWait(metrics.longestWaitSeconds),'Current oldest queued contact','◷')}${metricCard('WITHIN 60-SECOND TARGET',metrics.waiting?Math.round(metrics.withinServiceLevel/metrics.waiting*100)+'%':'—','Queue snapshot, not a contractual SLA','⌁')}</div><div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Prioritised inbound queue</h3><p>Urgent security and fraud contacts are prioritised ahead of routine enquiries.</p></div><span class="pill ${shiftTimeAvailable()?'green':'amber'}"><span class="live-dot"></span> ${shiftTimeAvailable()?'ROUTING OPEN':'SHIFT WINDOW CLOSED'}</span></div>${queue.length?`<div class="queue-contact-list">${queue.slice(0,8).map(item=>`<div class="queue-contact-row"><span class="priority-mark ${item.priority}"></span><div class="queue-contact-main"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${escapeHTML(item.routeGroup)}</small></div><span class="queue-wait">${formatWait(item.waitSeconds)}</span><span class="pill ${item.priority==='critical'?'red':item.priority==='high'?'amber':''}">${item.priority.toUpperCase()}</span></div>`).join('')}</div><button class="btn primary" style="margin-top:14px" data-action="answer-call" ${state.agentStatus==='available'&&shiftTimeAvailable()?'':'disabled'}>Accept highest-priority contact ↙</button>`:`<div class="empty-state"><h3>No waiting contacts</h3><p>Generate another batch of simulated arrivals to continue this shift.</p><button class="btn primary" data-action="refresh-queue">Load next arrivals</button></div>`}</section><section class="panel"><div class="panel-head"><div><h3>Callbacks due</h3><p>Customer-requested return contacts scheduled during earlier interactions.</p></div><span class="pill">${callbackRows.length} SCHEDULED</span></div>${callbackRows.length?callbackRows.map(item=>`<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · Due ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="return-callback-to-queue" data-callback-id="${escapeHTML(item.id)}" ${Date.parse(item.dueAt)<=Date.now()?'':'disabled'}>${Date.parse(item.dueAt)<=Date.now()?'Queue callback':'Not due yet'}</button></div>`).join(''):'<div class="empty-state"><p>No callbacks are scheduled.</p></div>'}<div class="panel-head" style="margin-top:18px"><div><h3>Recently handled</h3><p>Your latest customer interactions.</p></div><button class="btn small outline" data-action="open-crm">View cases</button></div>${state.cases.length?state.cases.slice(-3).reverse().map(caseRow).join(''):'<p class="muted-note">No completed interactions yet.</p>'}</section></div>`; return;
+    viewRoot.innerHTML = `<div class="ops-summary-grid">${metricCard('WAITING CONTACTS',metrics.waiting,'Prioritised inbound queue','↙')}${metricCard('LONGEST WAIT',formatWait(metrics.longestWaitSeconds),'Current oldest queued contact','◷')}${metricCard('WITHIN 60-SECOND TARGET',metrics.waiting?Math.round(metrics.withinServiceLevel/metrics.waiting*100)+'%':'—','Queue snapshot, not a contractual SLA','⌁')}${metricCard('CUSTOMERS ABANDONED',liveQueue.abandoned,'Exceeded simulated patience','↗')}</div><div class="panel" style="margin-top:14px;padding:12px 16px"><div class="data-list"><div class="data-row"><span>Automatic arrivals this shift</span><strong>${liveQueue.arrivals}</strong></div><div class="data-row"><span>Opening queue contacts</span><strong>${liveQueue.openingContacts}</strong></div><div class="data-row"><span>Manual surge contacts</span><strong>${liveQueue.manualContacts}</strong></div><div class="data-row"><span>Next expected contact</span><strong>${escapeHTML(nextArrivalLabel)}</strong></div><div class="data-row"><span>Demand overflow events</span><strong>${liveQueue.overflowed}</strong></div></div><p class="muted-note">Live queue simulation · all contacts and patience outcomes are fictional gameplay events.</p></div><div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Prioritised inbound queue</h3><p>New synthetic contacts arrive during the shift. Waiting customers may abandon when their patience expires.</p></div><span class="pill ${shiftTimeAvailable()?'green':'amber'}"><span class="live-dot"></span> ${shiftTimeAvailable()?'ROUTING OPEN':'SHIFT WINDOW CLOSED'}</span></div>${queue.length?`<div class="queue-contact-list">${queue.slice(0,8).map(item=>`<div class="queue-contact-row"><span class="priority-mark ${item.priority}"></span><div class="queue-contact-main"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${escapeHTML(item.routeGroup)}</small></div><span class="queue-wait">${formatWait(item.waitSeconds)}</span><span class="pill ${item.priority==='critical'?'red':item.priority==='high'?'amber':''}">${item.priority.toUpperCase()}</span></div>`).join('')}</div><button class="btn primary" style="margin-top:14px" data-action="answer-call" ${state.agentStatus==='available'&&shiftTimeAvailable()?'':'disabled'}>Accept highest-priority contact ↙</button>`:`<div class="empty-state"><h3>No waiting contacts</h3><p>Automatic arrivals continue during an active shift. Add a controlled demand surge when needed.</p><button class="btn primary" data-action="refresh-queue">Simulate demand surge (+6)</button></div>`}</section><section class="panel"><div class="panel-head"><div><h3>Callbacks due</h3><p>Customer-requested return contacts scheduled during earlier interactions.</p></div><span class="pill">${callbackRows.length} SCHEDULED</span></div>${callbackRows.length?callbackRows.map(item=>`<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · Due ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="return-callback-to-queue" data-callback-id="${escapeHTML(item.id)}" ${Date.parse(item.dueAt)<=Date.now()?'':'disabled'}>${Date.parse(item.dueAt)<=Date.now()?'Queue callback':'Not due yet'}</button></div>`).join(''):'<div class="empty-state"><p>No callbacks are scheduled.</p></div>'}<div class="panel-head" style="margin-top:18px"><div><h3>Recently handled</h3><p>Your latest customer interactions.</p></div><button class="btn small outline" data-action="open-crm">View cases</button></div>${state.cases.length?state.cases.slice(-3).reverse().map(caseRow).join(''):'<p class="muted-note">No completed interactions yet.</p>'}</section></div>`; return;
   }
   const call=state.currentCall;
   const scenario=inboundScenarios.find(item=>item.id===call.scenarioId);
@@ -898,10 +930,13 @@ function renderDigital() {
 function renderQueue(){
   if(!state.shiftActive){viewRoot.innerHTML=renderShiftEntryPanel('Queue control is not active','Start your shift to open contact routing.');return;}
   ensureInboundQueue(6);
-  const queue=sortQueuedContacts(state.inboundQueueItems);
-  const metrics=queueMetrics(state.inboundQueueItems);
+  const queueNow = queueSimulationNowMs();
+  const queue=sortQueuedContacts(state.inboundQueueItems, queueNow);
+  const metrics=queueMetrics(state.inboundQueueItems, queueNow);
+  const liveQueue = currentLiveQueueSnapshot();
+  const nextArrivalLabel = liveQueue.nextArrivalInMinutes === null ? 'Stopped' : `${Math.ceil(liveQueue.nextArrivalInMinutes)} simulated min`;
   const callbacks=state.callbacks.filter(item=>(item.status==='scheduled'||item.status==='queued')&&item.type!=='outbound');
-  viewRoot.innerHTML=`<div class="ops-summary-grid">${metricCard('IN QUEUE',metrics.waiting,'Queued voice contacts','↙')}${metricCard('AVERAGE WAIT',formatWait(metrics.averageWaitSeconds),'Across waiting contacts','◷')}${metricCard('ACCEPTED THIS SHIFT',state.acceptedContacts,'Includes completed and active contacts','✓')}</div><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Queue supervisor</h3><p>Priority, routing group and live wait-age snapshot.</p></div><button class="btn small secondary" data-action="refresh-queue">Add six arrivals</button></div>${queue.length?`<div class="table-wrap"><table><thead><tr><th>Priority</th><th>Customer</th><th>Issue</th><th>Route group</th><th>Wait</th><th>Status</th></tr></thead><tbody>${queue.map(item=>`<tr><td><span class="priority-label ${item.priority}">${item.priority.toUpperCase()}</span></td><td>${escapeHTML(item.customer)}</td><td>${escapeHTML(item.issue)}</td><td>${escapeHTML(item.routeGroup)}</td><td>${formatWait(item.waitSeconds)}</td><td><span class="pill green">QUEUED</span></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state"><h3>Queue clear</h3><p>No inbound contacts are waiting.</p></div>'}</section><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Scheduled callbacks</h3><p>Only customer-requested callbacks are listed.</p></div><span class="pill">${callbacks.length}</span></div>${callbacks.length?callbacks.map(item=>`<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="return-callback-to-queue" data-callback-id="${escapeHTML(item.id)}" ${item.status==='queued'||Date.parse(item.dueAt)>Date.now()?'disabled':''}>${item.status==='queued'?'In queue':Date.parse(item.dueAt)>Date.now()?'Not due yet':'Queue callback'}</button></div>`).join(''):'<p class="muted-note">No callbacks are scheduled.</p>'}</section>`;
+  viewRoot.innerHTML=`<div class="ops-summary-grid">${metricCard('IN QUEUE',metrics.waiting,'Queued voice contacts','↙')}${metricCard('AVERAGE WAIT',formatWait(metrics.averageWaitSeconds),'Across waiting contacts','◷')}${metricCard('ACCEPTED THIS SHIFT',state.acceptedContacts,'Includes completed and active contacts','✓')}${metricCard('ABANDONED',liveQueue.abandoned,'Customers who exceeded patience','↗')}</div><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Queue supervisor</h3><p>Automatic arrivals, priority routing, customer patience and live wait-age.</p></div><button class="btn small secondary" data-action="refresh-queue">Simulate demand surge (+6)</button></div><div class="data-list" style="margin-bottom:14px"><div class="data-row"><span>Automatic arrivals</span><strong>${liveQueue.arrivals}</strong></div><div class="data-row"><span>Opening queue contacts</span><strong>${liveQueue.openingContacts}</strong></div><div class="data-row"><span>Manual surge contacts</span><strong>${liveQueue.manualContacts}</strong></div><div class="data-row"><span>Next expected arrival</span><strong>${escapeHTML(nextArrivalLabel)}</strong></div><div class="data-row"><span>Overflow events</span><strong>${liveQueue.overflowed}</strong></div></div>${queue.length?`<div class="table-wrap"><table><thead><tr><th>Priority</th><th>Customer</th><th>Issue</th><th>Route group</th><th>Wait</th><th>Status</th></tr></thead><tbody>${queue.map(item=>`<tr><td><span class="priority-label ${item.priority}">${item.priority.toUpperCase()}</span></td><td>${escapeHTML(item.customer)}</td><td>${escapeHTML(item.issue)}</td><td>${escapeHTML(item.routeGroup)}</td><td>${formatWait(item.waitSeconds)}</td><td><span class="pill green">QUEUED</span></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state"><h3>Queue clear</h3><p>No inbound contacts are waiting.</p></div>'}</section><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Scheduled callbacks</h3><p>Only customer-requested callbacks are listed.</p></div><span class="pill">${callbacks.length}</span></div>${callbacks.length?callbacks.map(item=>`<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="return-callback-to-queue" data-callback-id="${escapeHTML(item.id)}" ${item.status==='queued'||Date.parse(item.dueAt)>Date.now()?'disabled':''}>${item.status==='queued'?'In queue':Date.parse(item.dueAt)>Date.now()?'Not due yet':'Queue callback'}</button></div>`).join(''):'<p class="muted-note">No callbacks are scheduled.</p>'}</section>`;
 }
 
 function renderSupervisor(){
@@ -995,7 +1030,7 @@ function renderWorkforce() {
       </section>
       <section class="panel">
         <div class="panel-head"><div><h3>Agent state, shift adherence and coaching</h3><p>Scheduled shift operations, break adherence and team-leader support.</p></div><span class="pill ${state.shiftActive?'green':'amber'}">${escapeHTML(state.agentStatus.toUpperCase())}</span></div>
-        <div class="data-list"><div class="data-row"><span>Shift status</span><strong>${state.shiftActive?'ACTIVE':'CLOSED'}</strong></div><div class="data-row"><span>Elapsed simulation time</span><strong>${Math.floor(state.shiftElapsedMinutes)} minutes</strong></div><div class="data-row"><span>Live schedule adherence</span><strong>${state.shiftRecord?.status==='active'?calculateShiftAdherence(state.shiftRecord,state.shiftElapsedMinutes).adherence+'%':'—'}</strong></div><div class="data-row"><span>Shift hours</span><strong>08:00–17:00</strong></div></div>
+        <div class="data-list"><div class="data-row"><span>Shift status</span><strong>${state.shiftActive?'ACTIVE':'CLOSED'}</strong></div><div class="data-row"><span>Elapsed simulation time</span><strong>${Math.floor(state.shiftElapsedMinutes)} minutes</strong></div><div class="data-row"><span>Inbound arrivals this shift</span><strong>${currentLiveQueueSnapshot().totalArrivals}</strong></div><div class="data-row"><span>Customer abandonments</span><strong>${currentLiveQueueSnapshot().abandoned}</strong></div><div class="data-row"><span>Live schedule adherence</span><strong>${state.shiftRecord?.status==='active'?calculateShiftAdherence(state.shiftRecord,state.shiftElapsedMinutes).adherence+'%':'—'}</strong></div><div class="data-row"><span>Shift hours</span><strong>08:00–17:00</strong></div></div>
         ${state.shiftActive?`<div class="call-card" style="margin-top:12px"><span class="subtle-label">NEXT SCHEDULED BREAK</span>${(()=>{const b=nextScheduledBreak(state.shiftRecord,state.shiftElapsedMinutes);return b?`<h3>${escapeHTML(b.label)} · ${b.startLabel}</h3><p>${b.active?'Current scheduled break window.':`${Math.max(0,Math.ceil(b.startsInMinutes))} simulated minutes remaining.`}</p>`:'<h3>No further scheduled breaks</h3><p>The planned shift schedule has reached its final break window.</p>';})()}<div class="button-row"><button class="btn outline" data-action="take-break" ${expectedShiftMode(state.shiftRecord,state.shiftElapsedMinutes)==='break'&&state.agentStatus!=='break'&&!['busy','wrap-up'].includes(state.agentStatus)?'':'disabled'}>Start scheduled break</button><button class="btn outline" data-action="return-from-break" ${state.agentStatus==='break'?'':'disabled'}>Return from break</button><button class="btn danger" data-action="end-shift" ${state.currentCall||state.activeOutbound||state.wrapUp?'disabled':''}>End shift</button></div></div>`:state.lastShiftDay===state.day||simulationMinuteNow()>=17*60?`<button class="btn primary" style="margin-top:12px" data-action="advance-workday">Advance to next workday</button>`:`<button class="btn primary" style="margin-top:12px" data-action="start-shift">Start a new shift</button>`}
         <h4 style="margin-top:18px">Shift history</h4>
         ${state.shiftHistory.slice(-4).reverse().map(x=>`<div class="data-row"><span>Day ${x.day} · ${new Date(x.startedAt).toLocaleDateString()}</span><strong>${x.adherence}% adherence</strong></div>`).join('')||'<p class="muted-note">No completed shifts recorded.</p>'}
@@ -1354,6 +1389,8 @@ function startShift(){
   state.day=state.day||1;
   state.shiftElapsedMinutes=simulatedMinute-(8*60);
   state.shiftRecord=createShiftRecord({day:state.day,startedAt:Date.now()});
+  state.shiftSimulationEpochMs = Date.now() - state.shiftElapsedMinutes * 60_000;
+  state.liveQueueSimulation = createLiveQueueState({ day: state.day, elapsedMinute: state.shiftElapsedMinutes, seed: state.queueSequence + state.day * 17 });
   if(state.shiftElapsedMinutes>0){state.shiftRecord.events=[{status:'offline',elapsedMinute:0,at:new Date().toISOString(),reason:'Before scheduled shift start'}];recordAgentState(state.shiftRecord,'available',state.shiftElapsedMinutes,'Late shift start');}
   state.shiftActive=true;
   state.agentStatus='available';
@@ -1389,6 +1426,7 @@ function endShift(){
   state.shiftHistory=state.shiftHistory.slice(-20);
   state.lastShiftDay=state.day;
   state.shiftActive=false;state.agentStatus='offline';
+  if (state.liveQueueSimulation) state.liveQueueSimulation.active = false;
   pushOperationEvent('shift',completed.id,`Shift ended. Adherence ${completed.adherence?.adherence??0}%.`,'completed');
   saveState();renderView();toast(`Shift closed · ${completed.adherence?.adherence??0}% adherence.`,'success');
 }
@@ -1401,6 +1439,10 @@ function advanceWorkday(){
   simulationClockTicker=7*3600;
   lastShiftSaveBucket=0;
   state.shiftElapsedMinutes=0;
+  state.shiftSimulationEpochMs=null;
+  state.liveQueueSimulation=null;
+  state.inboundQueueItems=[];
+  state.callQueue=6;
   state.shiftRecord=null;
   state.agentStatus='offline';
   saveState();renderView();
@@ -1413,17 +1455,19 @@ function startInboundCall(){
   if(state.agentStatus!=='available'){toast(`Your agent status is ${state.agentStatus}. Return to Available before accepting a contact.`,'warning');return;}
   ensureInboundQueue(6);
   if(state.callQueue<=0){toast('The inbound queue is empty. Load the next simulated arrival batch.');return;}
-  const queued = nextQueuedContact(state.inboundQueueItems);
+  const queueNow = queueSimulationNowMs();
+  const queued = nextQueuedContact(state.inboundQueueItems, queueNow);
   if(!queued){syncQueueCount();toast('No eligible contacts are waiting.');return;}
   const contact = findQueueContact(queued.id);
   const scenario = inboundScenarios.find(item=>item.id===contact?.scenarioId);
   if(!contact || !scenario){toast('The queued scenario could not be loaded. Refresh the queue.','error');return;}
   const acceptedAt = Date.now();
-  transitionContact(contact, CONTACT_STATUS.OFFERED, 'Contact offered to the agent', acceptedAt, { routeGroup: contact.routeGroup });
-  transitionContact(contact, CONTACT_STATUS.CONNECTED, 'Agent accepted the inbound contact', acceptedAt, { agent: state.applicantName || 'Agent' });
+  const queueAcceptedAt = queueSimulationNowMs();
+  transitionContact(contact, CONTACT_STATUS.OFFERED, 'Contact offered to the agent', queueAcceptedAt, { routeGroup: contact.routeGroup });
+  transitionContact(contact, CONTACT_STATUS.CONNECTED, 'Agent accepted the inbound contact', queueAcceptedAt, { agent: state.applicantName || 'Agent' });
   const linkedCallback=state.callbacks.find(item=>item.contactId===contact.id&&item.status==='queued');
   if(linkedCallback){linkedCallback.status='in_progress';linkedCallback.acceptedAt=new Date(acceptedAt).toISOString();}
-  const waitSeconds = Math.max(0, Math.floor((acceptedAt - Date.parse(contact.queuedAt)) / 1000));
+  const waitSeconds = Math.max(0, Math.floor((queueAcceptedAt - Date.parse(contact.queuedAt)) / 1000));
   state.totalWaitSeconds += waitSeconds;
   state.acceptedContacts++;
   if(waitSeconds<=60)state.contactsWithinSla++;
@@ -1449,8 +1493,8 @@ function beginInboundWrapUp(transferred = false){
   const scenario=inboundScenarios.find(item=>item.id===call.scenarioId);
   const contact=findQueueContact(call.queueContactId);
   if(!scenario||!contact){toast('The active contact record is missing.','error');return;}
-  if(contact.status==='connected')transitionContact(contact,CONTACT_STATUS.WRAP_UP,'Customer conversation completed; after-contact work started',Date.now());
-  else if(contact.status==='transferred')transitionContact(contact,CONTACT_STATUS.WRAP_UP,'Transferred interaction entered after-contact work',Date.now());
+  if(contact.status==='connected')transitionContact(contact,CONTACT_STATUS.WRAP_UP,'Customer conversation completed; after-contact work started',queueSimulationNowMs());
+  else if(contact.status==='transferred')transitionContact(contact,CONTACT_STATUS.WRAP_UP,'Transferred interaction entered after-contact work',queueSimulationNowMs());
   const qa=Math.max(0,Math.min(100,Math.round(70+call.score*5-(call.breach?35:0))));
   stopVoiceTools();
   setAgentState('wrap-up','Inbound call entered after-contact work');
@@ -1522,11 +1566,11 @@ function saveWrapUp(){
     // Complete a previous callback only after the new disposition and due time validate.
     completeActiveCallback(state.callbacks,{contactId:contact.id},Date.now());
     if(disposition==='callback'){
-      transitionContact(contact,CONTACT_STATUS.CALLBACK,'Customer callback scheduled',Date.now(),{dueAt:callbackDueISO});
+      transitionContact(contact,CONTACT_STATUS.CALLBACK,'Customer callback scheduled',queueSimulationNowMs(),{dueAt:callbackDueISO});
     }else if(disposition==='escalated'){
-      transitionContact(contact,CONTACT_STATUS.ESCALATED,'Case escalated after wrap-up',Date.now());
+      transitionContact(contact,CONTACT_STATUS.ESCALATED,'Case escalated after wrap-up',queueSimulationNowMs());
     }else{
-      transitionContact(contact,CONTACT_STATUS.COMPLETED,'Interaction completed after wrap-up',Date.now());
+      transitionContact(contact,CONTACT_STATUS.COMPLETED,'Interaction completed after wrap-up',queueSimulationNowMs());
     }
     const resolved=disposition==='resolved'&&!wrap.breach;
     const status=disposition==='resolved'?'Resolved':disposition==='callback'?'Callback scheduled':disposition==='escalated'?'Escalated / review required':'Transferred / review required';
@@ -1576,10 +1620,10 @@ function toggleCallHold(){
   const contact=findQueueContact(call.queueContactId);if(!contact)return;
   if(contact.status==='connected'){
     stopVoiceTools();
-    transitionContact(contact,CONTACT_STATUS.ON_HOLD,'Agent placed the customer on hold',Date.now());call.held=true;
+    transitionContact(contact,CONTACT_STATUS.ON_HOLD,'Agent placed the customer on hold',queueSimulationNowMs());call.held=true;
     pushOperationEvent('call',contact.id,'Customer placed on hold.','on_hold');
   }else if(contact.status==='on_hold'){
-    transitionContact(contact,CONTACT_STATUS.CONNECTED,'Agent resumed the customer conversation',Date.now());call.held=false;
+    transitionContact(contact,CONTACT_STATUS.CONNECTED,'Agent resumed the customer conversation',queueSimulationNowMs());call.held=false;
     pushOperationEvent('call',contact.id,'Customer conversation resumed.','connected');
   }
   saveState();renderView();
@@ -1596,7 +1640,7 @@ function transferInboundCall(){
   const contact=findQueueContact(call.queueContactId);if(!contact)return;
   const target=$('#transferTarget')?.value||'Specialist Support';
   if(!['connected','on_hold'].includes(contact.status)){toast('This contact cannot be transferred from its current state.','error');return;}
-  transitionContact(contact,CONTACT_STATUS.TRANSFERRED,`Contact transferred to ${target}`,Date.now(),{target});
+  transitionContact(contact,CONTACT_STATUS.TRANSFERRED,`Contact transferred to ${target}`,queueSimulationNowMs(),{target});
   call.transferredTo=target;call.held=false;
   pushOperationEvent('transfer',contact.id,`Transferred to ${target}.`,'transferred',{target});
   beginInboundWrapUp(true);
@@ -1604,7 +1648,7 @@ function transferInboundCall(){
 function returnCallToQueue(){
   const call=state.currentCall;if(!call)return;
   const contact=findQueueContact(call.queueContactId);if(!contact)return;
-  if(['connected','on_hold'].includes(contact.status)){transitionContact(contact,CONTACT_STATUS.QUEUED,'Contact returned to inbound queue',Date.now());contact.queuedAt=new Date().toISOString();}
+  if(['connected','on_hold'].includes(contact.status)){const queueNow=queueSimulationNowMs();transitionContact(contact,CONTACT_STATUS.QUEUED,'Contact returned to inbound queue',queueNow);contact.queuedAt=new Date(queueNow).toISOString();}
   state.currentCall=null;stopVoiceTools();if(state.shiftActive)setAgentState('available','Contact returned to queue');syncQueueCount();pushOperationEvent('call',contact.id,'Contact returned to queue without a completed interaction.','queued');saveState();renderView();toast('Contact returned to the inbound queue.');
 }
 function returnCallbackToQueue(callbackId){
@@ -1612,7 +1656,7 @@ function returnCallbackToQueue(callbackId){
   if(!callback){toast('Scheduled callback was not found.','error');return;}
   if(Date.parse(callback.dueAt)>Date.now()){toast('This callback is not due yet. Keep it scheduled until the requested time.','warning');return;}
   const contact=findQueueContact(callback.contactId);
-  if(contact&&contact.status===CONTACT_STATUS.CALLBACK){transitionContact(contact,CONTACT_STATUS.QUEUED,'Scheduled callback returned to the inbound queue',Date.now());contact.queuedAt=new Date().toISOString();}
+  if(contact&&contact.status===CONTACT_STATUS.CALLBACK){const queueNow=queueSimulationNowMs();transitionContact(contact,CONTACT_STATUS.QUEUED,'Scheduled callback returned to the inbound queue',queueNow);contact.queuedAt=new Date(queueNow).toISOString();}
   callback.status='queued';callback.queuedAt=new Date().toISOString();syncQueueCount();pushOperationEvent('callback',callback.id,`Callback for ${callback.customer} moved to queue.`,'queued');saveState();renderView();toast('Callback returned to the inbound queue.','success');
 }
 function resolveSupervisorRequest(requestId){
@@ -1751,7 +1795,7 @@ function handleAction(action,event={}){
     case 'stop-voice-transcription':stopVoiceTranscription();break;
     case 'play-customer-prompt':speakCustomerPrompt(event.text||'');break;
     case 'clear-voice-practice':clearVoicePractice();break;
-    case 'refresh-queue':{const items=createInboundQueue(inboundScenarios,6,{sequence:state.queueSequence});state.inboundQueueItems.push(...items);state.queueSequence+=items.length;syncQueueCount();pushOperationEvent('queue','INBOUND','Six simulated contacts arrived in the queue.','queued');saveState();renderView();toast('Six new simulated contacts added.','success');break;}
+    case 'refresh-queue':{if(!shiftTimeAvailable()){toast('The demand queue is closed for this shift.','warning');break;}const now=queueSimulationNowMs();const result=addManualDemandSurge({queue:state.inboundQueueItems,scenarios:inboundScenarios,count:6,day:state.day,elapsedMinute:state.shiftElapsedMinutes,now,sequence:state.queueSequence,queueState:state.liveQueueSimulation});state.liveQueueSimulation=result.queueState;state.queueSequence=result.nextSequence;syncQueueCount();pushOperationEvent('queue','INBOUND',`Demand surge requested 6 contacts; ${result.admitted} admitted and ${result.overflowed} rejected at queue capacity.`,'queued',{source:'manual_demand_surge',admitted:result.admitted,overflowed:result.overflowed});saveState();renderView();toast(`${result.admitted} contacts added; ${result.overflowed} demand overflow.`,result.overflowed?'warning':'success');break;}
     case 'toggle-call-hold':toggleCallHold();break;
     case 'request-supervisor':requestSupervisor();break;
     case 'transfer-call':transferInboundCall();break;
@@ -1915,7 +1959,54 @@ document.addEventListener('change',e=>{if(e.target?.id==='voiceConsent'){voiceCo
 window.addEventListener('pagehide',()=>{stopVoiceTools();});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&voiceStatus!=='inactive')stopVoiceTools();});
 
-function initClock(){const savedTick=Number(state.simulationClockSeconds);simulationClockTicker=Number.isFinite(savedTick)?Math.max(0,Math.min(86399,savedTick)):7*3600;lastShiftSaveBucket=Math.floor((Number(state.shiftElapsedMinutes)||0)/15);setInterval(()=>{simulationClockTicker=(simulationClockTicker+30)%86400;state.simulationClockSeconds=simulationClockTicker;const h=String(Math.floor(simulationClockTicker/3600)).padStart(2,'0'),m=String(Math.floor((simulationClockTicker%3600)/60)).padStart(2,'0'),s=String(simulationClockTicker%60).padStart(2,'0');$('#shiftClock').textContent=`${h}:${m}:${s}`;if(state.shiftActive&&state.shiftRecord?.status==='active'){state.shiftElapsedMinutes=Math.min(540,state.shiftElapsedMinutes+.5);const bucket=Math.floor(state.shiftElapsedMinutes/15);if(bucket!==lastShiftSaveBucket){lastShiftSaveBucket=bucket;saveState();}}else if(Math.floor(simulationClockTicker/30)%30===0)saveState();},1000);}
+function initClock(){
+  const savedTick=Number(state.simulationClockSeconds);
+  simulationClockTicker=Number.isFinite(savedTick)?Math.max(0,Math.min(86399,savedTick)):7*3600;
+  lastShiftSaveBucket=Math.floor((Number(state.shiftElapsedMinutes)||0)/15);
+  setInterval(()=>{
+    simulationClockTicker=(simulationClockTicker+30)%86400;
+    state.simulationClockSeconds=simulationClockTicker;
+    const h=String(Math.floor(simulationClockTicker/3600)).padStart(2,'0');
+    const m=String(Math.floor((simulationClockTicker%3600)/60)).padStart(2,'0');
+    const sec=String(simulationClockTicker%60).padStart(2,'0');
+    $('#shiftClock').textContent=`${h}:${m}:${sec}`;
+    if(state.shiftActive&&state.shiftRecord?.status==='active'){
+      state.shiftElapsedMinutes=Math.min(540,state.shiftElapsedMinutes+.5);
+      let queueChanged=false;
+      if(state.liveQueueSimulation?.active){
+        const result=advanceLiveQueue({
+          queueState:state.liveQueueSimulation,
+          queue:state.inboundQueueItems,
+          scenarios:inboundScenarios,
+          day:state.day,
+          elapsedMinute:state.shiftElapsedMinutes,
+          now:queueSimulationNowMs(),
+          sequence:state.queueSequence
+        });
+        const previousOverflow = state.liveQueueSimulation.overflowed || 0;
+        state.liveQueueSimulation=result.queueState;
+        state.queueSequence=result.nextSequence;
+        if (result.queueState.overflowed > previousOverflow) {
+          pushOperationEvent('queue','INBOUND','Inbound queue reached its capacity; additional synthetic demand was not admitted.','overflowed',{overflowEvents:result.queueState.overflowed - previousOverflow});
+          queueChanged=true;
+        }
+        for(const contact of result.arrivals){
+          pushOperationEvent('queue',contact.id,`New inbound contact arrived: ${contact.issue}.`,'queued',{customer:contact.customer,priority:contact.priority,routeGroup:contact.routeGroup,source:'live_arrival'});
+          queueChanged=true;
+        }
+        for(const contact of result.abandonments){
+          const lastEvent=contact.timeline?.at(-1);
+          pushOperationEvent('queue',contact.id,`Customer abandoned after waiting ${Math.round(Number(lastEvent?.waitMinutes||0))} simulated minutes.`,'abandoned',{customer:contact.customer,priority:contact.priority,source:'patience_expired'});
+          queueChanged=true;
+        }
+        if(queueChanged){syncQueueCount();saveState();}
+      }
+      if(queueChanged&&!state.currentCall&&!state.activeOutbound&&!state.wrapUp&&!state.digitalActiveId&&['overview','inbound','queue'].includes(state.currentView))renderView();
+      const bucket=Math.floor(state.shiftElapsedMinutes/15);
+      if(bucket!==lastShiftSaveBucket){lastShiftSaveBucket=bucket;saveState();}
+    }else if(Math.floor(simulationClockTicker/30)%30===0)saveState();
+  },1000);
+}
 
 // Production-style 3D workplace. The scene is isolated from business logic so it can
 // evolve independently without disturbing recruitment, calls, CRM or career records.

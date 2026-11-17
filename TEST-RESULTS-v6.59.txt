@@ -1,0 +1,58 @@
+CALLORIA v6.59 — LIVE QUEUE OPERATIONS
+Verification date: 17 November 2026
+Source: user-provided calloria.zip snapshot
+Node.js: v22.16.0
+
+NEW FEATURE
+- Automatic synthetic inbound contacts arrive during an active shift.
+- Queue uses the existing accelerated shift clock and existing priority routing.
+- Customer patience is priority-based; unserved contacts transition to ABANDONED.
+- Waiting capacity is capped at 24 for automatic arrivals and manual demand surges.
+- Demand overflow is counted and written to the operations timeline.
+- Opening contacts, automatic arrivals and manual surge contacts are reported separately.
+- Shift close disables arrivals; next workday resets queue simulation.
+
+FOCUSED REGRESSION RUN
+Command:
+  node --test tests/live-queue-engine-v659.test.mjs tests/calloria-live-queue-v659.test.mjs tests/calloria-try-it-studio-v6-58.test.mjs tests/operations-engine.test.mjs
+
+Result:
+  42 tests
+  42 passed
+  0 failed
+
+SYNTAX
+- npm run check: passed (js/main.js and js/production-world.js)
+- node --check js/live-queue-engine.js: passed
+
+FULL TEST SUITE
+Command:
+  npm test
+
+Result:
+  1,790 tests
+  1,245 passed
+  545 failed
+  0 skipped
+
+Baseline before v6.59:
+  1,767 tests
+  1,222 passed
+  545 failed
+
+The same 545 failing test names are present before and after v6.59. The 23 added v6.59 tests pass. The existing baseline failures were not repaired as part of this upgrade and must not be treated as resolved.
+
+PRODUCTION BUILD
+Command:
+  npm run build
+
+Result:
+  FAILED TO START — vite: not found
+
+The uploaded source has no installed node_modules. An earlier dependency-install attempt timed out. No successful Vite bundle, Vercel deployment or live-browser test is claimed.
+
+ASSETS
+The uploaded archive has no public/assets directory or GLB binaries. Preserve any existing public/assets directory in the current repository when merging this update. The ZIP does not contain replacement 3D assets.
+
+PRESERVED RELEASE
+The existing v6.58 Try-It Studio plugin, test file and Vite registration remain unchanged.

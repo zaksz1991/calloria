@@ -48,3 +48,7 @@
 - v1.1.0 — Customer intelligence and adaptive contact simulation.
 - v1.2.0 — Human QA and supervisor intelligence.
 - v1.3.0 — AI-assisted customer intelligence (initial provider implementation; superseded by the Groq configuration in v1.4.0).
+
+## Runtime delivery note — CALLORIA v6.59
+
+The supplied repository now includes the first operational demand-flow increment toward deeper contact-centre simulation: deterministic inbound arrivals during a shift, priority-based customer patience, abandonment, queue capacity and supervisor queue telemetry. This is a partial delivery of richer customer arrival flows, not completion of the broader deeper-simulation roadmap. Real telephony, production dialler integration, enterprise data connectivity, multiplayer and multi-organisation administration remain separate work.
