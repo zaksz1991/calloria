@@ -1,0 +1,255 @@
+[
+  {
+    "slug": "ruffneck-learn",
+    "name": "RuffNeck Learn",
+    "url": "https://ruffneck-lms.vercel.app/",
+    "purpose": "Practical AI literacy, digital skills, productivity and professional learning for founders, freelancers, professionals, teams and organisations.",
+    "features": [
+      "Browse structured courses",
+      "Create a free account",
+      "Learn at own pace",
+      "Practical AI tools for work, business, education and personal productivity",
+      "Advanced records and information management",
+      "Effective teaching and digital teaching",
+      "Advanced AI productivity, automation and prompt engineering",
+      "Excel and Power BI data analysis",
+      "Digital marketing and AI content creation"
+    ],
+    "support_topics": [
+      "course discovery",
+      "account access",
+      "course enrolment",
+      "learning progress",
+      "course suitability",
+      "digital skills pathways"
+    ],
+    "self_service": [
+      {
+        "task": "Find a course",
+        "steps": [
+          "Open RuffNeck Learn.",
+          "Browse the course library.",
+          "Open a course to review its level, subject and description.",
+          "Create an account or sign in where required.",
+          "Follow the enrolment instructions shown on the course page."
+        ]
+      },
+      {
+        "task": "Choose a learning pathway",
+        "steps": [
+          "Clarify the learner's goal and current skill level.",
+          "Match the goal to a course subject and level.",
+          "Explain that course availability and pricing must be confirmed on the live course page.",
+          "Direct the learner to the course page for current details."
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "ruffneck-prospector",
+    "name": "RuffNeck Prospector",
+    "url": "https://ruffneck-prospector.vercel.app/",
+    "purpose": "Free multi-platform prospecting and Google intent discovery to help users find customers who need services.",
+    "features": [
+      "Discover leads through Google and DuckDuckGo intent searches",
+      "View scored prospects with influence and niche-fit signals",
+      "Manage prospects in a pipeline",
+      "Generate personalised PDF guides and slide decks",
+      "Built-in discovery for digital marketing, websites, AI solutions, graphic design, CV writing and Excel data cleaning",
+      "Public-source discovery across Instagram, X, Reddit, YouTube, TikTok, Facebook, Google and email workflows, subject to platform access and applicable rules"
+    ],
+    "support_topics": [
+      "lead discovery",
+      "prospect scoring",
+      "pipeline management",
+      "campaign assets",
+      "search setup",
+      "data accuracy",
+      "platform access"
+    ],
+    "self_service": [
+      {
+        "task": "Discover potential customers",
+        "steps": [
+          "Open Prospector and sign in if prompted.",
+          "Open Discover.",
+          "Enter a service niche and relevant search intent.",
+          "Review the returned public-source results and their context.",
+          "Save suitable prospects and review them in Prospects or Pipeline."
+        ]
+      },
+      {
+        "task": "Generate a prospect asset",
+        "steps": [
+          "Select an appropriate prospect or campaign context.",
+          "Open Generate.",
+          "Choose a PDF guide or slide-deck output where available.",
+          "Review generated content for accuracy before sending."
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "ruffneck-connect",
+    "name": "RuffNeck Connect",
+    "url": "https://ruffneck-connect.vercel.app/",
+    "purpose": "Community, collaboration and action platform for discovering communities, expressing needs, sharing offers and finding collaborators.",
+    "features": [
+      "Discover communities by interests, location, work and goals",
+      "Post needs and requests",
+      "Share skills, resources, knowledge and time as offers",
+      "Find collaborators and build projects",
+      "Private purposeful conversations",
+      "Record outcomes and contributions"
+    ],
+    "support_topics": [
+      "joining communities",
+      "community discovery",
+      "posting needs",
+      "posting offers",
+      "finding collaborators",
+      "private conversations",
+      "outcomes and proof"
+    ],
+    "self_service": [
+      {
+        "task": "Find a community",
+        "steps": [
+          "Open RuffNeck Connect.",
+          "Choose Get started or sign in.",
+          "Explore communities aligned with your interests, location or goals.",
+          "Open a relevant community and follow its join instructions."
+        ]
+      },
+      {
+        "task": "Post a need or offer",
+        "steps": [
+          "Open the relevant community or posting area.",
+          "Describe the need or contribution clearly.",
+          "Include practical details, scope and expected next step.",
+          "Publish and respond through the platform's conversation tools."
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "ruffneck-social-hub",
+    "name": "RuffNeck Social Hub",
+    "url": "https://ruffneck-social-hub.vercel.app/",
+    "purpose": "Social operations workspace for organisations and teams. Workspace data requires authenticated membership.",
+    "features": [
+      "Secure sign-in and organisation workspace access",
+      "Social operations across connected brand/client workspaces",
+      "Current public landing page provides sign-in and organisation overview entry points"
+    ],
+    "support_topics": [
+      "sign-in",
+      "organisation access",
+      "workspace membership",
+      "social operations",
+      "account permissions",
+      "connected channels",
+      "publishing and response workflows"
+    ],
+    "self_service": [
+      {
+        "task": "Access a workspace",
+        "steps": [
+          "Open RuffNeck Social Hub.",
+          "Select sign in.",
+          "Use the account associated with the organisation.",
+          "If access is denied, ask the organisation administrator to verify membership and role.",
+          "Never share passwords, access tokens or one-time codes with support agents."
+        ]
+      }
+    ],
+    "limitations": "Do not promise a specific social network integration, publishing capability, plan, quota or feature unless confirmed in the customer's live workspace or current product documentation."
+  },
+  {
+    "slug": "kano-run",
+    "name": "Kano Run / Kano Life",
+    "url": "https://kano-run.vercel.app/",
+    "purpose": "Browser-based Kano State keke driving and life simulation entertainment experience.",
+    "features": [
+      "Kano setting and Adaidaita Sahu keke driving",
+      "Routes, drivers and modes",
+      "Passenger pickup and drop-off, fares, fuel and vehicle condition",
+      "Garage customisation and daily login rewards",
+      "Career, time attack, fuel challenge, match drop, potholes and free roam modes",
+      "People, relationships, life and career simulation panels",
+      "Keyboard and touch controls"
+    ],
+    "support_topics": [
+      "starting a run",
+      "controls",
+      "routes and drivers",
+      "passengers and fares",
+      "fuel and vehicle condition",
+      "garage",
+      "daily rewards",
+      "game performance"
+    ],
+    "self_service": [
+      {
+        "task": "Start playing",
+        "steps": [
+          "Open Kano Run.",
+          "Choose a route, driver and mode.",
+          "Select Start Driving.",
+          "Use A/D or arrow keys, or swipe to change lanes.",
+          "Use gas and brake controls; slow almost completely at pickup and drop-off pads.",
+          "Use the garage, daily reward and life/career panels from the game menu."
+        ]
+      },
+      {
+        "task": "Resolve a driving issue",
+        "steps": [
+          "Pause the game and check the selected rendering mode.",
+          "Check browser compatibility and available device memory.",
+          "Reload the game if a session becomes unresponsive.",
+          "Report the device, browser, game mode and exact issue if it persists."
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "kano-keke",
+    "name": "Kano Keke",
+    "url": "https://kano-keke.vercel.app/",
+    "purpose": "3D keke driver life simulator set around Kano routes.",
+    "features": [
+      "Select a driver",
+      "Select a Kano route",
+      "Select a keke",
+      "Select a road",
+      "Select a game mode",
+      "Tutorial selection",
+      "Daily reward",
+      "Start shift",
+      "Garajin Keke Shop customisation options including neon underglow, subwoofer and steel bumper as displayed on the current public page"
+    ],
+    "support_topics": [
+      "driver selection",
+      "route selection",
+      "vehicle selection",
+      "road and mode selection",
+      "tutorial",
+      "daily reward",
+      "start shift",
+      "garage shop"
+    ],
+    "self_service": [
+      {
+        "task": "Start a shift",
+        "steps": [
+          "Open Kano Keke.",
+          "Select a driver, Kano route, keke, road and mode.",
+          "Review the tutorial selection if needed.",
+          "Claim the daily reward if available.",
+          "Select Start Shift."
+        ]
+      }
+    ],
+    "limitations": "Treat visible shop prices and inventory as live display values; recheck in-game before quoting because they may change."
+  }
+]

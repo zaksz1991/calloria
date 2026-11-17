@@ -4,6 +4,8 @@
  * channel, telephony provider or external workforce is controlled by this file.
  */
 
+import { DIGITAL_CHANNELS, DIGITAL_STATUS } from './multichannel-engine.js';
+
 export const SUPERVISOR_QUEUE_VERSION = '6.60.0';
 
 export const SUPERVISOR_INTAKE_MODES = Object.freeze({
@@ -212,9 +214,16 @@ export function supervisorQueueBoard({
   const priorityCounts = Object.fromEntries(SUPERVISOR_PRIORITIES.map(priority => [priority, voice.filter(item => item.priority === priority).length + digital.filter(item => item.priority === priority).length]));
   const openRequests = (Array.isArray(supervisorRequests) ? supervisorRequests : []).filter(item => item?.status === 'open');
   const escalatedCases = (Array.isArray(cases) ? cases : []).filter(item => /escalated|review|required/i.test(String(item?.status || '')));
+  const activeDigitalItems = (Array.isArray(digitalQueue) ? digitalQueue : []).filter(item => item?.status === DIGITAL_STATUS.ACTIVE);
+  const awaitingCustomerItems = (Array.isArray(digitalQueue) ? digitalQueue : []).filter(item => item?.status === DIGITAL_STATUS.AWAITING_CUSTOMER);
   const riskCount = voice.filter(item => item.slaAtRisk).length + digital.filter(item => item.slaAtRisk).length;
   const oldestVoiceWait = voice.length ? Math.max(...voice.map(item => item.waitSeconds)) : 0;
   const oldestDigitalWait = digital.length ? Math.max(...digital.map(item => item.waitSeconds)) : 0;
+  const legacySelectedDigital = digitalActiveId && !(Array.isArray(digitalQueue) ? digitalQueue : []).some(item => item?.id === digitalActiveId && [DIGITAL_STATUS.ACTIVE, DIGITAL_STATUS.AWAITING_CUSTOMER].includes(item.status)) ? 1 : 0;
+  const activeDigital = activeDigitalItems.length + legacySelectedDigital;
+  const activeDigitalByChannel = Object.fromEntries(Object.keys(DIGITAL_CHANNELS).map(channel => [
+    channel, activeDigitalItems.filter(item => item.channel === channel).length
+  ]));
 
   return {
     voiceWaiting: voice.length,
@@ -223,7 +232,10 @@ export function supervisorQueueBoard({
     slaAtRisk: riskCount,
     openRequests: openRequests.length,
     escalatedCases: escalatedCases.length,
-    activeWork: Number(Boolean(currentCall)) + Number(Boolean(activeOutbound)) + Number(Boolean(digitalActiveId)),
+    activeDigital,
+    awaitingCustomer: awaitingCustomerItems.length,
+    activeDigitalByChannel,
+    activeWork: Number(Boolean(currentCall)) + Number(Boolean(activeOutbound)) + activeDigital,
     oldestVoiceWaitSeconds: oldestVoiceWait,
     oldestDigitalWaitSeconds: oldestDigitalWait,
     priorityCounts,

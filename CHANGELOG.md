@@ -1,3 +1,32 @@
+# CALLORIA v6.62 — Unified Agent Workload & Digital Concurrency
+
+## Added
+
+- Bounded multi-contact digital work: up to three simultaneous active responses per agent, with channel caps of two email threads, two live chats and one social conversation.
+- An assigned-work tab strip so agents can move between open digital conversations without losing the selected thread.
+- A persistent compact waiting queue inside the active thread workspace, allowing additional eligible work to be accepted while capacity remains.
+- Customer-waiting threads stay assigned but release active response capacity; follow-up resumption checks capacity again.
+- Capacity-aware acceptance, channel-level caps, shift-window checks and mutual exclusion with voice/outbound/after-contact work.
+- Agent status recalculation when a digital thread becomes active, moves to customer-waiting, resumes or is completed.
+- Safe migration from the earlier single selected digital-thread save format.
+- Supervisor visibility into concurrent active digital responses and customer-waiting threads.
+- Responsive work tabs, queue actions and capacity indicators.
+
+## Verification boundary
+
+- The v6.62 workload engine includes 24 focused unit tests and 8 main-application/supervisor integration tests.
+- The combined v6.58–v6.62 selected regression run is recorded in `TEST-RESULTS-v6.62.txt`.
+- No successful Vite production build, browser-playthrough or Vercel deployment is claimed unless recorded separately.
+
+## Boundaries
+
+- All email, live-chat and social contacts remain fictional local gameplay records; there is no connection to real provider inboxes or customers.
+- The concurrency limits are simulator policy defaults, not real-world staffing or contractual service standards.
+- No database migration, provider secret, environment variable or external package is added.
+- Recruitment remains the employment entry gate. The main gameplay remains agent operations, customer resolution and career progression.
+
+---
+
 # CALLORIA v6.61 — Automatic Multichannel Digital Demand
 
 ## Added

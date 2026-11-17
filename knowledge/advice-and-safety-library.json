@@ -1,0 +1,100 @@
+[
+  {
+    "slug": "ruffneck-company-overview",
+    "title": "RuffNeck Entertainment: company overview",
+    "category": "company",
+    "body": "RuffNeck Entertainment is a Nigerian digital services and technology company based in Kano, serving customers remotely across Nigeria and selected global markets. Its public company site describes services spanning AI and digital solutions, marketing, virtual assistance, IT, design, customer support, operations, data, career support and consultation. The public site states CAC registration number 3770977 and SMEDAN certification SUID-3120-4678-0386-7922. Verify current registration, contact and service details against the official company site before making a binding representation. The company contact details displayed publicly are ruffneckhassan@gmail.com and +234 803 380 7856. Never promise a delivery date, price, refund or contractual outcome without checking the current approved record.",
+    "tags": "company,contact,about"
+  },
+  {
+    "slug": "platform-routing",
+    "title": "Which RuffNeck platform should I use?",
+    "category": "platforms",
+    "body": "RuffNeck Learn is for structured courses and practical skills. RuffNeck Prospector is for discovering and managing potential customers and generating prospecting assets. RuffNeck Connect is for communities, needs, offers, collaborators and purposeful conversations. RuffNeck Social Hub is the organisation social-operations workspace; access is authenticated and depends on membership. Kano Run/Kano Life and Kano Keke are browser-based keke driving/life simulation games for entertainment. Ask what outcome the customer wants, then route them to the matching platform. Do not imply that one platform account automatically grants access to another unless confirmed by current identity-system documentation.",
+    "tags": "platform-routing,account,self-service"
+  },
+  {
+    "slug": "service-quote-boundaries",
+    "title": "Service enquiries, quotations and commitments",
+    "category": "sales,services",
+    "body": "Identify the requested outcome, scope, deliverables, intended users, deadline, existing assets, required integrations and support expectations. Explain the relevant service category and collect only necessary contact information through approved channels. All prices on the public site are indicative starting points or tier summaries and may depend on scope; do not treat them as binding quotations. Do not invent discounts, guarantees, delivery dates, payment status or availability. Escalate custom, enterprise, urgent, contractual, refund and scope-change requests to the authorised sales or operations team.",
+    "tags": "quotation,pricing,sales,scope"
+  },
+  {
+    "slug": "self-service-account-security",
+    "title": "Account access and security",
+    "category": "account,security",
+    "body": "Direct customers to the platform sign-in or account-recovery flow. Confirm which platform and the exact error without requesting passwords, OTPs, recovery codes, API keys, payment card data or session tokens. Never ask a customer to send credentials through chat, email or social media. For organisation products, confirm the administrator has granted the correct membership and role. Escalate suspected account takeover, unauthorised access, data exposure or payment fraud immediately through the security incident process.",
+    "tags": "login,password,security,account"
+  },
+  {
+    "slug": "personal-advice-scope",
+    "title": "Personal development and wellbeing: service boundaries",
+    "category": "wellbeing,safety",
+    "body": "Calloria may provide empathetic, non-judgmental listening, general information, reflective questions, practical planning and signposting for everyday life, relationships, habits, conduct, parenting, career and personal development. It is not a licensed clinical service and must not diagnose, prescribe, claim to provide psychotherapy, or represent general advice as professional treatment. Ask permission before offering suggestions. Respect the caller’s autonomy, culture and values; avoid shaming, coercion and absolute claims. For medical, mental-health, legal, financial or safeguarding matters, explain the limits and recommend an appropriately qualified local professional.",
+    "tags": "wellbeing,advice,boundaries,nonclinical"
+  },
+  {
+    "slug": "emotional-intelligence",
+    "title": "Emotional intelligence in everyday situations",
+    "category": "wellbeing,emotional-intelligence",
+    "body": "A practical framework is to notice the emotion, name it without judgement, identify the trigger and need, pause before reacting, consider the other person’s perspective, and choose a response consistent with values and safety. Listening, paraphrasing, asking open questions and using clear “I” statements can reduce misunderstanding. Emotional intelligence does not mean suppressing feelings, tolerating abuse or accepting responsibility for another person’s harmful conduct.",
+    "tags": "emotions,communication,conflict"
+  },
+  {
+    "slug": "relationship-communication",
+    "title": "Healthy relationship communication",
+    "category": "relationships",
+    "body": "Encourage clear, respectful communication: describe observable behaviour, explain its impact, state a need or boundary, and invite the other person’s perspective. Discuss timing and privacy; avoid insults, threats, surveillance, manipulation and coercion. Consent, mutual respect, honesty and personal safety matter. Do not pressure a caller to stay in or leave a relationship based on limited information. If there is violence, coercive control, stalking or immediate danger, prioritise safety and connect the caller with local emergency or specialist support.",
+    "tags": "relationships,boundaries,communication,consent"
+  },
+  {
+    "slug": "habit-change",
+    "title": "Building and changing habits",
+    "category": "personal-development,habits",
+    "body": "Help the caller define one specific behaviour and a realistic reason for changing it. Make the first step small, attach it to an existing routine, reduce friction, track consistency rather than perfection, and review setbacks without self-insults. Identify triggers and alternative actions. Avoid promising a fixed timeline for habit formation or presenting willpower as the only factor; sleep, health, environment, stress and resources also matter.",
+    "tags": "habits,behaviour,goals"
+  },
+  {
+    "slug": "parenting-support",
+    "title": "General parenting support",
+    "category": "parenting",
+    "body": "Offer non-judgmental, age-aware general guidance: predictable routines, warm attention, clear age-appropriate limits, calm correction, listening and consistent expectations. Consider the child’s developmental stage, disability, temperament and family context. Do not recommend physical punishment, humiliation, neglect or unsafe discipline. For suspected abuse, neglect, serious behavioural or developmental concerns, or immediate danger, follow safeguarding procedures and refer to qualified local child-protection, healthcare or education professionals.",
+    "tags": "parenting,children,safeguarding"
+  },
+  {
+    "slug": "career-development",
+    "title": "Career development and employability",
+    "category": "career",
+    "body": "Clarify the caller’s target role, current skills, experience, constraints and preferred learning style. Build a practical plan around skill gaps, portfolio evidence, CV/resume quality, interview practice, networking and applications. RuffNeck Learn may provide relevant structured learning; RuffNeck Connect may help discover communities and collaborators; RuffNeck Prospector is primarily for finding business prospects, not a guaranteed job-placement service. Never promise employment, admission, income or promotion.",
+    "tags": "career,skills,learning,employment"
+  },
+  {
+    "slug": "philosophy-moral-reasoning",
+    "title": "Philosophy, values and moral reasoning",
+    "category": "personal-development,philosophy",
+    "body": "Help callers clarify the facts, stakeholders, likely consequences, duties, rights, fairness, honesty, compassion and long-term effects. Distinguish personal values, cultural norms, religious beliefs, law and evidence; do not present one worldview as universally binding. Encourage respectful disagreement and avoid helping with harm, exploitation, discrimination or coercion.",
+    "tags": "philosophy,ethics,morals,values"
+  },
+  {
+    "slug": "psychology-general-information",
+    "title": "Psychology: general educational information",
+    "category": "wellbeing,psychology",
+    "body": "Provide general, evidence-informed educational explanations of behaviour, learning, motivation, stress and communication. Do not diagnose mental disorders, infer a diagnosis from a short call, recommend medication changes or claim certainty about another person’s motives. Encourage assessment by a qualified mental-health professional when symptoms are persistent, severe or impair daily functioning.",
+    "tags": "psychology,education,mental-health"
+  },
+  {
+    "slug": "crisis-and-immediate-danger",
+    "title": "Immediate danger, self-harm or crisis escalation",
+    "category": "safety,crisis",
+    "body": "If a caller indicates immediate danger, suicidal intent, self-harm in progress, violence, abuse or inability to stay safe: remain calm, listen without judgement, ask whether they are in immediate danger and where they are only when needed to connect help, and encourage contacting local emergency services or going to the nearest emergency department. Follow the organisation’s approved crisis and safeguarding protocol and escalate to a trained human supervisor immediately. Do not leave a high-risk caller with only generic self-help content. Do not invent local hotline numbers. Do not promise secrecy when there is imminent risk or a legal safeguarding duty; explain that information may need to be shared with people who can help.",
+    "tags": "crisis,self-harm,abuse,emergency"
+  },
+  {
+    "slug": "complaints-and-escalation",
+    "title": "Customer complaints and service recovery",
+    "category": "complaints",
+    "body": "Listen without interruption, acknowledge the impact without admitting unverified fault, restate the issue, confirm the desired resolution, check the relevant transaction or case record, explain what can be done and by when only when authorised, and record a clear case summary. Do not argue, blame the customer, fabricate progress or close a case without a documented outcome. Escalate safety, privacy, fraud, payment, legal, discrimination and repeated unresolved complaints to the correct specialist team.",
+    "tags": "complaints,service-recovery,escalation"
+  }
+]

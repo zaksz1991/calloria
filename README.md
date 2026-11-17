@@ -1,8 +1,21 @@
-# CALLORIA v6.61 — Automatic Multichannel Digital Demand
+# CALLORIA v6.62 — Unified Agent Workload & Digital Concurrency
 
-A cumulative upgrade built on the v6.60 Supervisor Live Operations release. v6.61 adds automatic in-shift email, live-chat and social arrivals, per-channel capacity and overflow accounting, and a live digital-demand panel. The same accelerated shift clock now drives voice and digital waiting-time/SLA calculations.
+A cumulative upgrade built on the supplied v6.61 source snapshot. v6.62 turns digital contacts into a multi-item agent workload: agents can work several assigned email, live-chat and social conversations concurrently, subject to global and channel-specific capacity, while preserving customer-waiting threads and supervisor visibility. v6.59 live voice queues, v6.60 supervisor controls and v6.61 automatic digital demand remain in the cumulative source.
 
 The recruitment and assessment pathway remains the employment entry gate. The main gameplay remains employed agent work: queue handling, customer conversations, CRM and case records, service tools, after-contact work, QA, supervisor assistance and career progression. This is not a training-only conversion.
+
+
+## v6.62 unified agent workload and digital concurrency
+
+- Agents can keep up to three active digital responses assigned at once, with channel caps of two email threads, two live chats and one social conversation. The global three-item cap applies across all digital channels.
+- An assigned-work tab strip lets agents switch between conversations without losing the current thread. A compact queue remains available in the thread workspace so additional work can be accepted while capacity is available.
+- When an agent replies and the contact moves to Awaiting Customer, it remains on the assigned list but frees an active response slot. A customer follow-up must pass the capacity checks before it becomes active again.
+- The same workload checks prevent digital acceptance during voice, outbound or after-contact work and outside an active shift.
+- Older single-thread browser saves are migrated to the multi-contact representation. Agent status is recalculated as contacts are accepted, moved to customer-waiting, resumed or completed.
+- Supervisor metrics distinguish active digital responses from assigned contacts waiting for customers.
+- Responsive layouts provide work tabs, capacity indicators and queue actions on desktop and phone widths.
+
+All records remain fictional local simulation data. The feature does not connect to live email, social or messaging providers. Limits are simulator rules, not contractual staffing standards. The new tests and verification boundary are recorded in `TEST-RESULTS-v6.62.txt` and `VERIFICATION-v6.62.md`.
 
 ## v6.61 automatic multichannel digital demand
 
@@ -73,19 +86,15 @@ The v6.58 visitor-preview behaviour, v6.59 live voice queue and v6.60 supervisor
 
 ## Package contents
 
-- `js/digital-live-queue-engine.js`: v6.61 independent digital-channel arrival schedules, bounded channel capacity, overflow accounting and persisted demand state.
-- `js/supervisor-queue-engine.js`: v6.60 intake controls, voice/digital triage, unified queue metrics and supervisor audit state.
-- `js/live-queue-engine.js`: v6.59 arrival engine with pause-aware intake and bounded demand-profile intervals; customer patience still runs during intake pause.
-- `js/main.js`: persistent live voice/digital intake, digital demand dashboard, supervisor command-centre screen, triage submissions, operation timeline and safe migration.
-- `styles.css`: responsive supervisor queue-control and triage layouts.
-- `tests/digital-live-queue-engine-v661.test.mjs` and `tests/digital-live-queue-ui-v661.test.mjs`: v6.61 engine and application integration regression tests.
-- `tests/supervisor-queue-engine-v660.test.mjs` and `tests/supervisor-queue-ui-v660.test.mjs`: v6.60 engine and application integration regression tests.
-- v6.59 live queue tests, v6.58 Try-It Studio files/tests, existing game, office, GLB runtime, recruitment, operations, CRM, digital channels, voice, QA, career, organisation, Supabase and Vite configuration are retained from the supplied source snapshot.
-- `docs/CALLORIA-v6.61-AUTOMATIC-MULTICHANNEL-DEMAND.md`, `VERIFICATION-v6.61.md`, and `TEST-RESULTS-v6.61.txt` describe the current release and verification boundary.
-- The v6.60 supervisor and v6.59 voice-queue release documentation, tests and engines remain included.
+- `js/agent-workload-engine.js`: v6.62 multi-contact worklist, capacity policy and assignment/resumption guards.
+- `js/main.js`: v6.62 state migration, assigned-work tabs, multi-contact digital queue acceptance, thread switching, response/follow-up/completion integration and agent status recalculation.
+- `js/supervisor-queue-engine.js`: supervisor counts for concurrent active digital work and customer-waiting assignments.
+- `styles.css`: responsive work tabs, queue controls and workload/capacity indicators.
+- `tests/agent-workload-engine-v662.test.mjs` and `tests/agent-workload-ui-v662.test.mjs`: 32 new engine and integration tests.
+- `docs/CALLORIA-v6.62-UNIFIED-AGENT-WORKLOAD.md`, `INSTALL-GITHUB-v6.62.md`, `TEST-RESULTS-v6.62.txt` and `VERIFICATION-v6.62.md`: release and acceptance documentation.
+- v6.61 digital arrival engine and tests, v6.60 supervisor controls and tests, v6.59 inbound voice queue and tests, v6.58 Try-It Studio, and the existing recruitment, employment, 3D workplace runtime, operations, CRM, multichannel, voice, QA, career, organisation, Supabase and Vite configuration are retained from the supplied cumulative source snapshot.
 
-This is a complete cumulative replacement for the supplied repository snapshot plus the saved v6.59 and v6.60 updates. The uploaded repository did not contain `public/assets/` or its GLB binaries, so the ZIP cannot restore those missing files. Preserve the existing `public/assets/` folder, GLB models and hidden `.git` directory from your actual GitHub checkout when applying this release. Other files under `public/` that were present in the upload are retained. Environment files, private secrets and Supabase credentials are not included. See `INSTALL-GITHUB-v6.61.md` for the GUI merge procedure.
-
+This is a cumulative replacement for the supplied v6.61 repository snapshot. The source archive did not include `public/assets/` or its GLB binaries; keep those files from the actual GitHub checkout when merging. Keep the hidden `.git` directory and local environment files. No credentials, provider secrets or database exports are included.
 
 ## Commercial readiness boundary
 

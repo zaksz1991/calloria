@@ -1,0 +1,32 @@
+CALLORIA v6.62 — UNIFIED AGENT WORKLOAD & DIGITAL CONCURRENCY
+Verification date: 17 November 2026
+Source: supplied cumulative CALLORIA v6.61 repository archive, upgraded in place.
+
+NEW v6.62 TESTS
+- Agent workload engine unit tests: 24 passed, 0 failed.
+- Agent workload UI / main-application and supervisor integration tests: 8 passed, 0 failed.
+- Total new v6.62 tests: 32 passed, 0 failed.
+
+FOCUSED CUMULATIVE REGRESSION RUN
+- Selected v6.58, v6.59, v6.60, v6.61 and v6.62 tests: 119 passed, 0 failed.
+- Includes the new agent workload tests plus the earlier Try-It Studio, live voice queue, supervisor command-centre and automatic digital-demand tests.
+
+SOURCE CHECK
+- `npm run check`: PASSED.
+- JavaScript syntax checks cover main.js, production-world.js, live-queue-engine.js, supervisor-queue-engine.js, digital-live-queue-engine.js and agent-workload-engine.js.
+
+FULL REPOSITORY TEST SUITE
+- v6.61 baseline: 1,835 tests; 1,291 passed; 544 failed; 0 skipped.
+- v6.62 result: 1,867 tests; 1,323 passed; 544 failed; 0 skipped.
+- All 544 failing test records were compared against the v6.61 baseline. The set of 526 distinct failing test names is identical: no new failing test name was introduced and no prior failing test name was resolved by this change.
+- The 32 additional v6.62 tests all pass. The existing 544 failures remain unresolved and must not be represented as a clean full-suite result.
+
+PRODUCTION BUILD / DEPLOYMENT
+- `npm run build` was attempted and could not start: `vite: not found`.
+- The supplied workspace does not have installed dependencies. No successful Vite production build is claimed.
+- No browser playthrough, physical-device test, Vercel deployment or live external-provider operation was performed or verified.
+
+ASSETS AND CONFIGURATION
+- The uploaded source snapshot omitted `public/assets/` and its GLB binaries. This package does not invent substitute assets. Preserve the actual `public/assets/` directory and model files from the user's GitHub checkout when applying this release.
+- No database migration, new environment variable, secret, external package dependency or live provider integration was added.
+- Existing .git directory and local environment files must remain in the user's checkout; neither is replaced by this ZIP.

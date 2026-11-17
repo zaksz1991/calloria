@@ -472,3 +472,17 @@ body.calloria-game-launch .world-vignette{position:absolute;inset:0;z-index:2;ba
   .digital-live-summary > div { padding: 9px; }
   .digital-live-summary strong { font-size: 18px; }
 }
+
+/* CALLORIA v6.62 — assigned multichannel work tabs and response-capacity cues */
+.digital-worklist-panel{margin-bottom:14px}
+.digital-work-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.digital-work-tab{display:grid;gap:6px;min-width:0;text-align:left;padding:12px;border:1px solid #dfe7eb;border-radius:10px;background:#fff;color:#344b5c;cursor:pointer;transition:border-color .15s,box-shadow .15s,background .15s}
+.digital-work-tab.selected{border-color:#2a7b79;background:#f1f8f7;box-shadow:inset 0 0 0 1px #2a7b79}
+.digital-work-tab:disabled{opacity:.55;cursor:not-allowed}
+.digital-work-tab strong{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.digital-work-tab small{font-size:9px;color:#748692;line-height:1.4}
+.digital-followup{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.digital-followup small{color:#9a6530;font-size:10px}
+@media(max-width:650px){.digital-work-tabs{grid-template-columns:1fr}.digital-work-tab{padding:10px}.digital-followup{align-items:stretch;flex-direction:column}.digital-followup .btn{width:100%}}
+
+.digital-available-queue{margin-bottom:14px}.digital-available-queue .digital-queue-row{padding:9px}.digital-available-queue .digital-queue-priority{min-height:52px}

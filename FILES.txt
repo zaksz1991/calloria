@@ -1,33 +1,41 @@
-CALLORIA v6.61 — Complete cumulative repository snapshot
+CALLORIA v6.62 — Complete cumulative repository snapshot
 
-This archive contains the uploaded CALLORIA repository source with v6.59 Live Queue Operations and v6.60 Supervisor Live Operations retained, plus v6.61 Automatic Multichannel Digital Demand.
+Release: Unified Agent Workload & Digital Concurrency
+Base: supplied cumulative v6.61 source archive
 
-Key v6.61 files:
-  js/digital-live-queue-engine.js
+New v6.62 files:
+  js/agent-workload-engine.js
+  tests/agent-workload-engine-v662.test.mjs
+  tests/agent-workload-ui-v662.test.mjs
+  docs/CALLORIA-v6.62-UNIFIED-AGENT-WORKLOAD.md
+  INSTALL-GITHUB-v6.62.md
+  TEST-RESULTS-v6.62.txt
+  VERIFICATION-v6.62.md
+
+Updated integration files:
   js/main.js
+  js/supervisor-queue-engine.js
   styles.css
   package.json
-  tests/digital-live-queue-engine-v661.test.mjs
-  tests/digital-live-queue-ui-v661.test.mjs
-  tests/package-manifest.test.mjs
-  docs/CALLORIA-v6.61-AUTOMATIC-MULTICHANNEL-DEMAND.md
-  INSTALL-GITHUB-v6.61.md
-  VERIFICATION-v6.61.md
-  TEST-RESULTS-v6.61.txt
+  CHANGELOG.md
+  README.md
 
-Previous releases retained:
-  v6.60 supervisor live operations engine, interface and tests
-  v6.59 automatic inbound voice queue engine and tests
-  v6.58 RuffNeck Try-It Studio and tests
-  Existing recruitment, employment, 3D workplace runtime, operations, CRM, multichannel contact, voice, QA, career, organisation/workforce, Supabase and Vite files supplied in the source ZIP.
+Previous cumulative releases retained:
+  v6.61 Automatic Multichannel Digital Demand
+  v6.60 Supervisor Live Operations Command Centre
+  v6.59 Live Queue Operations
+  v6.58 Try-It Studio
+  Existing recruitment, employment, 3D workplace runtime, simulated operations, CRM, customer dialogue, voice, digital channels, QA, career progression, organisation/workforce, Supabase, tests, assets present in supplied snapshot and Vite application configuration.
 
 Verification:
-  21 new v6.61 tests passed; 87 combined focused v6.58–v6.61 regression tests passed.
+  32 new v6.62 tests passed.
+  Selected cumulative v6.58–v6.62 tests: 119 passed, 0 failed.
   npm run check passed.
-  Full suite: 1,835 tests; 1,291 passed; 544 legacy failures; no new failing test name versus v6.60.
-  Vite production build not verified (vite dependency absent in preparation workspace).
+  Full suite: 1,867 tests; 1,323 passed; 544 failed. The 544 failing records comprise the same 526 distinct failing test names found in the v6.61 baseline; no new failing name was introduced.
+  Vite build not verified: vite is not installed in the supplied workspace.
+  No browser playthrough or Vercel deployment claimed.
 
 Asset boundary:
-  The supplied upload omitted public/assets/ and GLB binary files. No replacement assets are invented. Preserve the user's actual public/assets/ directory and model files when merging into the GitHub checkout.
+  The provided source archive omitted public/assets/ and GLB binaries. No substitute models are invented. Preserve the actual public/assets/ directory and models from the user's GitHub checkout when merging.
 
-No private keys, secrets, environment values, database exports or unprovided model binaries are included.
+No secrets, environment values, database exports, new migrations or live provider credentials are included.

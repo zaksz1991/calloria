@@ -17,6 +17,7 @@ import { AGENT_STATES, createShiftRecord, recordAgentState, calculateShiftAdhere
 import { speechRecognitionAvailable, mediaRecordingAvailable, createVoiceSession, appendVoiceTranscript, finishVoiceSession, sanitizeTranscript } from './voice-engine.js';
 import { DIGITAL_CHANNELS, DIGITAL_STATUS, DIGITAL_SCENARIOS, createDigitalQueue, sortDigitalQueue, findDigitalContact, acceptDigitalContact, recordDigitalReply, deliverDigitalFollowUp, completeDigitalContact, digitalQueueMetrics, appendDigitalEvent } from './multichannel-engine.js';
 import { createDigitalLiveQueueState, normalizeDigitalLiveQueueState, advanceDigitalLiveQueue, digitalLiveQueueSnapshot, setDigitalQueueDemandMultiplier } from './digital-live-queue-engine.js';
+import { agentWorkloadSnapshot, assignedDigitalWorkItems, canAcceptDigitalContact, canResumeDigitalFollowUp } from './agent-workload-engine.js';
 import { ORGANIZATION_ROLES, DEFAULT_ORG_POLICY, ensureOrganizationWorkspace, createOrganization, createOrganizationMember, setOrganizationMemberStatus, updateOrganizationPolicy, getActiveOrganization, getOrganizationSnapshot } from './organization-engine.js';
 import { initializeCloudPlatform, getCloudPlatformState, getCloudSupabaseClient, canCloudRole, createCloudOrganization, createCloudInvitation, updateCloudPolicy, setCloudMemberStatus, selectCloudOrganization } from './cloud-platform.js';
 import { validateCloudPolicy } from './cloud-security.js';
@@ -91,7 +92,7 @@ const initialState = () => ({
   viewedArticle: null,
   workforceDepartment: 'inbound',
   shiftRecord: null, shiftElapsedMinutes: 0, shiftSimulationEpochMs: null, liveQueueSimulation: null, agentStatus: 'offline', shiftHistory: [], coachingSessions: [], simulationClockSeconds: 7 * 3600, lastShiftDay: 0,
-  briefingAttendance: [], promotionAttempts: [], crossSellRecords: [], commendations: [], systemEvents: [], digitalQueue: [], digitalSequence: 0, digitalLiveQueueSimulation: null, digitalActiveId: null, digitalChannelFilter: 'all', digitalEvents: [], customerLabSession: null, customerQaHistory: [], qaScorecards: [], humanQaReviews: [], qaDisputes: [], qaCalibrations: [], aiQaSuggestions: [], qaSelectedInteractionId: '', qaSelectedScorecardId: '', organizationWorkspace: null
+  briefingAttendance: [], promotionAttempts: [], crossSellRecords: [], commendations: [], systemEvents: [], digitalQueue: [], digitalSequence: 0, digitalLiveQueueSimulation: null, digitalActiveId: null, digitalActiveIds: [], digitalChannelFilter: 'all', digitalEvents: [], customerLabSession: null, customerQaHistory: [], qaScorecards: [], humanQaReviews: [], qaDisputes: [], qaCalibrations: [], aiQaSuggestions: [], qaSelectedInteractionId: '', qaSelectedScorecardId: '', organizationWorkspace: null
 });
 
 let state = loadState();
@@ -153,7 +154,18 @@ function loadState() {
     if (!migrated.qaScorecards.length) migrated.qaScorecards = [JSON.parse(JSON.stringify(DEFAULT_QA_SCORECARD))];
     if (!migrated.qaSelectedScorecardId) migrated.qaSelectedScorecardId = migrated.qaScorecards.find(item => item.active !== false)?.id || DEFAULT_QA_SCORECARD.id;
     if (!['all', ...Object.keys(DIGITAL_CHANNELS)].includes(migrated.digitalChannelFilter)) migrated.digitalChannelFilter = 'all';
-    if (migrated.digitalActiveId && !migrated.digitalQueue.some(item => item.id === migrated.digitalActiveId && [DIGITAL_STATUS.ACTIVE, DIGITAL_STATUS.AWAITING_CUSTOMER].includes(item.status))) migrated.digitalActiveId = null;
+    // Rebuild the multi-contact worklist from existing assigned queue records.
+    // This migrates v6.58-v6.61 saves without discarding the legacy selected ID.
+    const migratedAgentId = `EMP-${migrated.nameInitials || 'AGENT'}`;
+    const migratedAssignments = assignedDigitalWorkItems(migrated.digitalQueue, migratedAgentId);
+    const migratedIds = migratedAssignments.map(item => item.id);
+    if (Array.isArray(migrated.digitalActiveIds)) {
+      migrated.digitalActiveIds = [...new Set(migrated.digitalActiveIds.filter(id => migratedIds.includes(id)))];
+      for (const id of migratedIds) if (!migrated.digitalActiveIds.includes(id)) migrated.digitalActiveIds.push(id);
+    } else {
+      migrated.digitalActiveIds = migratedIds;
+    }
+    if (!migrated.digitalActiveId || !migratedIds.includes(migrated.digitalActiveId)) migrated.digitalActiveId = migratedIds[0] || null;
     if (!AGENT_STATES.includes(migrated.agentStatus)) migrated.agentStatus = migrated.shiftActive ? 'available' : 'offline';
     if (!localStorage.getItem(activeStorageKey)) localStorage.setItem(activeStorageKey, JSON.stringify(migrated));
     return migrated;
@@ -912,46 +924,108 @@ function digitalReplyTemplates(channel) {
   return templates[channel] || templates.email;
 }
 
+function currentAgentReference() {
+  return `EMP-${state.nameInitials || 'AGENT'}`;
+}
+
+function currentAgentDigitalWork() {
+  return assignedDigitalWorkItems(state.digitalQueue, currentAgentReference());
+}
+
+function currentAgentWorkload() {
+  return agentWorkloadSnapshot(state.digitalQueue, currentAgentReference());
+}
+
+function syncDigitalWorkSelection(preferredId = null) {
+  const work = currentAgentDigitalWork();
+  state.digitalActiveIds = work.map(item => item.id);
+  if (preferredId && state.digitalActiveIds.includes(preferredId)) state.digitalActiveId = preferredId;
+  else if (!state.digitalActiveIds.includes(state.digitalActiveId)) state.digitalActiveId = state.digitalActiveIds[0] || null;
+  return work;
+}
+
+function syncAgentStateWithDigitalWork(reason = 'Digital workload updated') {
+  if (!state.shiftActive || state.currentCall || state.activeOutbound || state.wrapUp) return;
+  const workload = currentAgentWorkload();
+  const nextStatus = workload.activeCount > 0 ? 'busy' : 'available';
+  if (state.agentStatus !== nextStatus) setAgentState(nextStatus, reason);
+}
+
+function digitalWorkloadDecision(contactId, mode = 'accept') {
+  const common = {
+    queue: state.digitalQueue,
+    contactId,
+    agentId: currentAgentReference(),
+    shiftActive: state.shiftActive,
+    inShiftWindow: shiftTimeAvailable(),
+    agentStatus: state.agentStatus,
+    currentCall: state.currentCall,
+    activeOutbound: state.activeOutbound,
+    wrapUp: state.wrapUp
+  };
+  return mode === 'resume' ? canResumeDigitalFollowUp(common) : canAcceptDigitalContact(common);
+}
+
+function renderDigitalWorkTabs(work, selectedId, disabled = false) {
+  if (!work.length) return '';
+  return `<section class="panel digital-worklist-panel"><div class="panel-head"><div><h3>My assigned digital work</h3><p>Keep asynchronous customer threads open while handling other eligible digital contacts.</p></div><span class="pill green">${work.length} OPEN</span></div><div class="digital-work-tabs">${work.map(item => {
+    const channel = DIGITAL_CHANNELS[item.channel];
+    const waiting = item.status === DIGITAL_STATUS.AWAITING_CUSTOMER;
+    return `<button type="button" class="digital-work-tab ${item.id === selectedId ? 'selected' : ''}" data-action="select-digital" data-contact-id="${escapeHTML(item.id)}" ${disabled ? 'disabled' : ''}><span class="channel-label ${item.channel}">${channel.icon} ${channel.label.toUpperCase()}</span><strong>${escapeHTML(item.subject)}</strong><small>${escapeHTML(item.customer)} · ${waiting ? 'AWAITING CUSTOMER' : 'ACTIVE WORK'}</small></button>`;
+  }).join('')}</div></section>`;
+}
+
 function renderDigital() {
   if (!state.shiftActive) {
     viewRoot.innerHTML = renderShiftEntryPanel('Digital support is not active', 'Start your shift before receiving email, live-chat and social-media assignments. Digital queues are simulated and do not connect to real accounts.');
     return;
   }
   ensureDigitalQueue(6);
-  const digitalNow = state.shiftActive ? queueSimulationNowMs() : Date.now();
+  const digitalNow = queueSimulationNowMs();
   const metrics = digitalQueueMetrics(state.digitalQueue, digitalNow);
   const digitalLive = digitalLiveQueueSnapshot(state.digitalLiveQueueSimulation, state.shiftElapsedMinutes);
-  const active = state.digitalActiveId ? findDigitalContact(state.digitalQueue, state.digitalActiveId) : null;
-  if (active && [DIGITAL_STATUS.ACTIVE, DIGITAL_STATUS.AWAITING_CUSTOMER].includes(active.status)) {
+  const workload = currentAgentWorkload();
+  const work = syncDigitalWorkSelection();
+  const selected = state.digitalActiveId ? findDigitalContact(state.digitalQueue, state.digitalActiveId) : null;
+  const active = selected && [DIGITAL_STATUS.ACTIVE, DIGITAL_STATUS.AWAITING_CUSTOMER].includes(selected.status) ? selected : null;
+  const interactiveBlocked = Boolean(state.currentCall || state.activeOutbound || state.wrapUp);
+  const tabs = renderDigitalWorkTabs(work, active?.id || null, interactiveBlocked);
+  const quickQueue = sortDigitalQueue(state.digitalQueue, { channel: state.digitalChannelFilter || 'all', now: digitalNow }).slice(0, 5);
+
+  if (active) {
     const channel = DIGITAL_CHANNELS[active.channel];
     const messageRows = active.messages.map(message => `<div class="digital-message ${message.type === 'agent' ? 'agent' : 'customer'}"><div class="digital-message-meta"><strong>${message.type === 'agent' ? 'YOU · AGENT' : escapeHTML(active.customer)}</strong><time>${new Date(message.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time></div><p>${escapeHTML(message.text)}</p>${message.quality ? `<small>Rule-based practice check: ${message.quality.score}%</small>` : ''}</div>`).join('');
     const waitingForCustomer = active.status === DIGITAL_STATUS.AWAITING_CUSTOMER;
-    viewRoot.innerHTML = `<div class="digital-workspace">
+    const resumeDecision = waitingForCustomer ? digitalWorkloadDecision(active.id, 'resume') : { allowed: false, reason: '' };
+    const queuePanel = `<section class="panel digital-available-queue"><div class="panel-head"><div><h3>Waiting digital queue</h3><p>Accept additional work while response capacity remains available.</p></div><span class="pill ${workload.availableSlots > 0 ? 'green' : 'amber'}">${workload.availableSlots} SLOTS AVAILABLE</span></div>${quickQueue.length ? `<div class="digital-queue-list">${quickQueue.map(item => { const decision = digitalWorkloadDecision(item.id); return `<article class="digital-queue-row"><span class="digital-queue-priority ${item.priority}"></span><div class="digital-queue-main"><span class="channel-label ${item.channel}">${DIGITAL_CHANNELS[item.channel].icon} ${DIGITAL_CHANNELS[item.channel].label.toUpperCase()}</span><strong>${escapeHTML(item.subject)}</strong><small>${escapeHTML(item.customer)} · ${escapeHTML(item.preview)}</small></div><div class="digital-queue-meta"><span class="pill ${item.priority === 'critical' ? 'red' : item.priority === 'high' ? 'amber' : ''}">${item.priority.toUpperCase()}</span><small>${Math.floor(item.waitSeconds / 60)}m ${item.waitSeconds % 60}s</small><button class="btn small primary" data-action="accept-digital" data-contact-id="${escapeHTML(item.id)}" ${decision.allowed ? '' : 'disabled'} title="${escapeHTML(decision.reason || 'Accept contact')}">Accept</button></div></article>`; }).join('')}</div>` : '<p class="muted-note">No waiting digital contacts are available.</p>'}</section>`;
+    viewRoot.innerHTML = `${tabs}${queuePanel}<div class="digital-workspace">
       <section class="panel digital-thread-panel">
         <div class="digital-topbar"><div><span class="channel-label ${active.channel}">${channel.icon} ${channel.label.toUpperCase()}</span><h3>${escapeHTML(active.subject)}</h3><p>${escapeHTML(active.customer)} · ${escapeHTML(active.routeGroup)} · ${escapeHTML(active.id)}</p></div><span class="pill ${active.priority === 'critical' ? 'red' : active.priority === 'high' ? 'amber' : 'green'}">${active.priority.toUpperCase()}</span></div>
         <div class="digital-thread">${messageRows}</div>
-        ${waitingForCustomer && !active.followUpDelivered && active.followUp ? `<div class="digital-followup"><p>Customer response is pending in the simulation.</p><button class="btn outline" data-action="deliver-digital-followup">Receive simulated customer reply</button></div>` : ''}
-        ${active.status === DIGITAL_STATUS.ACTIVE ? `<div class="digital-template-row"><span>REPLY STARTERS</span>${digitalReplyTemplates(active.channel).map(([id,text])=>`<button type="button" class="digital-template-button" data-digital-template="${id}">${id.replaceAll('-',' ')}</button>`).join('')}</div><form id="digitalReplyForm" class="digital-composer"><label class="form-field">AGENT RESPONSE<textarea name="reply" rows="4" minlength="12" maxlength="1200" required placeholder="Write a clear, professional response. Do not request passwords, PINs, one-time codes or full payment-card numbers."></textarea></label><div class="digital-composer-foot"><small>Maximum 1,200 characters. Replies are stored in this browser's local simulation save.</small><button class="btn primary" type="submit">Record and send simulated reply</button></div></form>` : `<div class="digital-awaiting-note">Awaiting the scripted customer follow-up. You may complete the interaction based on the information already available.</div>`}
-        <form id="digitalCloseForm" class="digital-close-form"><div class="digital-close-heading"><div><strong>AFTER-CONTACT WORK</strong><small>Record a clear disposition and factual CRM note.</small></div><span class="pill amber">WRAP-UP</span></div><div class="grid two"><label class="form-field">DISPOSITION<select name="disposition"><option value="resolved">Resolved</option><option value="pending_customer">Pending customer response</option><option value="escalated">Escalated to specialist team</option></select></label><label class="form-field">CASE NOTES<textarea name="notes" rows="3" minlength="12" maxlength="1200" required placeholder="Issue, checks, action, owner and agreed next step."></textarea></label></div><button class="btn secondary" type="submit">Save disposition & return to queue</button></form>
+        ${waitingForCustomer && !active.followUpDelivered && active.followUp ? `<div class="digital-followup"><div><p>Customer response is pending in the simulation.</p>${!resumeDecision.allowed ? `<small>${escapeHTML(resumeDecision.reason)}</small>` : ''}</div><button class="btn outline" data-action="deliver-digital-followup" ${resumeDecision.allowed ? '' : 'disabled'}>Receive simulated customer reply</button></div>` : ''}
+        ${active.status === DIGITAL_STATUS.ACTIVE ? `<div class="digital-template-row"><span>REPLY STARTERS</span>${digitalReplyTemplates(active.channel).map(([id,text])=>`<button type="button" class="digital-template-button" data-digital-template="${id}" ${interactiveBlocked ? 'disabled' : ''}>${id.replaceAll('-',' ')}</button>`).join('')}</div><form id="digitalReplyForm" class="digital-composer"><label class="form-field">AGENT RESPONSE<textarea name="reply" rows="4" minlength="12" maxlength="1200" required placeholder="Write a clear, professional response. Do not request passwords, PINs, one-time codes or full payment-card numbers." ${interactiveBlocked ? 'disabled' : ''}></textarea></label><div class="digital-composer-foot"><small>Maximum 1,200 characters. Replies are stored in this browser's local simulation save.</small><button class="btn primary" type="submit" ${interactiveBlocked ? 'disabled' : ''}>Record and send simulated reply</button></div></form>` : `<div class="digital-awaiting-note">Awaiting the scripted customer follow-up. This assigned thread remains on your worklist but does not consume an active response slot.</div>`}
+        <form id="digitalCloseForm" class="digital-close-form"><div class="digital-close-heading"><div><strong>AFTER-CONTACT WORK</strong><small>Record a clear disposition and factual CRM note.</small></div><span class="pill amber">WRAP-UP</span></div><div class="grid two"><label class="form-field">DISPOSITION<select name="disposition" ${interactiveBlocked ? 'disabled' : ''}><option value="resolved">Resolved</option><option value="pending_customer">Pending customer response</option><option value="escalated">Escalated to specialist team</option></select></label><label class="form-field">CASE NOTES<textarea name="notes" rows="3" minlength="12" maxlength="1200" required placeholder="Issue, checks, action, owner and agreed next step." ${interactiveBlocked ? 'disabled' : ''}></textarea></label></div><button class="btn secondary" type="submit" ${interactiveBlocked ? 'disabled' : ''}>Save disposition & return to queue</button></form>
       </section>
       <aside class="digital-side-stack">
-        <section class="panel"><div class="panel-head"><div><h3>Channel handling guide</h3><p>${channel.description}</p></div><span class="pill">${channel.slaMinutes < 10 ? `${channel.slaMinutes} MIN` : `${channel.slaMinutes} MIN`} TARGET</span></div><div class="digital-guidance-list">${active.guidance.map((item,index)=>`<div><span>${index + 1}</span><p>${escapeHTML(item)}</p></div>`).join('')}</div></section>
+        <section class="panel"><div class="panel-head"><div><h3>Agent workload capacity</h3><p>Active conversations consume response capacity; customer-waiting threads stay assigned without occupying a live slot.</p></div><span class="pill ${workload.atCapacity ? 'amber' : 'green'}">${workload.activeCount}/${workload.maxConcurrentDigital} ACTIVE</span></div><div class="data-list"><div class="data-row"><span>Available digital slots</span><strong>${workload.availableSlots}</strong></div><div class="data-row"><span>Assigned open threads</span><strong>${workload.assignedCount}</strong></div><div class="data-row"><span>Awaiting customer</span><strong>${workload.awaitingCustomerCount}</strong></div><div class="data-row"><span>Live chat capacity</span><strong>${workload.activeByChannel.live_chat}/${workload.channelCapacity.live_chat}</strong></div><div class="data-row"><span>Email capacity</span><strong>${workload.activeByChannel.email}/${workload.channelCapacity.email}</strong></div><div class="data-row"><span>Social capacity</span><strong>${workload.activeByChannel.social}/${workload.channelCapacity.social}</strong></div></div></section>
+        <section class="panel"><div class="panel-head"><div><h3>Channel handling guide</h3><p>${channel.description}</p></div><span class="pill">${channel.slaMinutes} MIN TARGET</span></div><div class="digital-guidance-list">${active.guidance.map((item,index)=>`<div><span>${index + 1}</span><p>${escapeHTML(item)}</p></div>`).join('')}</div></section>
         <section class="panel"><div class="panel-head"><div><h3>Customer and routing</h3><p>Synthetic customer record only.</p></div><span class="pill green">SIMULATED CRM</span></div><div class="data-list"><div class="data-row"><span>Customer</span><strong>${escapeHTML(active.customer)}</strong></div><div class="data-row"><span>Channel</span><strong>${channel.label}</strong></div><div class="data-row"><span>Priority</span><strong>${active.priority.toUpperCase()}</strong></div><div class="data-row"><span>Specialist route</span><strong>${escapeHTML(active.routeGroup)}</strong></div><div class="data-row"><span>Agent replies</span><strong>${active.replyCount}</strong></div><div class="data-row"><span>Current practice QA</span><strong>${active.qaScore === null ? 'Pending' : `${active.qaScore}%`}</strong></div></div><p class="muted-note" style="margin-top:12px">Never collect credentials or sensitive payment information through email, chat or social messages. Use organisation-approved secure verification channels.</p></section>
       </aside>
     </div>`;
     return;
   }
-  state.digitalActiveId = null;
+
   const queue = sortDigitalQueue(state.digitalQueue, { channel: state.digitalChannelFilter || 'all', now: digitalNow });
   const recent = state.digitalQueue.filter(item => [DIGITAL_STATUS.RESOLVED, DIGITAL_STATUS.ESCALATED, DIGITAL_STATUS.PENDING_CUSTOMER].includes(item.status)).slice(-5).reverse();
   const channels = Object.entries(DIGITAL_CHANNELS).map(([key,item]) => `<div class="digital-channel-card"><span class="channel-label ${key}">${item.icon} ${item.label.toUpperCase()}</span><strong>${metrics.channelCounts[key].waiting}</strong><small>waiting · ${digitalLive.arrivalsByChannel[key] || 0} new this shift · ${metrics.channelCounts[key].resolved} resolved</small></div>`).join('');
-  viewRoot.innerHTML = `<div class="ops-summary-grid">${metricCard('DIGITAL CONTACTS WAITING',metrics.waiting,'Email, live chat and social','✉')}${metricCard('ACTIVE INTERACTIONS',metrics.active,'Currently in progress','◉')}${metricCard('SLA RESPONSE RISK',metrics.slaAtRisk,'Waiting beyond channel target','⌁')}${metricCard('AVERAGE DIGITAL QA',metrics.averageQA === null ? '—' : `${metrics.averageQA}%`,'Rule-based practice check','✓')}</div>
+  const acceptable = state.shiftActive && shiftTimeAvailable() && !state.currentCall && !state.activeOutbound && !state.wrapUp;
+  viewRoot.innerHTML = `${tabs}<div class="ops-summary-grid">${metricCard('DIGITAL CONTACTS WAITING',metrics.waiting,'Email, live chat and social','✉')}${metricCard('ACTIVE INTERACTIONS',metrics.active,'Currently in progress','◉')}${metricCard('SLA RESPONSE RISK',metrics.slaAtRisk,'Waiting beyond channel target','⌁')}${metricCard('AVAILABLE DIGITAL SLOTS',workload.availableSlots,`${workload.activeCount}/${workload.maxConcurrentDigital} active · ${workload.awaitingCustomerCount} awaiting customer`,'↔')}</div>
     <div class="digital-channel-grid">${channels}</div>
     <section class="panel digital-live-intake-panel"><div class="panel-head"><div><h3>Live digital demand</h3><p>New synthetic email, live-chat and social contacts continue arriving during the shift.</p></div><span class="pill ${digitalLive.active ? 'green' : 'amber'}">${digitalLive.active ? 'AUTOMATIC INTAKE' : 'INTAKE CLOSED'}</span></div><div class="digital-live-summary"><div><span>Total new contacts</span><strong>${digitalLive.arrivals}</strong></div><div><span>Queue overflow</span><strong>${digitalLive.overflowed}</strong></div><div><span>Next arrival</span><strong>${digitalLive.nextArrivalInMinutes === null ? 'Stopped' : `${Math.max(0, Math.ceil(digitalLive.nextArrivalInMinutes))} sim min`}</strong></div></div><p class="muted-note">Arrival demand follows the supervisor's Standard, Busy period or Recovery profile. When a channel reaches its waiting capacity, additional demand is recorded as overflow instead of creating an unbounded queue.</p></section>
-    <div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Digital contact queue</h3><p>Priority-first routing across the three supported digital channels.</p></div><span class="pill ${state.agentStatus === 'available' && shiftTimeAvailable() ? 'green' : 'amber'}">${state.agentStatus === 'available' && shiftTimeAvailable() ? 'READY TO ACCEPT' : 'AGENT NOT AVAILABLE'}</span></div>
+    <div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Digital contact queue</h3><p>Priority-first routing with channel-specific concurrency limits.</p></div><span class="pill ${acceptable && workload.availableSlots > 0 ? 'green' : 'amber'}">${acceptable && workload.availableSlots > 0 ? 'CAPACITY AVAILABLE' : 'CAPACITY / SHIFT BLOCKED'}</span></div>
       <label class="form-field digital-filter">FILTER CHANNEL<select id="digitalChannelFilter"><option value="all" ${state.digitalChannelFilter==='all'?'selected':''}>All channels</option><option value="email" ${state.digitalChannelFilter==='email'?'selected':''}>Email</option><option value="live_chat" ${state.digitalChannelFilter==='live_chat'?'selected':''}>Live chat</option><option value="social" ${state.digitalChannelFilter==='social'?'selected':''}>Social media</option></select></label>
-      ${queue.length ? `<div class="digital-queue-list">${queue.map(item => `<article class="digital-queue-row"><span class="digital-queue-priority ${item.priority}"></span><div class="digital-queue-main"><span class="channel-label ${item.channel}">${DIGITAL_CHANNELS[item.channel].icon} ${DIGITAL_CHANNELS[item.channel].label.toUpperCase()}</span><strong>${escapeHTML(item.subject)}</strong><small>${escapeHTML(item.customer)} · ${escapeHTML(item.preview)}</small><em>${escapeHTML(item.routeGroup)}</em></div><div class="digital-queue-meta"><span class="pill ${item.priority==='critical'?'red':item.priority==='high'?'amber':''}">${item.priority.toUpperCase()}</span><small>${Math.floor(item.waitSeconds/60)}m ${item.waitSeconds%60}s waiting</small><button class="btn small primary" data-action="accept-digital" data-contact-id="${escapeHTML(item.id)}" ${state.agentStatus==='available' && shiftTimeAvailable() && !state.currentCall && !state.activeOutbound && !state.wrapUp ? '' : 'disabled'}>Accept</button></div></article>`).join('')}</div>` : `<div class="empty-state"><h3>No contacts in this channel filter</h3><p>Load another controlled batch of synthetic digital enquiries.</p></div>`}
-      <button class="btn outline" style="margin-top:14px" data-action="refresh-digital-queue" ${state.agentStatus==='available' && shiftTimeAvailable() ? '' : 'disabled'}>Load next simulated batch</button>
+      ${queue.length ? `<div class="digital-queue-list">${queue.map(item => { const decision = digitalWorkloadDecision(item.id); return `<article class="digital-queue-row"><span class="digital-queue-priority ${item.priority}"></span><div class="digital-queue-main"><span class="channel-label ${item.channel}">${DIGITAL_CHANNELS[item.channel].icon} ${DIGITAL_CHANNELS[item.channel].label.toUpperCase()}</span><strong>${escapeHTML(item.subject)}</strong><small>${escapeHTML(item.customer)} · ${escapeHTML(item.preview)}</small><em>${escapeHTML(item.routeGroup)}</em></div><div class="digital-queue-meta"><span class="pill ${item.priority==='critical'?'red':item.priority==='high'?'amber':''}">${item.priority.toUpperCase()}</span><small>${Math.floor(item.waitSeconds/60)}m ${item.waitSeconds%60}s waiting</small><button class="btn small primary" data-action="accept-digital" data-contact-id="${escapeHTML(item.id)}" ${decision.allowed ? '' : 'disabled'} title="${escapeHTML(decision.reason || `Accept ${DIGITAL_CHANNELS[item.channel].label}`)}">Accept</button></div></article>`; }).join('')}</div>` : `<div class="empty-state"><h3>No contacts in this channel filter</h3><p>Load another controlled batch of synthetic digital enquiries.</p></div>`}
+      <button class="btn outline" style="margin-top:14px" data-action="refresh-digital-queue" ${acceptable ? '' : 'disabled'}>Load next simulated batch</button>
     </section><section class="panel"><div class="panel-head"><div><h3>Digital service performance</h3><p>Separate channel workloads and case outcomes.</p></div><span class="pill green">LOCAL SIMULATION</span></div><div class="data-list"><div class="data-row"><span>Email first-response target</span><strong>4 hours · illustrative</strong></div><div class="data-row"><span>Live chat response target</span><strong>2 minutes · illustrative</strong></div><div class="data-row"><span>Social acknowledgement target</span><strong>20 minutes · illustrative</strong></div><div class="data-row"><span>Average first response</span><strong>${metrics.averageFirstResponseMinutes ? `${metrics.averageFirstResponseMinutes} min` : 'Pending'}</strong></div><div class="data-row"><span>Completed digital contacts</span><strong>${metrics.resolved}</strong></div><div class="data-row"><span>Escalated digital contacts</span><strong>${metrics.escalated}</strong></div><div class="data-row"><span>Pending customer response</span><strong>${metrics.awaitingCustomer}</strong></div></div><p class="muted-note" style="margin-top:12px">Targets are example gameplay values, not contractual service levels or regulatory requirements. Actual targets must be configured by the organisation.</p><h4 style="margin:16px 0 8px">Recent digital outcomes</h4>${recent.length ? recent.map(item=>`<div class="case-item"><div class="case-symbol">${DIGITAL_CHANNELS[item.channel].icon}</div><div class="case-copy"><strong>${escapeHTML(item.subject)}</strong><small>${escapeHTML(item.customer)} · ${escapeHTML(item.channelLabel)}</small></div><span class="pill ${item.status===DIGITAL_STATUS.RESOLVED?'green':'amber'}">${item.status.replaceAll('_',' ').toUpperCase()}</span></div>`).join('') : '<p class="muted-note">No digital interactions completed yet.</p>'}</section></div>`;
 }
 
@@ -992,7 +1066,7 @@ function renderSupervisor(){
   const audit=[...(control.history||[]).map(item=>({...item,kind:'intake'})),...(state.supervisorQueueAudit||[])].sort((a,b)=>Date.parse(b.at||0)-Date.parse(a.at||0)).slice(0,12);
   const auditRows=audit.map(item=>`<div class="timeline-row"><time>${new Date(item.at).toLocaleTimeString()}</time><div><strong>${escapeHTML(item.message||`${item.action||'Queue triage'}: ${item.from||''} → ${item.to||''}`)}</strong><small>${escapeHTML(item.reference||item.reason||'Supervisor control')} · ${escapeHTML(item.actor||'Supervisor')}</small></div></div>`).join('');
   viewRoot.innerHTML=`
-    <div class="ops-summary-grid">${metricCard('VOICE WAITING',board.voiceWaiting,'Simulated inbound calls','↙')}${metricCard('DIGITAL WAITING',board.digitalWaiting,'Email, live chat and social','✉')}${metricCard('SLA AT RISK',board.slaAtRisk,'75% channel target / voice threshold','⌁')}${metricCard('OPEN ASSISTANCE',board.openRequests,'Agent requests awaiting review','!')}</div>
+    <div class="ops-summary-grid">${metricCard('VOICE WAITING',board.voiceWaiting,'Simulated inbound calls','↙')}${metricCard('DIGITAL WAITING',board.digitalWaiting,'Email, live chat and social','✉')}${metricCard('SLA AT RISK',board.slaAtRisk,'75% channel target / voice threshold','⌁')}${metricCard('ACTIVE DIGITAL WORK',board.activeDigital,'Concurrent agent response threads','↔')}</div>
     <section class="panel supervisor-control-panel" style="margin-top:14px">
       <div class="panel-head"><div><h3>Queue intake controls</h3><p>Pause/resume affects automatic voice arrivals; demand profiles adjust future voice and digital arrivals. These controls do not affect real providers.</p></div><span class="pill ${!state.shiftActive?'amber':control.paused?'amber':'green'}">${!state.shiftActive?'OFF SHIFT':control.paused?'INTAKE PAUSED':'INTAKE OPEN'}</span></div>
       <div class="supervisor-control-grid"><div class="supervisor-control-status"><span class="subtle-label">CURRENT INTAKE MODE</span><strong>${SUPERVISOR_INTAKE_MODES[control.mode].label}</strong><small>${SUPERVISOR_INTAKE_MODES[control.mode].description}</small><button class="btn ${control.paused?'primary':'outline'}" data-action="supervisor-toggle-intake" ${active?'':'disabled'}>${control.paused?'Resume new arrivals':'Pause new arrivals'}</button></div><div class="supervisor-mode-wrap"><span class="subtle-label">DEMAND PROFILE</span><div class="supervisor-mode-list">${modes}</div></div></div><label class="supervisor-control-reason"><span>SUPERVISOR CHANGE REASON · REQUIRED</span><input id="supervisorControlReason" maxlength="160" minlength="4" placeholder="For example: protect service levels while team clears backlog" ${active?'':'disabled'}></label>
@@ -1455,6 +1529,8 @@ function startShift(){
   state.shiftSimulationEpochMs = Date.now() - state.shiftElapsedMinutes * 60_000;
   state.liveQueueSimulation = createLiveQueueState({ day: state.day, elapsedMinute: state.shiftElapsedMinutes, seed: state.queueSequence + state.day * 17 });
   state.digitalLiveQueueSimulation = createDigitalLiveQueueState({ day: state.day, elapsedMinute: state.shiftElapsedMinutes, seed: state.digitalSequence + state.day * 31 });
+  state.digitalActiveIds = [];
+  state.digitalActiveId = null;
   state.supervisorQueueControl = normalizeSupervisorQueueControl(state.supervisorQueueControl);
   state.supervisorQueueControl.paused = false;
   state.supervisorQueueControl.mode = 'normal';
@@ -1473,7 +1549,7 @@ function startShift(){
   saveState();toast('Shift started. Inbound routing is open.','success');renderView();
 }
 function takeScheduledBreak(){
-  if(!state.shiftActive||state.currentCall||state.activeOutbound||state.wrapUp||state.digitalActiveId){toast('Finish the current interaction before taking a break.','warning');return;}
+  if(!state.shiftActive||state.currentCall||state.activeOutbound||state.wrapUp||currentAgentDigitalWork().length){toast('Finish the current interaction before taking a break.','warning');return;}
   if(state.agentStatus==='break'){toast('You are already on a scheduled break.','warning');return;}
   const mode=expectedShiftMode(state.shiftRecord,state.shiftElapsedMinutes);
   if(mode!=='break'){toast('This is not a scheduled break window.','warning');return;}
@@ -1489,7 +1565,7 @@ function returnFromBreak(){
 }
 function endShift(){
   if(!state.shiftActive||!state.shiftRecord){toast('There is no active shift.');return;}
-  if(state.currentCall||state.activeOutbound||state.wrapUp||state.digitalActiveId){toast('Complete or safely close the active customer interaction before ending the shift.','warning');return;}
+  if(state.currentCall||state.activeOutbound||state.wrapUp||currentAgentDigitalWork().length){toast('Complete or safely close the active customer interaction before ending the shift.','warning');return;}
   setAgentState('offline','Shift ended by employee');
   const completed=closeShift(state.shiftRecord,Date.now(),state.shiftElapsedMinutes);
   state.shiftHistory.push({id:completed.id,day:completed.day,startedAt:completed.startedAt,endedAt:completed.endedAt,elapsedMinutes:completed.elapsedMinutes,adherence:completed.adherence?.adherence??0,status:completed.status});
@@ -1503,7 +1579,7 @@ function endShift(){
 }
 function advanceWorkday(){
   if(!state.hired){toast('Employment is required before advancing a workday.','warning');return;}
-  if(state.shiftActive||state.currentCall||state.activeOutbound||state.wrapUp||state.digitalActiveId){toast('Close the current shift and customer interactions before advancing the workday.','warning');return;}
+  if(state.shiftActive||state.currentCall||state.activeOutbound||state.wrapUp||currentAgentDigitalWork().length){toast('Close the current shift and customer interactions before advancing the workday.','warning');return;}
   if(state.lastShiftDay!==state.day&&simulationMinuteNow()<17*60){toast('The current workday has not ended. Finish or close this shift before advancing.','warning');return;}
   state.day=Math.max(1,Number(state.day)||1)+1;
   state.simulationClockSeconds=7*3600;
@@ -1822,14 +1898,12 @@ function applyOutboundChoice(index){
 function completeOutbound(){beginOutboundWrapUp();}
 
 function acceptDigital(contactId) {
-  if (!state.shiftActive || !shiftTimeAvailable() || state.agentStatus !== 'available' || state.currentCall || state.activeOutbound || state.wrapUp || state.digitalActiveId) {
-    toast('Finish the active task and make sure your agent status is available before accepting a digital contact.', 'warning');
-    return;
-  }
+  const decision = digitalWorkloadDecision(contactId);
+  if (!decision.allowed) { toast(decision.reason, 'warning'); return; }
   try {
-    const contact = acceptDigitalContact(state.digitalQueue, contactId, `EMP-${state.nameInitials || 'AGENT'}`, queueSimulationNowMs());
-    state.digitalActiveId = contact.id;
-    setAgentState('busy', `${DIGITAL_CHANNELS[contact.channel].label} customer interaction`);
+    const contact = acceptDigitalContact(state.digitalQueue, contactId, currentAgentReference(), queueSimulationNowMs());
+    syncDigitalWorkSelection(contact.id);
+    if (state.agentStatus !== 'busy') setAgentState('busy', `${DIGITAL_CHANNELS[contact.channel].label} customer interaction`);
     appendDigitalEvent(state.digitalEvents, { contactId: contact.id, channel: contact.channel, type: 'accepted', message: `Accepted ${contact.channelLabel} contact`, status: 'active' });
     pushOperationEvent('digital', contact.id, `${contact.channelLabel} contact accepted: ${contact.subject}.`, 'active');
     saveState();
@@ -1841,11 +1915,13 @@ function acceptDigital(contactId) {
 function submitDigitalReply(form) {
   const contact = state.digitalActiveId ? findDigitalContact(state.digitalQueue, state.digitalActiveId) : null;
   if (!contact) { toast('There is no active digital interaction.', 'error'); return; }
+  if (state.currentCall || state.activeOutbound || state.wrapUp) { toast('Finish the active voice or outbound interaction before replying to a digital thread.', 'warning'); return; }
   const reply = new FormData(form).get('reply');
   try {
-    const result = recordDigitalReply(state.digitalQueue, contact.id, reply, `EMP-${state.nameInitials || 'AGENT'}`, queueSimulationNowMs());
+    const result = recordDigitalReply(state.digitalQueue, contact.id, reply, currentAgentReference(), queueSimulationNowMs());
     appendDigitalEvent(state.digitalEvents, { contactId: contact.id, channel: contact.channel, type: 'reply', message: 'Agent reply recorded in the simulated thread.', status: 'sent' });
     pushOperationEvent('digital', contact.id, `${contact.channelLabel} reply recorded.`, 'sent', { qaScore: result.quality.score });
+    syncAgentStateWithDigitalWork('Digital reply sent; active workload capacity recalculated');
     saveState(); renderView(); toast(`Reply recorded · practice QA ${result.quality.score}%.`, 'success');
   } catch (error) { toast(error.message, 'warning'); }
 }
@@ -1853,6 +1929,7 @@ function submitDigitalReply(form) {
 function finishDigitalContact(form) {
   const contact = state.digitalActiveId ? findDigitalContact(state.digitalQueue, state.digitalActiveId) : null;
   if (!contact) { toast('There is no active digital interaction.', 'error'); return; }
+  if (state.currentCall || state.activeOutbound || state.wrapUp) { toast('Finish the active voice or outbound interaction before completing digital after-contact work.', 'warning'); return; }
   const values = new FormData(form);
   const disposition = String(values.get('disposition') || '');
   try {
@@ -1863,8 +1940,10 @@ function finishDigitalContact(form) {
     state.cases = state.cases.slice(-200);
     appendDigitalEvent(state.digitalEvents, { contactId: contact.id, channel: contact.channel, type: 'disposition', message: `Digital interaction ${disposition.replaceAll('_',' ')}.`, status: disposition });
     pushOperationEvent('digital', contact.id, `${contact.channelLabel} interaction ${disposition.replaceAll('_',' ')}.`, disposition, { qaScore: contact.qaScore });
+    state.digitalActiveIds = (state.digitalActiveIds || []).filter(id => id !== contact.id);
     state.digitalActiveId = null;
-    setAgentState('available', 'Digital interaction completed; ready for next task');
+    syncDigitalWorkSelection();
+    syncAgentStateWithDigitalWork('Digital interaction completed; remaining capacity recalculated');
     saveState(); renderView(); toast(`${statusLabel} · CRM case ${reference} created.`, 'success');
   } catch (error) { toast(error.message, 'warning'); }
 }
@@ -1872,10 +1951,15 @@ function finishDigitalContact(form) {
 function receiveDigitalFollowUp() {
   const contact = state.digitalActiveId ? findDigitalContact(state.digitalQueue, state.digitalActiveId) : null;
   if (!contact) return;
+  if (state.currentCall || state.activeOutbound || state.wrapUp) { toast('Finish the active voice or outbound interaction before resuming this digital thread.', 'warning'); return; }
+  const decision = digitalWorkloadDecision(contact.id, 'resume');
+  if (!decision.allowed) { toast(decision.reason, 'warning'); return; }
   try {
     deliverDigitalFollowUp(state.digitalQueue, contact.id, queueSimulationNowMs());
     appendDigitalEvent(state.digitalEvents, { contactId: contact.id, channel: contact.channel, type: 'customer-follow-up', message: 'Simulated customer follow-up received.', status: 'active' });
     pushOperationEvent('digital', contact.id, `${contact.channelLabel} customer follow-up received.`, 'active');
+    syncDigitalWorkSelection(contact.id);
+    syncAgentStateWithDigitalWork('Customer reply received; digital concurrency recalculated');
     saveState(); renderView();
   } catch (error) { toast(error.message, 'warning'); }
 }
@@ -1919,8 +2003,9 @@ function handleAction(action,event={}){
     case 'open-outbound':state.currentView='outbound';renderView();break;
     case 'open-digital':state.currentView='digital';renderView();break;
     case 'accept-digital':acceptDigital(event.contactId);break;
+    case 'select-digital':{const item=findDigitalContact(state.digitalQueue,event.contactId);if(item&&[DIGITAL_STATUS.ACTIVE,DIGITAL_STATUS.AWAITING_CUSTOMER].includes(item.status)){state.digitalActiveId=item.id;saveState();renderView();}break;}
     case 'deliver-digital-followup':receiveDigitalFollowUp();break;
-    case 'refresh-digital-queue':{if(state.digitalActiveId||state.agentStatus!=='available'){toast('Complete the current interaction before loading another batch.','warning');break;}const items=createDigitalQueue(DIGITAL_SCENARIOS,6,{sequence:state.digitalSequence,now:queueSimulationNowMs(),slaMinutesOverride:getActiveOrganization(state.organizationWorkspace)?.policy?.digitalResponseTargetMinutes});state.digitalQueue.push(...items);state.digitalSequence+=items.length;appendDigitalEvent(state.digitalEvents,{type:'queue-refresh',message:'Six synthetic digital contacts added.',status:'queued'});saveState();renderView();toast('Six simulated digital contacts added.','success');break;}
+    case 'refresh-digital-queue':{if(!state.shiftActive||!shiftTimeAvailable()||state.currentCall||state.activeOutbound||state.wrapUp){toast('A running shift without a voice wrap-up is required to load another batch.','warning');break;}const items=createDigitalQueue(DIGITAL_SCENARIOS,6,{sequence:state.digitalSequence,now:queueSimulationNowMs(),slaMinutesOverride:getActiveOrganization(state.organizationWorkspace)?.policy?.digitalResponseTargetMinutes});state.digitalQueue.push(...items);state.digitalSequence+=items.length;appendDigitalEvent(state.digitalEvents,{type:'queue-refresh',message:'Six synthetic digital contacts added.',status:'queued'});saveState();renderView();toast('Six simulated digital contacts added.','success');break;}
     case 'open-crm':state.currentView='crm';renderView();break;
     case 'open-knowledge':state.currentView='knowledge';state.viewedArticle=null;renderView();break;
     case 'answer-call':startInboundCall();break;
@@ -2139,7 +2224,9 @@ function initClock(){
         }
       }
       if(queueChanged||digitalQueueChanged)saveState();
-      if((queueChanged||digitalQueueChanged)&&!state.currentCall&&!state.activeOutbound&&!state.wrapUp&&!state.digitalActiveId&&['overview','inbound','queue','supervisor','digital','performance'].includes(state.currentView))renderView();
+      const digitalEditorFocused = Boolean(document.activeElement?.closest?.('#digitalReplyForm textarea, #digitalCloseForm textarea'));
+      const safeToRefreshWorkView = !state.digitalActiveId || state.currentView !== 'digital' || !digitalEditorFocused;
+      if((queueChanged||digitalQueueChanged)&&!state.currentCall&&!state.activeOutbound&&!state.wrapUp&&safeToRefreshWorkView&&['overview','inbound','queue','supervisor','digital','performance'].includes(state.currentView))renderView();
       const bucket=Math.floor(state.shiftElapsedMinutes/15);
       if(bucket!==lastShiftSaveBucket){lastShiftSaveBucket=bucket;saveState();}
     }else if(Math.floor(simulationClockTicker/30)%30===0)saveState();
