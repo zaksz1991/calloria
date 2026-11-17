@@ -6,6 +6,7 @@
 
 import { DIGITAL_CHANNELS, DIGITAL_STATUS } from './multichannel-engine.js';
 import { assessDigitalSla, digitalSlaDisplay } from './digital-sla-engine.js';
+import { digitalCustomerBehaviourMetrics, digitalCustomerBehaviourRiskItems } from './digital-customer-behaviour-engine.js';
 
 export const SUPERVISOR_QUEUE_VERSION = '6.60.0';
 
@@ -241,6 +242,16 @@ export function supervisorQueueBoard({
   const activeDigitalByChannel = Object.fromEntries(Object.keys(DIGITAL_CHANNELS).map(channel => [
     channel, activeDigitalItems.filter(item => item.channel === channel).length
   ]));
+  const customerBehaviour = digitalCustomerBehaviourMetrics(digitalQueue);
+  const customerRiskItems = digitalCustomerBehaviourRiskItems(digitalQueue).map(({ contact, behaviour }) => ({
+    id: contact.id,
+    customer: contact.customer || 'Customer',
+    subject: contact.subject || 'Digital contact',
+    channel: contact.channelLabel || DIGITAL_CHANNELS[contact.channel]?.label || contact.channel || 'Digital',
+    mood: behaviour.mood,
+    sentiment: behaviour.sentiment,
+    reason: behaviour.supervisorReason
+  }));
 
   return {
     voiceWaiting: voice.length,
@@ -254,6 +265,10 @@ export function supervisorQueueBoard({
     activeDigital,
     awaitingCustomer: awaitingCustomerItems.length,
     activeDigitalByChannel,
+    customerEscalationRecommended: customerBehaviour.supervisorRecommended,
+    averageCustomerSentiment: customerBehaviour.averageOpenSentiment,
+    customerFrustratedOpen: customerBehaviour.frustratedOpen,
+    customerRiskItems,
     activeWork: Number(Boolean(currentCall)) + Number(Boolean(activeOutbound)) + activeDigital,
     oldestVoiceWaitSeconds: oldestVoiceWait,
     oldestDigitalWaitSeconds: oldestDigitalWait,

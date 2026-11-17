@@ -1,3 +1,23 @@
+# CALLORIA v6.64 — Adaptive Digital Customer Behaviour
+
+## Added
+
+- Six deterministic digital-customer personas with persisted sentiment, patience and mood per contact.
+- Adaptive customer replies based on the agent's acknowledgement, ownership, next step, privacy and persona-specific communication needs.
+- Multi-turn customer conversations bounded to three simulated customer follow-ups per contact.
+- Customer reaction history recorded in the interaction timeline and customer behaviour values retained in the CRM case record.
+- Supervisor recommendations for critically low sentiment or repeated negative reactions, plus a live Customer Emotion Watch and agent-requested supervisor assistance.
+- Responsive customer behaviour monitor in the agent digital workspace.
+
+## Boundaries
+
+- Customer behaviour, dialogue, sentiment and patience remain synthetic local game mechanics; they are not real customer analytics or validated psychological measures.
+- Existing v6.63 first-response SLA, v6.62 agent concurrency, v6.61 digital demand, v6.60 supervisor operations and v6.59 voice queue releases remain preserved.
+- No live provider, external AI, database migration, secret, environment variable or package dependency is added.
+- Recruitment remains the entry gate; the main gameplay remains agent operations, customer resolution and career progression.
+
+---
+
 # CALLORIA v6.63 — Digital First-Response SLA Control
 
 ## Added

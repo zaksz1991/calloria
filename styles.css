@@ -508,3 +508,24 @@ body.calloria-game-launch .world-vignette{position:absolute;inset:0;z-index:2;ba
 .digital-work-tab .digital-sla-pill{margin-top:1px}
 .supervisor-triage-row .digital-sla-pill{align-self:center}
 @media(max-width:600px){.digital-sla-banner{align-items:flex-start;flex-direction:column;padding:10px 12px}.digital-sla-banner>span{white-space:normal}.digital-sla-pill{font-size:8px}}
+
+/* v6.64 — adaptive digital customer emotion and escalation feedback */
+.digital-customer-behaviour{display:grid;gap:10px}
+.customer-behaviour-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid #e5ecef;border-radius:10px;background:#f8fbfc}
+.customer-behaviour-head>div:first-child{display:grid;gap:4px;min-width:0}
+.customer-behaviour-head strong{font:800 13px Manrope,sans-serif;color:#233f52}
+.customer-behaviour-head small{font-size:9px;line-height:1.45;color:#738694}
+.customer-mood-badge{flex:0 0 auto;padding:7px 10px;border-radius:999px;background:#e9f4ef;color:#18745d;font:800 8px Manrope,sans-serif;letter-spacing:.4px}
+.customer-mood-badge.concerned,.customer-mood-badge.frustrated{background:#fff4dc;color:#94621b}
+.customer-mood-badge.angry{background:#fff0f1;color:#a52d3f}
+.customer-mood-badge.reassured{background:#e6f7f1;color:#087d6d}
+.customer-behaviour-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.customer-behaviour-stats>div{display:grid;gap:5px;padding:10px;border:1px solid #e7edf1;border-radius:9px}
+.customer-behaviour-stats span{font-size:8px;color:#718494;text-transform:uppercase;font-weight:800;letter-spacing:.45px}
+.customer-behaviour-stats strong{font:800 14px Manrope,sans-serif;color:#2d465a}
+.customer-behaviour-stats .bar-track{height:6px;margin-top:2px}
+.customer-supervisor-warning{display:grid;gap:4px;padding:10px;border:1px solid #efd8a8;border-radius:8px;background:#fff8e9}
+.customer-supervisor-warning strong{font:800 9px Manrope,sans-serif;color:#865c19}
+.customer-supervisor-warning small{font-size:9px;line-height:1.5;color:#8b6b36}
+.customer-risk-row{border-left:3px solid #d39a42;background:#fffcf5}
+@media(max-width:600px){.customer-behaviour-head{align-items:flex-start;flex-direction:column}.customer-behaviour-stats{grid-template-columns:1fr 1fr}.digital-customer-behaviour .btn{width:100%}}
