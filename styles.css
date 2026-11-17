@@ -486,3 +486,25 @@ body.calloria-game-launch .world-vignette{position:absolute;inset:0;z-index:2;ba
 @media(max-width:650px){.digital-work-tabs{grid-template-columns:1fr}.digital-work-tab{padding:10px}.digital-followup{align-items:stretch;flex-direction:column}.digital-followup .btn{width:100%}}
 
 .digital-available-queue{margin-bottom:14px}.digital-available-queue .digital-queue-row{padding:9px}.digital-available-queue .digital-queue-priority{min-height:52px}
+
+/* v6.63 — first-response SLA visibility across agent and supervisor worklists */
+.digital-sla-pill{display:inline-flex;align-items:center;justify-content:center;width:max-content;max-width:100%;padding:4px 7px;border:1px solid transparent;border-radius:999px;font:800 8px/1.2 Manrope,sans-serif;letter-spacing:.25px;white-space:nowrap}
+.digital-sla-pill.on_track{color:#18745d;background:#e8f6ef;border-color:#c7ead9}
+.digital-sla-pill.at_risk{color:#94621b;background:#fff4dc;border-color:#f1ddb0}
+.digital-sla-pill.breached{color:#a52d3f;background:#fff0f1;border-color:#efc7cd}
+.digital-sla-pill.met{color:#18745d;background:#e8f6ef;border-color:#c7ead9}
+.digital-sla-pill.unavailable{color:#71808d;background:#f1f3f5;border-color:#e0e4e8}
+.digital-sla-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;border-block:1px solid #e5ebef;background:#f7fafb}
+.digital-sla-banner>div{display:grid;gap:4px;min-width:0}
+.digital-sla-banner strong{font:800 8px Manrope,sans-serif;letter-spacing:.65px;color:#536a7b}
+.digital-sla-banner small{font-size:9px;line-height:1.5;color:#788b98}
+.digital-sla-banner>span{font:800 11px Manrope,sans-serif;white-space:nowrap;color:#18745d}
+.digital-sla-banner.at-risk{background:#fff9ec;border-color:#f0dfbd}
+.digital-sla-banner.at-risk>span{color:#94621b}
+.digital-sla-banner.breached{background:#fff3f4;border-color:#f1d0d5}
+.digital-sla-banner.breached>span{color:#a52d3f}
+.digital-sla-banner.met{background:#edf8f2;border-color:#d0ead9}
+.digital-sla-banner.met>span{color:#18745d}
+.digital-work-tab .digital-sla-pill{margin-top:1px}
+.supervisor-triage-row .digital-sla-pill{align-self:center}
+@media(max-width:600px){.digital-sla-banner{align-items:flex-start;flex-direction:column;padding:10px 12px}.digital-sla-banner>span{white-space:normal}.digital-sla-pill{font-size:8px}}
