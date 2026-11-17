@@ -7,6 +7,11 @@ import {
   createLiveQueueState, normalizeLiveQueueState, stampInboundQueue,
   advanceLiveQueue, liveQueueSnapshot, addManualDemandSurge
 } from './live-queue-engine.js';
+import {
+  createSupervisorQueueControl, normalizeSupervisorQueueControl, updateSupervisorQueueControl,
+  triageInboundContact, triageDigitalContact, supervisorQueueBoard,
+  SUPERVISOR_INTAKE_MODES, SUPERVISOR_PRIORITIES, SUPERVISOR_ROUTE_GROUPS
+} from './supervisor-queue-engine.js';
 import { DEPARTMENTS, SYSTEMS, briefingFor, recordBriefingAttendance, promotionEligibility, recordPromotionExam, recordCrossSell, recordCommendation, createSystemEvent } from './workforce-engine.js';
 import { AGENT_STATES, createShiftRecord, recordAgentState, calculateShiftAdherence, expectedShiftMode, nextScheduledBreak, closeShift, createCoachingRecord } from './shift-engine.js';
 import { speechRecognitionAvailable, mediaRecordingAvailable, createVoiceSession, appendVoiceTranscript, finishVoiceSession, sanitizeTranscript } from './voice-engine.js';
@@ -51,6 +56,8 @@ const initialState = () => ({
   queueSequence: 0,
   callbacks: [],
   supervisorRequests: [],
+  supervisorQueueControl: createSupervisorQueueControl(),
+  supervisorQueueAudit: [],
   interactionTimeline: [],
   outboundSuppressions: [],
   outboundAttempts: [],
@@ -116,8 +123,9 @@ function loadState() {
     if (!stored) return initialState();
     const parsed = JSON.parse(stored);
     const migrated = { ...initialState(), ...parsed };
-    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations','aiQaSuggestions']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
+    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations','aiQaSuggestions','supervisorQueueAudit']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
     if (!Number.isFinite(migrated.callQueue)) migrated.callQueue = 6;
+    migrated.supervisorQueueControl = normalizeSupervisorQueueControl(migrated.supervisorQueueControl);
     if (migrated.shiftActive && (!migrated.shiftRecord || migrated.shiftRecord.status !== 'active')) migrated.shiftRecord = createShiftRecord({ day: migrated.day || 1 });
     if (!Number.isFinite(migrated.shiftElapsedMinutes)) migrated.shiftElapsedMinutes = 0;
     if (migrated.shiftActive) {
@@ -127,6 +135,8 @@ function loadState() {
         elapsedMinute: migrated.shiftElapsedMinutes,
         seed: migrated.queueSequence || 1
       });
+      migrated.liveQueueSimulation.paused = migrated.supervisorQueueControl.paused;
+      migrated.liveQueueSimulation.arrivalIntervalMultiplier = SUPERVISOR_INTAKE_MODES[migrated.supervisorQueueControl.mode].multiplier;
     } else if (migrated.liveQueueSimulation && typeof migrated.liveQueueSimulation === 'object') {
       migrated.liveQueueSimulation = { ...migrated.liveQueueSimulation, active: false };
     }
@@ -157,7 +167,7 @@ function queueSimulationNowMs() {
   return Date.now();
 }
 function currentLiveQueueSnapshot() {
-  if (!state.liveQueueSimulation) return { arrivals: 0, openingContacts: 0, manualContacts: 0, totalArrivals: 0, abandoned: 0, overflowed: 0, nextArrivalInMinutes: null, active: false };
+  if (!state.liveQueueSimulation) return { arrivals: 0, openingContacts: 0, manualContacts: 0, totalArrivals: 0, abandoned: 0, overflowed: 0, nextArrivalInMinutes: null, active: false, paused: false, arrivalIntervalMultiplier: 1 };
   return liveQueueSnapshot(state.liveQueueSimulation, state.shiftElapsedMinutes);
 }
 function pushOperationEvent(type, reference, message, status = 'recorded', details = {}) {
@@ -843,7 +853,7 @@ function renderInbound() {
     const queue=sortQueuedContacts(state.inboundQueueItems, queueNow);
     const metrics=queueMetrics(state.inboundQueueItems, queueNow);
     const liveQueue = currentLiveQueueSnapshot();
-    const nextArrivalLabel = liveQueue.nextArrivalInMinutes === null ? 'Stopped' : `${Math.ceil(liveQueue.nextArrivalInMinutes)} simulated min`;
+    const nextArrivalLabel = liveQueue.paused ? 'Paused' : liveQueue.nextArrivalInMinutes === null ? 'Stopped' : `${Math.ceil(liveQueue.nextArrivalInMinutes)} simulated min`;
     const callbackRows=state.callbacks.filter(item=>item.status==='scheduled'&&item.type!=='outbound').slice().sort((a,b)=>Date.parse(a.dueAt)-Date.parse(b.dueAt));
     viewRoot.innerHTML = `<div class="ops-summary-grid">${metricCard('WAITING CONTACTS',metrics.waiting,'Prioritised inbound queue','↙')}${metricCard('LONGEST WAIT',formatWait(metrics.longestWaitSeconds),'Current oldest queued contact','◷')}${metricCard('WITHIN 60-SECOND TARGET',metrics.waiting?Math.round(metrics.withinServiceLevel/metrics.waiting*100)+'%':'—','Queue snapshot, not a contractual SLA','⌁')}${metricCard('CUSTOMERS ABANDONED',liveQueue.abandoned,'Exceeded simulated patience','↗')}</div><div class="panel" style="margin-top:14px;padding:12px 16px"><div class="data-list"><div class="data-row"><span>Automatic arrivals this shift</span><strong>${liveQueue.arrivals}</strong></div><div class="data-row"><span>Opening queue contacts</span><strong>${liveQueue.openingContacts}</strong></div><div class="data-row"><span>Manual surge contacts</span><strong>${liveQueue.manualContacts}</strong></div><div class="data-row"><span>Next expected contact</span><strong>${escapeHTML(nextArrivalLabel)}</strong></div><div class="data-row"><span>Demand overflow events</span><strong>${liveQueue.overflowed}</strong></div></div><p class="muted-note">Live queue simulation · all contacts and patience outcomes are fictional gameplay events.</p></div><div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Prioritised inbound queue</h3><p>New synthetic contacts arrive during the shift. Waiting customers may abandon when their patience expires.</p></div><span class="pill ${shiftTimeAvailable()?'green':'amber'}"><span class="live-dot"></span> ${shiftTimeAvailable()?'ROUTING OPEN':'SHIFT WINDOW CLOSED'}</span></div>${queue.length?`<div class="queue-contact-list">${queue.slice(0,8).map(item=>`<div class="queue-contact-row"><span class="priority-mark ${item.priority}"></span><div class="queue-contact-main"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${escapeHTML(item.routeGroup)}</small></div><span class="queue-wait">${formatWait(item.waitSeconds)}</span><span class="pill ${item.priority==='critical'?'red':item.priority==='high'?'amber':''}">${item.priority.toUpperCase()}</span></div>`).join('')}</div><button class="btn primary" style="margin-top:14px" data-action="answer-call" ${state.agentStatus==='available'&&shiftTimeAvailable()?'':'disabled'}>Accept highest-priority contact ↙</button>`:`<div class="empty-state"><h3>No waiting contacts</h3><p>Automatic arrivals continue during an active shift. Add a controlled demand surge when needed.</p><button class="btn primary" data-action="refresh-queue">Simulate demand surge (+6)</button></div>`}</section><section class="panel"><div class="panel-head"><div><h3>Callbacks due</h3><p>Customer-requested return contacts scheduled during earlier interactions.</p></div><span class="pill">${callbackRows.length} SCHEDULED</span></div>${callbackRows.length?callbackRows.map(item=>`<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · Due ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="return-callback-to-queue" data-callback-id="${escapeHTML(item.id)}" ${Date.parse(item.dueAt)<=Date.now()?'':'disabled'}>${Date.parse(item.dueAt)<=Date.now()?'Queue callback':'Not due yet'}</button></div>`).join(''):'<div class="empty-state"><p>No callbacks are scheduled.</p></div>'}<div class="panel-head" style="margin-top:18px"><div><h3>Recently handled</h3><p>Your latest customer interactions.</p></div><button class="btn small outline" data-action="open-crm">View cases</button></div>${state.cases.length?state.cases.slice(-3).reverse().map(caseRow).join(''):'<p class="muted-note">No completed interactions yet.</p>'}</section></div>`; return;
   }
@@ -934,15 +944,49 @@ function renderQueue(){
   const queue=sortQueuedContacts(state.inboundQueueItems, queueNow);
   const metrics=queueMetrics(state.inboundQueueItems, queueNow);
   const liveQueue = currentLiveQueueSnapshot();
-  const nextArrivalLabel = liveQueue.nextArrivalInMinutes === null ? 'Stopped' : `${Math.ceil(liveQueue.nextArrivalInMinutes)} simulated min`;
+  const nextArrivalLabel = liveQueue.paused ? 'Paused' : liveQueue.nextArrivalInMinutes === null ? 'Stopped' : `${Math.ceil(liveQueue.nextArrivalInMinutes)} simulated min`;
   const callbacks=state.callbacks.filter(item=>(item.status==='scheduled'||item.status==='queued')&&item.type!=='outbound');
   viewRoot.innerHTML=`<div class="ops-summary-grid">${metricCard('IN QUEUE',metrics.waiting,'Queued voice contacts','↙')}${metricCard('AVERAGE WAIT',formatWait(metrics.averageWaitSeconds),'Across waiting contacts','◷')}${metricCard('ACCEPTED THIS SHIFT',state.acceptedContacts,'Includes completed and active contacts','✓')}${metricCard('ABANDONED',liveQueue.abandoned,'Customers who exceeded patience','↗')}</div><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Queue supervisor</h3><p>Automatic arrivals, priority routing, customer patience and live wait-age.</p></div><button class="btn small secondary" data-action="refresh-queue">Simulate demand surge (+6)</button></div><div class="data-list" style="margin-bottom:14px"><div class="data-row"><span>Automatic arrivals</span><strong>${liveQueue.arrivals}</strong></div><div class="data-row"><span>Opening queue contacts</span><strong>${liveQueue.openingContacts}</strong></div><div class="data-row"><span>Manual surge contacts</span><strong>${liveQueue.manualContacts}</strong></div><div class="data-row"><span>Next expected arrival</span><strong>${escapeHTML(nextArrivalLabel)}</strong></div><div class="data-row"><span>Overflow events</span><strong>${liveQueue.overflowed}</strong></div></div>${queue.length?`<div class="table-wrap"><table><thead><tr><th>Priority</th><th>Customer</th><th>Issue</th><th>Route group</th><th>Wait</th><th>Status</th></tr></thead><tbody>${queue.map(item=>`<tr><td><span class="priority-label ${item.priority}">${item.priority.toUpperCase()}</span></td><td>${escapeHTML(item.customer)}</td><td>${escapeHTML(item.issue)}</td><td>${escapeHTML(item.routeGroup)}</td><td>${formatWait(item.waitSeconds)}</td><td><span class="pill green">QUEUED</span></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state"><h3>Queue clear</h3><p>No inbound contacts are waiting.</p></div>'}</section><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Scheduled callbacks</h3><p>Only customer-requested callbacks are listed.</p></div><span class="pill">${callbacks.length}</span></div>${callbacks.length?callbacks.map(item=>`<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="return-callback-to-queue" data-callback-id="${escapeHTML(item.id)}" ${item.status==='queued'||Date.parse(item.dueAt)>Date.now()?'disabled':''}>${item.status==='queued'?'In queue':Date.parse(item.dueAt)>Date.now()?'Not due yet':'Queue callback'}</button></div>`).join(''):'<p class="muted-note">No callbacks are scheduled.</p>'}</section>`;
 }
 
 function renderSupervisor(){
-  const open=state.supervisorRequests.filter(item=>item.status==='open');
-  const escalated=state.cases.filter(item=>/Escalated|review|required/i.test(item.status));
-  viewRoot.innerHTML=`<div class="ops-summary-grid">${metricCard('OPEN ASSISTANCE REQUESTS',open.length,'Agent requests awaiting supervisor review','!')}${metricCard('ESCALATED CASES',escalated.length,'Cases requiring specialist or QA attention','↗')}${metricCard('TOTAL INTERACTIONS',state.interactionTimeline.length,'Recorded operational events','◷')}</div><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Supervisor assistance desk</h3><p>Review live requests and close the assistance loop.</p></div><span class="pill ${open.length?'amber':'green'}">${open.length} OPEN</span></div>${open.length?open.map(item=>`<div class="case-item"><div class="case-symbol">!</div><div class="case-copy"><strong>${escapeHTML(item.customer)} · ${escapeHTML(item.reason)}</strong><small>${escapeHTML(item.reference)} · ${new Date(item.createdAt).toLocaleString()}</small></div><button class="btn small primary" data-action="resolve-supervisor" data-request-id="${escapeHTML(item.id)}">Mark reviewed</button></div>`).join(''):'<div class="empty-state"><h3>No open requests</h3><p>New assistance requests and escalations will appear here.</p></div>'}</section><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Escalated and review cases</h3><p>Open quality and specialist follow-up records.</p></div></div>${escalated.length?escalated.slice().reverse().map(caseRow).join(''):'<p class="muted-note">No escalated cases recorded.</p>'}</section><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Recent operations timeline</h3><p>Queue and interaction lifecycle events.</p></div></div>${state.interactionTimeline.slice(-12).reverse().map(item=>`<div class="timeline-row"><time>${new Date(item.at).toLocaleTimeString()}</time><div><strong>${escapeHTML(item.message)}</strong><small>${escapeHTML(item.reference)} · ${escapeHTML(item.status)}</small></div></div>`).join('')||'<p class="muted-note">No operations events have been recorded.</p>'}</section>`;
+  const control=normalizeSupervisorQueueControl(state.supervisorQueueControl);
+  state.supervisorQueueControl=control;
+  const nowVoice=queueSimulationNowMs();
+  const board=supervisorQueueBoard({
+    inboundQueue:state.inboundQueueItems,
+    digitalQueue:state.digitalQueue,
+    supervisorRequests:state.supervisorRequests,
+    cases:state.cases,
+    currentCall:state.currentCall,
+    activeOutbound:state.activeOutbound,
+    digitalActiveId:state.digitalActiveId,
+    voiceNow:nowVoice,
+    digitalNow:Date.now()
+  });
+  const live=currentLiveQueueSnapshot();
+  const active=state.shiftActive&&shiftTimeAvailable();
+  const modes=Object.entries(SUPERVISOR_INTAKE_MODES).map(([key,item])=>`<button type="button" class="supervisor-mode-button ${control.mode===key?'active':''}" data-action="supervisor-intake-mode" data-mode="${key}" ${active?'':'disabled'}><strong>${item.label}</strong><small>${key==='busy'?'Shorter arrival gaps':key==='recovery'?'Longer arrival gaps':'Baseline arrival gaps'}</small></button>`).join('');
+  const voiceRows=board.voice.slice(0,8).map(item=>`<form class="supervisor-triage-row" data-supervisor-triage="voice" data-contact-id="${escapeHTML(item.id)}"><div class="supervisor-contact-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${formatWait(item.waitSeconds)} waiting</small></div><label><span>Priority</span><select name="priority">${SUPERVISOR_PRIORITIES.map(value=>`<option value="${value}" ${item.priority===value?'selected':''}>${value.toUpperCase()}</option>`).join('')}</select></label><label><span>Route</span><select name="routeGroup">${[...new Set([item.routeGroup,...SUPERVISOR_ROUTE_GROUPS])].map(value=>`<option value="${escapeHTML(value)}" ${item.routeGroup===value?'selected':''}>${escapeHTML(value)}</option>`).join('')}</select></label><label class="supervisor-reason"><span>Reason</span><input name="reason" maxlength="160" minlength="4" required placeholder="Triage reason"></label><button class="btn small secondary" type="submit">Save</button><span class="pill ${item.slaAtRisk?'red':item.priority==='critical'?'amber':'green'}">${item.slaAtRisk?'SLA RISK':item.priority.toUpperCase()}</span></form>`).join('');
+  const digitalRows=board.digital.slice(0,8).map(item=>`<form class="supervisor-triage-row digital" data-supervisor-triage="digital" data-contact-id="${escapeHTML(item.id)}"><div class="supervisor-contact-copy"><strong>${escapeHTML(item.subject)}</strong><small>${escapeHTML(item.customer)} · ${escapeHTML(item.channelLabel||item.channel)} · ${formatWait(item.waitSeconds)} waiting</small></div><label><span>Priority</span><select name="priority">${SUPERVISOR_PRIORITIES.map(value=>`<option value="${value}" ${item.priority===value?'selected':''}>${value.toUpperCase()}</option>`).join('')}</select></label><label><span>Route</span><select name="routeGroup">${[...new Set([item.routeGroup,...SUPERVISOR_ROUTE_GROUPS])].map(value=>`<option value="${escapeHTML(value)}" ${item.routeGroup===value?'selected':''}>${escapeHTML(value)}</option>`).join('')}</select></label><label class="supervisor-reason"><span>Reason</span><input name="reason" maxlength="160" minlength="4" required placeholder="Triage reason"></label><button class="btn small secondary" type="submit">Save</button><span class="pill ${item.slaAtRisk?'red':item.priority==='critical'?'amber':'green'}">${item.slaAtRisk?'SLA RISK':item.priority.toUpperCase()}</span></form>`).join('');
+  const open=board.openRequestItems;
+  const audit=[...(control.history||[]).map(item=>({...item,kind:'intake'})),...(state.supervisorQueueAudit||[])].sort((a,b)=>Date.parse(b.at||0)-Date.parse(a.at||0)).slice(0,12);
+  const auditRows=audit.map(item=>`<div class="timeline-row"><time>${new Date(item.at).toLocaleTimeString()}</time><div><strong>${escapeHTML(item.message||`${item.action||'Queue triage'}: ${item.from||''} → ${item.to||''}`)}</strong><small>${escapeHTML(item.reference||item.reason||'Supervisor control')} · ${escapeHTML(item.actor||'Supervisor')}</small></div></div>`).join('');
+  viewRoot.innerHTML=`
+    <div class="ops-summary-grid">${metricCard('VOICE WAITING',board.voiceWaiting,'Simulated inbound calls','↙')}${metricCard('DIGITAL WAITING',board.digitalWaiting,'Email, live chat and social','✉')}${metricCard('SLA AT RISK',board.slaAtRisk,'75% channel target / voice threshold','⌁')}${metricCard('OPEN ASSISTANCE',board.openRequests,'Agent requests awaiting review','!')}</div>
+    <section class="panel supervisor-control-panel" style="margin-top:14px">
+      <div class="panel-head"><div><h3>Queue intake controls</h3><p>Controls affect automatic synthetic inbound voice arrivals only. They do not control real telephone, email or social systems.</p></div><span class="pill ${!state.shiftActive?'amber':control.paused?'amber':'green'}">${!state.shiftActive?'OFF SHIFT':control.paused?'INTAKE PAUSED':'INTAKE OPEN'}</span></div>
+      <div class="supervisor-control-grid"><div class="supervisor-control-status"><span class="subtle-label">CURRENT INTAKE MODE</span><strong>${SUPERVISOR_INTAKE_MODES[control.mode].label}</strong><small>${SUPERVISOR_INTAKE_MODES[control.mode].description}</small><button class="btn ${control.paused?'primary':'outline'}" data-action="supervisor-toggle-intake" ${active?'':'disabled'}>${control.paused?'Resume new arrivals':'Pause new arrivals'}</button></div><div class="supervisor-mode-wrap"><span class="subtle-label">DEMAND PROFILE</span><div class="supervisor-mode-list">${modes}</div></div></div><label class="supervisor-control-reason"><span>SUPERVISOR CHANGE REASON · REQUIRED</span><input id="supervisorControlReason" maxlength="160" minlength="4" placeholder="For example: protect service levels while team clears backlog" ${active?'':'disabled'}></label>
+      <div class="supervisor-intake-metrics"><div><span>Automatic arrivals</span><strong>${live.arrivals}</strong></div><div><span>Customers abandoned</span><strong>${live.abandoned}</strong></div><div><span>Demand overflow</span><strong>${live.overflowed}</strong></div><div><span>Next arrival</span><strong>${control.paused?'Paused':live.nextArrivalInMinutes===null?'Stopped':`${Math.ceil(live.nextArrivalInMinutes)} min`}</strong></div><div><span>Queue ceiling</span><strong>24 waiting</strong></div></div>
+      <p class="muted-note">Pausing stops new automatic voice arrivals but does not freeze waiting-customer patience. Existing customers may still abandon. Digital work remains in its own queue. Busy period shortens voice arrival gaps; Recovery lengthens them.</p>
+    </section>
+    <div class="grid two supervisor-queue-grid" style="margin-top:14px">
+      <section class="panel"><div class="panel-head"><div><h3>Voice queue triage</h3><p>Change priority or destination for waiting calls. Every change requires a reason and is audited.</p></div><span class="pill">${board.voiceWaiting} WAITING</span></div>${voiceRows||'<div class="empty-state"><p>No inbound voice contacts are waiting.</p></div>'}</section>
+      <section class="panel"><div class="panel-head"><div><h3>Digital queue triage</h3><p>Review waiting email, live-chat and social contacts against their channel targets.</p></div><span class="pill">${board.digitalWaiting} WAITING</span></div>${digitalRows||'<div class="empty-state"><p>No digital contacts are waiting.</p></div>'}</section>
+    </div>
+    <section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Supervisor assistance desk</h3><p>Review requests raised by the agent during active customer interactions.</p></div><span class="pill ${open.length?'amber':'green'}">${open.length} OPEN</span></div>${open.length?open.map(item=>`<div class="case-item"><div class="case-symbol">!</div><div class="case-copy"><strong>${escapeHTML(item.customer)} · ${escapeHTML(item.reason)}</strong><small>${escapeHTML(item.reference)} · ${new Date(item.createdAt).toLocaleString()}</small></div><button class="btn small primary" data-action="resolve-supervisor" data-request-id="${escapeHTML(item.id)}">Mark reviewed</button></div>`).join(''):'<div class="empty-state"><h3>No open requests</h3><p>Agent assistance requests will appear here while a contact is active.</p></div>'}</section>
+    <div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Escalated and review cases</h3><p>Cases requiring specialist or QA attention.</p></div><span class="pill">${board.escalatedCases}</span></div>${board.escalatedCaseItems.length?board.escalatedCaseItems.slice().reverse().map(caseRow).join(''):'<p class="muted-note">No escalated cases recorded.</p>'}</section><section class="panel"><div class="panel-head"><div><h3>Supervisor audit trail</h3><p>Recent intake changes and queue triage decisions.</p></div><span class="pill">${audit.length} EVENTS</span></div>${auditRows||'<p class="muted-note">No supervisor control changes recorded.</p>'}</section></div>
+    <section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Operations activity</h3><p>Recent call, digital, queue and shift events.</p></div><span class="pill">${board.activeWork} ACTIVE WORK</span></div>${state.interactionTimeline.slice(-10).reverse().map(item=>`<div class="timeline-row"><time>${new Date(item.at).toLocaleTimeString()}</time><div><strong>${escapeHTML(item.message)}</strong><small>${escapeHTML(item.reference)} · ${escapeHTML(item.status)}</small></div></div>`).join('')||'<p class="muted-note">No operations events have been recorded.</p>'}</section>`;
 }
 
 function renderOutbound() {
@@ -1313,7 +1357,7 @@ function renderView() {
     overview:['CAREER ENTRY',state.hired?'Your shift overview':state.stage==='assessment'?'Recruitment assessment':state.stage==='offer'?'Employment offer':'Start your application',state.hired?'Your daily operations, performance and available work.':'Complete recruitment before starting agent operations.'],
     inbound:['CUSTOMER OPERATIONS','Inbound desk','Answer, investigate, resolve, transfer and document incoming customer contacts.'],
     queue:['OPERATIONS CONTROL','Queue management','Inspect priority, routing groups, waiting contacts and scheduled callbacks.'],
-    supervisor:['SUPERVISOR DESK','Assistance & escalations','Review agent assistance requests, escalations and operational activity.'],
+    supervisor:['SUPERVISOR DESK','Live operations command centre','Control synthetic queue intake, triage waiting work, monitor service risk and review escalations across voice and digital channels.'],
     outbound:['CUSTOMER OPERATIONS','Outbound campaigns','Work authorised simulated campaigns and record true outcomes.'],
     digital:['CUSTOMER OPERATIONS','Multi-channel support','Handle simulated email, live-chat and social-media conversations with channel-specific privacy and service standards.'],
     customerIntel:['CUSTOMER INTELLIGENCE','Customer behaviour & practice QA','Practise adaptive customer conversations and review transparent quality evidence across customer personalities.'],
@@ -1391,6 +1435,11 @@ function startShift(){
   state.shiftRecord=createShiftRecord({day:state.day,startedAt:Date.now()});
   state.shiftSimulationEpochMs = Date.now() - state.shiftElapsedMinutes * 60_000;
   state.liveQueueSimulation = createLiveQueueState({ day: state.day, elapsedMinute: state.shiftElapsedMinutes, seed: state.queueSequence + state.day * 17 });
+  state.supervisorQueueControl = normalizeSupervisorQueueControl(state.supervisorQueueControl);
+  state.supervisorQueueControl.paused = false;
+  state.supervisorQueueControl.mode = 'normal';
+  state.liveQueueSimulation.paused = false;
+  state.liveQueueSimulation.arrivalIntervalMultiplier = SUPERVISOR_INTAKE_MODES.normal.multiplier;
   if(state.shiftElapsedMinutes>0){state.shiftRecord.events=[{status:'offline',elapsedMinute:0,at:new Date().toISOString(),reason:'Before scheduled shift start'}];recordAgentState(state.shiftRecord,'available',state.shiftElapsedMinutes,'Late shift start');}
   state.shiftActive=true;
   state.agentStatus='available';
@@ -1659,6 +1708,42 @@ function returnCallbackToQueue(callbackId){
   if(contact&&contact.status===CONTACT_STATUS.CALLBACK){const queueNow=queueSimulationNowMs();transitionContact(contact,CONTACT_STATUS.QUEUED,'Scheduled callback returned to the inbound queue',queueNow);contact.queuedAt=new Date(queueNow).toISOString();}
   callback.status='queued';callback.queuedAt=new Date().toISOString();syncQueueCount();pushOperationEvent('callback',callback.id,`Callback for ${callback.customer} moved to queue.`,'queued');saveState();renderView();toast('Callback returned to the inbound queue.','success');
 }
+function changeSupervisorIntake(action){
+  if(!state.shiftActive||!state.liveQueueSimulation?.active){toast('Start an active shift before changing queue intake.','warning');return;}
+  try{
+    const reason=$('#supervisorControlReason')?.value?.trim()||'';
+    const result=updateSupervisorQueueControl(state.supervisorQueueControl,action,{actor:state.applicantName||'Floor Supervisor',reason});
+    state.supervisorQueueControl=result.control;
+    if(result.changed){
+      state.liveQueueSimulation.paused=result.control.paused;
+      state.liveQueueSimulation.arrivalIntervalMultiplier=SUPERVISOR_INTAKE_MODES[result.control.mode].multiplier;
+      const message=result.event.action==='intake_paused'?'Supervisor paused new inbound arrivals.':result.event.action==='intake_resumed'?'Supervisor resumed inbound arrivals.':`Supervisor changed intake mode to ${SUPERVISOR_INTAKE_MODES[result.control.mode].label}.`;
+      pushOperationEvent('supervisor-queue','INBOUND',message,result.event.action,{mode:result.control.mode,paused:result.control.paused,actor:result.event.actor,reason:result.event.reason});
+      saveState();
+      toast(message,'success');
+    }
+    renderView();
+  }catch(error){toast(error.message||'Queue control could not be updated.','error');}
+}
+
+function saveSupervisorTriage(form){
+  const kind=form.dataset.supervisorTriage;
+  const contactId=form.dataset.contactId;
+  const values=new FormData(form);
+  const patch={priority:values.get('priority'),routeGroup:values.get('routeGroup'),reason:values.get('reason')};
+  try{
+    const result=kind==='digital'
+      ?triageDigitalContact(state.digitalQueue,contactId,patch,{actor:state.applicantName||'Floor Supervisor',now:Date.now()})
+      :triageInboundContact(state.inboundQueueItems,contactId,patch,{actor:state.applicantName||'Floor Supervisor',now:queueSimulationNowMs()});
+    if(!result.changed){toast('No queue change was required.','warning');return;}
+    const event={id:`${kind}-${contactId}-${Date.now()}`,at:result.event.at,actor:result.event.actor,reference:contactId,reason:patch.reason,message:`${kind==='digital'?'Digital':'Voice'} contact triaged: ${Object.entries(result.event.changes).map(([key,value])=>`${key} ${value.from} → ${value.to}`).join('; ')}.`};
+    state.supervisorQueueAudit=Array.isArray(state.supervisorQueueAudit)?state.supervisorQueueAudit:[];
+    state.supervisorQueueAudit.push(event);state.supervisorQueueAudit=state.supervisorQueueAudit.slice(-100);
+    pushOperationEvent('supervisor-triage',contactId,event.message,'triaged',{channel:kind,reason:patch.reason,changes:result.event.changes,actor:event.actor});
+    saveState();renderView();toast('Supervisor triage decision saved and audited.','success');
+  }catch(error){toast(error.message||'Queue triage could not be saved.','error');}
+}
+
 function resolveSupervisorRequest(requestId){
   const request=state.supervisorRequests.find(item=>item.id===requestId&&item.status==='open');
   if(!request)return;
@@ -1804,6 +1889,8 @@ function handleAction(action,event={}){
     case 'return-callback-to-queue':returnCallbackToQueue(event.callbackId);break;
     case 'resume-outbound-callback':resumeOutboundCallback(event.callbackId);break;
     case 'resolve-supervisor':resolveSupervisorRequest(event.requestId);break;
+    case 'supervisor-toggle-intake':changeSupervisorIntake(state.supervisorQueueControl?.paused?'resume':'pause');break;
+    case 'supervisor-intake-mode':changeSupervisorIntake(`mode:${event.mode}`);break;
     case 'open-inbound':state.currentView='inbound';renderView();break;
     case 'open-outbound':state.currentView='outbound';renderView();break;
     case 'open-digital':state.currentView='digital';renderView();break;
@@ -1847,7 +1934,7 @@ function handleAction(action,event={}){
 document.addEventListener('click',e=>{
   const template=e.target.closest('[data-digital-template]');if(template){const field=$('#digitalReplyForm textarea[name="reply"]');if(field){const channel=state.digitalActiveId?findDigitalContact(state.digitalQueue,state.digitalActiveId)?.channel:'email';const selected=digitalReplyTemplates(channel).find(item=>item[0]===template.dataset.digitalTemplate);if(selected){field.value=selected[1];field.focus();}}return;}
   const nav=e.target.closest('.nav-item[data-view]');if(nav){if(nav.disabled){toast('Complete recruitment and accept an offer to unlock agent operations.');return;}if(nav.dataset.view!=='inbound'&&voiceStatus!=='inactive')stopVoiceTools();state.currentView=nav.dataset.view;renderView();return;}
-  const action=e.target.closest('[data-action]');if(action){if(action.dataset.action==='cloud-member-status'){setCloudMemberStatus(action.dataset.memberId,action.dataset.nextStatus).then(()=>{renderView();toast('Server-side staff access updated.','success');}).catch(error=>toast(error.message,'error'));return;}handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId,system:action.dataset.system,text:action.dataset.text,contactId:action.dataset.contactId,memberId:action.dataset.memberId,nextStatus:action.dataset.nextStatus});return;}
+  const action=e.target.closest('[data-action]');if(action){if(action.dataset.action==='cloud-member-status'){setCloudMemberStatus(action.dataset.memberId,action.dataset.nextStatus).then(()=>{renderView();toast('Server-side staff access updated.','success');}).catch(error=>toast(error.message,'error'));return;}handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId,system:action.dataset.system,text:action.dataset.text,contactId:action.dataset.contactId,memberId:action.dataset.memberId,nextStatus:action.dataset.nextStatus,mode:action.dataset.mode});return;}
   const answer=e.target.closest('[data-answer]');
 if(answer){const i=state.assessmentIndex;state.assessmentAnswers[i]=Number(answer.dataset.answer);renderView();return;}
   const practicalAnswer=e.target.closest('[data-practical-answer]');if(practicalAnswer){state.practicalAnswers[state.practicalIndex]=Number(practicalAnswer.dataset.practicalAnswer);renderView();return;}
@@ -1867,6 +1954,7 @@ document.addEventListener('change',e=>{
   if(e.target?.id==='qaScorecardSelect'){state.qaSelectedScorecardId=e.target.value;saveState();renderView();}
 });
 document.addEventListener('submit',async e=>{
+  if(e.target.matches('[data-supervisor-triage]')){e.preventDefault();saveSupervisorTriage(e.target);return;}
   if(e.target.id==='customerLabReplyForm'){e.preventDefault();const value=new FormData(e.target).get('reply');try{submitCustomerTurn(state.customerLabSession,String(value||''));if(state.customerLabSession.status==='escalated')pushOperationEvent('customer-intelligence',state.customerLabSession.id,'Critical practice QA breach triggered mandatory review.','escalated');saveState();renderView();}catch(error){toast(error.message,'warning');}return;}
   if(e.target.id==='qaScorecardForm'){
     e.preventDefault();try{const f=new FormData(e.target);const base=state.qaScorecards.find(item=>item.id===state.qaSelectedScorecardId)||state.qaScorecards.find(item=>item.active!==false)||DEFAULT_QA_SCORECARD;const criteria=base.criteria.map(item=>({...item,weight:Number(f.get(`weight_${item.id}`))}));const created=createScorecard(state.qaScorecards,{name:f.get('name'),criteria});state.qaSelectedScorecardId=created.id;saveState();renderView();toast('New QA scorecard version created.','success');}catch(error){toast(error.message,'warning');}return;
@@ -2001,7 +2089,7 @@ function initClock(){
         }
         if(queueChanged){syncQueueCount();saveState();}
       }
-      if(queueChanged&&!state.currentCall&&!state.activeOutbound&&!state.wrapUp&&!state.digitalActiveId&&['overview','inbound','queue'].includes(state.currentView))renderView();
+      if(queueChanged&&!state.currentCall&&!state.activeOutbound&&!state.wrapUp&&!state.digitalActiveId&&['overview','inbound','queue','supervisor'].includes(state.currentView))renderView();
       const bucket=Math.floor(state.shiftElapsedMinutes/15);
       if(bucket!==lastShiftSaveBucket){lastShiftSaveBucket=bucket;saveState();}
     }else if(Math.floor(simulationClockTicker/30)%30===0)saveState();
@@ -2126,7 +2214,7 @@ window.addEventListener('calloria:cloud-context', async event=>{
         state.organizationWorkspace={activeOrganizationId:detail.organizationId,organizations:[{
           id:detail.organizationId,name:cloudOrg?.name||detail.organizationName||'Organisation',industry:cloudOrg?.industry||'General customer service',status:'active',createdAt:cloudOrg?.createdAt||new Date().toISOString(),policy:structuredClone(detail.policy||DEFAULT_ORG_POLICY),members:[],audit:[]
         }]};
-        for(const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations','aiQaSuggestions']) if(!Array.isArray(state[key])) state[key]=[];
+        for(const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations','aiQaSuggestions','supervisorQueueAudit']) if(!Array.isArray(state[key])) state[key]=[];
         markCloudEmploymentSyncReady();
       } else {
         // One-time migration of this user's already-scoped browser save into the tenant record.

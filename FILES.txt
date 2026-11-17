@@ -1,26 +1,24 @@
-Cumulative CALLORIA v6.58 integration package
+CALLORIA v6.60 — Complete cumulative repository snapshot
 
-Root:
-  vite.config.js — cumulative plugin registration through v6.58
-  README.md
-  CHANGELOG.md
-  INSTALL-GITHUB.md
-  VERIFICATION.md
-  TEST-RESULTS.txt
-  FILES.txt
+The archive contains the full source tree supplied in `calloria.zip`, with the previous v6.59 Live Queue Operations upgrade preserved and the v6.60 Supervisor Live Operations Command Centre added.
 
-build/:
-  cumulative CALLORIA integration modules v6.42 through v6.58
+Key v6.60 files:
+  js/supervisor-queue-engine.js
+  js/live-queue-engine.js
+  js/main.js
+  styles.css
+  tests/supervisor-queue-engine-v660.test.mjs
+  tests/supervisor-queue-ui-v660.test.mjs
+  docs/CALLORIA-v6.60-SUPERVISOR-QUEUE-COMMAND-CENTRE.md
+  VERIFICATION-v6.60.md
+  TEST-RESULTS-v6.60.txt
 
-Important:
-  The original CALLORIA repository's world, customer, office, GLB, OJT, shift, and gameplay plugin files are not included in this overlay. Keep those existing repository files. Merge this package's build/ directory into the existing build/ directory; do not replace the whole folder.
+Previous releases retained:
+  v6.59 live queue operations and regression tests
+  v6.58 RuffNeck Try-It Studio plugin and tests
+  Existing game, recruitment, workplace, GLB runtime, operations, CRM, voice, digital-channel, QA, career, organisation, workforce, Supabase and Vite source files included in the uploaded repository.
 
-tests/:
-  cumulative integration tests and test fixtures packaged with the v6.57.1 baseline
-  calloria-try-it-studio-v6-58.test.mjs
+Asset boundary:
+  The supplied upload did not contain public/assets/ or GLB binary files. All other public/ files present in the upload are retained. Preserve the user's actual public/assets/ folder when merging into a checkout that contains it.
 
-Not included:
-  full application source (including js/main.js and HTML source pages)
-  public assets or GLB models
-  package.json or package-lock.json
-  Supabase migrations, environment variables, API keys, or database exports
+No private keys, secrets, environment values, Supabase database exports or unprovided model binaries are included.

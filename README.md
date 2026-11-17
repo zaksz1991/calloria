@@ -1,8 +1,22 @@
-# CALLORIA v6.59 — Live Queue Operations
+# CALLORIA v6.60 — Supervisor Live Operations Command Centre
 
-A cumulative upgrade built on the supplied CALLORIA repository snapshot. v6.59 turns the inbound workload into a moving shift simulation: contacts arrive automatically, waiting customers have priority-based patience, queue capacity is enforced, and supervisors can see arrivals, abandonments and demand overflow.
+A cumulative upgrade built from the supplied `calloria.zip` repository snapshot and the saved v6.59 cumulative release. v6.60 turns the Supervisor view into an actionable command centre for the same simulated workload the agent handles: supervisors can pause or resume new arrivals, adjust demand pace, inspect voice and digital service risk, change waiting-contact priority and route group, and review an auditable history of decisions.
 
-The recruitment and assessment pathway remains the entry gate. The main gameplay remains employed agent work: handling customer contacts, using the CRM and service tools, completing after-contact work, receiving QA and progressing through a contact-centre career.
+The recruitment and assessment pathway remains the employment entry gate. The main gameplay remains employed agent work: queue handling, customer conversations, CRM and case records, service tools, after-contact work, QA, supervisor assistance and career progression. This is not a training-only conversion.
+
+## v6.60 supervisor live operations
+
+- A unified board summarises waiting inbound voice, email, live chat and social contacts, active work, open supervisor assistance requests and escalated/review cases.
+- Voice contacts show simulated wait age and an illustrative 60-second service-risk threshold. Digital contacts show wait age against their configured illustrative channel target; the risk marker activates at 75% of that target.
+- Supervisors can pause or resume new automatic inbound arrivals without closing the shift or clearing the queue. Existing waiting customers continue to age and can still abandon while intake is paused.
+- Three demand profiles change the arrival interval: Standard (1.00x), Busy period (0.72x) and Recovery (1.42x). A faster/slower profile affects future automatic arrivals, not contacts already waiting.
+- Supervisors can change priority and route group for waiting voice and digital contacts. Each saved triage action requires a reason and records its before/after values on the contact timeline.
+- Intake control changes and triage actions are written to the supervisor audit panel and the existing operations timeline.
+- Legacy saves are normalised safely. A new workday starts with Standard/Open intake while prior audit history is retained.
+- The command-centre layout adapts to phone and desktop widths.
+
+All queue activity and control effects are local fictional simulation events. Pause/mode changes do not control a real dialler, telephone network, email provider, social inbox, external team or production SLA. This release does not add a database migration, secret, environment variable or external provider dependency. It does not claim v0.2 Advanced Contact Centre Operations is complete.
+
 
 ## v6.59 live queue operations
 
@@ -16,6 +30,8 @@ The recruitment and assessment pathway remains the entry gate. The main gameplay
 - Closing a shift stops new arrivals. Advancing to a new workday clears the prior day's queue and starts a fresh queue schedule.
 
 All customers, arrivals, wait times, abandonments and demand-overflow events are fictional simulation data. This feature does not connect to a real telephone network, dialler provider or customer database. It does not claim that v0.2 Advanced Contact Centre Operations is complete.
+
+The v6.59 demand simulation remains the engine used by the v6.60 supervisor intake controls.
 
 ## v6.58 Try-It Studio — previous release preserved
 
@@ -41,14 +57,16 @@ Each preview has two short decisions, explanations for the choices, a score, and
 - The access/pricing link opens the existing support router with a product and enquiry intent preselected. The visitor reviews the request and remains responsible for consent and submission.
 - Official product navigation opens the relevant existing RuffNeck destination in a new tab.
 
-The v6.58 visitor-preview behaviour remains unchanged by v6.59. The v6.59 runtime change is limited to inbound queue operations and its shift telemetry; it does not replace recruitment, customer dialogue, wrap-up, CRM, QA, supervisor or career modules.
+The v6.58 visitor-preview behaviour and v6.59 live inbound queue engine remain preserved. v6.60 extends the existing supervisor screen and queue state; it does not replace recruitment, customer dialogue, wrap-up, CRM, QA or career modules.
 
 ## Package contents
 
-- `js/live-queue-engine.js`: new v6.59 deterministic live inbound queue engine.
-- `js/main.js`: integrated shift clock, automatic arrivals, queue abandonment, queue telemetry and demand surge handling.
-- `tests/live-queue-engine-v659.test.mjs` and `tests/calloria-live-queue-v659.test.mjs`: engine and application integration regression tests.
-- Existing `build/`, v6.58 Try-It Studio plugin, test fixtures, pages, modules, configuration and Supabase source are retained from the supplied repository snapshot.
-- `docs/CALLORIA-v6.59-LIVE-QUEUE-OPERATIONS.md`, `VERIFICATION-v6.59.md`, and `TEST-RESULTS-v6.59.txt` document the feature and its verification boundary.
+- `js/supervisor-queue-engine.js`: v6.60 intake controls, voice/digital triage, unified queue metrics and supervisor audit state.
+- `js/live-queue-engine.js`: v6.59 arrival engine with pause-aware intake and bounded demand-profile intervals; customer patience still runs during intake pause.
+- `js/main.js`: supervisor command-centre screen, persisted controls, triage submissions, operation timeline and safe migration.
+- `styles.css`: responsive supervisor queue-control and triage layouts.
+- `tests/supervisor-queue-engine-v660.test.mjs` and `tests/supervisor-queue-ui-v660.test.mjs`: v6.60 engine and application integration regression tests.
+- v6.59 live queue tests, v6.58 Try-It Studio files/tests, existing game, office, GLB runtime, recruitment, operations, CRM, digital channels, voice, QA, career, organisation, Supabase and Vite configuration are retained from the supplied source snapshot.
+- `docs/CALLORIA-v6.60-SUPERVISOR-QUEUE-COMMAND-CENTRE.md`, `VERIFICATION-v6.60.md`, and `TEST-RESULTS-v6.60.txt` describe the release and verification boundary.
 
-The archive is a cumulative source replacement for the repository snapshot supplied for this upgrade. That upload did not contain `public/assets/` or its GLB binaries. The ZIP therefore cannot restore those missing files. Preserve any existing `public/assets/` folder in the local/GitHub repository when copying this upgrade into place. Environment files, secrets and Supabase credentials are not included.
+The archive is a complete cumulative replacement for the repository snapshot supplied for this upgrade, including the v6.59 changes from the immediately preceding release. The upload did not contain `public/assets/` or its GLB binaries. The ZIP therefore cannot restore those missing files. Preserve the existing `public/assets/` folder in the actual GitHub checkout when copying this upgrade into place. Other files under `public/` that were present in the upload are retained. Environment files, private secrets and Supabase credentials are not included.

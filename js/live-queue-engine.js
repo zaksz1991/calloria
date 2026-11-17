@@ -63,6 +63,8 @@ export function createLiveQueueState({ day = 1, elapsedMinute = 0, seed = 1 } = 
     abandoned: 0,
     overflowed: 0,
     active: true,
+    paused: false,
+    arrivalIntervalMultiplier: 1,
     lastProcessedMinute: currentMinute
   };
 }
@@ -83,6 +85,8 @@ export function normalizeLiveQueueState(value, { day = 1, elapsedMinute = 0, see
     abandoned: Math.max(0, Math.floor(finite(value.abandoned))),
     overflowed: Math.max(0, Math.floor(finite(value.overflowed))),
     active: value.active !== false,
+    paused: value.paused === true,
+    arrivalIntervalMultiplier: Math.min(2, Math.max(0.5, finite(value.arrivalIntervalMultiplier, 1))),
     lastProcessedMinute: Math.max(0, finite(value.lastProcessedMinute, elapsedMinute))
   };
 }
@@ -190,7 +194,7 @@ export function advanceLiveQueue({
   }
 
   let guard = 0;
-  while (minute >= state.nextArrivalAtMinute && guard < Math.max(1, Math.floor(policy.maxArrivalsPerAdvance || 3))) {
+  while (!state.paused && minute >= state.nextArrivalAtMinute && guard < Math.max(1, Math.floor(policy.maxArrivalsPerAdvance || 3))) {
     const waiting = countQueuedContacts(queueItems);
     if (waiting < Math.max(1, Math.floor(policy.maxWaiting || 24))) {
       const arrivalMinute = state.nextArrivalAtMinute;
@@ -219,7 +223,7 @@ export function advanceLiveQueue({
     const random = nextRandom(state.seed);
     state.seed = random.seed;
     const jitter = (random.value - 0.5) * Math.max(0, finite(policy.intervalJitterMinutes, 2.5));
-    state.nextArrivalAtMinute += Math.max(5.5, intervalAtMinute(state.nextArrivalAtMinute, policy) + jitter);
+    state.nextArrivalAtMinute += Math.max(5.5, (intervalAtMinute(state.nextArrivalAtMinute, policy) + jitter) * state.arrivalIntervalMultiplier);
     guard += 1;
   }
 
@@ -253,7 +257,9 @@ export function liveQueueSnapshot(queueState, elapsedMinute = 0) {
     totalArrivals: Math.max(0, Math.floor(finite(state.arrivals))) + Math.max(0, Math.floor(finite(state.openingContacts))) + Math.max(0, Math.floor(finite(state.manualContacts))),
     abandoned: Math.max(0, Math.floor(finite(state.abandoned))),
     overflowed: Math.max(0, Math.floor(finite(state.overflowed))),
-    nextArrivalInMinutes: state.active ? remaining : null,
-    active: state.active !== false
+    nextArrivalInMinutes: state.active && !state.paused ? remaining : null,
+    active: state.active !== false,
+    paused: state.paused === true,
+    arrivalIntervalMultiplier: Math.min(2, Math.max(0.5, finite(state.arrivalIntervalMultiplier, 1)))
   };
 }

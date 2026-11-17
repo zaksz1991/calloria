@@ -428,3 +428,34 @@ body.calloria-game-launch .world-vignette{position:absolute;inset:0;z-index:2;ba
   .game-launch-footer{grid-template-columns:1fr;gap:8px}.game-stats-bar{gap:12px;flex-wrap:wrap;padding:7px 0}.game-stat{min-width:60px;gap:3px}.game-stat strong{font-size:19px}.game-stat span{font-size:6px;letter-spacing:.8px}.game-stat-status{flex-basis:100%;margin-left:0;text-align:left;font-size:6px}.game-sponsor-slot{padding:9px 11px;gap:4px}.game-sponsor-slot strong{font-size:9px}.game-sponsor-slot small{font-size:7px}.game-sponsor-slot img{max-height:55px}
 }
 @media(max-width:380px){.game-launch-copy h1{font-size:36px}.game-launch-copy>p{font-size:10px}.game-secondary-button{font-size:7px;padding:0 9px}.game-primary-button{min-width:128px}}
+
+/* CALLORIA v6.60 — supervisor live operations command centre */
+.supervisor-control-panel{border-color:rgba(19,196,173,.28);background:linear-gradient(145deg,#fff 0%,#f8fcfb 100%)}
+.supervisor-control-grid{display:grid;grid-template-columns:minmax(190px,.8fr) minmax(0,1.6fr);gap:16px;margin-top:12px}
+.supervisor-control-status,.supervisor-mode-wrap{display:grid;align-content:start;gap:9px;padding:15px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.supervisor-control-status>strong{font:900 22px Manrope;color:var(--ink)}
+.supervisor-control-status>small{min-height:30px;color:var(--muted);font-size:10px;line-height:1.5}
+.supervisor-mode-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.supervisor-mode-button{display:grid;gap:6px;min-height:76px;padding:11px;border:1px solid var(--line);border-radius:8px;background:#fff;text-align:left;cursor:pointer}
+.supervisor-mode-button strong{font:800 10px Manrope;color:var(--ink)}
+.supervisor-mode-button small{font-size:9px;line-height:1.4;color:var(--muted)}
+.supervisor-mode-button.active{border-color:var(--teal);background:#eaf8f5;box-shadow:inset 0 0 0 1px rgba(19,196,173,.12)}
+.supervisor-mode-button:disabled{opacity:.45;cursor:not-allowed}
+.supervisor-control-reason{display:grid;gap:6px;margin-top:12px;font-size:9px;font-weight:800;letter-spacing:.8px;color:var(--muted)}
+.supervisor-control-reason input{width:100%;min-height:40px;padding:9px 11px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);font:500 11px 'DM Sans',sans-serif;letter-spacing:0}
+.supervisor-intake-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:14px}
+.supervisor-intake-metrics>div{display:grid;gap:5px;padding:10px;border-radius:8px;background:#f1f6f8}
+.supervisor-intake-metrics span{font-size:8px;line-height:1.35;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.55px}
+.supervisor-intake-metrics strong{font:900 16px Manrope;color:var(--ink)}
+.supervisor-queue-grid{align-items:start}
+.supervisor-triage-row{display:grid;grid-template-columns:minmax(130px,1.2fr) minmax(100px,.7fr) minmax(125px,.9fr) minmax(135px,1fr) auto auto;align-items:end;gap:8px;padding:11px 0;border-bottom:1px solid var(--line)}
+.supervisor-contact-copy{display:grid;align-self:center;gap:4px;min-width:0}
+.supervisor-contact-copy strong{font-size:10px;color:var(--ink);overflow-wrap:anywhere}
+.supervisor-contact-copy small{font-size:9px;line-height:1.4;color:var(--muted)}
+.supervisor-triage-row label{display:grid;gap:4px;min-width:0}
+.supervisor-triage-row label span{font-size:8px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.65px}
+.supervisor-triage-row select,.supervisor-triage-row input{width:100%;height:34px;min-width:0;padding:0 7px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font:500 9px 'DM Sans',sans-serif}
+.supervisor-triage-row .pill{align-self:center;white-space:nowrap}
+.supervisor-triage-row button{white-space:nowrap}
+@media(max-width:1100px){.supervisor-triage-row{grid-template-columns:repeat(3,minmax(0,1fr))}.supervisor-contact-copy{grid-column:1/-1}.supervisor-reason{grid-column:span 2}}
+@media(max-width:680px){.supervisor-control-grid{grid-template-columns:1fr}.supervisor-mode-list{grid-template-columns:1fr}.supervisor-mode-button{min-height:56px}.supervisor-intake-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.supervisor-triage-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.supervisor-contact-copy{grid-column:1/-1}.supervisor-reason{grid-column:1/-1}.supervisor-triage-row .pill{justify-self:start}.supervisor-queue-grid{grid-template-columns:1fr}}

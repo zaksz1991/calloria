@@ -1,0 +1,33 @@
+CALLORIA v6.60 — SUPERVISOR LIVE OPERATIONS COMMAND CENTRE
+Verification date: 17 November 2026
+Runtime: Node.js v22.16.0
+
+FOCUSED REGRESSION RUN
+66 tests
+66 passed
+0 failed
+
+Includes:
+- v6.60 supervisor queue engine and UI integration tests
+- v6.59 live queue engine and main integration tests
+- v6.58 Try-It Studio tests
+- operations engine tests
+
+SYNTAX
+npm run check: passed
+- js/main.js
+- js/production-world.js
+- js/live-queue-engine.js
+- js/supervisor-queue-engine.js
+
+FULL TEST SUITE
+Before v6.60 (v6.59 source): 1,790 tests; 1,245 passed; 545 failed.
+After v6.60: 1,814 tests; 1,269 passed; 545 failed.
+The same 545 existing failure instances across 527 distinct failing test names remain. The set of failing names is unchanged. All 24 new v6.60 tests pass.
+
+BUILD
+npm run build: unable to start because dependencies are not installed in the source snapshot (`vite: not found`).
+No Vercel deployment or live browser behaviour is claimed.
+
+ASSETS
+The original uploaded repository omitted public/assets/ and GLB model binaries. No substitute asset folder or binaries have been invented. Preserve any public/assets/ folder already present in the user's actual GitHub checkout.

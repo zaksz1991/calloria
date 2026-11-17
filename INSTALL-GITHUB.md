@@ -1,34 +1,37 @@
-# CALLORIA v6.59 — GUI installation
+# CALLORIA v6.60 — GUI installation
 
-This archive contains the cumulative CALLORIA source snapshot supplied for this upgrade, with v6.58 preserved and v6.59 live queue operations integrated. It does not contain the missing `public/assets/` folder or its GLB binaries.
+This is a complete cumulative replacement for the exact `calloria.zip` repository snapshot supplied for the upgrade. It includes the saved v6.59 Live Queue Operations changes and the new v6.60 Supervisor Live Operations Command Centre. It does not contain the `public/assets/` folder or GLB binaries omitted from the uploaded source snapshot.
 
 ## Install through GitHub Desktop and File Explorer
 
-1. Keep the existing `zaksz1991/calloria` GitHub repository and Vercel project. Do not create a replacement project.
-2. Make a backup of the current local `calloria` repository folder.
-3. Extract `CALLORIA-v6.59-LIVE-QUEUE-OPERATIONS.zip` in File Explorer.
+1. Keep the existing GitHub repository `zaksz1991/calloria` and Vercel project. Do not create a replacement project.
+2. Make a backup of the current local `calloria` repository folder. The original uploaded snapshot was separately preserved before this release.
+3. Extract `CALLORIA-v6.60-SUPERVISOR-LIVE-OPERATIONS.zip` in File Explorer.
 4. In GitHub Desktop, open the existing repository and choose **Repository → Show in Explorer**.
-5. Copy the extracted archive contents into the existing repository root and allow matching source files to be replaced. Keep the hidden `.git` folder.
-6. **Do not delete or replace an existing `public/assets/` folder.** It was not included in the supplied ZIP, so any GLB files already in your repository must be retained separately.
-7. Keep the existing `.env`/Vercel environment variables and Supabase configuration. This upgrade adds no migration, secret or provider setting.
-8. Review the changed-file list. It should include `js/live-queue-engine.js`, updated `js/main.js`, two new v6.59 tests, README/changelog and release verification documents. Existing v6.58 Try-It Studio files and Vite registration must remain.
-9. Use commit message `CALLORIA v6.59 — live queue operations`, commit to `main`, then **Push origin**.
-10. Let the existing Vercel deployment run. Do not treat the feature as deployed until the Vercel build finishes successfully.
+5. Copy the extracted archive contents into the existing repository root. Allow matching source files to be replaced. Keep the hidden `.git` folder.
+6. **Do not delete or replace an existing `public/assets/` folder.** It was not included in the supplied upload; retain all GLB files already present in the actual repository checkout. Other files under `public/` that were present in the uploaded source are included in the upgrade archive.
+7. Keep the existing `.env`/Vercel environment variables and Supabase project configuration. v6.60 adds no migration, provider secret or environment setting.
+8. Review the changed-file list. It should include `js/supervisor-queue-engine.js`, updated `js/live-queue-engine.js`, `js/main.js`, `styles.css`, updated `package.json` and its package-manifest test, plus the two new v6.60 tests and release documentation. The previous v6.59 live-queue files and v6.58 Try-It Studio files must remain.
+9. Use commit message `CALLORIA v6.60 — supervisor live operations command centre`, commit to `main`, then **Push origin**.
+10. Let the existing Vercel project build the updated `main` branch. Treat the upgrade as deployed only after Vercel reports a successful production deployment.
 
 ## In-game acceptance checks
 
-1. Open an existing hired profile or complete recruitment and accept the employment offer.
-2. Start a working shift. The opening inbound contacts should appear in the existing queue.
-3. Keep the shift active. The first automatic additional contact is expected after about 7.5 simulated minutes; the game clock runs at 30× speed, so this is about 15 seconds of wall-clock time.
-4. Open **Inbound** and **Queue Control**. Confirm the waiting count, next-arrival estimate and arrival count update.
-5. Accept the highest-priority waiting contact and complete its existing customer dialogue and wrap-up. Confirm accepted-contact and wait-time metrics continue to update.
-6. Leave a low-priority contact waiting long enough to pass its simulated patience window. Confirm it leaves the waiting queue and increments the abandoned metric.
-7. Use **Simulate demand surge (+6)** to add a controlled batch. Confirm the interaction timeline records the surge.
-8. Confirm that queue growth is capped at 24 waiting contacts and overflow is recorded.
-9. End the shift. Confirm automatic arrivals stop. Advance to a new workday and confirm a fresh queue schedule begins.
+1. Open an existing hired profile or complete recruitment and accept the employment offer. Recruitment remains the entry gate; this upgrade does not replace agent gameplay with a quiz.
+2. Start an active working shift and open **Supervisor** from the operations navigation.
+3. Confirm the supervisor board reports waiting voice and digital work, service-risk counts, open assistance requests and escalated cases.
+4. Enter a reason of at least four characters and select **Pause new arrivals**. Confirm automatic inbound voice arrivals pause while the shift remains active.
+5. Leave a low-priority waiting voice contact in the queue long enough to pass its simulated patience threshold. Confirm it can still abandon while intake is paused.
+6. Enter a reason and resume arrivals. Confirm the next expected arrival estimate returns.
+7. Change the demand profile to **Busy period**, then **Recovery**. Observe that busy mode shortens future arrival intervals and recovery lengthens them. These profiles affect future synthetic inbound voice arrivals only.
+8. Change priority and route group for a waiting voice contact. Enter a reason and save. Confirm the changed values, contact timeline entry and supervisor audit record.
+9. Repeat triage for a waiting email/live-chat/social contact. Confirm active or completed work cannot be triaged as waiting work.
+10. Review the supervisor audit trail and operations activity. Resolve any open assistance request and confirm the request closes.
+11. End the shift, advance to the next simulated workday and confirm intake resets to Standard/Open while saved audit history remains.
+12. Repeat on a phone-sized browser viewport to check that the control buttons and triage forms remain usable.
 
-All contacts and outcomes are synthetic. The game feature does not place calls or contact real customers. The documented checks require a browser session; automated engine tests alone do not prove production playability.
+All contacts, arrivals, queue states and outcomes are fictional local simulation data. Intake controls do not control a real telephone network, dialler, email provider, social inbox or external staff team.
 
 ## Verification status
 
-See `VERIFICATION-v6.59.md` and `TEST-RESULTS-v6.59.txt`. A successful Vite production build, Vercel deployment, browser acceptance session and actual-device/mobile 3D rendering are not claimed by this source package.
+See `VERIFICATION-v6.60.md` and `TEST-RESULTS-v6.60.txt`. The focused release checks report 66 passed. `npm run check` passes. The full suite reports 1,814 tests, 1,269 passed and 545 existing failures; the set of 527 distinct failing test names is unchanged from the v6.59 baseline. The Vite production build could not start in the preparation environment because dependencies were not installed (`vite: not found`). A successful Vercel deployment, browser acceptance session and actual-device 3D rendering are not claimed.

@@ -1,3 +1,36 @@
+# CALLORIA v6.60 — Supervisor Live Operations Command Centre
+
+## Added
+
+- Unified supervisor live board for waiting inbound voice and digital contacts, current work, service-risk counts, open assistance requests and escalated cases.
+- Reason-required pause/resume controls for new simulated inbound arrivals. Existing queue patience and abandonment continue while intake is paused.
+- Standard, Busy period and Recovery demand profiles, with bounded deterministic arrival interval multipliers.
+- Voice and digital contact triage: update a waiting contact's priority and route group, with status validation and required rationale.
+- Per-contact triage metadata and timeline events containing actor, reason and before/after changes.
+- Persistent supervisor control history and a local supervisor audit panel.
+- Safe migration for older saved profiles; new shifts reset intake to Standard/Open while retaining prior control history.
+- Responsive phone and desktop command-centre styling.
+- Dedicated engine and application integration tests.
+
+## Verification boundary
+
+- Focused release regression: **66 passed, 0 failed**.
+- `npm run check`: passed.
+- Full suite: 1,814 tests; 1,269 passed; 545 existing failure instances across 527 distinct failing test names. The set of failing names is identical to the v6.59 baseline; no new full-suite failure was introduced.
+- Vite production build was not verified because Vite dependencies were not installed in the uploaded source snapshot (`vite: not found`).
+- No browser walkthrough, Vercel deployment or external-provider integration is claimed.
+
+## Boundaries
+
+- All queue records and controls remain fictional local gameplay simulation.
+- Intake pause stops only automatic new voice arrivals; it does not close the shift, remove existing queue work or suspend customer patience.
+- Demand profiles affect future synthetic voice arrivals only.
+- Triage changes local priority and route metadata; it does not transfer a contact to a real external workforce.
+- No database migration, external provider, secret, environment variable or new package dependency is added.
+- v6.59 live queue operations and v6.58 Try-It Studio remain preserved. Recruitment remains an entry gate; actual agent operations and career progression remain the core product.
+
+---
+
 # CALLORIA v6.59 — Live Queue Operations
 
 ## Added
