@@ -35,6 +35,7 @@ import { configureCloudEmploymentSync, markCloudEmploymentSyncReady, loadCloudEm
 import { normalizeCaseLifecycle, caseReopenEligibility, reopenCase, caseFollowUpRisk, startCaseFollowUp, completeCaseFollowUp, reviewCaseFollowUp, caseFollowUpMetrics, formatCaseClock } from './case-lifecycle-engine.js';
 import { normalizeSupervisorRequests, assessSupervisorEscalation, claimSupervisorEscalation, reassignSupervisorEscalation, resolveSupervisorEscalation, closeLinkedSupervisorEscalation, supervisorEscalationMetrics } from './supervisor-escalation-engine.js';
 import { normalizeSupervisorHandovers, supervisorHandoverCandidates, createSupervisorHandover, acceptSupervisorHandover, cancelSupervisorHandover, supervisorHandoverMetrics } from './supervisor-handover-engine.js';
+import { normalizeAgentHandovers, collectAgentHandoverCandidates, createAgentShiftHandover, acceptAgentShiftHandover, cancelAgentShiftHandover, agentShiftHandoverMetrics } from './agent-handover-engine.js';
 
 let THREE = null;
 
@@ -68,6 +69,7 @@ const initialState = () => ({
   callbacks: [],
   supervisorRequests: [],
   supervisorHandovers: [],
+  agentHandovers: [],
   supervisorQueueControl: createSupervisorQueueControl(),
   supervisorQueueAudit: [],
   interactionTimeline: [],
@@ -144,9 +146,10 @@ function loadState() {
     migrated.customerCommitments = globalThis.CalloriaCommitmentEngine?.normaliseState?.(migrated.customerCommitments) || { version: '6.9.0', commitments: [], activity: [] };
     migrated.cases = Array.isArray(migrated.cases) ? migrated.cases.map(row => { try { return normalizeCaseLifecycle(row); } catch (_) { return row; } }) : [];
     if (typeof migrated.crmSelectedCaseReference !== 'string') migrated.crmSelectedCaseReference = '';
-    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','supervisorHandovers','interactionTimeline','outboundSuppressions','outboundAttempts','outboundWorklist','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations','aiQaSuggestions','supervisorQueueAudit']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
+    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','supervisorHandovers','agentHandovers','interactionTimeline','outboundSuppressions','outboundAttempts','outboundWorklist','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations','aiQaSuggestions','supervisorQueueAudit']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
     migrated.supervisorRequests = normalizeSupervisorRequests(migrated.supervisorRequests);
     migrated.supervisorHandovers = normalizeSupervisorHandovers(migrated.supervisorHandovers);
+    migrated.agentHandovers = normalizeAgentHandovers(migrated.agentHandovers);
     if (!Number.isFinite(migrated.callQueue)) migrated.callQueue = 6;
     migrated.supervisorQueueControl = normalizeSupervisorQueueControl(migrated.supervisorQueueControl);
     if (migrated.shiftActive && (!migrated.shiftRecord || migrated.shiftRecord.status !== 'active')) migrated.shiftRecord = createShiftRecord({ day: migrated.day || 1 });
@@ -1163,6 +1166,40 @@ function supervisorHandoverCard(handover, actor){
   return `<article class="supervisor-handover-card ${pending?'pending':handover.status}"><div class="supervisor-handover-head"><div><strong>${escapeHTML(handover.fromSupervisor)} <span aria-hidden="true">→</span> ${escapeHTML(handover.toSupervisor)}</strong><small>${escapeHTML(handover.id)} · ${new Date(handover.createdAt).toLocaleString()}</small></div><span class="pill ${pending?'amber':handover.status==='accepted'?'green':'muted'}">${escapeHTML(statusLabel)}</span></div><p>${escapeHTML(handover.note)}</p><div class="supervisor-handover-counts"><span>${waiting} awaiting transfer</span><span>${transferred} transferred</span><span>${stale} stale / closed</span></div><ul class="supervisor-handover-items">${itemRows}</ul>${handover.items.length>8?`<small class="muted-note">${handover.items.length-8} additional item(s) are included in this handover.</small>`:''}${handover.acceptedBy?`<small class="muted-note">Accepted by ${escapeHTML(handover.acceptedBy)} at ${new Date(handover.acceptedAt).toLocaleString()}.</small>`:''}${handover.cancelledBy?`<small class="muted-note">Cancelled by ${escapeHTML(handover.cancelledBy)}: ${escapeHTML(handover.cancellationReason)}</small>`:''}${acceptForm}${cancelForm}</article>`;
 }
 
+function agentHandoverResources(){
+  const store=commitmentStore();
+  return {cases:state.cases,commitments:store.commitments,commitmentState:store,digitalQueue:state.digitalQueue,callbacks:state.callbacks};
+}
+function agentHandoverTypeLabel(type){
+  return ({digital_contact:'Digital conversation',customer_commitment:'Customer callback promise',case_followup:'Reopened case follow-up',open_case:'Open CRM case'})[type]||'Customer work';
+}
+function agentHandoverCard(handover){
+  const pending=handover.status==='pending_acceptance';
+  const outgoing=String(state.applicantName||'').toLowerCase()===handover.fromAgent.toLowerCase();
+  const incoming=String(state.applicantName||'').toLowerCase()===handover.toAgent.toLowerCase();
+  const transferred=handover.items.filter(item=>item.status==='transferred').length;
+  const stale=handover.items.filter(item=>item.status==='stale').length;
+  const waiting=handover.items.filter(item=>item.status==='pending').length;
+  const rows=handover.items.slice(0,10).map(item=>`<li><span><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(agentHandoverTypeLabel(item.type))} · ${escapeHTML(item.reference)} · ${escapeHTML(item.channel)}</small>${item.subject?`<small>${escapeHTML(item.subject)}</small>`:''}${item.callbackIds?.length?`<small>${item.callbackIds.length} scheduled callback task(s) remain linked</small>`:''}${item.staleReason?`<small class="agent-handover-stale-reason">${escapeHTML(item.staleReason)}</small>`:''}</span><span class="pill ${item.status==='transferred'?'green':item.status==='stale'?'muted':'amber'}">${escapeHTML(item.status.toUpperCase())}</span></li>`).join('');
+  const accept=pending?`<form class="agent-handover-action" data-agent-handover-accept data-handover-id="${escapeHTML(handover.id)}"><label><span>Incoming agent acknowledgement · type ${escapeHTML(handover.toAgent)}</span><input name="actor" required minlength="2" maxlength="100" value="${incoming?escapeHTML(state.applicantName):escapeHTML(handover.toAgent)}"></label><button class="btn small primary" type="submit">Accept & take ownership</button><small class="muted-note">Local simulation acknowledgement only. The name is not authenticated through an enterprise identity provider.</small></form>`:'';
+  const cancel=pending&&outgoing?`<form class="agent-handover-action cancel" data-agent-handover-cancel data-handover-id="${escapeHTML(handover.id)}"><label><span>Cancellation reason · 10+ characters</span><input name="reason" required minlength="10" maxlength="400" placeholder="Explain why the handover is cancelled"></label><button class="btn small outline" type="submit">Cancel pending handover</button></form>`:'';
+  return `<article class="agent-handover-card ${pending?'pending':handover.status}"><div class="agent-handover-card-head"><div><strong>${escapeHTML(handover.fromAgent)} <span aria-hidden="true">→</span> ${escapeHTML(handover.toAgent)}</strong><small>${escapeHTML(handover.id)} · ${new Date(handover.createdAt).toLocaleString()}</small></div><span class="pill ${pending?'amber':handover.status==='accepted'?'green':'muted'}">${escapeHTML(handover.status.replaceAll('_',' ').toUpperCase())}</span></div><p>${escapeHTML(handover.note)}</p><div class="agent-handover-counts"><span>${waiting} awaiting</span><span>${transferred} transferred</span><span>${stale} stale</span></div><ul class="agent-handover-items">${rows}</ul>${handover.items.length>10?`<small class="muted-note">${handover.items.length-10} additional item(s) are included in this handover.</small>`:''}${handover.acceptedBy?`<small class="muted-note">Accepted by ${escapeHTML(handover.acceptedBy)} at ${new Date(handover.acceptedAt).toLocaleString()}.</small>`:''}${handover.cancelledBy?`<small class="muted-note">Cancelled by ${escapeHTML(handover.cancelledBy)}: ${escapeHTML(handover.cancellationReason)}</small>`:''}${accept}${cancel}</article>`;
+}
+function renderAgentHandover(){
+  state.agentHandovers=normalizeAgentHandovers(state.agentHandovers);
+  const actor=state.applicantName||'Customer Experience Agent';
+  const actorId=currentAgentReference();
+  const resources=agentHandoverResources();
+  const candidates=collectAgentHandoverCandidates(resources,actor,actorId,state.agentHandovers);
+  const metrics=agentShiftHandoverMetrics(state.agentHandovers);
+  const activeInteraction=!!(state.currentCall||state.activeOutbound||state.wrapUp);
+  const typeCounts=Object.fromEntries(['digital_contact','customer_commitment','case_followup','open_case'].map(type=>[type,candidates.filter(item=>item.type===type).length]));
+  const candidateRows=candidates.slice(0,12).map(item=>`<li><span><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(agentHandoverTypeLabel(item.type))} · ${escapeHTML(item.reference)} · ${escapeHTML(item.channel)}</small>${item.subject?`<small>${escapeHTML(item.subject)}</small>`:''}${item.callbackIds?.length?`<small>${item.callbackIds.length} linked scheduled callback(s)</small>`:''}</span><span class="pill ${item.priority==='critical'||item.priority==='urgent'?'red':item.priority==='high'?'amber':'muted'}">${escapeHTML(item.priority.toUpperCase())}</span></li>`).join('');
+  const createForm=candidates.length?`<form class="agent-handover-create" data-agent-handover-create><div class="form-grid two"><label><span>Incoming employee name</span><input name="toAgent" required minlength="2" maxlength="100" placeholder="Name of the next agent"></label><label><span>Outgoing employee</span><input value="${escapeHTML(actor)}" readonly></label></div><label><span>Shift handover note · 30+ characters</span><textarea name="note" rows="3" required minlength="30" maxlength="1200" placeholder="Record current customer risk, actions already taken, due times and the next step the incoming agent must complete."></textarea></label><button class="btn primary" type="submit" ${activeInteraction?'disabled':''}>Prepare ${candidates.length} outstanding work item(s)</button>${activeInteraction?'<small class="muted-note">Complete or safely end the active voice/outbound interaction before preparing a handover.</small>':''}</form>`:'<div class="empty-state"><h3>No eligible work to hand over</h3><p>Open digital conversations, customer callback promises, active reopened case follow-ups and open owned CRM cases appear here.</p></div>';
+  const cards=state.agentHandovers.slice().sort((a,b)=>Date.parse(b.createdAt||0)-Date.parse(a.createdAt||0)).slice(0,10).map(agentHandoverCard).join('');
+  viewRoot.innerHTML=`<div class="ops-summary-grid agent-handover-metrics">${metricCard('ELIGIBLE WORK',candidates.length,'Owned open work available to transfer','⇄')}${metricCard('PENDING ACCEPTANCE',metrics.pending,'Waiting for the named next agent','◷')}${metricCard('TRANSFERRED ITEMS',metrics.transferredItems,'Ownership accepted and reassigned','✓')}${metricCard('STALE / SKIPPED',metrics.staleItems,'Closed or reassigned before acceptance','!')}</div><div class="grid two agent-handover-overview" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>My outstanding customer work</h3><p>Only items currently assigned to ${escapeHTML(actor)} are eligible. Pending transfers are excluded.</p></div><span class="pill">${candidates.length} ITEMS</span></div><div class="agent-handover-type-metrics"><div><span>Digital</span><strong>${typeCounts.digital_contact}</strong></div><div><span>Promises</span><strong>${typeCounts.customer_commitment}</strong></div><div><span>Case follow-ups</span><strong>${typeCounts.case_followup}</strong></div><div><span>Open cases</span><strong>${typeCounts.open_case}</strong></div></div><ul class="agent-handover-candidates">${candidateRows||'<li class="empty">No owned work is currently eligible for transfer.</li>'}</ul></section><section class="panel"><div class="panel-head"><div><h3>Prepare agent shift handover</h3><p>Ownership stays with the outgoing agent until the incoming agent accepts.</p></div><span class="pill amber">TWO-PARTY STEP</span></div>${createForm}<div class="article-box" style="margin-top:14px"><h4>What transfers</h4><p>Digital conversation ownership, open callback promises, active reopened case follow-ups and eligible open CRM cases. Existing due times, notes, customer history and linked callback tasks are retained.</p><p>Active voice/outbound calls are not interrupted or silently transferred. The new owner must claim reopened case follow-up work before continuing.</p></div></section></div><section class="panel agent-handover-history" style="margin-top:14px"><div class="panel-head"><div><h3>Agent shift handover register</h3><p>Recent outgoing and incoming work transfers, including items skipped because their live status changed.</p></div><span class="pill ${metrics.pending?'amber':'green'}">${metrics.pending} PENDING</span></div>${cards||'<div class="empty-state"><p>No agent shift handovers have been recorded.</p></div>'}</section><p class="muted-note" style="margin-top:12px">This is a local synthetic workforce simulation. Typed agent names and employee references do not authenticate real employees or provide cross-device synchronisation.</p>`;
+}
+
 function renderSupervisor(){
   const control=normalizeSupervisorQueueControl(state.supervisorQueueControl);
   state.supervisorQueueControl=control;
@@ -1934,6 +1971,7 @@ function renderView() {
     outbound:['CUSTOMER OPERATIONS','Outbound campaigns','Work authorised simulated campaigns and record true outcomes.'],
     digital:['CUSTOMER OPERATIONS','Multi-channel support','Handle simulated email, live-chat and social-media conversations with channel-specific privacy and service standards.'],
     commitments:['CUSTOMER PROMISE CONTROL','Callback commitments','Own scheduled customer promises, monitor due times, record callback attempts and route repeated failures for independent review.'],
+    agentHandover:['SHIFT CONTINUITY','Agent shift handover','Transfer open customer conversations, callbacks and case work to the next agent with an explicit acceptance and audit trail.'],
     customerIntel:['CUSTOMER INTELLIGENCE','Customer behaviour & practice QA','Practise adaptive customer conversations and review transparent quality evidence across customer personalities.'],
     crm:['WORKSTATION','CRM & cases','Review accurate records of completed simulated interactions.'],
     knowledge:['AGENT RESOURCES','Knowledge base','Reference the principles and procedures relevant to your role.'],
@@ -1955,6 +1993,7 @@ function renderView() {
     case 'outbound': renderOutbound(); break;
     case 'digital': renderDigital(); break;
     case 'commitments': renderCommitments(); break;
+    case 'agentHandover': renderAgentHandover(); break;
     case 'customerIntel': renderCustomerIntelligence(); break;
     case 'qa': renderQAWorkspace(); break;
     case 'crm': renderCRM(); break;
@@ -2542,6 +2581,33 @@ function resolveSupervisorRequest(requestId,values){
   }catch(error){toast(error.message||'Supervisor decision could not be recorded.','warning');}
 }
 
+function prepareAgentShiftHandoverFromForm(values){
+  try{
+    const toAgent=String(values.get('toAgent')||'').trim();
+    const toAgentId=`EMP-${initials(toAgent)}`;
+    const resources=agentHandoverResources();
+    const handover=createAgentShiftHandover(resources,state.agentHandovers,{fromAgent:state.applicantName||'Customer Experience Agent',fromAgentId:currentAgentReference(),toAgent,toAgentId,note:String(values.get('note')||'')},new Date());
+    pushOperationEvent('agent-handover',handover.id,`${handover.items.length} open customer work item(s) prepared for ${handover.toAgent}; ownership remains with ${handover.fromAgent} until acceptance.`,'pending-acceptance',{from:handover.fromAgent,to:handover.toAgent,itemCount:handover.items.length});
+    saveState();renderView();toast('Agent shift handover prepared. The incoming agent must accept it before ownership changes.','success');
+  }catch(error){toast(error.message||'Agent handover could not be prepared.','warning');}
+}
+function acceptAgentShiftHandoverRecord(handoverId,values){
+  try{
+    const actor=String(values.get('actor')||'').trim();
+    const result=acceptAgentShiftHandover(agentHandoverResources(),state.agentHandovers,handoverId,actor,`EMP-${initials(actor)}`,new Date());
+    syncDigitalWorkSelection();
+    pushOperationEvent('agent-handover',result.handover.id,`${result.acceptedBy} accepted the agent handover: ${result.transferred} work item(s) transferred and ${result.stale} item(s) skipped.`,'accepted',{from:result.handover.fromAgent,to:result.handover.toAgent,transferred:result.transferred,stale:result.stale});
+    saveState();renderView();toast(`Handover accepted: ${result.transferred} item(s) transferred, ${result.stale} stale item(s) skipped.`,'success');
+  }catch(error){toast(error.message||'Agent handover could not be accepted.','warning');}
+}
+function cancelAgentShiftHandoverRecord(handoverId,values){
+  try{
+    const handover=cancelAgentShiftHandover(state.agentHandovers,handoverId,state.applicantName||'Customer Experience Agent',String(values.get('reason')||''),new Date());
+    pushOperationEvent('agent-handover',handover.id,`Pending agent handover to ${handover.toAgent} was cancelled by ${handover.fromAgent}.`,'cancelled',{reason:handover.cancellationReason});
+    saveState();renderView();toast('Pending agent handover cancelled. Existing work ownership was not changed.','success');
+  }catch(error){toast(error.message||'Agent handover could not be cancelled.','warning');}
+}
+
 function createSupervisorShiftHandover(values){
   const actor=state.applicantName||'Floor Supervisor';
   try{
@@ -2842,6 +2908,9 @@ document.addEventListener('change',e=>{
   if(e.target?.id==='qaScorecardSelect'){state.qaSelectedScorecardId=e.target.value;saveState();renderView();}
 });
 document.addEventListener('submit',async e=>{
+  if(e.target.matches('[data-agent-handover-create]')){e.preventDefault();prepareAgentShiftHandoverFromForm(new FormData(e.target));return;}
+  if(e.target.matches('[data-agent-handover-accept]')){e.preventDefault();acceptAgentShiftHandoverRecord(e.target.dataset.handoverId,new FormData(e.target));return;}
+  if(e.target.matches('[data-agent-handover-cancel]')){e.preventDefault();cancelAgentShiftHandoverRecord(e.target.dataset.handoverId,new FormData(e.target));return;}
   if(e.target.matches('[data-supervisor-handover-create]')){e.preventDefault();createSupervisorShiftHandover(new FormData(e.target));return;}
   if(e.target.matches('[data-supervisor-handover-accept]')){e.preventDefault();acceptSupervisorShiftHandover(e.target.dataset.handoverId,new FormData(e.target));return;}
   if(e.target.matches('[data-supervisor-handover-cancel]')){e.preventDefault();cancelSupervisorShiftHandover(e.target.dataset.handoverId,new FormData(e.target));return;}
@@ -3273,7 +3342,8 @@ window.addEventListener('calloria:cloud-context', async event=>{
         state.organizationWorkspace={activeOrganizationId:detail.organizationId,organizations:[{
           id:detail.organizationId,name:cloudOrg?.name||detail.organizationName||'Organisation',industry:cloudOrg?.industry||'General customer service',status:'active',createdAt:cloudOrg?.createdAt||new Date().toISOString(),policy:structuredClone(detail.policy||DEFAULT_ORG_POLICY),members:[],audit:[]
         }]};
-        for(const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations','aiQaSuggestions','supervisorQueueAudit']) if(!Array.isArray(state[key])) state[key]=[];
+        for(const key of ['inboundQueueItems','callbacks','supervisorRequests','supervisorHandovers','agentHandovers','interactionTimeline','outboundSuppressions','outboundAttempts','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations','aiQaSuggestions','supervisorQueueAudit']) if(!Array.isArray(state[key])) state[key]=[];
+        state.agentHandovers=normalizeAgentHandovers(state.agentHandovers);
         markCloudEmploymentSyncReady();
       } else {
         // One-time migration of this user's already-scoped browser save into the tenant record.

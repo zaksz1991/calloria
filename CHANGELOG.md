@@ -1,3 +1,29 @@
+# CALLORIA v6.74 — Agent Shift Handover & Open Work Continuity
+
+## Added
+
+- Added a first-class Agent Handover workspace for outgoing and incoming agents.
+- Worklist snapshots include active digital conversations, open owned callback commitments, active reopened case follow-ups and other eligible open CRM cases.
+- Preparing a handover does not change ownership; pending item IDs are reserved against duplicate handovers.
+- Acceptance rechecks each live record and skips closed, completed, missing or reassigned work instead of overwriting current ownership.
+- Digital contacts retain message history and receive an ownership timeline entry; callback due plans and linked callback task records remain unchanged.
+- Reopened case follow-ups transfer ownership while releasing the outgoing agent's claim so the incoming agent must explicitly claim the work. Due time, priority, case notes and customer history are retained.
+- Added reason-required outgoing-agent cancellation, transferred/stale metrics, local-save migration and responsive desktop/mobile UI.
+- Active voice/outbound sessions are excluded from the handover; supervisor escalation handovers remain in the existing Supervisor workspace.
+
+## Verification boundary
+
+- See `VERIFICATION-v6.74.md` for automated tests, syntax checks and full-suite results.
+- Production Vite build, browser walkthrough and Vercel deployment are not claimed unless separately verified.
+
+## Compatibility
+
+- Builds on top of v6.73 Supervisor Shift Handover and the existing v6.68–v6.72 customer continuity, promise, case lifecycle and supervisor ownership modules.
+- No database migration, environment variable, secret, new dependency or public asset replacement is required.
+- All handover data remains local synthetic gameplay; names and employee references are not authenticated enterprise identities.
+
+---
+
 # CALLORIA v6.73 — Supervisor Shift Handover & Outstanding Work Continuity
 
 ## Added

@@ -754,3 +754,38 @@ body.calloria-game-launch .world-vignette{position:absolute;inset:0;z-index:2;ba
  .supervisor-handover-action,.supervisor-handover-action.cancel{grid-template-columns:1fr}
  .supervisor-handover-action button{width:100%;min-height:42px}
 }
+
+/* CALLORIA v6.74 — Agent shift handover */
+.agent-handover-overview{align-items:start}
+.agent-handover-type-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:14px 0}
+.agent-handover-type-metrics>div{padding:12px;border:1px solid var(--line,#dfe5ee);border-radius:12px;background:var(--surface-soft,#f7f9fc);display:flex;flex-direction:column;gap:5px}
+.agent-handover-type-metrics span{font-size:11px;color:var(--muted,#64748b)}
+.agent-handover-type-metrics strong{font-size:22px;font-weight:800;color:var(--ink,#142033)}
+.agent-handover-candidates,.agent-handover-items{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.agent-handover-candidates li,.agent-handover-items li{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid var(--line,#dfe5ee);border-radius:12px;background:var(--surface,#fff)}
+.agent-handover-candidates li>span:first-child,.agent-handover-items li>span:first-child{display:grid;gap:4px;min-width:0}
+.agent-handover-candidates strong,.agent-handover-items strong{font-size:13px;color:var(--ink,#142033)}
+.agent-handover-candidates small,.agent-handover-items small{font-size:11px;color:var(--muted,#64748b);line-height:1.45;overflow-wrap:anywhere}
+.agent-handover-create,.agent-handover-action{display:grid;gap:12px;margin-top:12px}
+.agent-handover-create label,.agent-handover-action label{display:grid;gap:6px;font-size:12px;font-weight:700;color:var(--ink,#142033)}
+.agent-handover-create input,.agent-handover-create textarea,.agent-handover-action input{width:100%;min-width:0;border:1px solid var(--line,#dfe5ee);border-radius:10px;padding:10px 12px;background:var(--surface,#fff);color:var(--ink,#142033);font:inherit}
+.agent-handover-card{border:1px solid var(--line,#dfe5ee);border-radius:14px;padding:14px;margin-top:10px;background:var(--surface,#fff);display:grid;gap:12px}
+.agent-handover-card.pending{border-color:#d7a64b;background:linear-gradient(120deg,rgba(250,204,21,.07),transparent 60%)}
+.agent-handover-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.agent-handover-card-head>div{display:grid;gap:4px;min-width:0}
+.agent-handover-card-head strong{font-size:14px;color:var(--ink,#142033)}
+.agent-handover-card-head small{font-size:11px;color:var(--muted,#64748b)}
+.agent-handover-card>p{font-size:13px;line-height:1.6;color:var(--muted,#526175);margin:0}
+.agent-handover-counts{display:flex;flex-wrap:wrap;gap:8px}
+.agent-handover-counts span{font-size:11px;padding:5px 8px;border-radius:999px;background:var(--surface-soft,#f4f6fa);color:var(--muted,#64748b)}
+.agent-handover-action{padding-top:10px;border-top:1px solid var(--line,#dfe5ee)}
+.agent-handover-action small{font-size:11px;line-height:1.45}
+.agent-handover-stale-reason{color:#a33b35!important}
+.agent-handover-history{display:grid;gap:8px}
+@media(max-width:760px){
+ .agent-handover-type-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .agent-handover-candidates li,.agent-handover-items li{gap:8px;padding:10px}
+ .agent-handover-card{padding:11px}
+ .agent-handover-card-head{flex-direction:column}
+ .agent-handover-action .btn,.agent-handover-create .btn{width:100%}
+}
