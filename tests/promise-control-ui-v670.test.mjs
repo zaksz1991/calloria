@@ -52,8 +52,9 @@ test('escalation buttons are not intercepted as Promise worklist navigation butt
   assert.match(main, /data-action="raise-promise-escalation" data-commitment-id=/);
 });
 
-test('promise requests cannot be one-click closed from the generic supervisor desk', () => {
-  assert.match(main, /item\.commitmentId\?`<button class="btn small primary" data-action="open-promise-control">Open promise control/);
+test('promise requests are routed to the dedicated Promise Control review rather than one-click closed', () => {
+  assert.match(main, /else if \(request\.commitmentId\)/);
+  assert.match(main, /data-action="open-promise-control">Open promise review/);
   assert.match(main, /case 'open-promise-control':state\.currentView='promiseControl'/);
 });
 

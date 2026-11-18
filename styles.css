@@ -712,3 +712,45 @@ body.calloria-game-launch .world-vignette{position:absolute;inset:0;z-index:2;ba
  .supervisor-escalation-reassign form{grid-template-columns:1fr}
  .supervisor-escalation-head>strong{flex-basis:100%}
 }
+
+
+/* CALLORIA v6.73 — supervisor shift handover and outstanding work continuity */
+.supervisor-handover-panel{min-width:0}
+.supervisor-handover-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:14px 0}
+.supervisor-handover-metrics>div{display:flex;flex-direction:column;gap:5px;min-width:0;padding:11px 12px;border:1px solid var(--line,rgba(120,140,160,.22));border-radius:12px;background:var(--surface-soft,rgba(120,140,160,.07))}
+.supervisor-handover-metrics span{font-size:10px;color:var(--muted,#8c9aaa);text-transform:uppercase;letter-spacing:.05em}
+.supervisor-handover-metrics strong{font-size:21px;line-height:1.15}
+.supervisor-handover-compose{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,1.1fr);gap:16px;padding:14px;border:1px solid var(--line,rgba(120,140,160,.2));border-radius:12px;background:var(--surface-soft,rgba(120,140,160,.045))}
+.supervisor-handover-compose>div,.supervisor-handover-create{min-width:0}
+.supervisor-handover-compose>div>strong{font-size:12px}
+.supervisor-handover-candidates,.supervisor-handover-items{display:grid;gap:6px;margin:10px 0;padding:0;list-style:none}
+.supervisor-handover-candidates li,.supervisor-handover-items li{display:grid;gap:3px;padding:8px 9px;border:1px solid var(--line,rgba(120,140,160,.18));border-radius:8px;background:rgba(120,140,160,.035);min-width:0}
+.supervisor-handover-candidates strong,.supervisor-handover-items strong{font-size:10px;overflow-wrap:anywhere}
+.supervisor-handover-candidates span,.supervisor-handover-items span,.supervisor-handover-items small{font-size:9px;color:var(--muted,#8c9aaa);line-height:1.45;overflow-wrap:anywhere}
+.supervisor-handover-create{display:grid;gap:10px;align-content:start}
+.supervisor-handover-create .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.supervisor-handover-create label,.supervisor-handover-action label{display:grid;gap:5px;min-width:0}
+.supervisor-handover-create label>span,.supervisor-handover-action label>span{font-size:10px;color:var(--muted,#8c9aaa);text-transform:uppercase;letter-spacing:.04em}
+.supervisor-handover-create input,.supervisor-handover-create textarea,.supervisor-handover-action input{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--line,rgba(120,140,160,.25));border-radius:8px;padding:9px 10px;background:var(--surface,#0c1b27);color:var(--ink,#e7f1f4);font:500 11px "DM Sans",sans-serif}
+.supervisor-handover-create textarea{resize:vertical;line-height:1.5}
+.supervisor-handover-history{margin-top:16px;padding-top:12px;border-top:1px solid var(--line,rgba(120,140,160,.18))}
+.supervisor-handover-history>h4{margin:0 0 9px;font-size:12px}
+.supervisor-handover-card{display:grid;gap:8px;margin:9px 0;padding:12px;border:1px solid var(--line,rgba(120,140,160,.2));border-radius:11px;background:var(--surface,rgba(120,140,160,.035));min-width:0}
+.supervisor-handover-card.pending{border-left:4px solid #d08a31}
+.supervisor-handover-card.accepted{border-left:4px solid #428c73}
+.supervisor-handover-card.cancelled{border-left:4px solid #8d98a4;opacity:.85}
+.supervisor-handover-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.supervisor-handover-head>div{display:grid;gap:4px;min-width:0}
+.supervisor-handover-head strong{font-size:12px;overflow-wrap:anywhere}
+.supervisor-handover-head small,.supervisor-handover-card>p{font-size:9px;color:var(--muted,#8c9aaa);line-height:1.5;overflow-wrap:anywhere}
+.supervisor-handover-card>p{margin:0;color:var(--ink,#dbe4ee)}
+.supervisor-handover-counts{display:flex;gap:8px 14px;flex-wrap:wrap;color:var(--muted,#8c9aaa);font-size:9px}
+.supervisor-handover-action{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:9px;padding-top:8px;border-top:1px solid var(--line,rgba(120,140,160,.16))}
+.supervisor-handover-action.cancel{grid-template-columns:minmax(0,1fr) auto}
+@media(max-width:760px){
+ .supervisor-handover-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .supervisor-handover-compose{grid-template-columns:1fr}
+ .supervisor-handover-create .form-grid{grid-template-columns:1fr}
+ .supervisor-handover-action,.supervisor-handover-action.cancel{grid-template-columns:1fr}
+ .supervisor-handover-action button{width:100%;min-height:42px}
+}

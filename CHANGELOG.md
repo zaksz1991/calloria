@@ -1,3 +1,26 @@
+# CALLORIA v6.73 — Supervisor Shift Handover & Outstanding Work Continuity
+
+## Added
+
+- Added a named, two-party supervisor handover workflow for unresolved supervisor escalations.
+- Outgoing supervisors can prepare a handover containing only open escalation requests currently assigned to them, with priority, reference, customer, channel, response target and action context retained.
+- Pending handovers reserve their included request IDs so the same escalation cannot be placed into multiple pending handovers.
+- Ownership does not change when a handover is prepared. Only the designated incoming supervisor can accept it.
+- Acceptance re-checks each live request. Closed, missing or reassigned requests are marked stale and skipped; eligible open requests transfer to the incoming supervisor and receive a `shift_handover_accepted` escalation history event.
+- Outgoing supervisors can cancel a pending handover with a reason; cancellation leaves current escalation ownership unchanged.
+- Added handover history, pending/transferred/stale metrics, local save migration and responsive Supervisor desk controls.
+- All handover actions remain synthetic local gameplay records. The named incoming supervisor field is not an authenticated enterprise identity and no external notification is sent.
+
+## Verification boundary
+
+- Focused v6.73 engine/UI tests plus v6.72 escalation and v6.71 case-lifecycle regression tests: see `VERIFICATION-v6.73.md`.
+- JavaScript syntax checks: see the verification report.
+- Full repository test suite, production Vite build, browser walkthrough and Vercel deployment are not claimed by this updated-files package.
+
+## Compatibility
+
+- Builds on top of v6.72 Supervisor Escalation Ownership and v6.71 Case Reopen / Follow-up Control.
+- No database migration, environment variable, new dependency or public asset replacement is required.
 # CALLORIA v6.70 — Supervisor Promise Risk & Recovery Control
 
 ## Added

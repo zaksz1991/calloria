@@ -34,6 +34,7 @@ import { startPublicGameServices, refreshPublicGameStats } from './game-platform
 import { configureCloudEmploymentSync, markCloudEmploymentSyncReady, loadCloudEmploymentSnapshot, scheduleCloudEmploymentSave, flushCloudEmploymentSave } from './cloud-employment-sync.js';
 import { normalizeCaseLifecycle, caseReopenEligibility, reopenCase, caseFollowUpRisk, startCaseFollowUp, completeCaseFollowUp, reviewCaseFollowUp, caseFollowUpMetrics, formatCaseClock } from './case-lifecycle-engine.js';
 import { normalizeSupervisorRequests, assessSupervisorEscalation, claimSupervisorEscalation, reassignSupervisorEscalation, resolveSupervisorEscalation, closeLinkedSupervisorEscalation, supervisorEscalationMetrics } from './supervisor-escalation-engine.js';
+import { normalizeSupervisorHandovers, supervisorHandoverCandidates, createSupervisorHandover, acceptSupervisorHandover, cancelSupervisorHandover, supervisorHandoverMetrics } from './supervisor-handover-engine.js';
 
 let THREE = null;
 
@@ -66,6 +67,7 @@ const initialState = () => ({
   queueSequence: 0,
   callbacks: [],
   supervisorRequests: [],
+  supervisorHandovers: [],
   supervisorQueueControl: createSupervisorQueueControl(),
   supervisorQueueAudit: [],
   interactionTimeline: [],
@@ -142,8 +144,9 @@ function loadState() {
     migrated.customerCommitments = globalThis.CalloriaCommitmentEngine?.normaliseState?.(migrated.customerCommitments) || { version: '6.9.0', commitments: [], activity: [] };
     migrated.cases = Array.isArray(migrated.cases) ? migrated.cases.map(row => { try { return normalizeCaseLifecycle(row); } catch (_) { return row; } }) : [];
     if (typeof migrated.crmSelectedCaseReference !== 'string') migrated.crmSelectedCaseReference = '';
-    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','outboundWorklist','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations','aiQaSuggestions','supervisorQueueAudit']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
+    for (const key of ['inboundQueueItems','callbacks','supervisorRequests','supervisorHandovers','interactionTimeline','outboundSuppressions','outboundAttempts','outboundWorklist','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations','aiQaSuggestions','supervisorQueueAudit']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
     migrated.supervisorRequests = normalizeSupervisorRequests(migrated.supervisorRequests);
+    migrated.supervisorHandovers = normalizeSupervisorHandovers(migrated.supervisorHandovers);
     if (!Number.isFinite(migrated.callQueue)) migrated.callQueue = 6;
     migrated.supervisorQueueControl = normalizeSupervisorQueueControl(migrated.supervisorQueueControl);
     if (migrated.shiftActive && (!migrated.shiftRecord || migrated.shiftRecord.status !== 'active')) migrated.shiftRecord = createShiftRecord({ day: migrated.day || 1 });
@@ -1147,6 +1150,19 @@ function supervisorEscalationCard(request, actor, now = new Date()) {
   return `<article class="supervisor-escalation-card ${risk.priority}"><div class="supervisor-escalation-main"><div class="supervisor-escalation-head"><strong>${escapeHTML(request.customer || 'Synthetic customer')} · ${escapeHTML(request.reference || request.contactId || 'Supervisor request')}</strong><span class="pill ${priorityTone}">${risk.priority.toUpperCase()}</span><span class="pill ${riskTone}">${escapeHTML(response)}</span></div><p>${escapeHTML(request.reason || 'Agent assistance requested.')}</p><div class="supervisor-escalation-meta"><span>${escapeHTML(request.channel || 'Customer contact')}</span><span>${owner}</span><span>${escalation.stage.replaceAll('_', ' ').toUpperCase()}</span><span>Raised ${new Date(request.createdAt).toLocaleString()}</span></div>${actionMarkup}${reassignMarkup}</div></article>`;
 }
 
+function supervisorHandoverCard(handover, actor){
+  const pending=handover.status==='pending_acceptance';
+  const isOutgoing=String(actor||'').toLowerCase()===handover.fromSupervisor.toLowerCase();
+  const transferred=handover.items.filter(item=>item.status==='transferred').length;
+  const stale=handover.items.filter(item=>item.status==='stale').length;
+  const waiting=handover.items.filter(item=>item.status==='pending').length;
+  const statusLabel=handover.status.replaceAll('_',' ').toUpperCase();
+  const itemRows=handover.items.slice(0,8).map(item=>`<li><strong>${escapeHTML(item.customer||'Customer')}</strong><span>${escapeHTML(item.reference||item.requestId)} · ${escapeHTML(item.priority.toUpperCase())} · ${escapeHTML(item.status.replaceAll('_',' '))}</span>${item.staleReason?`<small>${escapeHTML(item.staleReason)}</small>`:''}</li>`).join('');
+  const acceptForm=pending?`<form class="supervisor-handover-action" data-supervisor-handover-accept data-handover-id="${escapeHTML(handover.id)}"><label><span>Incoming supervisor acknowledgement · type ${escapeHTML(handover.toSupervisor)}</span><input name="actor" required minlength="2" maxlength="100" placeholder="Enter the incoming supervisor's exact name" value="${isOutgoing?'':escapeHTML(handover.toSupervisor)}"></label><button class="btn small primary" type="submit">Accept handover</button></form><small class="muted-note">Local simulation acknowledgement only; the incoming name is not authenticated by an enterprise identity provider.</small>`:'';
+  const cancelForm=pending&&isOutgoing?`<form class="supervisor-handover-action cancel" data-supervisor-handover-cancel data-handover-id="${escapeHTML(handover.id)}"><label><span>Cancellation reason · 10+ characters</span><input name="reason" required minlength="10" maxlength="400" placeholder="Explain why the transfer is cancelled"></label><button class="btn small outline" type="submit">Cancel pending handover</button></form>`:'';
+  return `<article class="supervisor-handover-card ${pending?'pending':handover.status}"><div class="supervisor-handover-head"><div><strong>${escapeHTML(handover.fromSupervisor)} <span aria-hidden="true">→</span> ${escapeHTML(handover.toSupervisor)}</strong><small>${escapeHTML(handover.id)} · ${new Date(handover.createdAt).toLocaleString()}</small></div><span class="pill ${pending?'amber':handover.status==='accepted'?'green':'muted'}">${escapeHTML(statusLabel)}</span></div><p>${escapeHTML(handover.note)}</p><div class="supervisor-handover-counts"><span>${waiting} awaiting transfer</span><span>${transferred} transferred</span><span>${stale} stale / closed</span></div><ul class="supervisor-handover-items">${itemRows}</ul>${handover.items.length>8?`<small class="muted-note">${handover.items.length-8} additional item(s) are included in this handover.</small>`:''}${handover.acceptedBy?`<small class="muted-note">Accepted by ${escapeHTML(handover.acceptedBy)} at ${new Date(handover.acceptedAt).toLocaleString()}.</small>`:''}${handover.cancelledBy?`<small class="muted-note">Cancelled by ${escapeHTML(handover.cancelledBy)}: ${escapeHTML(handover.cancellationReason)}</small>`:''}${acceptForm}${cancelForm}</article>`;
+}
+
 function renderSupervisor(){
   const control=normalizeSupervisorQueueControl(state.supervisorQueueControl);
   state.supervisorQueueControl=control;
@@ -1184,6 +1200,12 @@ function renderSupervisor(){
   const supervisorActor=state.applicantName||'Floor Supervisor';
   const open=state.supervisorRequests.filter(item=>item&&item.status==='open').sort((a,b)=>{const rank={critical:0,high:1,normal:2};return (rank[a.escalation?.priority]??3)-(rank[b.escalation?.priority]??3)||Date.parse(a.createdAt||0)-Date.parse(b.createdAt||0);});
   const escalationRows=open.map(item=>supervisorEscalationCard(item,supervisorActor,escalationNow)).join('');
+  state.supervisorHandovers=normalizeSupervisorHandovers(state.supervisorHandovers);
+  const handoverCandidates=supervisorHandoverCandidates(state.supervisorRequests,state.supervisorHandovers,supervisorActor,escalationNow);
+  const handoverMetrics=supervisorHandoverMetrics(state.supervisorHandovers);
+  const handoverCandidateRows=handoverCandidates.slice(0,8).map(item=>`<li><strong>${escapeHTML(item.customer)}</strong><span>${escapeHTML(item.reference)} · ${escapeHTML(item.priority.toUpperCase())} · ${escapeHTML(item.channel)}</span></li>`).join('');
+  const handoverCreateForm=handoverCandidates.length?`<form class="supervisor-handover-create" data-supervisor-handover-create><div class="form-grid two"><label><span>Incoming supervisor</span><input name="toSupervisor" required minlength="2" maxlength="100" placeholder="Name of incoming supervisor"></label><label><span>Outgoing supervisor</span><input value="${escapeHTML(supervisorActor)}" readonly></label></div><label><span>Shift handover note · 20+ characters</span><textarea name="note" rows="2" required minlength="20" maxlength="1000" placeholder="Summarise current customer risks, actions already taken and what the incoming supervisor must do next."></textarea></label><button class="btn primary" type="submit">Prepare ${handoverCandidates.length} outstanding escalation(s) for handover</button></form>`:'<div class="empty-state"><p>No eligible open escalations are currently owned by this supervisor. Claim or work the relevant requests before preparing a shift handover.</p></div>';
+  const handoverRows=state.supervisorHandovers.slice().sort((a,b)=>Date.parse(b.createdAt||0)-Date.parse(a.createdAt||0)).slice(0,8).map(item=>supervisorHandoverCard(item,supervisorActor)).join('');
   const customerRiskRows=(board.customerRiskItems||[]).map(item=>`<div class="case-item customer-risk-row"><div class="case-symbol">!</div><div class="case-copy"><strong>${escapeHTML(item.customer)} · ${escapeHTML(item.subject||'Digital contact')}</strong><small>${escapeHTML(item.channel)} · ${escapeHTML(item.mood)} · sentiment ${item.sentiment}/100 · ${escapeHTML(item.reason)}</small></div><span class="pill amber">INTERVENTION</span></div>`).join('');
   const audit=[...(control.history||[]).map(item=>({...item,kind:'intake'})),...(state.supervisorQueueAudit||[])].sort((a,b)=>Date.parse(b.at||0)-Date.parse(a.at||0)).slice(0,12);
   const auditRows=audit.map(item=>`<div class="timeline-row"><time>${new Date(item.at).toLocaleTimeString()}</time><div><strong>${escapeHTML(item.message||`${item.action||'Queue triage'}: ${item.from||''} → ${item.to||''}`)}</strong><small>${escapeHTML(item.reference||item.reason||'Supervisor control')} · ${escapeHTML(item.actor||'Supervisor')}</small></div></div>`).join('');
@@ -1201,6 +1223,7 @@ function renderSupervisor(){
     </div>
     <section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Customer emotion watch</h3><p>Open voice and digital conversations where sentiment, patience or repeated dissatisfaction recommends supervisor intervention.</p></div><span class="pill ${(board.customerEscalationRecommended+voiceBehaviourMetrics.supervisorRecommended)?'amber':'green'}">${board.customerEscalationRecommended+voiceBehaviourMetrics.supervisorRecommended} AT RISK</span></div>${voiceRiskRows}${customerRiskRows||(!voiceRiskRows?'<div class="empty-state"><p>No open voice or digital conversations currently require customer-emotion intervention.</p></div>':'')}</section>
     <section class="panel supervisor-escalation-desk" style="margin-top:14px"><div class="panel-head"><div><h3>Supervisor escalation &amp; assistance desk</h3><p>Claim each request, work it under named ownership, track its response target and record evidence before closure.</p></div><span class="pill ${open.length?'amber':'green'}">${open.length} OPEN</span></div><div class="supervisor-escalation-metrics"><div><span>Unassigned</span><strong>${escalationMetrics.unassigned}</strong></div><div><span>Critical</span><strong>${escalationMetrics.critical}</strong></div><div><span>Overdue</span><strong>${escalationMetrics.overdue}</strong></div><div><span>Due soon</span><strong>${escalationMetrics.dueSoon}</strong></div><div><span>In progress</span><strong>${escalationMetrics.inProgress}</strong></div></div><p class="muted-note">Default response targets are illustrative local-simulation controls: critical 5 minutes, high 15 minutes and normal 30 minutes. They are not contractual SLAs. Each request retains its original channel and linked CRM/promise workflow.</p>${open.length?escalationRows:'<div class="empty-state"><h3>No open requests</h3><p>Agent assistance and case escalations will appear here during operations.</p></div>'}</section>
+    <section class="panel supervisor-handover-panel" style="margin-top:14px"><div class="panel-head"><div><h3>Supervisor shift handover</h3><p>Prepare outstanding escalations for the incoming supervisor. Ownership changes only after the named recipient accepts.</p></div><span class="pill ${handoverMetrics.pending?'amber':'green'}">${handoverMetrics.pending} PENDING</span></div><div class="supervisor-handover-metrics"><div><span>Eligible work</span><strong>${handoverCandidates.length}</strong></div><div><span>Pending handovers</span><strong>${handoverMetrics.pending}</strong></div><div><span>Transferred</span><strong>${handoverMetrics.transferredItems}</strong></div><div><span>Stale items</span><strong>${handoverMetrics.staleItems}</strong></div></div><div class="supervisor-handover-compose"><div><strong>Current outgoing supervisor: ${escapeHTML(supervisorActor)}</strong><p class="muted-note">Only open escalations currently owned by this supervisor are included. Existing pending handovers are excluded so the same request cannot be transferred twice.</p>${handoverCandidateRows?`<ul class="supervisor-handover-candidates">${handoverCandidateRows}</ul>`:'<p class="muted-note">No owned escalations are currently eligible for transfer.</p>'}</div>${handoverCreateForm}</div><div class="supervisor-handover-history"><h4>Recent handover records</h4>${handoverRows||'<p class="muted-note">No supervisor shift handovers have been recorded.</p>'}</div></section>
     <div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Escalated and review cases</h3><p>Cases requiring specialist or QA attention.</p></div><span class="pill">${board.escalatedCases}</span></div>${board.escalatedCaseItems.length?board.escalatedCaseItems.slice().reverse().map(caseRow).join(''):'<p class="muted-note">No escalated cases recorded.</p>'}</section><section class="panel"><div class="panel-head"><div><h3>Supervisor audit trail</h3><p>Recent intake changes and queue triage decisions.</p></div><span class="pill">${audit.length} EVENTS</span></div>${auditRows||'<p class="muted-note">No supervisor control changes recorded.</p>'}</section></div>
     <section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Operations activity</h3><p>Recent call, digital, queue and shift events.</p></div><span class="pill">${board.activeWork} ACTIVE WORK</span></div>${state.interactionTimeline.slice(-10).reverse().map(item=>`<div class="timeline-row"><time>${new Date(item.at).toLocaleTimeString()}</time><div><strong>${escapeHTML(item.message)}</strong><small>${escapeHTML(item.reference)} · ${escapeHTML(item.status)}</small></div></div>`).join('')||'<p class="muted-note">No operations events have been recorded.</p>'}</section>`;
 }
@@ -1906,7 +1929,7 @@ function renderView() {
     overview:['CAREER ENTRY',state.hired?'Your shift overview':state.stage==='assessment'?'Recruitment assessment':state.stage==='offer'?'Employment offer':'Start your application',state.hired?'Your daily operations, performance and available work.':'Complete recruitment before starting agent operations.'],
     inbound:['CUSTOMER OPERATIONS','Inbound desk','Answer, investigate, resolve, transfer and document incoming customer contacts.'],
     queue:['OPERATIONS CONTROL','Queue management','Inspect priority, routing groups, waiting contacts and scheduled callbacks.'],
-    supervisor:['SUPERVISOR DESK','Live operations command centre','Control synthetic queue intake, triage waiting work, monitor service risk and review escalations across voice and digital channels.'],
+    supervisor:['SUPERVISOR DESK','Live operations command centre','Control synthetic queue intake, triage waiting work, monitor service risk, own escalations and hand over unresolved work between supervisor shifts.'],
     promiseControl:['SUPERVISOR DESK','Customer promise control','Monitor due and at-risk callbacks across employees, raise service-recovery escalations and record independent supervisor actions.'],
     outbound:['CUSTOMER OPERATIONS','Outbound campaigns','Work authorised simulated campaigns and record true outcomes.'],
     digital:['CUSTOMER OPERATIONS','Multi-channel support','Handle simulated email, live-chat and social-media conversations with channel-specific privacy and service standards.'],
@@ -2518,6 +2541,31 @@ function resolveSupervisorRequest(requestId,values){
     saveState();renderView();toast('Supervisor decision and supporting evidence recorded.','success');
   }catch(error){toast(error.message||'Supervisor decision could not be recorded.','warning');}
 }
+
+function createSupervisorShiftHandover(values){
+  const actor=state.applicantName||'Floor Supervisor';
+  try{
+    const handover=createSupervisorHandover(state.supervisorRequests,state.supervisorHandovers,{fromSupervisor:actor,toSupervisor:String(values.get('toSupervisor')||''),note:String(values.get('note')||'')},new Date());
+    state.supervisorHandovers.push(handover);
+    pushOperationEvent('supervisor-handover',handover.id,`${handover.items.length} open supervisor escalation(s) prepared for ${handover.toSupervisor}; ownership remains with ${actor} until acceptance.`,'pending-acceptance',{from:actor,to:handover.toSupervisor,itemCount:handover.items.length});
+    saveState();renderView();toast('Supervisor shift handover prepared. The incoming supervisor must accept it before ownership changes.','success');
+  }catch(error){toast(error.message||'Supervisor handover could not be prepared.','warning');}
+}
+function acceptSupervisorShiftHandover(handoverId,values){
+  try{
+    const result=acceptSupervisorHandover(state.supervisorRequests,state.supervisorHandovers,handoverId,String(values.get('actor')||''),new Date());
+    pushOperationEvent('supervisor-handover',result.handover.id,`${result.acceptedBy||result.handover.acceptedBy||result.handover.toSupervisor} accepted the shift handover: ${result.transferred} escalation(s) transferred and ${result.stale} item(s) skipped.`,'accepted',{from:result.handover.fromSupervisor,to:result.handover.toSupervisor,transferred:result.transferred,stale:result.stale});
+    saveState();renderView();toast(`Handover accepted: ${result.transferred} transferred, ${result.stale} no longer eligible.`,'success');
+  }catch(error){toast(error.message||'Supervisor handover could not be accepted.','warning');}
+}
+function cancelSupervisorShiftHandover(handoverId,values){
+  const actor=state.applicantName||'Floor Supervisor';
+  try{
+    const handover=cancelSupervisorHandover(state.supervisorHandovers,handoverId,actor,String(values.get('reason')||''),new Date());
+    pushOperationEvent('supervisor-handover',handover.id,`Pending shift handover to ${handover.toSupervisor} was cancelled by ${actor}.`,'cancelled',{reason:handover.cancellationReason});
+    saveState();renderView();toast('Pending supervisor handover cancelled. Existing escalation ownership was not changed.','success');
+  }catch(error){toast(error.message||'Supervisor handover could not be cancelled.','warning');}
+}
 function resumeOutboundCallback(callbackId){
   const callback=state.callbacks.find(item=>item.id===callbackId&&item.type==='outbound'&&item.status==='scheduled');
   if(!callback){toast('Outbound callback was not found.','error');return;}
@@ -2794,6 +2842,9 @@ document.addEventListener('change',e=>{
   if(e.target?.id==='qaScorecardSelect'){state.qaSelectedScorecardId=e.target.value;saveState();renderView();}
 });
 document.addEventListener('submit',async e=>{
+  if(e.target.matches('[data-supervisor-handover-create]')){e.preventDefault();createSupervisorShiftHandover(new FormData(e.target));return;}
+  if(e.target.matches('[data-supervisor-handover-accept]')){e.preventDefault();acceptSupervisorShiftHandover(e.target.dataset.handoverId,new FormData(e.target));return;}
+  if(e.target.matches('[data-supervisor-handover-cancel]')){e.preventDefault();cancelSupervisorShiftHandover(e.target.dataset.handoverId,new FormData(e.target));return;}
   if(e.target.matches('[data-supervisor-escalation-resolve]')){e.preventDefault();resolveSupervisorRequest(e.target.dataset.requestId,new FormData(e.target));return;}
   if(e.target.matches('[data-supervisor-escalation-reassign]')){e.preventDefault();reassignSupervisorRequest(e.target.dataset.requestId,new FormData(e.target));return;}
   if(e.target.id==='promiseEscalationRaiseForm'){
