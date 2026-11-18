@@ -607,3 +607,17 @@ body.calloria-game-launch .world-vignette{position:absolute;inset:0;z-index:2;ba
 .dialler-result-panel p{max-width:720px;color:var(--muted,#81909c);line-height:1.55}
 .dialler-result-panel .assessment-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 @media(max-width:760px){.campaign-contact-row{align-items:flex-start;flex-direction:column}.campaign-contact-right{width:100%;justify-content:space-between}.campaign-contact-right .btn{min-width:76px}.campaign-contact-list{max-height:360px}.dialler-result-panel .assessment-footer{align-items:stretch;flex-direction:column}.dialler-result-panel .assessment-footer .btn{width:100%;min-height:44px}}
+
+
+/* v6.69 customer promise and callback desk */
+.commitment-workspace{align-items:start}
+.commitment-list{display:grid;gap:8px;max-height:620px;overflow:auto}
+.commitment-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;padding:12px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.025);color:var(--ink);cursor:pointer}
+.commitment-row:hover,.commitment-row.selected{border-color:rgba(89,224,202,.65);background:rgba(89,224,202,.07)}
+.commitment-row-main{display:grid;gap:4px;min-width:0}
+.commitment-row-main strong{font-size:10px;color:var(--ink)}
+.commitment-row-main small{font-size:8px;color:var(--muted);line-height:1.5;overflow-wrap:anywhere}
+.commitment-detail{min-width:0}
+.commitment-history{display:grid;gap:3px;margin-top:14px;max-height:220px;overflow:auto}
+.callback-commitment-fields textarea{width:100%;min-width:0;border:1px solid var(--line);border-radius:7px;background:#0c1b27;color:#e7f1f4;padding:10px;font:500 11px "DM Sans",sans-serif;resize:vertical}
+@media(max-width:760px){.commitment-workspace{grid-template-columns:1fr}.commitment-row{align-items:flex-start}.commitment-row .pill{white-space:nowrap}.commitment-list{max-height:420px}}

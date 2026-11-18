@@ -99,7 +99,7 @@ const initialState = () => ({
   viewedArticle: null,
   workforceDepartment: 'inbound',
   shiftRecord: null, shiftElapsedMinutes: 0, shiftSimulationEpochMs: null, liveQueueSimulation: null, agentStatus: 'offline', shiftHistory: [], coachingSessions: [], simulationClockSeconds: 7 * 3600, lastShiftDay: 0,
-  briefingAttendance: [], promotionAttempts: [], crossSellRecords: [], commendations: [], systemEvents: [], digitalQueue: [], digitalSequence: 0, digitalLiveQueueSimulation: null, digitalActiveId: null, digitalActiveIds: [], digitalChannelFilter: 'all', digitalEvents: [], customerLabSession: null, customerQaHistory: [], qaScorecards: [], humanQaReviews: [], qaDisputes: [], qaCalibrations: [], aiQaSuggestions: [], qaSelectedInteractionId: '', qaSelectedScorecardId: '', organizationWorkspace: null, customerContinuity: createCustomerContinuityState()
+  briefingAttendance: [], promotionAttempts: [], crossSellRecords: [], commendations: [], systemEvents: [], digitalQueue: [], digitalSequence: 0, digitalLiveQueueSimulation: null, digitalActiveId: null, digitalActiveIds: [], digitalChannelFilter: 'all', digitalEvents: [], customerLabSession: null, customerQaHistory: [], qaScorecards: [], humanQaReviews: [], qaDisputes: [], qaCalibrations: [], aiQaSuggestions: [], qaSelectedInteractionId: '', qaSelectedScorecardId: '', organizationWorkspace: null, customerContinuity: createCustomerContinuityState(), customerCommitments: globalThis.CalloriaCommitmentEngine?.createState?.() || { version: '6.9.0', commitments: [], activity: [] }
 });
 
 let state = loadState();
@@ -125,6 +125,8 @@ let aiSettingsLoaded = false;
 let aiSettingsError = '';
 let aiTenantSettings = null;
 let aiAssistBusy = false;
+let selectedCommitmentId = '';
+const CommitmentEngine = globalThis.CalloriaCommitmentEngine;
 
 function loadState() {
   try {
@@ -133,6 +135,7 @@ function loadState() {
     const parsed = JSON.parse(stored);
     const migrated = { ...initialState(), ...parsed };
     migrated.customerContinuity = normalizeCustomerContinuityState(migrated.customerContinuity);
+    migrated.customerCommitments = globalThis.CalloriaCommitmentEngine?.normaliseState?.(migrated.customerCommitments) || { version: '6.9.0', commitments: [], activity: [] };
     for (const key of ['inboundQueueItems','callbacks','supervisorRequests','interactionTimeline','outboundSuppressions','outboundAttempts','outboundWorklist','cases','outboundDone','briefingAttendance','promotionAttempts','crossSellRecords','commendations','systemEvents','shiftHistory','coachingSessions','digitalQueue','digitalEvents','customerQaHistory','qaScorecards','humanQaReviews','qaDisputes','qaCalibrations','aiQaSuggestions','supervisorQueueAudit']) { if (!Array.isArray(migrated[key])) migrated[key] = []; }
     if (!Number.isFinite(migrated.callQueue)) migrated.callQueue = 6;
     migrated.supervisorQueueControl = normalizeSupervisorQueueControl(migrated.supervisorQueueControl);
@@ -188,6 +191,9 @@ function saveState() {
 function syncQueueCount() {
   state.callQueue = countQueuedContacts(state.inboundQueueItems);
   $('#inboundCount').textContent = state.callQueue;
+  const commitmentCount = CommitmentEngine ? CommitmentEngine.listForAgent(state.customerCommitments, { name: state.applicantName }, commitmentShiftSnapshot()).length : 0;
+  const commitmentBadge = $('#commitmentCount');
+  if (commitmentBadge) commitmentBadge.textContent = commitmentCount;
 }
 function queueSimulationNowMs() {
   const epoch = Number(state.shiftSimulationEpochMs);
@@ -294,6 +300,9 @@ function setHeader() {
     btn.classList.toggle('active', view === state.currentView);
   });
   $('#inboundCount').textContent = state.callQueue;
+  const commitmentCount = CommitmentEngine ? CommitmentEngine.listForAgent(state.customerCommitments, { name: state.applicantName }, commitmentShiftSnapshot()).length : 0;
+  const commitmentBadge = $('#commitmentCount');
+  if (commitmentBadge) commitmentBadge.textContent = commitmentCount;
 }
 
 const recruitmentQuestions = [
@@ -916,7 +925,7 @@ function renderInbound() {
     const liveQueue = currentLiveQueueSnapshot();
     const nextArrivalLabel = liveQueue.paused ? 'Paused' : liveQueue.nextArrivalInMinutes === null ? 'Stopped' : `${Math.ceil(liveQueue.nextArrivalInMinutes)} simulated min`;
     const callbackRows=state.callbacks.filter(item=>item.status==='scheduled'&&item.type!=='outbound').slice().sort((a,b)=>Date.parse(a.dueAt)-Date.parse(b.dueAt));
-    viewRoot.innerHTML = `<div class="ops-summary-grid">${metricCard('WAITING CONTACTS',metrics.waiting,'Prioritised inbound queue','↙')}${metricCard('LONGEST WAIT',formatWait(metrics.longestWaitSeconds),'Current oldest queued contact','◷')}${metricCard('WITHIN 60-SECOND TARGET',metrics.waiting?Math.round(metrics.withinServiceLevel/metrics.waiting*100)+'%':'—','Queue snapshot, not a contractual SLA','⌁')}${metricCard('CUSTOMERS ABANDONED',liveQueue.abandoned,'Exceeded simulated patience','↗')}</div><div class="panel" style="margin-top:14px;padding:12px 16px"><div class="data-list"><div class="data-row"><span>Automatic arrivals this shift</span><strong>${liveQueue.arrivals}</strong></div><div class="data-row"><span>Opening queue contacts</span><strong>${liveQueue.openingContacts}</strong></div><div class="data-row"><span>Manual surge contacts</span><strong>${liveQueue.manualContacts}</strong></div><div class="data-row"><span>Next expected contact</span><strong>${escapeHTML(nextArrivalLabel)}</strong></div><div class="data-row"><span>Demand overflow events</span><strong>${liveQueue.overflowed}</strong></div></div><p class="muted-note">Live queue simulation · all contacts and patience outcomes are fictional gameplay events.</p></div><div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Prioritised inbound queue</h3><p>New synthetic contacts arrive during the shift. Waiting customers may abandon when their patience expires.</p></div><span class="pill ${shiftTimeAvailable()?'green':'amber'}"><span class="live-dot"></span> ${shiftTimeAvailable()?'ROUTING OPEN':'SHIFT WINDOW CLOSED'}</span></div>${queue.length?`<div class="queue-contact-list">${queue.slice(0,8).map(item=>`<div class="queue-contact-row"><span class="priority-mark ${item.priority}"></span><div class="queue-contact-main"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${escapeHTML(item.routeGroup)}</small></div><span class="queue-wait">${formatWait(item.waitSeconds)}</span><span class="pill ${item.priority==='critical'?'red':item.priority==='high'?'amber':''}">${item.priority.toUpperCase()}</span></div>`).join('')}</div><button class="btn primary" style="margin-top:14px" data-action="answer-call" ${state.agentStatus==='available'&&shiftTimeAvailable()?'':'disabled'}>Accept highest-priority contact ↙</button>`:`<div class="empty-state"><h3>No waiting contacts</h3><p>Automatic arrivals continue during an active shift. Add a controlled demand surge when needed.</p><button class="btn primary" data-action="refresh-queue">Simulate demand surge (+6)</button></div>`}</section><section class="panel"><div class="panel-head"><div><h3>Callbacks due</h3><p>Customer-requested return contacts scheduled during earlier interactions.</p></div><span class="pill">${callbackRows.length} SCHEDULED</span></div>${callbackRows.length?callbackRows.map(item=>`<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · Due ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="return-callback-to-queue" data-callback-id="${escapeHTML(item.id)}" ${Date.parse(item.dueAt)<=Date.now()?'':'disabled'}>${Date.parse(item.dueAt)<=Date.now()?'Queue callback':'Not due yet'}</button></div>`).join(''):'<div class="empty-state"><p>No callbacks are scheduled.</p></div>'}<div class="panel-head" style="margin-top:18px"><div><h3>Recently handled</h3><p>Your latest customer interactions.</p></div><button class="btn small outline" data-action="open-crm">View cases</button></div>${state.cases.length?state.cases.slice(-3).reverse().map(caseRow).join(''):'<p class="muted-note">No completed interactions yet.</p>'}</section></div>`; return;
+    viewRoot.innerHTML = `<div class="ops-summary-grid">${metricCard('WAITING CONTACTS',metrics.waiting,'Prioritised inbound queue','↙')}${metricCard('LONGEST WAIT',formatWait(metrics.longestWaitSeconds),'Current oldest queued contact','◷')}${metricCard('WITHIN 60-SECOND TARGET',metrics.waiting?Math.round(metrics.withinServiceLevel/metrics.waiting*100)+'%':'—','Queue snapshot, not a contractual SLA','⌁')}${metricCard('CUSTOMERS ABANDONED',liveQueue.abandoned,'Exceeded simulated patience','↗')}</div><div class="panel" style="margin-top:14px;padding:12px 16px"><div class="data-list"><div class="data-row"><span>Automatic arrivals this shift</span><strong>${liveQueue.arrivals}</strong></div><div class="data-row"><span>Opening queue contacts</span><strong>${liveQueue.openingContacts}</strong></div><div class="data-row"><span>Manual surge contacts</span><strong>${liveQueue.manualContacts}</strong></div><div class="data-row"><span>Next expected contact</span><strong>${escapeHTML(nextArrivalLabel)}</strong></div><div class="data-row"><span>Demand overflow events</span><strong>${liveQueue.overflowed}</strong></div></div><p class="muted-note">Live queue simulation · all contacts and patience outcomes are fictional gameplay events.</p></div><div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Prioritised inbound queue</h3><p>New synthetic contacts arrive during the shift. Waiting customers may abandon when their patience expires.</p></div><span class="pill ${shiftTimeAvailable()?'green':'amber'}"><span class="live-dot"></span> ${shiftTimeAvailable()?'ROUTING OPEN':'SHIFT WINDOW CLOSED'}</span></div>${queue.length?`<div class="queue-contact-list">${queue.slice(0,8).map(item=>`<div class="queue-contact-row"><span class="priority-mark ${item.priority}"></span><div class="queue-contact-main"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${escapeHTML(item.routeGroup)}</small></div><span class="queue-wait">${formatWait(item.waitSeconds)}</span><span class="pill ${item.priority==='critical'?'red':item.priority==='high'?'amber':''}">${item.priority.toUpperCase()}</span></div>`).join('')}</div><button class="btn primary" style="margin-top:14px" data-action="answer-call" ${state.agentStatus==='available'&&shiftTimeAvailable()?'':'disabled'}>Accept highest-priority contact ↙</button>`:`<div class="empty-state"><h3>No waiting contacts</h3><p>Automatic arrivals continue during an active shift. Add a controlled demand surge when needed.</p><button class="btn primary" data-action="refresh-queue">Simulate demand surge (+6)</button></div>`}</section><section class="panel"><div class="panel-head"><div><h3>Callbacks due</h3><p>Customer-requested return contacts scheduled during earlier interactions.</p></div><span class="pill">${callbackRows.length} SCHEDULED</span></div>${callbackRows.length?callbackRows.map(item=>`<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · Due ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="return-callback-to-queue" data-callback-id="${escapeHTML(item.id)}" ${callbackIsDue(item)?'':'disabled'}>${callbackIsDue(item)?'Queue callback':'Not due yet'}</button></div>`).join(''):'<div class="empty-state"><p>No callbacks are scheduled.</p></div>'}<div class="panel-head" style="margin-top:18px"><div><h3>Recently handled</h3><p>Your latest customer interactions.</p></div><button class="btn small outline" data-action="open-crm">View cases</button></div>${state.cases.length?state.cases.slice(-3).reverse().map(caseRow).join(''):'<p class="muted-note">No completed interactions yet.</p>'}</section></div>`; return;
   }
   const call=state.currentCall;
   const scenario=inboundScenarios.find(item=>item.id===call.scenarioId);
@@ -1104,7 +1113,7 @@ function renderQueue(){
   const liveQueue = currentLiveQueueSnapshot();
   const nextArrivalLabel = liveQueue.paused ? 'Paused' : liveQueue.nextArrivalInMinutes === null ? 'Stopped' : `${Math.ceil(liveQueue.nextArrivalInMinutes)} simulated min`;
   const callbacks=state.callbacks.filter(item=>(item.status==='scheduled'||item.status==='queued')&&item.type!=='outbound');
-  viewRoot.innerHTML=`<div class="ops-summary-grid">${metricCard('IN QUEUE',metrics.waiting,'Queued voice contacts','↙')}${metricCard('AVERAGE WAIT',formatWait(metrics.averageWaitSeconds),'Across waiting contacts','◷')}${metricCard('ACCEPTED THIS SHIFT',state.acceptedContacts,'Includes completed and active contacts','✓')}${metricCard('ABANDONED',liveQueue.abandoned,'Customers who exceeded patience','↗')}</div><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Queue supervisor</h3><p>Automatic arrivals, priority routing, customer patience and live wait-age.</p></div><button class="btn small secondary" data-action="refresh-queue">Simulate demand surge (+6)</button></div><div class="data-list" style="margin-bottom:14px"><div class="data-row"><span>Automatic arrivals</span><strong>${liveQueue.arrivals}</strong></div><div class="data-row"><span>Opening queue contacts</span><strong>${liveQueue.openingContacts}</strong></div><div class="data-row"><span>Manual surge contacts</span><strong>${liveQueue.manualContacts}</strong></div><div class="data-row"><span>Next expected arrival</span><strong>${escapeHTML(nextArrivalLabel)}</strong></div><div class="data-row"><span>Overflow events</span><strong>${liveQueue.overflowed}</strong></div></div>${queue.length?`<div class="table-wrap"><table><thead><tr><th>Priority</th><th>Customer</th><th>Issue</th><th>Route group</th><th>Wait</th><th>Status</th></tr></thead><tbody>${queue.map(item=>`<tr><td><span class="priority-label ${item.priority}">${item.priority.toUpperCase()}</span></td><td>${escapeHTML(item.customer)}</td><td>${escapeHTML(item.issue)}</td><td>${escapeHTML(item.routeGroup)}</td><td>${formatWait(item.waitSeconds)}</td><td><span class="pill green">QUEUED</span></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state"><h3>Queue clear</h3><p>No inbound contacts are waiting.</p></div>'}</section><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Scheduled callbacks</h3><p>Only customer-requested callbacks are listed.</p></div><span class="pill">${callbacks.length}</span></div>${callbacks.length?callbacks.map(item=>`<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="return-callback-to-queue" data-callback-id="${escapeHTML(item.id)}" ${item.status==='queued'||Date.parse(item.dueAt)>Date.now()?'disabled':''}>${item.status==='queued'?'In queue':Date.parse(item.dueAt)>Date.now()?'Not due yet':'Queue callback'}</button></div>`).join(''):'<p class="muted-note">No callbacks are scheduled.</p>'}</section>`;
+  viewRoot.innerHTML=`<div class="ops-summary-grid">${metricCard('IN QUEUE',metrics.waiting,'Queued voice contacts','↙')}${metricCard('AVERAGE WAIT',formatWait(metrics.averageWaitSeconds),'Across waiting contacts','◷')}${metricCard('ACCEPTED THIS SHIFT',state.acceptedContacts,'Includes completed and active contacts','✓')}${metricCard('ABANDONED',liveQueue.abandoned,'Customers who exceeded patience','↗')}</div><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Queue supervisor</h3><p>Automatic arrivals, priority routing, customer patience and live wait-age.</p></div><button class="btn small secondary" data-action="refresh-queue">Simulate demand surge (+6)</button></div><div class="data-list" style="margin-bottom:14px"><div class="data-row"><span>Automatic arrivals</span><strong>${liveQueue.arrivals}</strong></div><div class="data-row"><span>Opening queue contacts</span><strong>${liveQueue.openingContacts}</strong></div><div class="data-row"><span>Manual surge contacts</span><strong>${liveQueue.manualContacts}</strong></div><div class="data-row"><span>Next expected arrival</span><strong>${escapeHTML(nextArrivalLabel)}</strong></div><div class="data-row"><span>Overflow events</span><strong>${liveQueue.overflowed}</strong></div></div>${queue.length?`<div class="table-wrap"><table><thead><tr><th>Priority</th><th>Customer</th><th>Issue</th><th>Route group</th><th>Wait</th><th>Status</th></tr></thead><tbody>${queue.map(item=>`<tr><td><span class="priority-label ${item.priority}">${item.priority.toUpperCase()}</span></td><td>${escapeHTML(item.customer)}</td><td>${escapeHTML(item.issue)}</td><td>${escapeHTML(item.routeGroup)}</td><td>${formatWait(item.waitSeconds)}</td><td><span class="pill green">QUEUED</span></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state"><h3>Queue clear</h3><p>No inbound contacts are waiting.</p></div>'}</section><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Scheduled callbacks</h3><p>Only customer-requested callbacks are listed.</p></div><span class="pill">${callbacks.length}</span></div>${callbacks.length?callbacks.map(item=>`<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="return-callback-to-queue" data-callback-id="${escapeHTML(item.id)}" ${item.status==='queued'||!callbackIsDue(item)?'disabled':''}>${item.status==='queued'?'In queue':!callbackIsDue(item)?'Not due yet':'Queue callback'}</button></div>`).join(''):'<p class="muted-note">No callbacks are scheduled.</p>'}</section>`;
 }
 
 function renderSupervisor(){
@@ -1287,7 +1296,35 @@ function renderOutbound() {
     const campaignEligible=contacts.filter(item=>campaignContactEligibility(item,{now,suppressed:isContactSuppressed(item.customer,suppressed),shiftOpen:true,agentAvailable:true}).allowed).length;
     return `<section class="panel campaign-card"><div class="subtle-label">${escapeHTML(c.type)}</div><h3>${escapeHTML(c.title)}</h3><p class="muted-note">${escapeHTML(c.context)}</p><div class="campaign-contact-summary"><span>${contacts.length} synthetic contacts</span><span>${campaignEligible} eligible</span><span>${campaignDone} closed</span></div><div class="campaign-contact-list">${rows}</div></section>`;
   }).join('');
-  viewRoot.innerHTML = `<div class="panel"><div class="panel-head"><div><h3>Outbound campaign dialler</h3><p>Campaign worklists, eligible retries, customer-requested callbacks and compliance suppression.</p></div><span class="pill green">${metrics.total} CONTACTS IN POOL</span></div><div class="ops-summary-grid">${metricCard('ELIGIBLE TO DIAL',metrics.eligible,'Ready, retry due or callback due','↗')}${metricCard('TOTAL ATTEMPTS',metrics.attempts,'All recorded campaign attempts','☎')}${metricCard('CALLBACKS DUE',metrics.callbacksDue,'Customer-requested returns','◷')}${metricCard('COMPLETED',metrics.completed,'Contacts closed with an outcome','✓')}</div><div class="ops-summary-grid" style="margin-top:10px">${metricCard('SUPPRESSED',metrics.suppressed,'Do-not-contact register','⊘')}${metricCard('REVIEW REQUIRED',metrics.reviewRequired,'Supervisor / compliance attention','!')}${metricCard('RETRY WAITING',metrics.retryWaiting,'Cooling-off period not complete','◷')}${metricCard('ATTEMPT LIMIT',metrics.exhausted,'Maximum attempts reached','—')}</div><div class="grid two" style="margin-top:14px">${campaignCards}</div><p class="muted-note" style="margin-top:14px">All worklist contacts and dial outcomes are fictional game records. The default simulated contact window is 08:00–17:00 Africa/Lagos. Real outbound contact needs organisation-approved lawful basis, consent, suppression and contact-window rules.</p>${suppressed.length?`<div class="article-box"><h4>Suppression register</h4>${suppressed.map(item=>`<div class="data-row"><span>${escapeHTML(item.contactKey)}</span><strong>${escapeHTML(item.reason)}</strong></div>`).join('')}</div>`:''}<div class="article-box"><h4>Scheduled outbound callbacks</h4>${outboundCallbacks.length?outboundCallbacks.map(item=>{const due=Date.parse(item.dueAt)<=now;const blocked=isContactSuppressed(item.customer,suppressed);return `<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · Due ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="resume-outbound-callback" data-callback-id="${escapeHTML(item.id)}" ${due&&!blocked&&agentReady?'':'disabled'}>${blocked?'Suppressed':due?'Call back':'Scheduled'}</button></div>`;}).join(''):'<p class="muted-note">No outbound callbacks scheduled.</p>'}</div><div class="article-box"><h4>Recent outbound outcomes</h4>${state.outboundAttempts.length?state.outboundAttempts.slice(-8).reverse().map(item=>`<div class="data-row"><span>${escapeHTML(item.customer)}<small>${escapeHTML(item.id)} · ${escapeHTML(item.campaignId)} · ${escapeHTML(item.connectionOutcome||'answered')}</small></span><strong>${escapeHTML(item.outcome)}</strong></div>`).join(''):'<p class="muted-note">No outbound attempts recorded yet.</p>'}</div></div>`;
+  viewRoot.innerHTML = `<div class="panel"><div class="panel-head"><div><h3>Outbound campaign dialler</h3><p>Campaign worklists, eligible retries, customer-requested callbacks and compliance suppression.</p></div><span class="pill green">${metrics.total} CONTACTS IN POOL</span></div><div class="ops-summary-grid">${metricCard('ELIGIBLE TO DIAL',metrics.eligible,'Ready, retry due or callback due','↗')}${metricCard('TOTAL ATTEMPTS',metrics.attempts,'All recorded campaign attempts','☎')}${metricCard('CALLBACKS DUE',metrics.callbacksDue,'Customer-requested returns','◷')}${metricCard('COMPLETED',metrics.completed,'Contacts closed with an outcome','✓')}</div><div class="ops-summary-grid" style="margin-top:10px">${metricCard('SUPPRESSED',metrics.suppressed,'Do-not-contact register','⊘')}${metricCard('REVIEW REQUIRED',metrics.reviewRequired,'Supervisor / compliance attention','!')}${metricCard('RETRY WAITING',metrics.retryWaiting,'Cooling-off period not complete','◷')}${metricCard('ATTEMPT LIMIT',metrics.exhausted,'Maximum attempts reached','—')}</div><div class="grid two" style="margin-top:14px">${campaignCards}</div><p class="muted-note" style="margin-top:14px">All worklist contacts and dial outcomes are fictional game records. The default simulated contact window is 08:00–17:00 Africa/Lagos. Real outbound contact needs organisation-approved lawful basis, consent, suppression and contact-window rules.</p>${suppressed.length?`<div class="article-box"><h4>Suppression register</h4>${suppressed.map(item=>`<div class="data-row"><span>${escapeHTML(item.contactKey)}</span><strong>${escapeHTML(item.reason)}</strong></div>`).join('')}</div>`:''}<div class="article-box"><h4>Scheduled outbound callbacks</h4>${outboundCallbacks.length?outboundCallbacks.map(item=>{const due=callbackIsDue(item);const blocked=isContactSuppressed(item.customer,suppressed);return `<div class="case-item"><div class="case-symbol">◷</div><div class="case-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · Due ${new Date(item.dueAt).toLocaleString()}</small></div><button class="btn small secondary" data-action="resume-outbound-callback" data-callback-id="${escapeHTML(item.id)}" ${due&&!blocked&&agentReady?'':'disabled'}>${blocked?'Suppressed':due?'Call back':'Scheduled'}</button></div>`;}).join(''):'<p class="muted-note">No outbound callbacks scheduled.</p>'}</div><div class="article-box"><h4>Recent outbound outcomes</h4>${state.outboundAttempts.length?state.outboundAttempts.slice(-8).reverse().map(item=>`<div class="data-row"><span>${escapeHTML(item.customer)}<small>${escapeHTML(item.id)} · ${escapeHTML(item.campaignId)} · ${escapeHTML(item.connectionOutcome||'answered')}</small></span><strong>${escapeHTML(item.outcome)}</strong></div>`).join(''):'<p class="muted-note">No outbound attempts recorded yet.</p>'}</div></div>`;
+}
+
+function renderCommitments(){
+  const items=CommitmentEngine.listForAgent(commitmentStore(),{name:state.applicantName},commitmentShiftSnapshot());
+  const due=items.filter(item=>['Due','Overdue'].includes(item.timing.state)).length;
+  const overdue=items.filter(item=>item.timing.state==='Overdue').length;
+  const review=items.filter(item=>item.timing.state==='Needs review').length;
+  if(!items.some(item=>item.id===selectedCommitmentId))selectedCommitmentId=items[0]?.id||'';
+  const selected=items.find(item=>item.id===selectedCommitmentId)||null;
+  const rows=items.map(item=>{
+    const selectedClass=item.id===selectedCommitmentId?' selected':'';
+    const statusClass=item.timing.state==='Overdue'||item.timing.state==='Needs review'?'red':item.timing.state==='Due'?'amber':'green';
+    return `<button type="button" class="commitment-row${selectedClass}" data-commitment-id="${escapeHTML(item.id)}"><span class="commitment-row-main"><strong>${escapeHTML(item.customerName)} · ${escapeHTML(item.contactReference)}</strong><small>${escapeHTML(item.commitment)}</small><small>${escapeHTML(item.dueDate)} · ${CommitmentEngine.formatClock(item.dueMinutes)} · ${escapeHTML(item.preferredChannel)} · ${item.attempts} attempt(s)</small></span><span class="pill ${statusClass}">${escapeHTML(item.timing.state.toUpperCase())}</span></button>`;
+  }).join('');
+  let actionPanel='<div class="empty-state"><h3>No callback selected</h3><p>Select an outstanding customer promise to review its due time and recorded history.</p></div>';
+  if(selected){
+    const history=(selected.history||[]).map(entry=>`<div class="timeline-row"><time>${new Date(entry.at).toLocaleString()}</time><div><strong>${escapeHTML(entry.outcome||'Attempt')}</strong><small>${escapeHTML(entry.summary||entry.reviewer||'No additional detail')}</small></div></div>`).join('');
+    if(selected.timing.state==='Needs review'){
+      actionPanel=`<div class="commitment-detail"><div class="panel-head"><div><h3>${escapeHTML(selected.customerName)}</h3><p>${escapeHTML(selected.caseId||selected.contactReference)} · ${escapeHTML(selected.owner)}</p></div><span class="pill red">INDEPENDENT REVIEW REQUIRED</span></div><div class="article-box"><h4>Customer promise</h4><p>${escapeHTML(selected.commitment)}</p><p>Due ${escapeHTML(selected.dueDate)} · ${CommitmentEngine.formatClock(selected.dueMinutes)} · Attempts ${selected.attempts}/${CommitmentEngine.MAX_ATTEMPTS}</p><p>Last outcome: ${escapeHTML(selected.lastSummary||'No summary recorded.')}</p></div><form id="commitmentReviewForm"><div class="form-field"><label>INDEPENDENT SUPERVISOR / MANAGER</label><input name="reviewer" required minlength="2" maxlength="100" placeholder="Enter reviewer name"></div><div class="form-field"><label>REVIEW DECISION · MINIMUM 20 CHARACTERS</label><textarea name="summary" required minlength="20" maxlength="500" rows="3" placeholder="Explain the review decision and the next operational owner."></textarea></div><button class="btn primary" type="submit">Close after independent review</button></form><div class="commitment-history">${history}</div></div>`;
+    }else if(['Due','Overdue'].includes(selected.timing.state)){
+      const linked=state.callbacks.find(row=>row.commitmentId===selected.id&&['scheduled','queued','in_progress'].includes(row.status));
+      const linkedLabel=linked?.status==='queued'?'Callback is already in the inbound queue':linked?.status==='in_progress'?'Callback is currently being handled':'Open the appropriate agent desk to place the promised return contact.';
+      actionPanel=`<div class="commitment-detail"><div class="panel-head"><div><h3>${escapeHTML(selected.customerName)}</h3><p>${escapeHTML(selected.caseId||selected.contactReference)} · ${escapeHTML(selected.preferredChannel)} · Owner ${escapeHTML(selected.owner)}</p></div><span class="pill ${selected.timing.state==='Overdue'?'red':'amber'}">${escapeHTML(selected.timing.state.toUpperCase())}</span></div><div class="article-box"><h4>Promised customer outcome</h4><p>${escapeHTML(selected.commitment)}</p><p>Due ${escapeHTML(selected.dueDate)} · ${CommitmentEngine.formatClock(selected.dueMinutes)} · ${selected.timing.deltaMinutes<0?`${Math.abs(selected.timing.deltaMinutes)} simulated minutes overdue`:`${selected.timing.deltaMinutes} simulated minutes remaining`}</p></div><div class="article-box"><h4>Operational next step</h4><p>${escapeHTML(linkedLabel)}</p>${linked?`<button class="btn primary" data-action="open-commitment-callback" data-callback-id="${escapeHTML(linked.id)}" ${linked.status==='in_progress'?'disabled':''}>${linked.status==='queued'?'Open inbound queue':linked.type==='outbound'?'Open outbound callback desk':'Open inbound callback desk'}</button>`:'<p class="muted-note">No live callback task is linked. Review the case and supervisor assignment before recording any customer contact.</p>'}</div><div class="commitment-history">${history}</div></div>`;
+    }else{
+      actionPanel=`<div class="commitment-detail"><div class="panel-head"><div><h3>${escapeHTML(selected.customerName)}</h3><p>${escapeHTML(selected.caseId||selected.contactReference)} · ${escapeHTML(selected.owner)}</p></div><span class="pill green">${escapeHTML(selected.timing.state.toUpperCase())}</span></div><div class="article-box"><h4>Customer promise</h4><p>${escapeHTML(selected.commitment)}</p><p>Due ${escapeHTML(selected.dueDate)} · ${CommitmentEngine.formatClock(selected.dueMinutes)}</p>${selected.timing.state==='Due soon'?`<p>${selected.timing.deltaMinutes} simulated minutes until due.</p>`:'<p>Wait until the agreed due time before recording a callback attempt.</p>'}</div><div class="commitment-history">${history}</div></div>`;
+    }
+  }
+  viewRoot.innerHTML=`<div class="ops-summary-grid">${metricCard('OPEN PROMISES',items.length,'Assigned to this employee','◷')}${metricCard('DUE NOW',due,'Ready for callback outcome','!')}${metricCard('OVERDUE',overdue,'Past agreed simulated due time','⌛')}${metricCard('SUPERVISOR REVIEW',review,'Attempt limit reached','⚑')}</div><div class="grid two commitment-workspace" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>My customer commitments</h3><p>Every callback promise has a named owner, explicit due time and outcome history.</p></div><span class="pill">${items.length} OPEN</span></div><div class="commitment-list">${rows||'<div class="empty-state"><h3>No outstanding promises</h3><p>When a customer asks for a callback, record the commitment during after-contact work. It will appear here with a clear due time.</p></div>'}</div></section><section class="panel">${actionPanel}</section></div><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Commitment operating rules</h3><p>Callbacks are measured against the accelerated simulated shift clock, not the computer wall clock.</p></div><span class="pill green">AUDITABLE</span></div><div class="grid three"><div class="article-box"><h4>Named ownership</h4><p>Each customer promise is assigned to the employee who made it. The employee cannot independently sign off a review after repeated unsuccessful attempts.</p></div><div class="article-box"><h4>Due-time controls</h4><p>Same-shift, next-working-day and two-working-day plans use the simulator calendar and skip weekends for working-day commitments.</p></div><div class="article-box"><h4>Attempt governance</h4><p>Two unsuccessful attempts move the commitment to independent supervisor review. Each attempt requires factual notes.</p></div></div></section>`;
 }
 
 function caseRow(c) { return `<div class="case-item"><div class="case-symbol">${c.channel==='Outbound'?'↗':['Email','Live chat','Social media'].includes(c.channel)?'✉':'↙'}</div><div class="case-copy"><strong>${escapeHTML(c.title)}</strong><small>${escapeHTML(c.customer)} · ${escapeHTML(c.reference)}</small></div><span class="pill ${c.status==='Resolved'?'green':'amber'}">${escapeHTML(c.status)}</span></div>`; }
@@ -1322,6 +1359,124 @@ function simulationSecondsNow(){const stored=Number(state.simulationClockSeconds
 function simulationMinuteNow(){return Math.floor(simulationSecondsNow()/60);}
 function shiftTimeAvailable(){return state.shiftActive&&Number(state.shiftElapsedMinutes)<540;}
 function simulationDateNow(){const date=new Date();date.setDate(date.getDate()+Math.max(0,(Number(state.day)||1)-1));const seconds=simulationSecondsNow();date.setHours(Math.floor(seconds/3600),Math.floor((seconds%3600)/60),seconds%60,0);return date;}
+function commitmentShiftSnapshot(){
+  const date=simulationDateNow();
+  return {date:CommitmentEngine?.dateText?.(date)||date.toISOString().slice(0,10),minutes:simulationMinuteNow()};
+}
+function commitmentStore(){
+  if(!CommitmentEngine)throw new Error('Callback commitment engine is unavailable. Reload the application before recording this promise.');
+  if(!state.customerCommitments||!Array.isArray(state.customerCommitments.commitments))state.customerCommitments=CommitmentEngine.createState();
+  return state.customerCommitments;
+}
+function commitmentDateTimeISO(dateText,minutes){
+  const [year,month,day]=String(dateText).split('-').map(Number);
+  const minute=Math.max(0,Math.min(1439,Math.floor(Number(minutes)||0)));
+  return new Date(year,month-1,day,Math.floor(minute/60),minute%60,0,0).toISOString();
+}
+function callbackIsDue(callback){
+  if(callback?.commitmentId&&CommitmentEngine){
+    const item=CommitmentEngine.getCommitment(commitmentStore(),callback.commitmentId);
+    if(item)return ['Due','Overdue'].includes(CommitmentEngine.classify(item,commitmentShiftSnapshot()).state);
+  }
+  const due=Date.parse(callback?.dueAt||'');
+  return Number.isFinite(due)&&due<=Date.now();
+}
+function prepareCallbackCommitment(wrap,contact,task,planId,commitmentText){
+  const input={
+    planId,
+    customerId:String(contact?.customerRef||task?.customerRef||contact?.id||task?.id||wrap.contactId),
+    customerName:contact?.customer||task?.customer||wrap.customer,
+    contactReference:String(contact?.id||wrap.contactId),
+    caseId:wrap.reference,
+    subject:wrap.title,
+    productId:String(contact?.platform||task?.productId||state.selectedTrack||'general-service'),
+    preferredChannel:'Voice',
+    owner:state.applicantName||'Customer Experience Agent',
+    team:state.department||'Customer Care',
+    commitment:commitmentText
+  };
+  const shift=commitmentShiftSnapshot();
+  const fields=CommitmentEngine.validateCreation(input,shift);
+  return {input,fields,shift};
+}
+function createCallbackRecordFromCommitment(commitment,source){
+  const dueAt=commitmentDateTimeISO(commitment.dueDate,commitment.dueMinutes);
+  const record={
+    id:makeCallReference('CBK'),
+    type:source.type||'inbound',
+    contactId:source.contactId,
+    campaignContactId:source.campaignContactId||null,
+    customer:source.customer||commitment.customerName,
+    campaignId:source.campaignId||null,
+    scenarioId:source.scenarioId||null,
+    issue:source.issue||commitment.subject||commitment.commitment,
+    dueAt,
+    commitmentId:commitment.id,
+    status:'scheduled',
+    createdAt:new Date().toISOString()
+  };
+  state.callbacks.push(record);
+  return record;
+}
+function recordCommitmentOutcome(commitmentId,outcome,summary,context={}){
+  if(!commitmentId||!CommitmentEngine)return null;
+  try{
+    const result=CommitmentEngine.recordOutcome(commitmentStore(),commitmentId,{outcome,summary},commitmentShiftSnapshot(),new Date());
+    const item=result.item;
+    const caseRecord=state.cases.find(row=>row.reference===item.caseId||row.contactId===item.contactReference);
+    if(caseRecord){
+      caseRecord.commitmentStatus=item.status;
+      caseRecord.commitmentLastOutcome=item.lastOutcome;
+      caseRecord.commitmentUpdatedAt=new Date().toISOString();
+      caseRecord.status=item.status==='Complete'?'Callback promise fulfilled':item.status==='Needs review'?'Callback requires supervisor review':'Callback follow-up rescheduled';
+      caseRecord.notes=`${caseRecord.notes||''}\n\nCallback outcome: ${summary}`.trim().slice(0,1800);
+    }
+    if(result.requiresReview){
+      const exists=state.supervisorRequests.some(row=>row.commitmentId===item.id&&row.status==='open');
+      if(!exists)state.supervisorRequests.push({id:makeCallReference('SUP'),commitmentId:item.id,contactId:item.contactReference,reference:item.caseId||item.contactReference,customer:item.customerName,reason:'Customer callback promise reached its attempt limit and requires independent supervisor review.',status:'open',createdAt:new Date().toISOString(),channel:'Callback commitment'});
+      pushOperationEvent('commitment',item.id,`Callback promise requires supervisor review after ${item.attempts} attempts.`,'review_required',{caseId:item.caseId,owner:item.owner});
+    }else{
+      pushOperationEvent('commitment',item.id,`Callback commitment outcome recorded: ${outcome}.`,item.status.toLowerCase().replaceAll(' ','_'),{caseId:item.caseId,owner:item.owner,dueDate:item.dueDate,dueMinutes:item.dueMinutes});
+      if(item.status==='Open'&&context.retrySource)scheduleRetryForCommitment(item,context.retrySource);
+    }
+    return result;
+  }catch(error){toast(error.message||'Callback commitment outcome could not be recorded.','error');return null;}
+}
+function scheduleRetryForCommitment(item,source){
+  if(!item||item.status!=='Open')return null;
+  const existing=state.callbacks.find(row=>row.commitmentId===item.id&&['scheduled','queued','in_progress'].includes(row.status));
+  if(existing)return existing;
+  let retrySource={...source};
+  if(retrySource.type!=='outbound'){
+    let contact=findQueueContact(retrySource.contactId);
+    if(contact&&![CONTACT_STATUS.CALLBACK,CONTACT_STATUS.QUEUED].includes(contact.status)){
+      const scenario=inboundScenarios.find(row=>row.id===contact.scenarioId);
+      if(scenario){
+        const now=queueSimulationNowMs();
+        const created=createInboundQueue([scenario],1,{sequence:state.queueSequence,now});
+        const retry=created[0];
+        if(retry){
+          retry.customer=contact.customer;retry.customerRef=contact.customerRef||null;retry.issue=contact.issue;retry.priority=contact.priority;retry.routeGroup=contact.routeGroup;retry.source='callback_commitment_retry';
+          stampInboundQueue([retry],{now,elapsedMinute:state.shiftElapsedMinutes,source:'callback_commitment_retry'});
+          state.inboundQueueItems.push(retry);state.queueSequence+=1;
+          retrySource.contactId=retry.id;
+          pushOperationEvent('callback',retry.id,`A new inbound work item was created for commitment ${item.id}.`,'queued',{originContactId:contact.id,commitmentId:item.id});
+        }
+      }
+    }
+    contact=findQueueContact(retrySource.contactId);
+    if(contact&&contact.status===CONTACT_STATUS.QUEUED){
+      try{transitionContact(contact,CONTACT_STATUS.CALLBACK,'Callback commitment rescheduled after an unsuccessful attempt',queueSimulationNowMs(),{dueAt:commitmentDateTimeISO(item.dueDate,item.dueMinutes)});}catch{}
+    }
+  }
+  const callback=createCallbackRecordFromCommitment(item,retrySource);
+  if(callback.type==='outbound'){
+    const workItem=findCampaignContact(state.outboundWorklist,callback.campaignContactId);
+    if(workItem){workItem.status='callback_scheduled';workItem.nextEligibleAt=null;workItem.callbackDueAt=new Date(Date.now()+60_000).toISOString();}
+  }
+  pushOperationEvent('callback',callback.id,`Callback retry scheduled for ${callback.customer} under commitment ${item.id}.`,'scheduled',{commitmentId:item.id,dueDate:item.dueDate,dueMinutes:item.dueMinutes});
+  return callback;
+}
 function renderShiftEntryPanel(title, description){const next=state.lastShiftDay===state.day||simulationMinuteNow()>=17*60;return `<div class="panel empty-state"><div class="empty-icon">◷</div><h3>${escapeHTML(title)}</h3><p>${escapeHTML(description)}</p><button class="btn primary" data-action="${next?'advance-workday':'start-shift'}">${next?'Advance to next workday':'Start shift'}</button></div>`;}
 
 function renderWorkforce() {
@@ -1648,6 +1803,7 @@ function renderView() {
     supervisor:['SUPERVISOR DESK','Live operations command centre','Control synthetic queue intake, triage waiting work, monitor service risk and review escalations across voice and digital channels.'],
     outbound:['CUSTOMER OPERATIONS','Outbound campaigns','Work authorised simulated campaigns and record true outcomes.'],
     digital:['CUSTOMER OPERATIONS','Multi-channel support','Handle simulated email, live-chat and social-media conversations with channel-specific privacy and service standards.'],
+    commitments:['CUSTOMER PROMISE CONTROL','Callback commitments','Own scheduled customer promises, monitor due times, record callback attempts and route repeated failures for independent review.'],
     customerIntel:['CUSTOMER INTELLIGENCE','Customer behaviour & practice QA','Practise adaptive customer conversations and review transparent quality evidence across customer personalities.'],
     crm:['WORKSTATION','CRM & cases','Review accurate records of completed simulated interactions.'],
     knowledge:['AGENT RESOURCES','Knowledge base','Reference the principles and procedures relevant to your role.'],
@@ -1667,6 +1823,7 @@ function renderView() {
     case 'supervisor': renderSupervisor(); break;
     case 'outbound': renderOutbound(); break;
     case 'digital': renderDigital(); break;
+    case 'commitments': renderCommitments(); break;
     case 'customerIntel': renderCustomerIntelligence(); break;
     case 'qa': renderQAWorkspace(); break;
     case 'crm': renderCRM(); break;
@@ -1814,7 +1971,7 @@ function startInboundCall(){
   state.totalWaitSeconds += waitSeconds;
   state.acceptedContacts++;
   if(waitSeconds<=60)state.contactsWithinSla++;
-  state.currentCall={scenarioId:scenario.id,queueContactId:contact.id,stepIndex:0,score:0,behaviourScore:0,feedback:null,feedbackType:'neutral',breach:false,held:false,startedAt:acceptedAt,waitSeconds};
+  state.currentCall={scenarioId:scenario.id,queueContactId:contact.id,stepIndex:0,score:0,behaviourScore:0,feedback:null,feedbackType:'neutral',breach:false,held:false,startedAt:acceptedAt,waitSeconds,commitmentId:linkedCallback?.commitmentId||null};
   ensureVoiceCustomerBehaviour(state.currentCall,contact,scenario,queueAcceptedAt);
   setAgentState('busy','Inbound customer contact accepted');
   voiceConsent=false;voiceStatus='inactive';voiceTranscript='';
@@ -1992,12 +2149,17 @@ function renderWrapUp(){
   const defaultDisposition=allowed.some(([value])=>value===wrap.defaultDisposition)?wrap.defaultDisposition:allowed[0][0];
   const contact=findQueueContact(wrap.contactId);
   const transferLine=wrap.transferTarget?`<div class="data-row"><span>Transfer destination</span><strong>${escapeHTML(wrap.transferTarget)}</strong></div>`:'';
-  viewRoot.innerHTML=`<div class="wrapup-layout"><section class="panel assessment-card"><div class="panel-head"><div><div class="question-kicker">${inbound?'INBOUND':'OUTBOUND'} · AFTER-CONTACT WORK</div><h3 style="margin-top:7px">Complete the interaction record</h3></div><span class="pill amber">WRAP-UP</span></div><div class="customer-strip"><div class="customer-avatar">${escapeHTML(initials(wrap.customer))}</div><div class="customer-info"><strong>${escapeHTML(wrap.customer)}</strong><small>${escapeHTML(wrap.title)} · ${escapeHTML(wrap.reference)}</small></div><span class="pill">QA ${wrap.qa}%</span></div><div class="form-field" style="margin-top:18px"><label for="wrapDisposition">FINAL DISPOSITION</label><select id="wrapDisposition">${allowed.map(([value,label])=>`<option value="${value}" ${value===defaultDisposition?'selected':''}>${label}</option>`).join('')}</select></div><div class="form-field" id="callbackDueWrap" style="display:none"><label for="callbackDueAt">CALLBACK DATE & TIME</label><input id="callbackDueAt" type="datetime-local" /></div><div class="form-field"><label for="wrapNotes">FACTUAL CASE NOTES</label><textarea id="wrapNotes" rows="5" minlength="12" maxlength="1200" placeholder="Record the customer's issue, checks performed, action taken and agreed next step. A minimum of 12 characters is required.">${escapeHTML(wrap.transferred?`Transferred to ${wrap.transferTarget}. `:'')}</textarea><small class="muted-note">Do not enter PINs, passwords, one-time codes or unnecessary sensitive information.</small></div><div class="article-box"><h4>After-contact checklist</h4><p>Confirm the disposition, document the actual action, set a callback only when requested, and route unresolved or security-sensitive cases correctly.</p></div><div class="assessment-footer"><small>${wrap.breach?'A critical breach requires escalation or review.':'Saving this record updates the queue, case history and performance metrics.'}</small><button class="btn primary" data-action="save-wrap-up">Save record & finish →</button></div></section><aside class="panel"><div class="panel-head"><div><h3>Interaction summary</h3><p>Operational event data.</p></div><span class="pill green">RECORDED ACTIVITY</span></div><div class="data-list"><div class="data-row"><span>Customer</span><strong>${escapeHTML(wrap.customer)}</strong></div><div class="data-row"><span>Channel</span><strong>${wrap.channel}</strong></div><div class="data-row"><span>Reference</span><strong>${escapeHTML(wrap.reference)}</strong></div><div class="data-row"><span>Quality estimate</span><strong>${wrap.qa}%</strong></div>${wrap.voiceBehaviour?`<div class="data-row"><span>Customer sentiment</span><strong>${wrap.voiceBehaviour.sentiment}/100 · ${escapeHTML(wrap.voiceBehaviour.emotion)}</strong></div><div class="data-row"><span>Interruptions</span><strong>${wrap.voiceBehaviour.interruptionCount}</strong></div><div class="data-row"><span>Voice QA</span><strong>${wrap.voiceBehaviour.qualityScore}%</strong></div><div class="data-row"><span>Negotiation status</span><strong>${escapeHTML((wrap.voiceBehaviour.negotiationResolved?'resolved':wrap.voiceBehaviour.negotiationCount?'review required':'not started').replaceAll('_',' '))}</strong></div><div class="data-row"><span>Call outcome</span><strong>${escapeHTML(wrap.voiceOutcome?.label||'Not assessed')}</strong></div>`:''}<div class="data-row"><span>Contact priority</span><strong>${contact?escapeHTML(contact.priority.toUpperCase()):'STANDARD'}</strong></div>${transferLine}</div><p class="muted-note" style="margin-top:14px">After-contact work is part of handling time and must be completed before the next contact is accepted.</p></aside></div>`;
+  viewRoot.innerHTML=`<div class="wrapup-layout"><section class="panel assessment-card"><div class="panel-head"><div><div class="question-kicker">${inbound?'INBOUND':'OUTBOUND'} · AFTER-CONTACT WORK</div><h3 style="margin-top:7px">Complete the interaction record</h3></div><span class="pill amber">WRAP-UP</span></div><div class="customer-strip"><div class="customer-avatar">${escapeHTML(initials(wrap.customer))}</div><div class="customer-info"><strong>${escapeHTML(wrap.customer)}</strong><small>${escapeHTML(wrap.title)} · ${escapeHTML(wrap.reference)}</small></div><span class="pill">QA ${wrap.qa}%</span></div><div class="form-field" style="margin-top:18px"><label for="wrapDisposition">FINAL DISPOSITION</label><select id="wrapDisposition">${allowed.map(([value,label])=>`<option value="${value}" ${value===defaultDisposition?'selected':''}>${label}</option>`).join('')}</select></div><div class="form-field callback-commitment-fields" id="callbackDueWrap" style="display:none"><label for="callbackPlan">AGREED CALLBACK WINDOW</label><select id="callbackPlan"><option value="30-min">Within 30 simulated minutes</option><option value="60-min">Within 60 simulated minutes</option><option value="next-day">Next working day · 09:00</option><option value="two-days">Two working days · 10:00</option></select><label for="commitmentDescription" style="margin-top:8px">WHAT ARE WE PROMISING THE CUSTOMER?</label><textarea id="commitmentDescription" rows="2" minlength="10" maxlength="180" placeholder="For example: Confirm the investigation outcome and explain the next step."></textarea><small class="muted-note" id="callbackDuePreview">Choose a callback window to preview the due time.</small></div><div class="form-field"><label for="wrapNotes">FACTUAL CASE NOTES</label><textarea id="wrapNotes" rows="5" minlength="12" maxlength="1200" placeholder="Record the customer's issue, checks performed, action taken and agreed next step. A minimum of 12 characters is required.">${escapeHTML(wrap.transferred?`Transferred to ${wrap.transferTarget}. `:'')}</textarea><small class="muted-note">Do not enter PINs, passwords, one-time codes or unnecessary sensitive information.</small></div><div class="article-box"><h4>After-contact checklist</h4><p>Confirm the disposition, document the actual action, set a callback only when requested, and route unresolved or security-sensitive cases correctly.</p></div><div class="assessment-footer"><small>${wrap.breach?'A critical breach requires escalation or review.':'Saving this record updates the queue, case history and performance metrics.'}</small><button class="btn primary" data-action="save-wrap-up">Save record & finish →</button></div></section><aside class="panel"><div class="panel-head"><div><h3>Interaction summary</h3><p>Operational event data.</p></div><span class="pill green">RECORDED ACTIVITY</span></div><div class="data-list"><div class="data-row"><span>Customer</span><strong>${escapeHTML(wrap.customer)}</strong></div><div class="data-row"><span>Channel</span><strong>${wrap.channel}</strong></div><div class="data-row"><span>Reference</span><strong>${escapeHTML(wrap.reference)}</strong></div><div class="data-row"><span>Quality estimate</span><strong>${wrap.qa}%</strong></div>${wrap.voiceBehaviour?`<div class="data-row"><span>Customer sentiment</span><strong>${wrap.voiceBehaviour.sentiment}/100 · ${escapeHTML(wrap.voiceBehaviour.emotion)}</strong></div><div class="data-row"><span>Interruptions</span><strong>${wrap.voiceBehaviour.interruptionCount}</strong></div><div class="data-row"><span>Voice QA</span><strong>${wrap.voiceBehaviour.qualityScore}%</strong></div><div class="data-row"><span>Negotiation status</span><strong>${escapeHTML((wrap.voiceBehaviour.negotiationResolved?'resolved':wrap.voiceBehaviour.negotiationCount?'review required':'not started').replaceAll('_',' '))}</strong></div><div class="data-row"><span>Call outcome</span><strong>${escapeHTML(wrap.voiceOutcome?.label||'Not assessed')}</strong></div>`:''}<div class="data-row"><span>Contact priority</span><strong>${contact?escapeHTML(contact.priority.toUpperCase()):'STANDARD'}</strong></div>${transferLine}</div><p class="muted-note" style="margin-top:14px">After-contact work is part of handling time and must be completed before the next contact is accepted.</p></aside></div>`;
   const disposition=$('#wrapDisposition');
   const callbackWrap=$('#callbackDueWrap');
-  const updateCallback=()=>{if(callbackWrap)callbackWrap.style.display=disposition?.value==='callback'?'block':'none';};
-  disposition?.addEventListener('change',updateCallback);updateCallback();
-  const due=$('#callbackDueAt');if(due){const d=new Date(Date.now()+24*60*60*1000);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());due.value=d.toISOString().slice(0,16);}
+  const plan=$('#callbackPlan');
+  const updatePreview=()=>{
+    if(!plan||!$('#callbackDuePreview')||!CommitmentEngine)return;
+    try{const due=CommitmentEngine.makeDue(commitmentShiftSnapshot(),plan.value);$('#callbackDuePreview').textContent=`Due ${due.dueDate} · ${CommitmentEngine.formatClock(due.dueMinutes)} on the simulated shift calendar.`;}
+    catch(error){$('#callbackDuePreview').textContent=error.message;}
+  };
+  const updateCallback=()=>{if(callbackWrap)callbackWrap.style.display=disposition?.value==='callback'?'block':'none';updatePreview();};
+  disposition?.addEventListener('change',updateCallback);plan?.addEventListener('change',updatePreview);updateCallback();
 }
 function saveWrapUp(){
   const wrap=state.wrapUp;if(!wrap)return;
@@ -2012,29 +2174,34 @@ function saveWrapUp(){
       : (wrap.breach?['review']:['completed','callback','declined',...(wrap.defaultDisposition==='review'?['review']:[]),...(wrap.suppressionRequested?['opt_out']:[])]);
   if(!allowedDispositions.includes(disposition)){toast('Choose a permitted final disposition for this interaction.','error');return;}
   const createdAt=new Date().toISOString();
+  let contact=inbound?findQueueContact(wrap.contactId):null;
+  const activeForCommitment=!inbound?state.activeOutbound:null;
+  const taskForCommitment=!inbound?activeOutboundTask(activeForCommitment):null;
+  if(inbound&&!contact){toast('Contact record missing; wrap-up was not saved.','error');return;}
+  let callbackDraft=null;
   let callbackDueISO=null;
+  let worklistCallbackDueISO=null;
   if(disposition==='callback'){
-    const dueInput=$('#callbackDueAt')?.value||'';
-    const dueMillis=Date.parse(dueInput);
-    if(!Number.isFinite(dueMillis)||dueMillis<=Date.now()){
-      toast('Choose a valid future callback date and time.','error');return;
-    }
-    callbackDueISO=new Date(dueMillis).toISOString();
+    const planId=$('#callbackPlan')?.value||'30-min';
+    const commitmentText=$('#commitmentDescription')?.value?.trim()||'';
+    try{
+      callbackDraft=prepareCallbackCommitment(wrap,contact,taskForCommitment,planId,commitmentText);
+      callbackDueISO=commitmentDateTimeISO(callbackDraft.fields.dueDate,callbackDraft.fields.dueMinutes);
+      // The dialler keeps a wall-clock compatibility timestamp; actual eligibility is governed by the simulated commitment clock.
+      worklistCallbackDueISO=new Date(Date.now()+60_000).toISOString();
+    }catch(error){toast(error.message||'Customer callback promise could not be validated.','error');return;}
   }
   const started=wrap.startedAt||Date.now();
   const acwSeconds=Math.max(1,Math.round((Date.now()-started)/1000));
-  let contact=null;
+  let createdCommitment=null;
   if(inbound){
-    contact=findQueueContact(wrap.contactId);
-    if(!contact){toast('Contact record missing; wrap-up was not saved.','error');return;}
     let scheduledCallback=null;
-    if(disposition==='callback'){
-      try{scheduledCallback=scheduleCallback(state.callbacks,contact,callbackDueISO,Date.now());}
-      catch(error){toast(error.message,'error');return;}
-      scheduledCallback.type='inbound';
-    }
-    // Complete a previous callback only after the new disposition and due time validate.
+    // Complete the previous callback attempt only after the new promise has passed validation.
     completeActiveCallback(state.callbacks,{contactId:contact.id},Date.now());
+    if(disposition==='callback'){
+      createdCommitment=CommitmentEngine.createCommitment(commitmentStore(),callbackDraft.input,callbackDraft.shift,new Date(createdAt));
+      scheduledCallback=createCallbackRecordFromCommitment(createdCommitment,{type:'inbound',contactId:contact.id,customer:contact.customer,scenarioId:contact.scenarioId,issue:contact.issue});
+    }
     if(disposition==='callback'){
       transitionContact(contact,CONTACT_STATUS.CALLBACK,'Customer callback scheduled',queueSimulationNowMs(),{dueAt:callbackDueISO});
     }else if(disposition==='escalated'){
@@ -2052,6 +2219,11 @@ function saveWrapUp(){
     const voiceFlags=wrap.voiceBehaviour?.qualityFlags||[];
     const record={reference:wrap.reference,contactId:wrap.contactId,customer:wrap.customer,title:wrap.title,channel:'Inbound',status,disposition,notes,qa:wrap.qa,csat:simulatedCsat,customerSentiment:Number.isFinite(voiceSentiment)?voiceSentiment:null,customerEmotion:wrap.voiceBehaviour?.emotion||null,customerMood:wrap.voiceBehaviour?.emotion||null,customerPersona:wrap.voiceBehaviour?.personaLabel||null,customerInterruptions:wrap.voiceBehaviour?.interruptionCount||0,customerEscalationRisk:wrap.voiceBehaviour?.needsSupervisor===true,voiceNegotiationStatus:wrap.voiceBehaviour?.negotiationResolved?'resolved':wrap.voiceBehaviour?.negotiationCount?'review_required':'not_started',voiceQualityScore:wrap.voiceBehaviour?.qualityScore??null,voiceSecurityBreach:voiceFlags.includes('prohibited_secret_request')||voiceFlags.includes('critical_handling_breach'),voiceQualityFlags:voiceFlags,voiceSupervisorReason:wrap.voiceBehaviour?.supervisorReason||null,voiceOutcome:wrap.voiceOutcome?.outcome||'not_recorded',voiceTranscript:wrap.voiceBehaviour?.transcript||[],acwSeconds,createdAt,owner:state.applicantName||'Agent',timeline:contact.timeline.slice()};
     state.cases.push(record);recordCustomerContinuityFromCase(record,{customerRef:contact?.customerRef});state.experience+=resolved?14:7;state.bonus+=resolved?350:0;state.shiftMinutes+=Math.max(1,Math.round(elapsedMinutes+acwSeconds/60));
+    const fulfilledInboundCommitment=state.currentCall?.commitmentId;
+    if(fulfilledInboundCommitment){
+      const outcome=disposition==='escalated'?'further-action':'completed';
+      recordCommitmentOutcome(fulfilledInboundCommitment,outcome,`Inbound callback handled. Disposition: ${disposition}. ${notes}`,{retrySource:{type:'inbound',contactId:contact.id,customer:contact.customer,scenarioId:contact.scenarioId,issue:contact.issue}});
+    }
     if((disposition==='escalated'||wrap.breach)&&!state.supervisorRequests.some(item=>item.contactId===wrap.contactId&&item.status==='open')){state.supervisorRequests.push({id:makeCallReference('SUP'),contactId:wrap.contactId,reference:wrap.reference,customer:wrap.customer,reason:wrap.breach?'Critical compliance / security review':'Specialist escalation',status:'open',createdAt,channel:'Inbound voice'});}
     pushOperationEvent('case',wrap.reference,`Inbound case saved · ${status}`,'saved',{disposition,qa:wrap.qa,acwSeconds});
     state.currentCall=null;
@@ -2064,10 +2236,7 @@ function saveWrapUp(){
     const noConnectOutcome=['no_answer','busy','voicemail'].includes(wrap.connectionOutcome);
     const outboundOutcome=noConnectOutcome?wrap.connectionOutcome:disposition;
     // Validate the callback date before changing the campaign worklist or customer preference.
-    const outboundCallback=disposition==='callback'?{
-      id:makeCallReference('CBK'),type:'outbound',contactId:wrap.contactId,campaignContactId:workItem.id,customer:task.customer,
-      campaignId:task.id,scenarioId:null,issue:task.title,dueAt:callbackDueISO,status:'scheduled',createdAt
-    }:null;
+    const outboundCallback=null;
     if(disposition==='opt_out'&&!wrap.suppressionRequested){toast('The customer has not requested suppression in this scenario.','error');return;}
     let worklistResult;
     try{
@@ -2075,14 +2244,18 @@ function saveWrapUp(){
         attemptId:active.attemptId,
         outcome:outboundOutcome,
         now:Date.now(),
-        callbackDueAt:callbackDueISO
+        callbackDueAt:worklistCallbackDueISO
       });
     }catch(error){toast(error.message||'Campaign contact outcome could not be recorded.','error');return;}
     if(disposition==='opt_out'){
       addSuppression(state.outboundSuppressions,task.customer,'Customer requested no further campaign contact',Date.now());
     }
     completeActiveCallback(state.callbacks,{callbackId:active.callbackId},Date.now());
-    if(outboundCallback)state.callbacks.push(outboundCallback);
+    if(disposition==='callback'){
+      createdCommitment=CommitmentEngine.createCommitment(commitmentStore(),callbackDraft.input,callbackDraft.shift,new Date(createdAt));
+      createCallbackRecordFromCommitment(createdCommitment,{type:'outbound',contactId:wrap.contactId,campaignContactId:workItem.id,customer:task.customer,campaignId:task.id,issue:task.title});
+      workItem.status='callback_scheduled';workItem.nextEligibleAt=null;workItem.callbackDueAt=worklistCallbackDueISO;
+    }
     const conversation=active.conversation||null;
     const conversationSummary=conversation?outboundConversationSummary(conversation):null;
     const conversationHasExplicitOfferAcceptance=task.id!=='product-offer'||conversation?.customerDecision==='accepted';
@@ -2100,6 +2273,14 @@ function saveWrapUp(){
     const outboundCase={reference:wrap.reference,contactId:wrap.contactId,campaignContactId:workItem.id,attemptNumber:active.attemptNumber||workItem.attempts,customer:task.customer,title:task.title,channel:'Outbound',status,disposition:outboundOutcome,connectionOutcome:wrap.connectionOutcome||'answered',notes,qa:wrap.qa,acwSeconds,createdAt,owner:state.applicantName||'Agent',customerPreference:conversation?.preference||null,customerDecision:conversation?.customerDecision||null,callbackRequested:!!conversation?.callbackRequested,suppressionRequested:!!conversation?.suppressionRequested,criticalBreaches:[...(conversation?.criticalBreaches||[])],messages:transcript,scorecards,attemptsRemaining:worklistResult.attemptsRemaining,nextEligibleAt:worklistResult.nextEligibleAt||worklistResult.callbackDueAt||null};
     state.cases.push(outboundCase);recordCustomerContinuityFromCase(outboundCase,{customerRef:task.customerRef});
     state.outboundAttempts.push(attemptRecord);
+    if(active.commitmentId){
+      if(noConnectOutcome){
+        const result=recordCommitmentOutcome(active.commitmentId,'no-answer',`Outbound callback attempt ${active.attemptNumber||1} ended: ${wrap.connectionOutcome}. ${notes}`);
+        if(result?.item?.status==='Open')scheduleRetryForCommitment(result.item,{type:'outbound',contactId:wrap.contactId,campaignContactId:workItem.id,customer:task.customer,campaignId:task.id,issue:task.title});
+      }else{
+        recordCommitmentOutcome(active.commitmentId,'completed',`Customer reached through the promised outbound callback. Disposition: ${disposition}. ${notes}`);
+      }
+    }
     if(disposition==='review'&&!state.supervisorRequests.some(item=>item.contactId===wrap.contactId&&item.status==='open'))state.supervisorRequests.push({id:makeCallReference('SUP'),contactId:wrap.contactId,reference:wrap.reference,customer:task.customer,reason:'Outbound campaign conversation requires supervisor / compliance review',status:'open',createdAt,channel:'Outbound voice'});
     const campaignContacts=state.outboundWorklist.filter(item=>item.campaignId===task.id);
     if(campaignContacts.length&&campaignContacts.every(item=>['completed','suppressed','review_required','exhausted'].includes(item.status))&&!state.outboundDone.includes(task.id))state.outboundDone.push(task.id);
@@ -2163,7 +2344,7 @@ function returnCallToQueue(){
 function returnCallbackToQueue(callbackId){
   const callback=state.callbacks.find(item=>item.id===callbackId&&item.status==='scheduled'&&item.type!=='outbound');
   if(!callback){toast('Scheduled callback was not found.','error');return;}
-  if(Date.parse(callback.dueAt)>Date.now()){toast('This callback is not due yet. Keep it scheduled until the requested time.','warning');return;}
+  if(!callbackIsDue(callback)){toast('This callback is not due yet on the simulated shift calendar. Keep it scheduled until the agreed time.','warning');return;}
   const contact=findQueueContact(callback.contactId);
   if(contact&&contact.status===CONTACT_STATUS.CALLBACK){const queueNow=queueSimulationNowMs();transitionContact(contact,CONTACT_STATUS.QUEUED,'Scheduled callback returned to the inbound queue',queueNow);contact.queuedAt=new Date(queueNow).toISOString();}
   callback.status='queued';callback.queuedAt=new Date().toISOString();syncQueueCount();pushOperationEvent('callback',callback.id,`Callback for ${callback.customer} moved to queue.`,'queued');saveState();renderView();toast('Callback returned to the inbound queue.','success');
@@ -2214,14 +2395,15 @@ function resolveSupervisorRequest(requestId){
 function resumeOutboundCallback(callbackId){
   const callback=state.callbacks.find(item=>item.id===callbackId&&item.type==='outbound'&&item.status==='scheduled');
   if(!callback){toast('Outbound callback was not found.','error');return;}
-  if(Date.parse(callback.dueAt)>Date.now()){toast('This callback is not due yet. Keep it scheduled until the requested time.','warning');return;}
+  if(!callbackIsDue(callback)){toast('This callback is not due yet on the simulated shift calendar. Keep it scheduled until the agreed time.','warning');return;}
   if(!shiftTimeAvailable()||state.agentStatus!=='available'){toast('An active shift within 08:00–17:00 and Available agent status are required for this callback.','warning');return;}
   if(isContactSuppressed(callback.customer,state.outboundSuppressions)){toast('Contact suppression is active; callback is blocked.','error');return;}
   const worklist=ensureOutboundWorklist();
   let workItem=findCampaignContact(worklist,callback.campaignContactId);
   if(!workItem)workItem=worklist.find(item=>item.campaignId===callback.campaignId&&item.customer===callback.customer);
   if(!workItem){toast('The callback worklist contact could not be found.','error');return;}
-  if(workItem.status==='ready'&&workItem.attempts>0){workItem.status='callback_scheduled';workItem.callbackDueAt=callback.dueAt;}
+  if(workItem.status==='ready'&&workItem.attempts>0){workItem.status='callback_scheduled';workItem.callbackDueAt=new Date(Date.now()-1000).toISOString();}
+  if(workItem.status==='callback_scheduled')workItem.callbackDueAt=new Date(Date.now()-1000).toISOString();
   callback.campaignContactId=workItem.id;
   callback.status='in_progress';callback.attemptedAt=new Date().toISOString();
   startOutbound(callback.campaignId,workItem.id,callbackId);
@@ -2262,7 +2444,8 @@ function startOutbound(id,contactId,callbackId=null){
     started=startCampaignContact(worklist,contact.id,{attemptId,agentName:state.applicantName||'Customer Experience Agent',now:Date.now(),suppressed,shiftOpen:shiftTimeAvailable(),agentAvailable:state.agentStatus==='available'});
   }catch(error){toast(error.message||'The campaign contact could not be started.','warning');return;}
   const dialResult=resolveDialAttempt(contact,{attemptNumber:started.attemptNumber,seed:state.day||1});
-  state.activeOutbound={campaignId:id,campaignContactId:contact.id,contactSnapshot:{customer:contact.customer,initials:contact.initials,campaignContactId:contact.id},attemptId,attemptNumber:started.attemptNumber,maxAttempts:contact.maxAttempts,connectionOutcome:dialResult.outcome,callbackId,stepIndex:0,score:0,feedback:null,feedbackType:'neutral',breach:false,startedAt:Date.now(),suppressionRequested:false,disposition:null};
+  const linkedCommitment=callbackId?state.callbacks.find(item=>item.id===callbackId)?.commitmentId||null:null;
+  state.activeOutbound={commitmentId:linkedCommitment,campaignId:id,campaignContactId:contact.id,contactSnapshot:{customer:contact.customer,initials:contact.initials,campaignContactId:contact.id},attemptId,attemptNumber:started.attemptNumber,maxAttempts:contact.maxAttempts,connectionOutcome:dialResult.outcome,callbackId,stepIndex:0,score:0,feedback:null,feedbackType:'neutral',breach:false,startedAt:Date.now(),suppressionRequested:false,disposition:null};
   if(callbackId){const callback=state.callbacks.find(item=>item.id===callbackId);if(callback){callback.status='in_progress';callback.attemptedAt=new Date().toISOString();callback.campaignContactId=contact.id;}}
   setAgentState('busy',callbackId?'Scheduled outbound callback started':'Outbound campaign contact started');
   pushOperationEvent('campaign',attemptId,`Outbound dial attempt ${started.attemptNumber}/${contact.maxAttempts} · ${task.title} · ${contact.customer}`,'dialling',{campaignId:id,campaignContactId:contact.id,attemptNumber:started.attemptNumber,connectionOutcome:dialResult.outcome});
@@ -2409,6 +2592,7 @@ function handleAction(action,event={}){
     case 'transfer-call':transferInboundCall();break;
     case 'return-call-to-queue':returnCallToQueue();break;
     case 'save-wrap-up':saveWrapUp();break;
+    case 'open-commitment-callback':{const callback=state.callbacks.find(item=>item.id===event.callbackId);if(!callback)break;state.currentView=callback.type==='outbound'?'outbound':'inbound';renderView();break;}
     case 'return-callback-to-queue':returnCallbackToQueue(event.callbackId);break;
     case 'resume-outbound-callback':resumeOutboundCallback(event.callbackId);break;
     case 'resolve-supervisor':resolveSupervisorRequest(event.requestId);break;
@@ -2455,6 +2639,8 @@ function handleAction(action,event={}){
 }
 
 document.addEventListener('click',e=>{
+  const commitmentButton=e.target.closest('[data-commitment-id]');
+  if(commitmentButton){selectedCommitmentId=commitmentButton.dataset.commitmentId;state.currentView='commitments';renderView();return;}
   const template=e.target.closest('[data-digital-template]');if(template){const field=$('#digitalReplyForm textarea[name="reply"]');if(field){const channel=state.digitalActiveId?findDigitalContact(state.digitalQueue,state.digitalActiveId)?.channel:'email';const selected=digitalReplyTemplates(channel).find(item=>item[0]===template.dataset.digitalTemplate);if(selected){field.value=selected[1];field.focus();}}return;}
   const nav=e.target.closest('.nav-item[data-view]');if(nav){if(nav.disabled){toast('Complete recruitment and accept an offer to unlock agent operations.');return;}if(nav.dataset.view!=='inbound'&&voiceStatus!=='inactive')stopVoiceTools();state.currentView=nav.dataset.view;renderView();return;}
   const action=e.target.closest('[data-action]');if(action){if(action.dataset.action==='cloud-member-status'){setCloudMemberStatus(action.dataset.memberId,action.dataset.nextStatus).then(()=>{renderView();toast('Server-side staff access updated.','success');}).catch(error=>toast(error.message,'error'));return;}handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId,system:action.dataset.system,text:action.dataset.text,contactId:action.dataset.contactId,memberId:action.dataset.memberId,nextStatus:action.dataset.nextStatus,mode:action.dataset.mode,optionId:action.dataset.optionId});return;}
@@ -2476,6 +2662,32 @@ document.addEventListener('change',e=>{
   if(e.target?.id==='qaScorecardSelect'){state.qaSelectedScorecardId=e.target.value;saveState();renderView();}
 });
 document.addEventListener('submit',async e=>{
+  if(e.target.id==='commitmentOutcomeForm'){
+    e.preventDefault();
+    const item=CommitmentEngine.getCommitment(commitmentStore(),selectedCommitmentId);
+    if(!item){toast('Select an open customer commitment first.','warning');return;}
+    const f=new FormData(e.target);
+    const outcome=String(f.get('outcome')||'');
+    const summary=String(f.get('summary')||'').trim();
+    const result=recordCommitmentOutcome(item.id,outcome,summary);
+    if(result){saveState();renderView();toast(result.requiresReview?'Attempt limit reached. Independent supervisor review is required.':'Callback outcome recorded.','success');}
+    return;
+  }
+  if(e.target.id==='commitmentReviewForm'){
+    e.preventDefault();
+    const item=CommitmentEngine.getCommitment(commitmentStore(),selectedCommitmentId);
+    if(!item){toast('Select a commitment requiring review.','warning');return;}
+    const f=new FormData(e.target);
+    try{
+      CommitmentEngine.closeAfterReview(commitmentStore(),item.id,String(f.get('reviewer')||''),String(f.get('summary')||''),new Date(),state.applicantName||'');
+      const linkedCase=state.cases.find(row=>row.reference===item.caseId||row.contactId===item.contactReference);
+      if(linkedCase){linkedCase.commitmentStatus='Complete';linkedCase.status='Callback closed after supervisor review';}
+      for(const request of state.supervisorRequests.filter(row=>row.commitmentId===item.id&&row.status==='open')){request.status='resolved';request.resolvedAt=new Date().toISOString();}
+      pushOperationEvent('commitment',item.id,`Independent callback review completed by ${String(f.get('reviewer')||'Supervisor')}.`,'reviewed',{caseId:item.caseId});
+      saveState();renderView();toast('Independent callback review recorded.','success');
+    }catch(error){toast(error.message||'Supervisor review could not be saved.','error');}
+    return;
+  }
   if(e.target.matches('[data-supervisor-triage]')){e.preventDefault();saveSupervisorTriage(e.target);return;}
   if(e.target.id==='outboundCampaignReplyForm'){
     e.preventDefault();

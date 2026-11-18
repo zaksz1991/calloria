@@ -276,3 +276,13 @@
 - Previews use fictional scenarios and do not claim to connect to live RuffNeck product accounts or services.
 - No payment, account registration, lead submission, or support request is automatically performed.
 - Existing game, workforce, CRM, Supabase configuration, secrets, package dependencies, and GLB assets are unchanged.
+
+## v6.69 — Customer Promise & Callback Commitment Control
+
+- Integrated the existing callback commitment rules into the main CALLORIA 3D operations application.
+- Added an agent Commitment Desk with due, overdue, due-soon and independent-review work states.
+- Added named callback ownership, agreed commitment text, simulated-calendar due plans and callback history.
+- Linked inbound and outbound callback records to their commitment IDs; due checks now use the accelerated simulation clock for linked promises.
+- Added callback outcomes, next-working-day rescheduling, attempt limits and independent supervisor review.
+- Kept legacy callbacks without commitment IDs on their existing wall-clock due behaviour.
+- No Supabase migration or environment variable is required; commitments remain inside the existing local/cloud employment save payload.

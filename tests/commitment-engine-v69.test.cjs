@@ -1,6 +1,12 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const B = require('../public/commitment-engine.js');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const engineModule = { exports: {} };
+const engineSandbox = { module: engineModule, exports: engineModule.exports, globalThis: {} };
+vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../public/commitment-engine.js'), 'utf8'), engineSandbox, { filename: 'public/commitment-engine.js' });
+const B = engineModule.exports;
 
 function makeStore() { return { getItem: () => null, setItem(key, value) { this.value = value; } }; }
 function fixture(planId = '30-min', overrides = {}) {
