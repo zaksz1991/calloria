@@ -1,0 +1,28 @@
+CALLORIA v6.66 — TEST RESULTS
+
+Build: v6.66 Live Conversational Outbound Operations
+Base: uploaded cumulative v6.65 source archive
+
+FOCUSED CHECKS
+- New outbound application integration tests: 7 passed, 0 failed.
+- Existing outbound conversation-engine tests: 10 passed, 0 failed.
+- Combined focused outbound tests: 17 passed, 0 failed.
+- `npm run check`: passed; all configured JavaScript syntax checks completed.
+
+FULL REPOSITORY SUITE
+- Tests: 1,953
+- Passed: 1,409
+- Failed: 544
+- Skipped: 0
+- Baseline v6.65: 1,946 tests, 1,402 passed, 544 failed.
+- Failure-name comparison: 526 distinct failure names in both baseline and v6.66; 0 new failing names; 0 previously failing names resolved.
+- The full suite is not green. The 544 existing failures remain.
+
+BUILD / DEPLOYMENT
+- Vite production build: not run; installed `node_modules` was absent in the source workspace.
+- Browser gameplay walkthrough: not run.
+- Vercel deployment: not performed or claimed.
+- Supabase migration: none required.
+
+ASSET BOUNDARY
+- Source archive did not contain `public/assets/` or GLB binaries. Preserve the existing `public/assets/` directory and GLB files from the user's actual checkout when merging.

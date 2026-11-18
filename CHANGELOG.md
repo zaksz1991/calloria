@@ -1,3 +1,33 @@
+# CALLORIA v6.66 — Live Conversational Outbound Operations
+
+## Added
+
+- Integrated the existing outbound conversation engine directly into the live main application module.
+- Replaced multiple-choice outbound campaign progression with a customer transcript and free-form agent responses.
+- Added simulated customer preference states: open, busy, callback, declined and opt-out.
+- Added response evaluation for honest identity, purpose, permission, empathy, clarity, callback handling, respectful declines and campaign conduct.
+- Added critical flags and supervisor review for credential solicitation, unsupported promises and coercive language.
+- Added do-not-contact suppression enforcement, callback recording and explicit acceptance requirements before product-offer sales credit.
+- Persisted outbound transcripts, scorecards, customer decisions and compliance flags to the simulated CRM case and outbound attempt history.
+- Added synthetic customer speech playback and supervisor-assistance requests in the live outbound screen.
+- Removed the stale v4.5 build-time outbound transformer; the application now imports the engine directly.
+- Added seven UI/integration regression tests and extended the project syntax-check script.
+
+## Verification
+
+- `npm run check`: passed.
+- Focused outbound engine and application integration tests: 17 passed.
+- Full test suite: 1,953 tests; 1,409 passed; 544 failed. This matches the v6.65 baseline by failing test name: 526 distinct existing failure names, zero new failing names.
+- Vite production build and Vercel deployment: not verified.
+
+## Boundaries
+
+- All outbound customers and campaigns remain synthetic. No real calls, provider connections, database migration, new secret, environment variable or dependency are added.
+- Browser-generated speech is a playback aid, not a recording or telephony connection.
+- Recruitment remains the employment entry gate. The product remains a contact-centre career and operations simulator.
+
+---
+
 # CALLORIA v6.65 — Adaptive Live Inbound Voice Customer Behaviour
 
 ## Added

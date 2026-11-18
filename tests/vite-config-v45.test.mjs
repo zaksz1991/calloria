@@ -7,11 +7,12 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const config = readFileSync(resolve(root, 'vite.config.js'), 'utf8');
 
-test('keeps v4.4 live inbound transforms before v4.5 outbound transforms', () => {
-  const inbound = config.indexOf('calloriaFirstWorkingShiftV44Plugin()');
-  const outbound = config.indexOf('calloriaOutboundCampaignV45Plugin()');
-  assert.ok(inbound >= 0, 'v4.4 plugin registration missing');
-  assert.ok(outbound > inbound, 'v4.5 must run after the v4.4 post-transform');
+test('outbound live dialogue is integrated directly in the application rather than relying on the obsolete v4.5 transform', () => {
+  const main = readFileSync(resolve(root, 'js/main.js'), 'utf8');
+  assert.ok(config.includes('calloriaFirstWorkingShiftV44Plugin()'), 'existing live-shift integration must remain registered');
+  assert.ok(main.includes("from './outbound-campaign-engine.js'"), 'main application must import the live outbound conversation engine');
+  assert.ok(main.includes('outboundCampaignReplyForm'), 'main application must render the live outbound response workflow');
+  assert.ok(!config.includes('calloriaOutboundCampaignV45Plugin()'), 'obsolete outbound transform must not be registered against incompatible source anchors');
 });
 
 test('preserves the existing Vite multi-page inputs and plugin chain', () => {

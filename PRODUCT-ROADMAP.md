@@ -66,3 +66,8 @@ The supervisor workspace now provides local simulated control over the v6.59 inb
 ## Runtime delivery note — CALLORIA v6.65
 
 Inbound voice contacts now have one adaptive local customer dialogue model for guided and free-form agent replies. The model tracks synthetic sentiment and patience, can interrupt the agent, can pause for conditional service-recovery decisions, flags prohibited credential requests, and saves the final voice outcome and sanitised transcript into the simulated case record. Supervisor risk indicators describe the active player's voice call. This improves the voice simulation layer; it does not create real telephony, live multi-agent speech monitoring or a production contact-centre provider connection, and it does not complete v0.2 Advanced Contact Centre Operations.
+
+
+## Runtime delivery note — CALLORIA v6.66
+
+Outbound campaign work now uses the existing synthetic conversation engine directly inside the main agent application. The previous quiz-style outbound steps are replaced by a customer transcript and typed agent response flow, with preference-aware replies, permission checks, opt-out suppression, callback recording, compliance flags, supervisor requests and persisted CRM/attempt histories. Product-offer sales credit requires explicit synthetic customer acceptance. This is simulated gameplay only: no telephone call is placed and no provider is connected. It is a further v0.2 operations increment, not a claim that Advanced Contact Centre Operations is complete.

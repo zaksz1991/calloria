@@ -1,8 +1,29 @@
-# CALLORIA v6.65 — Adaptive Voice Customer Behaviour
+# CALLORIA v6.66 — Live Conversational Outbound Operations
 
-A cumulative upgrade built on the preserved v6.64 repository. v6.65 completes the adaptive inbound voice-customer module already wired into the agent call screen and Supervisor Operations. The customer reacts to the actual scripted, typed or transcribed agent response; the engine records conversational turns, sentiment, patience, interruptions, service-recovery status, quality effects and supervisor risk.
+A cumulative upgrade built on the complete v6.65 source archive. v6.66 replaces the quiz-style outbound campaign interaction with a live synthetic customer conversation in the actual agent workspace. Agents now respond in their own words, hear browser-generated customer speech, request supervisor assistance, record customer preferences and complete an auditable after-contact record.
 
 Recruitment and candidate assessment remain the employment entry gate. The main gameplay remains the work of an employed agent: taking inbound and outbound contacts, handling voice and digital customers, working CRM/cases and knowledge resources, completing after-contact work, receiving QA and supervisor intervention, and progressing through a contact-centre career. This is not a training-only conversion.
+
+## v6.66 live conversational outbound operations
+
+- Integrates the existing `js/outbound-campaign-engine.js` directly into the application entry point. The agent's outbound workspace now renders a customer transcript and free-form reply form instead of multiple-choice campaign steps.
+- Simulates deterministic customer preferences including open to a conversation, busy, callback requested, declined and do-not-contact. Customer reactions depend on the agent's actual typed response.
+- Evaluates identity, campaign purpose, permission to continue, empathy, clarity, next-step explanation, respectful decline and callback handling.
+- Flags credential solicitation, unsupported campaign promises and coercive pressure as critical breaches; these interactions require supervisor/compliance review. Customer opt-outs are added to the suppression register and block later attempts.
+- Provides browser speech playback for the latest synthetic customer statement and an agent-requested supervisor-assistance action. No real outbound telephone call is placed.
+- Requires an explicit synthetic customer acceptance before the product-offer campaign can receive sales credit.
+- Persists the conversation transcript, turn scorecards, customer preference/decision, callback status, suppression state and critical breach flags into the simulated CRM case and outbound attempt history.
+- Removes the obsolete v4.5 Vite source transformer from the active plugin chain because its source anchors no longer matched the current application. The live outbound feature is now an explicit runtime import, not a conditional build-time text rewrite.
+- Adds responsive desktop/mobile conversation UI and seven application integration tests. The package syntax check now checks the outbound conversation engine.
+
+## v6.66 boundaries
+
+- Customer contacts and campaign outcomes remain synthetic game data. The dialler does not connect to a PBX, real telephone network, external dialler, banking system or campaign provider.
+- Customer voice playback uses the browser speech synthesis helper. It is not recorded customer audio and does not create a telephone call.
+- The feature adds no Supabase migration, secret, environment variable, external provider or package dependency.
+- Recruitment and assessment remain the employment entry gate. The core product remains an employed-agent career and operations simulator; the outbound workflow is live simulated agent work, not a training quiz.
+- `npm run check` passed. The new outbound engine and integration-focused tests passed. The full repository suite has 1,953 tests: 1,409 passed and 544 failed; comparison against the v6.65 baseline found the same 526 distinct failing test names, with no new failing test names.
+- Vite production build, live browser walkthrough and Vercel deployment were not verified. The supplied source snapshot has no installed `node_modules`.
 
 ## v6.65 adaptive voice customer behaviour
 
@@ -32,7 +53,7 @@ Recruitment and candidate assessment remain the employment entry gate. The main 
 - The SLA clock uses the existing accelerated shift simulation time. Follow-up customer replies do not restart the first-response timer.
 - These are fictional local gameplay targets, not live provider clocks or contractual service levels. No database migration, secret, environment variable, external provider or new package dependency is added.
 
-The v6.65 test and verification record is in `TEST-RESULTS-v6.65.txt`, `VERIFICATION-v6.65.md` and `INSTALL-GITHUB-v6.65.md`. The v6.63 test and verification record is in `TEST-RESULTS-v6.63.txt` and `VERIFICATION-v6.63.md`; GUI merge steps are in `INSTALL-GITHUB-v6.63.md`.
+The v6.66 test and verification record is in `TEST-RESULTS-v6.66.txt`, `VERIFICATION-v6.66.md` and `INSTALL-GITHUB-v6.66.md`. The v6.65 test and verification record is in `TEST-RESULTS-v6.65.txt`, `VERIFICATION-v6.65.md` and `INSTALL-GITHUB-v6.65.md`. The v6.63 test and verification record is in `TEST-RESULTS-v6.63.txt` and `VERIFICATION-v6.63.md`; GUI merge steps are in `INSTALL-GITHUB-v6.63.md`.
 
 ## v6.62 unified agent workload and digital concurrency
 

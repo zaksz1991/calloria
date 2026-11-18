@@ -1,0 +1,18 @@
+CALLORIA v6.66 — CUMULATIVE RELEASE CONTENTS
+
+Base archive: CALLORIA-v6.65-ADAPTIVE-VOICE-CUSTOMER-BEHAVIOUR.zip
+New/updated implementation files:
+- js/main.js — direct outbound conversation runtime, live transcript/reply, wrap-up persistence, supervisor action
+- styles.css — responsive live outbound conversation workspace
+- package.json — syntax check includes the outbound engine
+- vite.config.js — removes obsolete v4.5 outbound source-transform registration
+- tests/outbound-live-workflow-v666.test.mjs — seven application integration contracts
+- tests/package-manifest.test.mjs — validates the expanded check command
+- tests/vite-config-v45.test.mjs — validates direct runtime integration and retired transformer
+- README.md, CHANGELOG.md, PRODUCT-ROADMAP.md — v6.66 release notes
+- docs/CALLORIA-v6.66-LIVE-OUTBOUND-OPERATIONS.md
+- INSTALL-GITHUB-v6.66.md
+- TEST-RESULTS-v6.66.txt
+- VERIFICATION-v6.66.md
+
+All other files from the cumulative v6.65 source archive are retained. The archive does not contain public/assets/ or GLB models because they were absent from the supplied repository ZIP.

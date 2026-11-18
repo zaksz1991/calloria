@@ -17,7 +17,6 @@ import { calloriaCC0LobbyGreeneryPlugin } from './build/calloria-cc0-lobby-green
 import { calloriaGlazedDepartmentPartitionsPlugin } from './build/calloria-glazed-department-partitions-plugin.mjs';
 import { calloriaOJTGLBActivationPlugin } from './build/calloria-ojt-glb-activation-plugin.mjs';
 import { calloriaFirstWorkingShiftV44Plugin } from './build/calloria-first-working-shift-v4-4-plugin.mjs';
-import { calloriaOutboundCampaignV45Plugin } from './build/calloria-outbound-campaign-v4-5-plugin.mjs';
 import { calloriaMobileResponsiveRepairPlugin } from './build/calloria-mobile-responsive-repair-v6-10.mjs';
 import { calloriaVoiceResponseWorkflowPlugin } from './build/calloria-voice-response-workflow-v6-42.mjs';
 import { calloriaInboundCustomerDialoguePlugin } from './build/calloria-inbound-customer-dialogue-v6-43.mjs';
@@ -64,8 +63,6 @@ export default defineConfig({
     calloriaOJTGLBActivationPlugin(),
     // The live-shift integration runs after OJT has inserted its employment gate.
     calloriaFirstWorkingShiftV44Plugin(),
-    // The outbound campaign plugin runs after v4.4 has transformed the inbound/shift workflow.
-    calloriaOutboundCampaignV45Plugin(),
     // Final post-transform: mobile first-person safety, responsive CSS and assessment controls.
     calloriaMobileResponsiveRepairPlugin(),
     // Voice transcript logging must run before the scripted customer dialogue bridge.
