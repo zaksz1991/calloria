@@ -621,3 +621,34 @@ body.calloria-game-launch .world-vignette{position:absolute;inset:0;z-index:2;ba
 .commitment-history{display:grid;gap:3px;margin-top:14px;max-height:220px;overflow:auto}
 .callback-commitment-fields textarea{width:100%;min-width:0;border:1px solid var(--line);border-radius:7px;background:#0c1b27;color:#e7f1f4;padding:10px;font:500 11px "DM Sans",sans-serif;resize:vertical}
 @media(max-width:760px){.commitment-workspace{grid-template-columns:1fr}.commitment-row{align-items:flex-start}.commitment-row .pill{white-space:nowrap}.commitment-list{max-height:420px}}
+
+
+/* CALLORIA v6.70 — customer promise risk portfolio and supervisor recovery controls */
+.promise-control-panel{min-width:0}
+.promise-control-table{max-height:620px;overflow:auto}
+.promise-control-table table{min-width:1120px}
+.promise-control-table th,.promise-control-table td{vertical-align:top;white-space:normal}
+.promise-control-table td{max-width:260px;line-height:1.45}
+.promise-control-table td strong{display:block;font-size:10px;overflow-wrap:anywhere}
+.promise-control-table td small{display:block;margin-top:4px;color:var(--muted,#81909c);font-size:8px;line-height:1.45;overflow-wrap:anywhere}
+.promise-risk-row.critical td:first-child{border-left:3px solid #ef6b73}
+.promise-risk-row.urgent td:first-child{border-left:3px solid #dca64c}
+.promise-risk-row.at_risk td:first-child{border-left:3px solid #d3b05d}
+.promise-task-state{display:inline-flex;max-width:150px;padding:4px 6px;border-radius:5px;background:rgba(89,224,202,.09);color:#83e4d2;font-size:8px;font-weight:800;text-transform:uppercase}
+.promise-task-state.missing{background:rgba(239,107,115,.12);color:#ff9a9f}
+.promise-row-actions{display:grid;gap:5px;min-width:105px}
+.promise-row-actions .btn{min-height:30px;padding:5px 7px;font-size:8px;white-space:nowrap}
+.promise-escalation-card{display:grid;gap:10px;padding:13px;margin:10px 0;border:1px solid rgba(239,107,115,.28);border-radius:10px;background:rgba(239,107,115,.045)}
+.promise-escalation-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.promise-escalation-head>div{display:grid;gap:4px;min-width:0}
+.promise-escalation-head strong{font-size:12px;overflow-wrap:anywhere}
+.promise-escalation-head small{font-size:9px;color:var(--muted,#81909c)}
+.promise-escalation-card>p{margin:0;color:var(--ink,#eaf3f5);font-size:11px;line-height:1.55}
+.promise-escalation-card textarea{width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line);border-radius:7px;background:#0c1b27;color:#e7f1f4;padding:9px;font:500 11px "DM Sans",sans-serif;resize:vertical}
+.promise-escalation-card .form-field{min-width:0}
+.promise-escalation-card .form-field input{width:100%;box-sizing:border-box}
+.promise-escalation-card .muted-note{font-size:9px;line-height:1.5}
+.promise-control-metrics{grid-template-columns:repeat(6,minmax(0,1fr))}
+@media(max-width:1100px){.promise-control-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.promise-control-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.promise-control-table{max-height:520px}.promise-escalation-card .form-grid.two{grid-template-columns:1fr}.promise-escalation-head{align-items:flex-start;flex-direction:column}.promise-row-actions{grid-template-columns:1fr 1fr;min-width:0}.promise-row-actions .btn{width:100%;min-width:0}.promise-escalation-card>button{width:100%;min-height:44px}}
+@media(max-width:380px){.promise-control-metrics{grid-template-columns:1fr}.promise-row-actions{grid-template-columns:1fr}}

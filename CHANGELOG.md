@@ -1,3 +1,32 @@
+# CALLORIA v6.70 — Supervisor Promise Risk & Recovery Control
+
+## Added
+
+- Added a management portfolio covering all open simulated callback commitments across employee owners.
+- Added deterministic promise-risk classification for critical overdue/review work, due-now promises, 30-minute at-risk commitments and watch-window items.
+- Added callback-task linkage visibility, including due commitments without an active inbound/outbound callback record.
+- Added owner-level exposure summaries for open, critical, due, at-risk and missing-task commitments.
+- Added reason-required supervisor escalation creation with duplicate-open-escalation protection.
+- Added independent supervisor review requiring a reviewer different from the original promise owner and a documented recovery action.
+- Supervisor review closes only the escalation request; it does not falsely close the underlying customer promise. Callback completion remains tied to the existing agent outcome workflow.
+- Added a responsive Promise Control management view and routed promise escalations away from the generic one-click supervisor close action.
+- Added a dedicated control engine and engine/UI regression tests.
+
+## Verification boundary
+
+- Focused v6.70 engine and UI tests: see the release verification run.
+- JavaScript syntax checks: run against the new control engine and changed application module.
+- Full Vite production build, live browser walkthrough and Vercel deployment are not claimed by this updated-files package.
+
+## Boundaries
+
+- All promises, customers, owners, callback tasks and escalation actions remain fictional local gameplay data.
+- This does not create server-authoritative cross-user workforce commitments or real notifications.
+- No Supabase migration, external provider, secret, environment variable or npm dependency is added.
+- v6.69 callback commitments, v6.68 customer continuity and earlier contact-centre operations remain the integration baseline.
+
+---
+
 # CALLORIA v6.68 — Cross-channel Customer Continuity
 
 ## Added

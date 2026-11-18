@@ -127,6 +127,7 @@ let aiTenantSettings = null;
 let aiAssistBusy = false;
 let selectedCommitmentId = '';
 const CommitmentEngine = globalThis.CalloriaCommitmentEngine;
+const PromiseControlEngine = globalThis.CalloriaPromiseControlEngine;
 
 function loadState() {
   try {
@@ -1164,7 +1165,7 @@ function renderSupervisor(){
       <section class="panel"><div class="panel-head"><div><h3>Digital queue triage</h3><p>Review waiting email, live-chat and social contacts against first-response deadlines.</p></div><span class="pill">${board.digitalWaiting} WAITING</span></div>${digitalRows||'<div class="empty-state"><p>No digital contacts are waiting.</p></div>'}</section>
     </div>
     <section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Customer emotion watch</h3><p>Open voice and digital conversations where sentiment, patience or repeated dissatisfaction recommends supervisor intervention.</p></div><span class="pill ${(board.customerEscalationRecommended+voiceBehaviourMetrics.supervisorRecommended)?'amber':'green'}">${board.customerEscalationRecommended+voiceBehaviourMetrics.supervisorRecommended} AT RISK</span></div>${voiceRiskRows}${customerRiskRows||(!voiceRiskRows?'<div class="empty-state"><p>No open voice or digital conversations currently require customer-emotion intervention.</p></div>':'')}</section>
-    <section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Supervisor assistance desk</h3><p>Review requests raised by the agent during active customer interactions.</p></div><span class="pill ${open.length?'amber':'green'}">${open.length} OPEN</span></div>${open.length?open.map(item=>`<div class="case-item"><div class="case-symbol">!</div><div class="case-copy"><strong>${escapeHTML(item.customer)} · ${escapeHTML(item.reason)}</strong><small>${escapeHTML(item.reference)} · ${new Date(item.createdAt).toLocaleString()}</small></div><button class="btn small primary" data-action="resolve-supervisor" data-request-id="${escapeHTML(item.id)}">Mark reviewed</button></div>`).join(''):'<div class="empty-state"><h3>No open requests</h3><p>Agent assistance requests will appear here while a contact is active.</p></div>'}</section>
+    <section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Supervisor assistance desk</h3><p>Review requests raised by the agent during active customer interactions.</p></div><span class="pill ${open.length?'amber':'green'}">${open.length} OPEN</span></div>${open.length?open.map(item=>`<div class="case-item"><div class="case-symbol">!</div><div class="case-copy"><strong>${escapeHTML(item.customer)} · ${escapeHTML(item.reason)}</strong><small>${escapeHTML(item.reference)} · ${new Date(item.createdAt).toLocaleString()}</small></div>${item.commitmentId?`<button class="btn small primary" data-action="open-promise-control">Open promise control</button>`:`<button class="btn small primary" data-action="resolve-supervisor" data-request-id="${escapeHTML(item.id)}">Mark reviewed</button>`}</div>`).join(''):'<div class="empty-state"><h3>No open requests</h3><p>Agent assistance requests will appear here while a contact is active.</p></div>'}</section>
     <div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Escalated and review cases</h3><p>Cases requiring specialist or QA attention.</p></div><span class="pill">${board.escalatedCases}</span></div>${board.escalatedCaseItems.length?board.escalatedCaseItems.slice().reverse().map(caseRow).join(''):'<p class="muted-note">No escalated cases recorded.</p>'}</section><section class="panel"><div class="panel-head"><div><h3>Supervisor audit trail</h3><p>Recent intake changes and queue triage decisions.</p></div><span class="pill">${audit.length} EVENTS</span></div>${auditRows||'<p class="muted-note">No supervisor control changes recorded.</p>'}</section></div>
     <section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Operations activity</h3><p>Recent call, digital, queue and shift events.</p></div><span class="pill">${board.activeWork} ACTIVE WORK</span></div>${state.interactionTimeline.slice(-10).reverse().map(item=>`<div class="timeline-row"><time>${new Date(item.at).toLocaleTimeString()}</time><div><strong>${escapeHTML(item.message)}</strong><small>${escapeHTML(item.reference)} · ${escapeHTML(item.status)}</small></div></div>`).join('')||'<p class="muted-note">No operations events have been recorded.</p>'}</section>`;
 }
@@ -1325,6 +1326,41 @@ function renderCommitments(){
     }
   }
   viewRoot.innerHTML=`<div class="ops-summary-grid">${metricCard('OPEN PROMISES',items.length,'Assigned to this employee','◷')}${metricCard('DUE NOW',due,'Ready for callback outcome','!')}${metricCard('OVERDUE',overdue,'Past agreed simulated due time','⌛')}${metricCard('SUPERVISOR REVIEW',review,'Attempt limit reached','⚑')}</div><div class="grid two commitment-workspace" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>My customer commitments</h3><p>Every callback promise has a named owner, explicit due time and outcome history.</p></div><span class="pill">${items.length} OPEN</span></div><div class="commitment-list">${rows||'<div class="empty-state"><h3>No outstanding promises</h3><p>When a customer asks for a callback, record the commitment during after-contact work. It will appear here with a clear due time.</p></div>'}</div></section><section class="panel">${actionPanel}</section></div><section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Commitment operating rules</h3><p>Callbacks are measured against the accelerated simulated shift clock, not the computer wall clock.</p></div><span class="pill green">AUDITABLE</span></div><div class="grid three"><div class="article-box"><h4>Named ownership</h4><p>Each customer promise is assigned to the employee who made it. The employee cannot independently sign off a review after repeated unsuccessful attempts.</p></div><div class="article-box"><h4>Due-time controls</h4><p>Same-shift, next-working-day and two-working-day plans use the simulator calendar and skip weekends for working-day commitments.</p></div><div class="article-box"><h4>Attempt governance</h4><p>Two unsuccessful attempts move the commitment to independent supervisor review. Each attempt requires factual notes.</p></div></div></section>`;
+}
+
+
+function renderPromiseControl(){
+  if(!PromiseControlEngine||!CommitmentEngine){viewRoot.innerHTML='<div class="empty-state"><h3>Promise control is unavailable</h3><p>Reload the application to initialise the customer promise engines.</p></div>';return;}
+  const dashboard=PromiseControlEngine.buildPortfolio(commitmentStore(),commitmentShiftSnapshot(),state.callbacks,state.supervisorRequests);
+  const metrics=dashboard.metrics;
+  const riskLabels={critical:'CRITICAL',urgent:'DUE NOW',at_risk:'AT RISK',watch:'WATCH',normal:'SCHEDULED'};
+  const riskClass={critical:'red',urgent:'amber',at_risk:'amber',watch:'',normal:'green'};
+  const rows=dashboard.rows.map(item=>{
+    const risk=item.control.risk;
+    const timing=item.timing;
+    const dueText=`${item.dueDate} · ${CommitmentEngine.formatClock(item.dueMinutes)}`;
+    const delta=timing.deltaMinutes;
+    const deltaText=delta===null?'No active simulated shift':delta<0?`${Math.abs(delta)} simulated minutes late`:delta===0?'Due now':`${delta} simulated minutes remaining`;
+    const callbackText=item.control.linkedCallback?item.control.callbackStatus.replaceAll('_',' '):item.control.missingCallbackTask?'No live callback task':'Not yet due';
+    const escalationText=item.control.escalationOpen?'Supervisor action open':'No escalation';
+    const canRaise=!item.control.escalationOpen&&['critical','urgent','at_risk'].includes(risk);
+    return `<tr class="promise-risk-row ${risk}"><td><strong>${escapeHTML(item.customerName)}</strong><small>${escapeHTML(item.contactReference)} · ${escapeHTML(item.caseId||'No case reference')}</small></td><td><strong>${escapeHTML(item.owner)}</strong><small>${escapeHTML(item.team||'Customer Care')} · ${escapeHTML(item.preferredChannel||'Voice')}</small></td><td>${escapeHTML(item.commitment)}<small>${escapeHTML(item.subject||'Customer callback commitment')}</small></td><td><strong>${escapeHTML(dueText)}</strong><small>${escapeHTML(deltaText)}</small></td><td><span class="pill ${riskClass[risk]}">${riskLabels[risk]}</span><small>${escapeHTML(timing.state)}</small></td><td><span class="promise-task-state ${item.control.missingCallbackTask?'missing':''}">${escapeHTML(callbackText)}</span><small>${escapeHTML(escalationText)}</small></td><td><div class="promise-row-actions"><button class="btn small outline" type="button" data-commitment-id="${escapeHTML(item.id)}">Open promise</button>${canRaise?`<button class="btn small primary" type="button" data-action="raise-promise-escalation" data-commitment-id="${escapeHTML(item.id)}">Escalate</button>`:''}</div></td></tr>`;
+  }).join('');
+  const ownerRows=dashboard.owners.map(owner=>`<tr><td><strong>${escapeHTML(owner.owner)}</strong></td><td>${owner.total}</td><td class="${owner.critical?'text-danger':''}">${owner.critical}</td><td>${owner.urgent}</td><td>${owner.atRisk}</td><td>${owner.needsCallbackTask}</td></tr>`).join('');
+  const openEscalations=state.supervisorRequests.filter(item=>item&&item.status==='open'&&item.commitmentId);
+  const escalationCards=openEscalations.map(item=>`<form class="promise-escalation-card" id="promiseEscalationReviewForm" data-request-id="${escapeHTML(item.id)}"><div class="promise-escalation-head"><div><strong>${escapeHTML(item.customer||'Customer')}</strong><small>${escapeHTML(item.reference||item.contactId||'')} · Owner ${escapeHTML(item.owner||'Unassigned')} · ${escapeHTML(item.promiseRisk||'Review')}</small></div><span class="pill red">SUPERVISOR ACTION REQUIRED</span></div><p>${escapeHTML(item.reason)}</p><div class="form-grid two"><label class="form-field"><span>REVIEWING SUPERVISOR</span><input name="reviewer" required minlength="2" maxlength="100" placeholder="Supervisor name"></label><label class="form-field"><span>RECOVERY ACTION / DECISION · 20+ CHARACTERS</span><textarea name="actionTaken" rows="2" required minlength="20" maxlength="500" placeholder="Document the owner, customer update or next operational step."></textarea></label></div><button class="btn primary" type="submit">Record review and action</button><small class="muted-note">Reviewing this escalation does not close the callback promise. The customer outcome must still be recorded from the linked agent callback workflow.</small></form>`).join('');
+  viewRoot.innerHTML=`
+    <div class="ops-summary-grid promise-control-metrics">${metricCard('OPEN PROMISES',metrics.open,'All employee-owned simulated commitments','◷')}${metricCard('OVERDUE / REVIEW',metrics.critical,'Past due by more than 30 minutes or awaiting independent review','!')}${metricCard('DUE NOW',metrics.dueNow,'Callback window reached','⌛')}${metricCard('AT RISK',metrics.atRisk,'Due within the next 30 simulated minutes','⚑')}${metricCard('MISSING CALLBACK TASK',metrics.missingCallbackTask,'Due promises without an active callback record','↗')}${metricCard('OPEN ESCALATIONS',metrics.escalated,'Supervisor action still outstanding','!')}</div>
+    <section class="panel promise-control-panel" style="margin-top:14px"><div class="panel-head"><div><h3>Customer promise risk portfolio</h3><p>Portfolio view of outstanding employee commitments, simulated due times, active callback tasks and escalation status.</p></div><span class="pill ${metrics.critical||metrics.dueNow?'red':metrics.atRisk?'amber':'green'}">${metrics.open} OPEN</span></div><div class="table-wrap promise-control-table"><table><thead><tr><th>Customer / reference</th><th>Owner / team</th><th>Promised outcome</th><th>Agreed due time</th><th>Risk</th><th>Callback task</th><th>Action</th></tr></thead><tbody>${rows||'<tr><td colspan="7"><div class="empty-state"><h3>No open customer promises</h3><p>Callback commitments created during after-contact work will appear here for supervisory monitoring.</p></div></td></tr>'}</tbody></table></div><p class="muted-note">Timing uses the accelerated simulated shift calendar. Risk indicators are operational game rules, not a real-world SLA or guarantee that a callback has been placed.</p></section>
+    <div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Owner workload and exposure</h3><p>Outstanding commitments grouped by their recorded owner.</p></div><span class="pill">${dashboard.owners.length} OWNERS</span></div><div class="table-wrap"><table><thead><tr><th>Owner</th><th>Open</th><th>Critical</th><th>Due</th><th>At risk</th><th>No task</th></tr></thead><tbody>${ownerRows||'<tr><td colspan="6">No owner workload recorded.</td></tr>'}</tbody></table></div></section><section class="panel"><div class="panel-head"><div><h3>Promise-control rules</h3><p>Escalation supports recovery; it does not falsely close a customer promise.</p></div><span class="pill green">AUDIT TRAIL</span></div><div class="article-box"><h4>Risk windows</h4><p>Overdue and independent-review items are critical. Due-now commitments are urgent. Promises due within 30 simulated minutes are at risk.</p></div><div class="article-box"><h4>Supervisor accountability</h4><p>Escalations require a reason and a reviewer different from the original owner. The recovery action is recorded against the supervisor request.</p></div><div class="article-box"><h4>Closure boundary</h4><p>Reviewing an escalation does not mark the callback complete. Only the agent callback workflow or independent review of an attempt-limited promise can close it.</p></div></section></div>
+    <section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Supervisor promise escalations</h3><p>Record the recovery action, responsible supervisor and documented next step.</p></div><span class="pill ${openEscalations.length?'amber':'green'}">${openEscalations.length} OPEN</span></div>${escalationCards||'<div class="empty-state"><h3>No promise escalations awaiting review</h3><p>Escalate a due or at-risk commitment when a supervisor decision is required.</p></div>'}</section>`;
+}
+
+function openPromiseEscalationModal(commitmentId){
+  const item=CommitmentEngine.getCommitment(commitmentStore(),commitmentId);
+  if(!item){toast('Customer promise was not found.','warning');return;}
+  const modal=openModal(`<div class="subtle-label">CUSTOMER PROMISE CONTROL</div><h3>Raise supervisor escalation</h3><p>${escapeHTML(item.customerName)} · ${escapeHTML(item.contactReference)} · Owner ${escapeHTML(item.owner)}</p><div class="article-box"><strong>${escapeHTML(item.commitment)}</strong><p>Due ${escapeHTML(item.dueDate)} · ${CommitmentEngine.formatClock(item.dueMinutes)}</p></div><form id="promiseEscalationRaiseForm" data-commitment-id="${escapeHTML(item.id)}"><div class="form-field"><label>WHY DOES THIS PROMISE NEED SUPERVISOR ACTION? · 20+ CHARACTERS</label><textarea name="reason" rows="4" required minlength="20" maxlength="500" placeholder="Explain the customer impact, missed deadline or recovery decision required."></textarea></div><div class="modal-actions"><button class="btn outline" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Raise escalation</button></div></form>`);
+  modal.querySelector('[data-close]')?.addEventListener('click',()=>modal.remove());
 }
 
 function caseRow(c) { return `<div class="case-item"><div class="case-symbol">${c.channel==='Outbound'?'↗':['Email','Live chat','Social media'].includes(c.channel)?'✉':'↙'}</div><div class="case-copy"><strong>${escapeHTML(c.title)}</strong><small>${escapeHTML(c.customer)} · ${escapeHTML(c.reference)}</small></div><span class="pill ${c.status==='Resolved'?'green':'amber'}">${escapeHTML(c.status)}</span></div>`; }
@@ -1801,6 +1837,7 @@ function renderView() {
     inbound:['CUSTOMER OPERATIONS','Inbound desk','Answer, investigate, resolve, transfer and document incoming customer contacts.'],
     queue:['OPERATIONS CONTROL','Queue management','Inspect priority, routing groups, waiting contacts and scheduled callbacks.'],
     supervisor:['SUPERVISOR DESK','Live operations command centre','Control synthetic queue intake, triage waiting work, monitor service risk and review escalations across voice and digital channels.'],
+    promiseControl:['SUPERVISOR DESK','Customer promise control','Monitor due and at-risk callbacks across employees, raise service-recovery escalations and record independent supervisor actions.'],
     outbound:['CUSTOMER OPERATIONS','Outbound campaigns','Work authorised simulated campaigns and record true outcomes.'],
     digital:['CUSTOMER OPERATIONS','Multi-channel support','Handle simulated email, live-chat and social-media conversations with channel-specific privacy and service standards.'],
     commitments:['CUSTOMER PROMISE CONTROL','Callback commitments','Own scheduled customer promises, monitor due times, record callback attempts and route repeated failures for independent review.'],
@@ -1821,6 +1858,7 @@ function renderView() {
     case 'inbound': renderInbound(); break;
     case 'queue': renderQueue(); break;
     case 'supervisor': renderSupervisor(); break;
+    case 'promiseControl': renderPromiseControl(); break;
     case 'outbound': renderOutbound(); break;
     case 'digital': renderDigital(); break;
     case 'commitments': renderCommitments(); break;
@@ -2596,6 +2634,8 @@ function handleAction(action,event={}){
     case 'return-callback-to-queue':returnCallbackToQueue(event.callbackId);break;
     case 'resume-outbound-callback':resumeOutboundCallback(event.callbackId);break;
     case 'resolve-supervisor':resolveSupervisorRequest(event.requestId);break;
+    case 'open-promise-control':state.currentView='promiseControl';renderView();break;
+    case 'raise-promise-escalation':openPromiseEscalationModal(event.commitmentId);break;
     case 'supervisor-toggle-intake':changeSupervisorIntake(state.supervisorQueueControl?.paused?'resume':'pause');break;
     case 'supervisor-intake-mode':changeSupervisorIntake(`mode:${event.mode}`);break;
     case 'open-inbound':state.currentView='inbound';renderView();break;
@@ -2639,11 +2679,11 @@ function handleAction(action,event={}){
 }
 
 document.addEventListener('click',e=>{
-  const commitmentButton=e.target.closest('[data-commitment-id]');
+  const commitmentButton=e.target.closest('[data-commitment-id]:not([data-action])');
   if(commitmentButton){selectedCommitmentId=commitmentButton.dataset.commitmentId;state.currentView='commitments';renderView();return;}
   const template=e.target.closest('[data-digital-template]');if(template){const field=$('#digitalReplyForm textarea[name="reply"]');if(field){const channel=state.digitalActiveId?findDigitalContact(state.digitalQueue,state.digitalActiveId)?.channel:'email';const selected=digitalReplyTemplates(channel).find(item=>item[0]===template.dataset.digitalTemplate);if(selected){field.value=selected[1];field.focus();}}return;}
   const nav=e.target.closest('.nav-item[data-view]');if(nav){if(nav.disabled){toast('Complete recruitment and accept an offer to unlock agent operations.');return;}if(nav.dataset.view!=='inbound'&&voiceStatus!=='inactive')stopVoiceTools();state.currentView=nav.dataset.view;renderView();return;}
-  const action=e.target.closest('[data-action]');if(action){if(action.dataset.action==='cloud-member-status'){setCloudMemberStatus(action.dataset.memberId,action.dataset.nextStatus).then(()=>{renderView();toast('Server-side staff access updated.','success');}).catch(error=>toast(error.message,'error'));return;}handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId,system:action.dataset.system,text:action.dataset.text,contactId:action.dataset.contactId,memberId:action.dataset.memberId,nextStatus:action.dataset.nextStatus,mode:action.dataset.mode,optionId:action.dataset.optionId});return;}
+  const action=e.target.closest('[data-action]');if(action){if(action.dataset.action==='cloud-member-status'){setCloudMemberStatus(action.dataset.memberId,action.dataset.nextStatus).then(()=>{renderView();toast('Server-side staff access updated.','success');}).catch(error=>toast(error.message,'error'));return;}handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId,commitmentId:action.dataset.commitmentId,system:action.dataset.system,text:action.dataset.text,contactId:action.dataset.contactId,memberId:action.dataset.memberId,nextStatus:action.dataset.nextStatus,mode:action.dataset.mode,optionId:action.dataset.optionId});return;}
   const answer=e.target.closest('[data-answer]');
 if(answer){const i=state.assessmentIndex;state.assessmentAnswers[i]=Number(answer.dataset.answer);renderView();return;}
   const practicalAnswer=e.target.closest('[data-practical-answer]');if(practicalAnswer){state.practicalAnswers[state.practicalIndex]=Number(practicalAnswer.dataset.practicalAnswer);renderView();return;}
@@ -2662,6 +2702,27 @@ document.addEventListener('change',e=>{
   if(e.target?.id==='qaScorecardSelect'){state.qaSelectedScorecardId=e.target.value;saveState();renderView();}
 });
 document.addEventListener('submit',async e=>{
+  if(e.target.id==='promiseEscalationRaiseForm'){
+    e.preventDefault();
+    const form=e.target;
+    try{
+      const request=PromiseControlEngine.raiseEscalation({commitmentId:form.dataset.commitmentId,reason:String(new FormData(form).get('reason')||'')},{commitmentState:commitmentStore(),shift:commitmentShiftSnapshot(),supervisorRequests:state.supervisorRequests,actor:state.applicantName||'Floor Supervisor',now:new Date()});
+      pushOperationEvent('customer-promise',request.reference,`Supervisor escalation raised for ${request.customer}; callback promise remains open.`,'escalated',{commitmentId:request.commitmentId,owner:request.owner,risk:request.promiseRisk});
+      form.closest('.modal-backdrop')?.remove();saveState();renderView();toast('Customer promise escalation raised. The callback remains open.','success');
+    }catch(error){toast(error.message||'Promise escalation could not be raised.','error');}
+    return;
+  }
+  if(e.target.id==='promiseEscalationReviewForm'){
+    e.preventDefault();
+    const form=e.target;
+    try{
+      const values=new FormData(form);
+      const request=PromiseControlEngine.resolveEscalation(state.supervisorRequests,form.dataset.requestId,{reviewer:String(values.get('reviewer')||''),actionTaken:String(values.get('actionTaken')||'')},{commitmentState:commitmentStore(),now:new Date()});
+      pushOperationEvent('customer-promise',request.reference,`Supervisor recovery action recorded by ${request.resolvedBy}; the customer callback commitment remains open.`,'recovery-reviewed',{commitmentId:request.commitmentId,requestId:request.id});
+      saveState();renderView();toast('Supervisor recovery action recorded. The customer promise is still open until the callback outcome is completed.','success');
+    }catch(error){toast(error.message||'Promise escalation review could not be saved.','error');}
+    return;
+  }
   if(e.target.id==='commitmentOutcomeForm'){
     e.preventDefault();
     const item=CommitmentEngine.getCommitment(commitmentStore(),selectedCommitmentId);

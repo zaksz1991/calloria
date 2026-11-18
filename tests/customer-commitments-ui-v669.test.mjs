@@ -8,7 +8,7 @@ const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
  test('the main 3D application loads the callback commitment engine before its module', () => {
-  assert.match(html, /<script src="\/commitment-engine\.js"><\/script>\s*<script type="module" src="\/js\/main\.js"><\/script>/);
+  assert.match(html, /<script src="\/commitment-engine\.js"><\/script>\s*<script src="\/promise-control-engine\.js"><\/script>\s*<script type="module" src="\/js\/main\.js"><\/script>/);
   assert.match(main, /const CommitmentEngine = globalThis\.CalloriaCommitmentEngine/);
 });
 
