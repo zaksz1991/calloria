@@ -1,3 +1,30 @@
+# CALLORIA v6.68 — Cross-channel Customer Continuity
+
+## Added
+
+- Added a local Customer 360 continuity registry shared by live inbound voice, outbound voice, email, live chat and social interaction workflows.
+- Agent workspaces show previous interaction channels, recent case references, the last contact and outstanding follow-up states before handling a returning customer.
+- Inbound, outbound and digital after-contact records update the same customer history.
+- Matching uses a shared synthetic customer reference where available and otherwise uses a normalised display-name match, explicitly labelled as simulation-only rather than real-world identity verification.
+- Stored continuity metadata is limited to case reference, channel, direction, issue title, status, disposition, timestamp and optional QA/sentiment values; free-form notes and transcripts are excluded.
+- Histories are limited to 20 recent interactions per customer and 500 local customer profiles.
+- Existing local saves migrate by normalising the added continuity state without removing older cases or channel records.
+
+## Verification
+
+- New v6.68 continuity engine tests: 13 passed.
+- New v6.68 application integration tests: 6 passed.
+- JavaScript syntax checks: run against the changed application and engine modules.
+- Vite production build, deployed Vercel build and real browser walkthrough: not verified in the preparation environment.
+
+## Boundaries
+
+- All customer profiles and interactions remain fictional local gameplay data.
+- No real-world identity verification, external CRM connection, Supabase migration, secret, environment variable or dependency is introduced.
+- Recruitment remains the entry gate; the core gameplay remains employed-agent operations and career progression.
+
+---
+
 # CALLORIA v6.67 — Campaign Contact Worklists & Dialler Retry Governance
 
 ## Added
