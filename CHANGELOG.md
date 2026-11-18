@@ -315,3 +315,22 @@
 - Added callback outcomes, next-working-day rescheduling, attempt limits and independent supervisor review.
 - Kept legacy callbacks without commitment IDs on their existing wall-clock due behaviour.
 - No Supabase migration or environment variable is required; commitments remain inside the existing local/cloud employment save payload.
+
+
+# CALLORIA v6.71 — Case Reopen & Follow-up Control
+
+## Added
+
+- CRM cases with an eligible resolved/completed status can be reopened when a customer reports an unresolved issue, an incorrect outcome, new information, a repeat contact or a service failure.
+- Reopening creates an owned follow-up work item with urgent/normal priority, a 30/120 simulated-minute target, due-time risk and a bounded audit history.
+- Agents claim follow-up work before recording an outcome. Only the claiming employee can complete that work item.
+- Reopened cases can be resolved only when the agent records factual evidence and explicitly confirms that the customer confirmed resolution.
+- Pending-customer outcomes reschedule the follow-up instead of falsely closing the case. Escalated outcomes route a case-specific supervisor request into the supervisor desk.
+- Independent supervisors can return a case to the agent or close it after a separate evidence review; supervisor closure also requires customer confirmation and an independent reviewer.
+- CRM now includes a reopened-case worklist, due-risk indicators, follow-up history and responsive agent/supervisor forms. Older case records are normalised without losing their original status or notes.
+
+## Boundaries
+
+- All cases, customers, owners, times and outcomes remain fictional local CALLORIA save data. No real CRM, customer, email, telephone or ticketing provider is connected.
+- Follow-up targets are gameplay controls, not contractual or regulatory SLAs. They use the accelerated simulated workday clock and pause while the agent is off shift.
+- No database migration, provider credential, environment variable or external dependency is added. Existing recruitment, employment, agent operations, CRM history and supervisor controls remain intact.

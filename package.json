@@ -11,7 +11,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "check": "node --check public/commitment-engine.js && node --check js/main.js && node --check js/production-world.js && node --check js/live-queue-engine.js && node --check js/supervisor-queue-engine.js && node --check js/digital-live-queue-engine.js && node --check js/agent-workload-engine.js && node --check js/digital-sla-engine.js && node --check js/digital-customer-behaviour-engine.js && node --check js/voice-customer-behaviour-engine.js && node --check js/outbound-campaign-engine.js && node --check js/campaign-operations-engine.js && node --check js/customer-continuity-engine.js && node --check public/promise-control-engine.js",
+    "check": "node --check public/commitment-engine.js && node --check js/case-lifecycle-engine.js && node --check js/main.js && node --check js/production-world.js && node --check js/live-queue-engine.js && node --check js/supervisor-queue-engine.js && node --check js/digital-live-queue-engine.js && node --check js/agent-workload-engine.js && node --check js/digital-sla-engine.js && node --check js/digital-customer-behaviour-engine.js && node --check js/voice-customer-behaviour-engine.js && node --check js/outbound-campaign-engine.js && node --check js/campaign-operations-engine.js && node --check js/customer-continuity-engine.js && node --check public/promise-control-engine.js",
     "test": "node --test tests/*.test.mjs tests/commitment-engine-v69.test.cjs"
   },
   "dependencies": {

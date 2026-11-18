@@ -652,3 +652,36 @@ body.calloria-game-launch .world-vignette{position:absolute;inset:0;z-index:2;ba
 @media(max-width:1100px){.promise-control-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){.promise-control-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.promise-control-table{max-height:520px}.promise-escalation-card .form-grid.two{grid-template-columns:1fr}.promise-escalation-head{align-items:flex-start;flex-direction:column}.promise-row-actions{grid-template-columns:1fr 1fr;min-width:0}.promise-row-actions .btn{width:100%;min-width:0}.promise-escalation-card>button{width:100%;min-height:44px}}
 @media(max-width:380px){.promise-control-metrics{grid-template-columns:1fr}.promise-row-actions{grid-template-columns:1fr}}
+
+
+/* CALLORIA v6.71 — CRM case reopen and follow-up lifecycle */
+.case-followup-panel{margin:18px 0;padding:16px;border:1px solid #d8e5ee;border-radius:14px;background:linear-gradient(145deg,#f8fbfd,#f3f8fa)}
+.case-followup-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.case-followup-heading>strong{font:800 14px Manrope, sans-serif;color:#132d43}
+.case-followup-panel>p{font-size:12px;line-height:1.6;color:#66798a}
+.case-followup-panel form{display:grid;gap:11px;margin-top:12px}
+.case-followup-panel .form-field{margin:0}
+.case-followup-panel .form-field>span,.case-followup-panel .form-field>label{font-size:10px;font-weight:800;letter-spacing:.055em;color:#486175}
+.case-followup-panel .form-field input,.case-followup-panel .form-field select,.case-followup-panel .form-field textarea{width:100%;min-width:0;border:1px solid #d5e0e8;border-radius:9px;padding:10px 11px;background:#fff;color:#193248;font:500 12px Inter, sans-serif}
+.case-followup-panel .form-field textarea{resize:vertical;line-height:1.5}
+.case-followup-panel .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.case-followup-panel .case-confirm-check{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border:1px solid #dbe5eb;border-radius:9px;background:#fff;color:#43596c;font-size:12px;line-height:1.5}
+.case-followup-panel .case-confirm-check input{margin-top:2px;accent-color:#147c72}
+.case-followup-panel .muted-note{font-size:10px;line-height:1.5;color:#75899a}
+.case-followup-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0;padding:12px;border:1px solid #dce6ec;border-radius:10px;background:#fff}
+.case-followup-facts>div{display:grid;gap:4px;min-width:0}
+.case-followup-facts span{font-size:9px;font-weight:800;letter-spacing:.06em;color:#7890a1}
+.case-followup-facts strong{font-size:11px;color:#203d52;overflow-wrap:anywhere}
+.case-followup-history{margin-top:14px;padding-top:12px;border-top:1px solid #dce6ec}
+.case-followup-history>strong{display:block;margin-bottom:8px;font:800 11px Manrope,sans-serif;color:#3b5669}
+.case-followup-queue{padding-bottom:8px}
+.case-followup-queue-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #edf1f4}
+.case-followup-queue-copy{display:grid;gap:4px;min-width:0}
+.case-followup-queue-copy strong{font-size:12px;color:#20394d;overflow-wrap:anywhere}
+.case-followup-queue-copy small{font-size:10px;color:#778b9c;line-height:1.5}
+.case-resolution-evidence{padding:12px;border:1px solid #cfe5dc;border-radius:10px;background:#f4fbf7}
+.case-resolution-evidence strong{font-size:11px;color:#17624c}
+.case-resolution-evidence p{margin:7px 0;font-size:12px;line-height:1.6;color:#365d50}
+.case-resolution-evidence small{font-size:10px;color:#5f8678}
+@media(max-width:760px){.case-followup-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.case-followup-queue-row{grid-template-columns:minmax(0,1fr) auto}.case-followup-queue-row .btn{grid-column:1/-1;width:100%}}
+@media(max-width:480px){.case-followup-panel{padding:12px;margin:12px 0}.case-followup-panel .form-grid{grid-template-columns:1fr}.case-followup-facts{gap:10px}.case-followup-heading{align-items:flex-start;flex-direction:column}}
