@@ -1,0 +1,21 @@
+CALLORIA v6.65 — TEST RESULTS
+Date: 17 November 2026
+Source: cumulative v6.64 project ZIP provided in the current conversation; public/assets/ was absent from that source archive.
+
+NEW FEATURE TESTS
+- Voice behaviour engine and UI contract tests: 24 passed, 0 failed.
+- Coverage: persona consistency, context-sensitive customer reactions, secure and empathetic handling, interruption decisions, service-recovery negotiation, critical credential-request detection, protective-warning handling, mixed refusal/request detection, promise/quality flags, supervisor escalation, turn limits, saved-state migration and transcript redaction.
+- The focused suite also confirms the main application imports the new engine, accepted calls retain one behaviour state, decisions block call progression until resolved, wrap-up/CRM retain outcomes, supervisor visibility is wired, and the UI is responsive.
+
+PROJECT CHECKS
+- `npm run check`: PASS. All configured JavaScript syntax checks, including the new voice engine, completed successfully.
+- `npm test`: 1,946 tests total; 1,402 passed; 544 failed. This is not a clean full-suite result. The 544 failing test names are identical to the v6.64 baseline (1,922 total; 1,378 passed; 544 failed). No new failing test names were introduced; the 24 additional tests all passed.
+- `npm run build`: NOT VERIFIED. The command stopped with `sh: 1: vite: not found` because dependencies/node_modules were not installed in this preparation workspace.
+- Browser/device testing: not performed.
+- GitHub commit and Vercel deployment: not performed.
+
+RELEASE BOUNDARIES
+- The customer, dialogue, sentiment, patience, QA score and service-recovery outcomes are fictional local game mechanics.
+- No PBX, SIP trunk, dialler, live telephone number, real customer system or speech provider is connected by this change. The existing optional browser microphone flow remains consent-gated and no audio or transcript is uploaded to a telephone provider.
+- No database migration, new secret, environment variable or package dependency is introduced.
+- Existing full-suite failures are retained as known baseline issues; they have not been represented as passed.

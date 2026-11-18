@@ -1,0 +1,11 @@
+CALLORIA v6.65 BUILD CHECK
+
+Command attempted: npm run build
+Exit code: 127
+
+> calloria-contact-centre-simulator@0.3.0 build
+> vite build
+
+sh: 1: vite: not found
+
+No Vite production bundle was generated. No successful production build or Vercel deployment is claimed.

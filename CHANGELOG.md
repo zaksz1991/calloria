@@ -1,3 +1,24 @@
+# CALLORIA v6.65 — Adaptive Live Inbound Voice Customer Behaviour
+
+## Added
+
+- Added a single adaptive voice-customer engine shared by guided call choices and free-form typed/speech-to-text agent responses.
+- Added deterministic customer personas, live agent/customer transcript entries, sentiment and patience changes, emotion display and an eight-agent-turn limit.
+- Added customer interruption decisions that pause the call until the agent chooses a listening, ownership or supervisor response.
+- Added conditional service-recovery decisions for eligible complaints/disputes, including authority checks and flags for unsupported promises. Unresolved negotiations remain escalation-required until the agent checks authority.
+- Added detection and transcript redaction for simulated requests involving passwords, PINs, one-time codes and payment security details. Protective warnings are not misclassified; mixed replies that still solicit a credential remain flagged.
+- Connected active-call intervention risk to the Supervisor Operations page and saved voice outcomes, QA estimate, quality flags and sanitised transcript to the simulated CRM case at wrap-up.
+- Added responsive transcript/decision UI, focused behaviour and UI integration tests, and a JavaScript syntax check for the new engine. The legacy v3.6 Vite source transformer yields to the newer adaptive voice workflow.
+
+## Boundaries
+
+- All customers, dialogue, sentiment, patience, quality scoring and outcomes are fictional gameplay rules, not real customer data or validated psychological measures.
+- Browser speech-to-text is optional and consent-gated; no PBX, real telephone network, live dialler or external speech provider is connected. A local audio sample is not a telephone call.
+- The Supervisor page's voice behaviour counters describe the active player call, not a multi-agent enterprise-wide feed.
+- No Supabase migration, new secret, environment variable or package dependency is added.
+- Recruitment remains the entry gate; the primary gameplay remains agent operations, customer resolution, shift performance and career progression.
+---
+
 # CALLORIA v6.64 — Adaptive Digital Customer Behaviour
 
 ## Added

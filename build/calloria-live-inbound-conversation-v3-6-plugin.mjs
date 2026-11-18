@@ -37,6 +37,12 @@ function exactlyOnce(context, source, anchor, label) {
 }
 function transformMain(context, input) {
   if (input.includes(MARKER)) return null;
+  // The v6.65+ live voice engine supersedes this legacy v3.6 conversation
+  // transform. Do not overwrite its adaptive customer, interruption,
+  // negotiation, supervisor-risk or CRM integration with the older engine.
+  if (input.includes("from './voice-customer-behaviour-engine.js'")
+      && input.includes('function recordInboundVoiceTurn(')
+      && input.includes('function resolveInboundVoiceDecision(')) return null;
   let code = String(input).replace(/\r\n?/g, '\n');
   exactlyOnce(context, code, IMPORT_ANCHOR, 'customer-intelligence import');
   exactlyOnce(context, code, CALL_START_ANCHOR, 'inbound call creation');

@@ -20,6 +20,7 @@ import { createDigitalLiveQueueState, normalizeDigitalLiveQueueState, advanceDig
 import { agentWorkloadSnapshot, assignedDigitalWorkItems, canAcceptDigitalContact, canResumeDigitalFollowUp } from './agent-workload-engine.js';
 import { assessDigitalSla, digitalSlaDisplay, advanceDigitalSlaMonitor, digitalSlaMetrics } from './digital-sla-engine.js';
 import { ensureDigitalCustomerBehaviour, evaluateDigitalCustomerReaction, deliverAdaptiveDigitalCustomerResponse, digitalCustomerBehaviourSnapshot, digitalCustomerBehaviourMetrics } from './digital-customer-behaviour-engine.js';
+import { VOICE_CUSTOMER_BEHAVIOUR_POLICY, ensureVoiceCustomerBehaviour, evaluateVoiceCustomerTurn, evaluateVoiceAgentUtterance, resolveVoiceCustomerDecision, voiceCustomerBehaviourSnapshot, voiceCustomerOutcome, sanitizeVoiceCustomerText } from './voice-customer-behaviour-engine.js';
 import { ORGANIZATION_ROLES, DEFAULT_ORG_POLICY, ensureOrganizationWorkspace, createOrganization, createOrganizationMember, setOrganizationMemberStatus, updateOrganizationPolicy, getActiveOrganization, getOrganizationSnapshot } from './organization-engine.js';
 import { initializeCloudPlatform, getCloudPlatformState, getCloudSupabaseClient, canCloudRole, createCloudOrganization, createCloudInvitation, updateCloudPolicy, setCloudMemberStatus, selectCloudOrganization } from './cloud-platform.js';
 import { validateCloudPolicy } from './cloud-security.js';
@@ -705,21 +706,24 @@ function renderVoicePractice(call, customerPrompt) {
   const recording = voiceStatus === 'recording';
   const transcribing = voiceStatus === 'transcribing';
   const busy = recording || transcribing;
+  const decisionPending = !!call?.voiceBehaviour?.pendingDecision;
+  const turnLimitReached = (Number(call?.voiceBehaviour?.turns) || 0) >= VOICE_CUSTOMER_BEHAVIOUR_POLICY.maxAgentTurns;
   const supportedRecord = mediaRecordingAvailable();
   const supportedSpeech = speechRecognitionAvailable();
-  return `<section class="voice-practice-panel">
-    <div class="panel-head"><div><h3>Voice practice & customer audio</h3><p>Optional local microphone practice for this simulated interaction.</p></div><span class="pill ${busy?'amber':voiceStatus==='ready'?'green':''}">${voiceStatus.toUpperCase()}</span></div>
-    <button class="btn small outline" type="button" data-action="play-customer-prompt" data-text="${escapeHTML(customerPrompt)}">Play customer statement</button>
-    <label class="voice-consent"><input type="checkbox" id="voiceConsent" ${voiceConsent?'checked':''}> I consent to microphone use for this practice interaction. I understand browser speech recognition may be processed by the browser's speech service.</label>
+  return `<section class="voice-practice-panel voice-live-response">
+    <div class="panel-head"><div><h3>Live voice conversation</h3><p>Speak, transcribe or type what you would say. The simulated customer reacts to your words, ownership and next step.</p></div><span class="pill ${busy?'amber':voiceStatus==='ready'?'green':''}">${voiceStatus.toUpperCase()}</span></div>
+    <button class="btn small outline" type="button" data-action="play-customer-prompt" data-text="${escapeHTML(customerPrompt)}">Play latest customer statement</button>
+    <label class="voice-consent"><input type="checkbox" id="voiceConsent" ${voiceConsent?'checked':''}> I consent to microphone use. Browser speech recognition may be processed by the browser's speech service. CALLORIA does not upload the recording or transcript to a telephone provider.</label>
     <div class="button-row">
-      <button class="btn primary" type="button" data-action="start-voice-recording" ${!voiceConsent||!supportedRecord||busy?'disabled':''}>Record a local voice sample</button>
+      <button class="btn primary" type="button" data-action="start-voice-recording" ${decisionPending||turnLimitReached||!voiceConsent||!supportedRecord||busy||call?.held?'disabled':''}>Record local audio sample</button>
       <button class="btn outline" type="button" data-action="stop-voice-recording" ${!recording?'disabled':''}>Stop recording</button>
-      ${supportedSpeech?`<button class="btn secondary" type="button" data-action="start-voice-transcription" ${!voiceConsent||busy?'disabled':''}>Start live transcription</button><button class="btn outline" type="button" data-action="stop-voice-transcription" ${!transcribing?'disabled':''}>Stop transcription</button>`:''}
+      ${supportedSpeech?`<button class="btn secondary" type="button" data-action="start-voice-transcription" ${decisionPending||turnLimitReached||!voiceConsent||busy||call?.held?'disabled':''}>Start speech-to-text</button><button class="btn outline" type="button" data-action="stop-voice-transcription" ${!transcribing?'disabled':''}>Stop transcription</button>`:''}
     </div>
     ${voiceAudioUrl?`<audio class="voice-audio-player" controls preload="none" src="${voiceAudioUrl}">Your browser cannot play this recording.</audio>`:''}
-    <div class="form-field"><label for="voiceTranscriptText">TEMPORARY PRACTICE TRANSCRIPT</label><div class="voice-transcript" id="voiceTranscriptText">${escapeHTML(voiceTranscript||'No transcript captured yet.')}</div></div>
-    <form id="voiceFallbackForm" class="form-stack"><label class="form-field">Text fallback<input name="utterance" maxlength="1200" placeholder="Type what you would say to the customer…" autocomplete="off"></label><button class="btn outline" type="submit">Record text response</button></form>
-    <div class="voice-privacy-note">Recording stays in this page's memory and is not uploaded or written to the employment save. Clear it before leaving a shared device. Never speak or enter a PIN, password, one-time code or full payment-card number.</div>
+    <div class="form-field"><label for="voiceTranscriptText">TEMPORARY SPEECH TRANSCRIPT</label><div class="voice-transcript" id="voiceTranscriptText">${escapeHTML(voiceTranscript||'No speech captured yet.')}</div></div>
+    <form id="voiceFallbackForm" class="form-stack"><label class="form-field" for="voiceReplyText">YOUR RESPONSE TO THE CUSTOMER<textarea id="voiceReplyText" name="utterance" rows="3" maxlength="1200" ${decisionPending||turnLimitReached||call?.held?'disabled':''} placeholder="Acknowledge the concern, take ownership, explain the secure process and agree the next step…">${escapeHTML(voiceTranscript)}</textarea></label><button class="btn primary" type="submit" ${busy||decisionPending||turnLimitReached||call?.held?'disabled':''}>Send response to customer</button></form>
+    ${turnLimitReached?'<div class="customer-supervisor-warning"><strong>Conversation turn limit reached.</strong><small>Complete after-contact work or request supervisor support before another contact is accepted.</small></div>':''}
+    <div class="voice-privacy-note">Only the sanitised response is added to the simulated interaction record. Recording remains in page memory and is discarded when cleared or when the page closes. Never request a password, PIN, one-time code or full payment-card detail.</div>
     <button class="btn small outline" type="button" data-action="clear-voice-practice">Clear microphone sample and transcript</button>
   </section>`;
 }
@@ -794,7 +798,8 @@ function startVoiceTranscription() {
       if(finalText.trim()) {
         appendVoiceTranscript(session, finalText.trim());
         voiceTranscript=session.transcript;
-        renderView();
+        const replyField=$('#voiceReplyText');if(replyField)replyField.value=voiceTranscript;
+        const transcriptNode=$('#voiceTranscriptText');if(transcriptNode)transcriptNode.textContent=voiceTranscript;
       }
     };
     speechRecognition.onerror = event => {
@@ -884,8 +889,22 @@ function renderInbound() {
   if(!scenario){toast('Active contact scenario unavailable.','error');return;}
   const step=scenario.steps[call.stepIndex];
   const contact=findQueueContact(call.queueContactId);
+  if(!contact){toast('Active inbound customer record is missing.','error');return;}
+  ensureVoiceCustomerBehaviour(call,contact,scenario,queueSimulationNowMs());
+  const voiceBehaviour=voiceCustomerBehaviourSnapshot(call.voiceBehaviour);
+  const turnLimitReached=(Number(voiceBehaviour?.turns)||0)>=VOICE_CUSTOMER_BEHAVIOUR_POLICY.maxAgentTurns;
+  const transcript=voiceBehaviour?.transcript||[];
+  const latestCustomerMessage=[...transcript].reverse().find(item=>item.speaker==='customer')?.text||scenario.opening;
+  const pendingDecision=call.voiceBehaviour?.pendingDecision||null;
   const supervisorOpen=state.supervisorRequests.some(item=>item.contactId===call.queueContactId&&item.status==='open');
-  viewRoot.innerHTML = `<div class="call-layout"><section class="panel call-console"><div class="call-console-head"><div><strong>INBOUND VOICE CONTACT</strong><small>Connected · ${escapeHTML(scenario.category)} · Ref ${escapeHTML(scenario.reference)}</small></div><span class="pill ${call.held?'amber':'green'}">${call.held?'ON HOLD':'CONNECTED'}</span></div><div class="call-console-body"><div class="customer-strip"><div class="customer-avatar">${scenario.initials}</div><div class="customer-info"><strong>${escapeHTML(scenario.customer)}</strong><small>${escapeHTML(scenario.profile)}</small></div><div class="customer-tags"><span class="pill">${scenario.tag}</span><span class="pill amber">${scenario.amount}</span></div></div>${call.held?`<div class="call-feedback neutral"><strong>Customer is on hold.</strong> Resume the conversation before selecting another call action.</div>`:`<div class="subtle-label">CUSTOMER STATEMENT</div><p class="call-prompt">“${scenario.opening}”</p><p class="call-context">${call.stepIndex===0?'The customer has just connected. Begin with the correct service procedure.':'Continue the interaction based on the case information and previous action.'}</p><div class="panel-head" style="margin:16px 0 11px"><div><div class="question-kicker">STEP ${call.stepIndex+1} OF ${scenario.steps.length} · ${step.label}</div><h3 class="call-prompt" style="margin-top:8px">${step.prompt}</h3><p class="call-context" style="margin:5px 0 0">${step.context}</p></div></div><div class="call-options">${step.options.map((opt,j)=>`<button class="call-option" data-call-choice="${j}" ${call.feedback?'disabled':''}><span>${String.fromCharCode(65+j)}</span><span>${opt.text}</span></button>`).join('')}</div>${call.feedback?`<div class="call-feedback ${call.feedbackType}">${escapeHTML(call.feedback)}</div><div class="assessment-footer"><small>${call.feedbackType==='bad'?'A quality or compliance deduction may apply.':'Decision recorded. Continue the interaction.'}</small><button class="btn primary" data-action="${call.stepIndex===scenario.steps.length-1?'complete-call':'next-call-step'}">${call.stepIndex===scenario.steps.length-1?'Move to after-contact work':'Continue →'}</button></div>`:''}${renderVoicePractice(call,scenario.opening)}</div>`}</div></section><aside class="call-side-stack"><section class="panel"><div class="panel-head"><div><h3>Customer record</h3><p>Simulated CRM profile.</p></div><span class="pill">CRM</span></div><div class="data-list"><div class="data-row"><span>Customer</span><strong>${scenario.customer}</strong></div><div class="data-row"><span>Case reference</span><strong>${scenario.reference}</strong></div><div class="data-row"><span>Reported issue</span><strong>${scenario.issue}</strong></div><div class="data-row"><span>Location</span><strong>${scenario.location}</strong></div><div class="data-row"><span>Queue route</span><strong>${contact?escapeHTML(contact.routeGroup):'General'}</strong></div><div class="data-row"><span>Queue wait</span><strong>${formatWait(call.waitSeconds||0)}</strong></div></div></section><section class="panel"><div class="panel-head"><div><h3>Interaction controls</h3><p>Contact lifecycle management.</p></div></div><div class="ops-control-stack"><button class="btn outline" data-action="toggle-call-hold">${call.held?'Resume customer':'Place on hold'}</button><button class="btn outline" data-action="request-supervisor" ${supervisorOpen?'disabled':''}>${supervisorOpen?'Supervisor requested':'Request supervisor assistance'}</button><label class="subtle-label" for="transferTarget">TRANSFER DESTINATION</label><select id="transferTarget"><option>Specialist Support</option><option>Fraud & Security</option><option>Cards & Payments</option><option>Technical Support</option><option>Complaints Management</option></select><button class="btn secondary" data-action="transfer-call" ${call.held?'disabled':''}>Transfer to specialist</button><button class="btn outline" data-action="return-call-to-queue">Return contact to queue</button></div><p class="muted-note" style="margin-top:12px">Hold, transfer, assistance and queue return are recorded in the simulated interaction timeline.</p></section></aside></div>`;
+  const dialogueRows=transcript.slice(-8).map(message=>`<div class="voice-dialogue-line ${message.speaker==='agent'?'agent':'customer'} ${['interruption','security_objection','unsupported_commitment','negotiation_request'].includes(message.type)?'interruption':''}"><span>${message.speaker==='agent'?'YOU':message.type==='interruption'?'CUSTOMER INTERRUPTED':'CUSTOMER'}</span><p>${escapeHTML(message.text)}</p></div>`).join('');
+  const dialoguePanel=transcript.length>1?`<section class="voice-live-dialogue" aria-live="polite"><div class="panel-head"><div><h3>Live call transcript</h3><p>Latest customer and agent turns · PINs, passwords, one-time codes and payment-card data are redacted.</p></div><span class="pill">${voiceBehaviour.turns}/${VOICE_CUSTOMER_BEHAVIOUR_POLICY.maxAgentTurns} AGENT TURNS</span></div>${dialogueRows}<button class="btn small outline" type="button" data-action="play-customer-response" data-text="${escapeHTML(latestCustomerMessage)}">Play latest customer response</button></section>`:'';
+  const decisionPanel=pendingDecision?`<section class="panel voice-decision-panel" aria-live="assertive"><div class="panel-head"><div><div class="question-kicker">CUSTOMER RESPONSE REQUIRED</div><h3>${escapeHTML(pendingDecision.title)}</h3><p>${escapeHTML(pendingDecision.prompt)}</p></div><span class="pill amber">PAUSED FOR RESPONSE</span></div><div class="voice-decision-options">${pendingDecision.options.map(option=>`<button class="voice-decision-option" type="button" data-action="resolve-voice-decision" data-option-id="${escapeHTML(option.id)}"><strong>${escapeHTML(option.label)}</strong><small>${escapeHTML(option.description)}</small></button>`).join('')}</div><p class="muted-note">Resolve this customer interruption or service-recovery negotiation before continuing the call.</p></section>`:'';
+  const voiceMonitor=voiceBehaviour?`<section class="panel voice-customer-monitor"><div class="panel-head"><div><h3>Live customer behaviour</h3><p>Customer emotion and escalation risk react to agent handling.</p></div><span class="pill ${voiceBehaviour.needsSupervisor?'amber':'green'}">${voiceBehaviour.needsSupervisor?'SUPERVISOR RISK':'LIVE'}</span></div><div class="customer-behaviour-head"><div><span class="subtle-label">CUSTOMER PERSONA</span><strong>${escapeHTML(voiceBehaviour.personaLabel)}</strong><small>${escapeHTML(voiceBehaviour.tone)}</small></div><div class="customer-mood-badge ${escapeHTML(voiceBehaviour.emotion)}">${escapeHTML(voiceBehaviour.emotion.toUpperCase())}</div></div><div class="customer-behaviour-stats"><div><span>Sentiment</span><strong>${voiceBehaviour.sentiment}/100</strong><div class="bar-track"><div class="bar-fill" style="width:${voiceBehaviour.sentiment}%"></div></div></div><div><span>Patience</span><strong>${voiceBehaviour.patience}/100</strong><div class="bar-track"><div class="bar-fill" style="width:${voiceBehaviour.patience}%"></div></div></div></div><div class="data-row"><span>Customer interruptions</span><strong>${voiceBehaviour.interruptionCount}/2</strong></div><div class="data-row"><span>Service-recovery requests</span><strong>${voiceBehaviour.negotiationCount}</strong></div><div class="data-row"><span>Voice quality flags</span><strong>${voiceBehaviour.qualityFlags.length}</strong></div><div class="data-row"><span>Voice QA estimate</span><strong>${Math.max(0,Math.min(100,76-voiceBehaviour.qualityFlags.length*12+Math.round((voiceBehaviour.sentiment-50)/10)))}%</strong></div>${voiceBehaviour.needsSupervisor?`<div class="customer-supervisor-warning"><strong>Supervisor intervention recommended</strong><small>${escapeHTML(voiceBehaviour.supervisorReason)}</small></div>`:''}${voiceBehaviour.qualityFlags.length?`<div class="customer-supervisor-warning"><strong>Quality review flags</strong><small>${voiceBehaviour.qualityFlags.map(escapeHTML).join(' · ')}</small></div>`:''}</section>`:'';
+  const callOptions=`<div class="call-options">${step.options.map((opt,j)=>`<button class="call-option" data-call-choice="${j}" ${call.feedback||pendingDecision||turnLimitReached?'disabled':''}><span>${String.fromCharCode(65+j)}</span><span>${escapeHTML(opt.text)}</span></button>`).join('')}</div>`;
+  const wrapUpReady=call.stepIndex===scenario.steps.length-1||turnLimitReached;
+  const feedbackPanel=call.feedback?`<div class="call-feedback ${call.feedbackType}">${escapeHTML(call.feedback)}</div><div class="assessment-footer"><small>${pendingDecision?'Resolve the customer response before advancing.':turnLimitReached?'Conversation turn limit reached. Complete after-contact work or request supervisor support.':call.feedbackType==='bad'?'A quality or compliance deduction may apply.':'Decision recorded. Continue the interaction.'}</small><button class="btn primary" data-action="${wrapUpReady?'complete-call':'next-call-step'}" ${pendingDecision?'disabled':''}>${wrapUpReady?'Move to after-contact work':'Continue →'}</button></div>`:'';
+  viewRoot.innerHTML=`<div class="call-layout"><section class="panel call-console"><div class="call-console-head"><div><strong>INBOUND VOICE CONTACT</strong><small>Connected · ${escapeHTML(scenario.category)} · Ref ${escapeHTML(scenario.reference)}</small></div><span class="pill ${call.held?'amber':'green'}">${call.held?'ON HOLD':'CONNECTED'}</span></div><div class="call-console-body"><div class="customer-strip"><div class="customer-avatar">${escapeHTML(scenario.initials)}</div><div class="customer-info"><strong>${escapeHTML(scenario.customer)}</strong><small>${escapeHTML(scenario.profile)}</small></div><div class="customer-tags"><span class="pill">${escapeHTML(scenario.tag)}</span><span class="pill amber">${escapeHTML(scenario.amount)}</span></div></div>${call.held?`<div class="call-feedback neutral"><strong>Customer is on hold.</strong> Resume the conversation before selecting another call action.</div>`:`<div class="subtle-label">CUSTOMER'S LATEST STATEMENT</div><p class="call-prompt">“${escapeHTML(latestCustomerMessage)}”</p>${dialoguePanel}<p class="call-context">${call.stepIndex===0?'The customer has just connected. Begin with the correct service procedure.':'Continue the interaction based on the case information and previous action.'}</p><div class="panel-head" style="margin:16px 0 11px"><div><div class="question-kicker">STEP ${call.stepIndex+1} OF ${scenario.steps.length} · ${escapeHTML(step.label)}</div><h3 class="call-prompt" style="margin-top:8px">${escapeHTML(step.prompt)}</h3><p class="call-context" style="margin:5px 0 0">${escapeHTML(step.context)}</p></div></div>${decisionPanel}${callOptions}${feedbackPanel}${renderVoicePractice(call,latestCustomerMessage)}</div>`}</div></section><aside class="call-side-stack">${voiceMonitor}<section class="panel"><div class="panel-head"><div><h3>Customer record</h3><p>Simulated CRM profile.</p></div><span class="pill">CRM</span></div><div class="data-list"><div class="data-row"><span>Customer</span><strong>${escapeHTML(scenario.customer)}</strong></div><div class="data-row"><span>Case reference</span><strong>${escapeHTML(scenario.reference)}</strong></div><div class="data-row"><span>Reported issue</span><strong>${escapeHTML(scenario.issue)}</strong></div><div class="data-row"><span>Location</span><strong>${escapeHTML(scenario.location)}</strong></div><div class="data-row"><span>Queue route</span><strong>${escapeHTML(contact.routeGroup||'General')}</strong></div><div class="data-row"><span>Queue wait</span><strong>${formatWait(call.waitSeconds||0)}</strong></div></div></section><section class="panel"><div class="panel-head"><div><h3>Interaction controls</h3><p>Contact lifecycle management.</p></div></div><div class="ops-control-stack"><button class="btn outline" data-action="toggle-call-hold">${call.held?'Resume customer':'Place on hold'}</button><button class="btn outline" data-action="request-supervisor" ${supervisorOpen?'disabled':''}>${supervisorOpen?'Supervisor requested':'Request supervisor assistance'}</button><label class="subtle-label" for="transferTarget">TRANSFER DESTINATION</label><select id="transferTarget"><option>Specialist Support</option><option>Fraud & Security</option><option>Cards & Payments</option><option>Technical Support</option><option>Complaints Management</option></select><button class="btn secondary" data-action="transfer-call" ${call.held?'disabled':''}>Transfer to specialist</button><button class="btn outline" data-action="return-call-to-queue">Return contact to queue</button></div><p class="muted-note" style="margin-top:12px">Hold, transfer, assistance and queue return are recorded in the simulated interaction timeline.</p></section></aside></div>`;
 }
 
 function ensureDigitalQueue(count = 6) {
@@ -1068,6 +1087,16 @@ function renderSupervisor(){
     digitalNow:nowVoice
   });
   const live=currentLiveQueueSnapshot();
+  const activeVoiceContact=state.currentCall?.queueContactId?findQueueContact(state.currentCall.queueContactId):null;
+  const activeVoiceBehaviour=state.currentCall?.voiceBehaviour?voiceCustomerBehaviourSnapshot(state.currentCall.voiceBehaviour):null;
+  const activeVoiceFlags=activeVoiceBehaviour?.qualityFlags||[];
+  const voiceSecurityRisk=activeVoiceFlags.includes('prohibited_secret_request')||activeVoiceFlags.includes('critical_handling_breach');
+  const voiceBehaviourMetrics={
+    supervisorRecommended:activeVoiceBehaviour?.needsSupervisor?1:0,
+    interruptions:activeVoiceBehaviour?.interruptionCount||0,
+    securityBreaches:voiceSecurityRisk?1:0
+  };
+  const voiceRiskRows=activeVoiceBehaviour?.needsSupervisor&&activeVoiceContact?`<div class="case-item customer-risk-row voice-risk-row"><div class="case-symbol">!</div><div class="case-copy"><strong>${escapeHTML(activeVoiceContact.customer)} · ${escapeHTML(activeVoiceContact.issue)}</strong><small>Voice · ${escapeHTML(activeVoiceBehaviour.personaLabel)} · ${escapeHTML(activeVoiceBehaviour.emotion)} · sentiment ${activeVoiceBehaviour.sentiment}/100 · patience ${activeVoiceBehaviour.patience}/100 · ${escapeHTML(activeVoiceBehaviour.supervisorReason)}</small></div><span class="pill ${voiceSecurityRisk?'red':'amber'}">${voiceSecurityRisk?'SECURITY REVIEW':'INTERVENTION'}</span></div>`:'';
   const active=state.shiftActive&&shiftTimeAvailable();
   const modes=Object.entries(SUPERVISOR_INTAKE_MODES).map(([key,item])=>`<button type="button" class="supervisor-mode-button ${control.mode===key?'active':''}" data-action="supervisor-intake-mode" data-mode="${key}" ${active?'':'disabled'}><strong>${item.label}</strong><small>${key==='busy'?'Shorter arrival gaps':key==='recovery'?'Longer arrival gaps':'Baseline arrival gaps'}</small></button>`).join('');
   const voiceRows=board.voice.slice(0,8).map(item=>`<form class="supervisor-triage-row" data-supervisor-triage="voice" data-contact-id="${escapeHTML(item.id)}"><div class="supervisor-contact-copy"><strong>${escapeHTML(item.customer)}</strong><small>${escapeHTML(item.issue)} · ${formatWait(item.waitSeconds)} waiting</small></div><label><span>Priority</span><select name="priority">${SUPERVISOR_PRIORITIES.map(value=>`<option value="${value}" ${item.priority===value?'selected':''}>${value.toUpperCase()}</option>`).join('')}</select></label><label><span>Route</span><select name="routeGroup">${[...new Set([item.routeGroup,...SUPERVISOR_ROUTE_GROUPS])].map(value=>`<option value="${escapeHTML(value)}" ${item.routeGroup===value?'selected':''}>${escapeHTML(value)}</option>`).join('')}</select></label><label class="supervisor-reason"><span>Reason</span><input name="reason" maxlength="160" minlength="4" required placeholder="Triage reason"></label><button class="btn small secondary" type="submit">Save</button><span class="pill ${item.slaAtRisk?'red':item.priority==='critical'?'amber':'green'}">${item.slaAtRisk?'SLA RISK':item.priority.toUpperCase()}</span></form>`).join('');
@@ -1077,7 +1106,7 @@ function renderSupervisor(){
   const audit=[...(control.history||[]).map(item=>({...item,kind:'intake'})),...(state.supervisorQueueAudit||[])].sort((a,b)=>Date.parse(b.at||0)-Date.parse(a.at||0)).slice(0,12);
   const auditRows=audit.map(item=>`<div class="timeline-row"><time>${new Date(item.at).toLocaleTimeString()}</time><div><strong>${escapeHTML(item.message||`${item.action||'Queue triage'}: ${item.from||''} → ${item.to||''}`)}</strong><small>${escapeHTML(item.reference||item.reason||'Supervisor control')} · ${escapeHTML(item.actor||'Supervisor')}</small></div></div>`).join('');
   viewRoot.innerHTML=`
-    <div class="ops-summary-grid">${metricCard('VOICE WAITING',board.voiceWaiting,'Simulated inbound calls','↙')}${metricCard('DIGITAL WAITING',board.digitalWaiting,'Email, live chat and social','✉')}${metricCard('SLA AT RISK',board.slaAtRisk,'Open voice and digital contacts near or beyond target','⌁')}${metricCard('DIGITAL SLA BREACHES',board.digitalSlaBreached,'Open digital work beyond first-response target','!')}${metricCard('CUSTOMER ESCALATION RISK',board.customerEscalationRecommended,'Digital conversations needing intervention','⚑')}${metricCard('AVG DIGITAL SENTIMENT',board.averageCustomerSentiment===null?'—':`${board.averageCustomerSentiment}/100`,'Open synthetic customer relationships','◉')}${metricCard('ACTIVE DIGITAL WORK',board.activeDigital,'Concurrent agent response threads','↔')}</div>
+    <div class="ops-summary-grid">${metricCard('VOICE WAITING',board.voiceWaiting,'Simulated inbound calls','↙')}${metricCard('DIGITAL WAITING',board.digitalWaiting,'Email, live chat and social','✉')}${metricCard('SLA AT RISK',board.slaAtRisk,'Open voice and digital contacts near or beyond target','⌁')}${metricCard('DIGITAL SLA BREACHES',board.digitalSlaBreached,'Open digital work beyond first-response target','!')}${metricCard('CUSTOMER ESCALATION RISK',board.customerEscalationRecommended+voiceBehaviourMetrics.supervisorRecommended,'Digital and voice conversations needing intervention','⚑')}${metricCard('AVG DIGITAL SENTIMENT',board.averageCustomerSentiment===null?'—':`${board.averageCustomerSentiment}/100`,'Open synthetic digital relationships','◉')}${metricCard('VOICE CUSTOMER RISK',voiceBehaviourMetrics.supervisorRecommended,'Live voice conversations needing intervention','☎')}${metricCard('VOICE INTERRUPTIONS',voiceBehaviourMetrics.interruptions,'Customer interruptions during live calls','↯')}${metricCard('VOICE SECURITY BREACHES',voiceBehaviourMetrics.securityBreaches,'Prohibited requests flagged in simulation','!')}${metricCard('ACTIVE DIGITAL WORK',board.activeDigital,'Concurrent agent response threads','↔')}</div>
     <section class="panel supervisor-control-panel" style="margin-top:14px">
       <div class="panel-head"><div><h3>Queue intake controls</h3><p>Pause/resume affects automatic voice arrivals; demand profiles adjust future voice and digital arrivals. These controls do not affect real providers.</p></div><span class="pill ${!state.shiftActive?'amber':control.paused?'amber':'green'}">${!state.shiftActive?'OFF SHIFT':control.paused?'INTAKE PAUSED':'INTAKE OPEN'}</span></div>
       <div class="supervisor-control-grid"><div class="supervisor-control-status"><span class="subtle-label">CURRENT INTAKE MODE</span><strong>${SUPERVISOR_INTAKE_MODES[control.mode].label}</strong><small>${SUPERVISOR_INTAKE_MODES[control.mode].description}</small><button class="btn ${control.paused?'primary':'outline'}" data-action="supervisor-toggle-intake" ${active?'':'disabled'}>${control.paused?'Resume new arrivals':'Pause new arrivals'}</button></div><div class="supervisor-mode-wrap"><span class="subtle-label">DEMAND PROFILE</span><div class="supervisor-mode-list">${modes}</div></div></div><label class="supervisor-control-reason"><span>SUPERVISOR CHANGE REASON · REQUIRED</span><input id="supervisorControlReason" maxlength="160" minlength="4" placeholder="For example: protect service levels while team clears backlog" ${active?'':'disabled'}></label>
@@ -1088,7 +1117,7 @@ function renderSupervisor(){
       <section class="panel"><div class="panel-head"><div><h3>Voice queue triage</h3><p>Change priority or destination for waiting calls. Every change requires a reason and is audited.</p></div><span class="pill">${board.voiceWaiting} WAITING</span></div>${voiceRows||'<div class="empty-state"><p>No inbound voice contacts are waiting.</p></div>'}</section>
       <section class="panel"><div class="panel-head"><div><h3>Digital queue triage</h3><p>Review waiting email, live-chat and social contacts against first-response deadlines.</p></div><span class="pill">${board.digitalWaiting} WAITING</span></div>${digitalRows||'<div class="empty-state"><p>No digital contacts are waiting.</p></div>'}</section>
     </div>
-    <section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Customer emotion watch</h3><p>Open digital conversations where customer sentiment or repeated dissatisfaction recommends supervisor intervention.</p></div><span class="pill ${(board.customerEscalationRecommended||0)?'amber':'green'}">${board.customerEscalationRecommended||0} AT RISK</span></div>${customerRiskRows||'<div class="empty-state"><p>No open digital conversations currently require customer-emotion intervention.</p></div>'}</section>
+    <section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Customer emotion watch</h3><p>Open voice and digital conversations where sentiment, patience or repeated dissatisfaction recommends supervisor intervention.</p></div><span class="pill ${(board.customerEscalationRecommended+voiceBehaviourMetrics.supervisorRecommended)?'amber':'green'}">${board.customerEscalationRecommended+voiceBehaviourMetrics.supervisorRecommended} AT RISK</span></div>${voiceRiskRows}${customerRiskRows||(!voiceRiskRows?'<div class="empty-state"><p>No open voice or digital conversations currently require customer-emotion intervention.</p></div>':'')}</section>
     <section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Supervisor assistance desk</h3><p>Review requests raised by the agent during active customer interactions.</p></div><span class="pill ${open.length?'amber':'green'}">${open.length} OPEN</span></div>${open.length?open.map(item=>`<div class="case-item"><div class="case-symbol">!</div><div class="case-copy"><strong>${escapeHTML(item.customer)} · ${escapeHTML(item.reason)}</strong><small>${escapeHTML(item.reference)} · ${new Date(item.createdAt).toLocaleString()}</small></div><button class="btn small primary" data-action="resolve-supervisor" data-request-id="${escapeHTML(item.id)}">Mark reviewed</button></div>`).join(''):'<div class="empty-state"><h3>No open requests</h3><p>Agent assistance requests will appear here while a contact is active.</p></div>'}</section>
     <div class="grid two" style="margin-top:14px"><section class="panel"><div class="panel-head"><div><h3>Escalated and review cases</h3><p>Cases requiring specialist or QA attention.</p></div><span class="pill">${board.escalatedCases}</span></div>${board.escalatedCaseItems.length?board.escalatedCaseItems.slice().reverse().map(caseRow).join(''):'<p class="muted-note">No escalated cases recorded.</p>'}</section><section class="panel"><div class="panel-head"><div><h3>Supervisor audit trail</h3><p>Recent intake changes and queue triage decisions.</p></div><span class="pill">${audit.length} EVENTS</span></div>${auditRows||'<p class="muted-note">No supervisor control changes recorded.</p>'}</section></div>
     <section class="panel" style="margin-top:14px"><div class="panel-head"><div><h3>Operations activity</h3><p>Recent call, digital, queue and shift events.</p></div><span class="pill">${board.activeWork} ACTIVE WORK</span></div>${state.interactionTimeline.slice(-10).reverse().map(item=>`<div class="timeline-row"><time>${new Date(item.at).toLocaleTimeString()}</time><div><strong>${escapeHTML(item.message)}</strong><small>${escapeHTML(item.reference)} · ${escapeHTML(item.status)}</small></div></div>`).join('')||'<p class="muted-note">No operations events have been recorded.</p>'}</section>`;
@@ -1631,7 +1660,8 @@ function startInboundCall(){
   state.totalWaitSeconds += waitSeconds;
   state.acceptedContacts++;
   if(waitSeconds<=60)state.contactsWithinSla++;
-  state.currentCall={scenarioId:scenario.id,queueContactId:contact.id,stepIndex:0,score:0,feedback:null,feedbackType:'neutral',breach:false,held:false,startedAt:acceptedAt,waitSeconds};
+  state.currentCall={scenarioId:scenario.id,queueContactId:contact.id,stepIndex:0,score:0,behaviourScore:0,feedback:null,feedbackType:'neutral',breach:false,held:false,startedAt:acceptedAt,waitSeconds};
+  ensureVoiceCustomerBehaviour(state.currentCall,contact,scenario,queueAcceptedAt);
   setAgentState('busy','Inbound customer contact accepted');
   voiceConsent=false;voiceStatus='inactive';voiceTranscript='';
   syncQueueCount();
@@ -1639,10 +1669,116 @@ function startInboundCall(){
   saveState();renderView();
 }
 
+function ensureVoiceSupervisorRequest(call,contact,reason='Customer interaction requires supervisor review'){
+  if(!call||!contact)return null;
+  const existing=state.supervisorRequests.find(item=>item.contactId===contact.id&&item.status==='open');
+  if(existing)return existing;
+  const request={id:makeCallReference('SUP'),contactId:contact.id,reference:contact.reference||contact.id,customer:contact.customer,reason,status:'open',createdAt:new Date().toISOString(),channel:'Inbound voice'};
+  state.supervisorRequests.push(request);
+  pushOperationEvent('supervisor',contact.id,'Adaptive voice behaviour raised a supervisor intervention request.','open',{reason,channel:'Inbound voice'});
+  return request;
+}
+
+function recordInboundVoiceResult(call,contact,result,source='guided_action'){
+  const behaviour=result?.behaviour;
+  if(!behaviour)throw new Error('The customer response could not be evaluated.');
+  const snapshot=voiceCustomerBehaviourSnapshot(behaviour);
+  const critical=result.criticalBreach===true||result.breach===true||snapshot.qualityFlags.includes('prohibited_secret_request')||snapshot.qualityFlags.includes('critical_handling_breach');
+  if(critical&&!call.voiceCriticalBreachRecorded){
+    call.voiceCriticalBreachRecorded=true;
+    call.breach=true;
+    state.incidents++;
+  }
+  call.behaviourScore=Math.max(-8,Math.min(8,(Number(call.behaviourScore)||0)+(Number(result.scoreDelta)||0)));
+  call.voiceReplyRequired=!!result.pendingDecision;
+  addCallTimeline(call,source==='free_response'?'Agent spoke or typed a live response to the customer.':'Agent selected a guided voice-handling response.',{
+    voiceTurn:behaviour.turns,
+    customerEmotion:snapshot.emotion,
+    customerSentiment:snapshot.sentiment,
+    customerPatience:snapshot.patience,
+    customerInterrupted:result.interrupted===true,
+    pendingCustomerDecision:behaviour.pendingDecision?.type||null,
+    securityBreach:critical,
+    negotiationCount:snapshot.negotiationCount,
+    needsSupervisor:snapshot.needsSupervisor,
+    qualityFlags:snapshot.qualityFlags,
+    voiceSource:source
+  });
+  if(snapshot.needsSupervisor){
+    ensureVoiceSupervisorRequest(call,contact,snapshot.supervisorReason||'Customer emotion or voice quality requires supervisor review.');
+  }
+  pushOperationEvent('voice-customer',contact.id,`Customer reacted: ${snapshot.emotion} · sentiment ${snapshot.sentiment}/100.`,critical?'security_review':snapshot.needsSupervisor?'customer_escalation_risk':result.interrupted?'customer_interruption':'customer_reaction',{
+    customer:contact.customer,persona:snapshot.personaLabel,sentiment:snapshot.sentiment,patience:snapshot.patience,
+    interruptions:snapshot.interruptionCount,negotiations:snapshot.negotiationCount,qualityFlags:snapshot.qualityFlags
+  });
+  return result;
+}
+
+function recordInboundVoiceTurn(call,contact,utterance,source='free_response',guidedOption=null){
+  if(!call||!contact)throw new Error('The active inbound voice contact is unavailable.');
+  const scenario=inboundScenarios.find(item=>item.id===call.scenarioId);
+  if(!scenario)throw new Error('The active inbound scenario is unavailable.');
+  const now=queueSimulationNowMs();
+  ensureVoiceCustomerBehaviour(call,contact,scenario,now);
+  const result=source==='free_response'
+    ? evaluateVoiceAgentUtterance(call.voiceBehaviour,utterance,{scenario,stepIndex:call.stepIndex,now})
+    : evaluateVoiceCustomerTurn(call.voiceBehaviour,{
+        text:guidedOption?.text||String(utterance||''),feedback:guidedOption?.feedback||'',score:Number(guidedOption?.score)||0,breach:!!guidedOption?.breach
+      },{scenario,stepIndex:call.stepIndex,now});
+  return recordInboundVoiceResult(call,contact,result,source);
+}
+
+function submitInboundVoiceResponse(value){
+  const call=state.currentCall;
+  const contact=call?.queueContactId?findQueueContact(call.queueContactId):null;
+  if(!call||!contact){toast('There is no connected inbound customer to respond to.','warning');return false;}
+  if(call.held){toast('Resume the customer call before sending a response.','warning');return false;}
+  if(call.voiceBehaviour?.pendingDecision){toast('Resolve the customer interruption or service-recovery decision before speaking again.','warning');return false;}
+  if(voiceStatus==='recording'||voiceStatus==='transcribing'){toast('Stop microphone capture or transcription before sending the response.','warning');return false;}
+  try{
+    const safe=sanitizeVoiceCustomerText(String(value||''));
+    const result=recordInboundVoiceTurn(call,contact,safe,'free_response');
+    call.feedback=result.customerMessage||'Customer response recorded. Continue the call.';
+    call.feedbackType=result.criticalBreach||result.unsupportedPromise||result.qualityFlag?'bad':Number(result.scoreDelta)>0?'good':'neutral';
+    voiceTranscript='';
+    saveState();renderView();
+    const message=result.criticalBreach?'Security breach recorded. Stop the prohibited request and involve a supervisor.':result.pendingDecision?.type==='interruption'?'The customer interrupted. Choose how to respond before continuing.':result.pendingDecision?.type==='negotiation'?'The customer requested a concrete remedy. Choose an authorised service-recovery response.':'Customer response recorded in the live call.';
+    toast(message,result.needsSupervisor||result.criticalBreach?'warning':'success');
+    return true;
+  }catch(error){toast(error.message||'The voice response could not be recorded.','warning');return false;}
+}
+
+function resolveInboundVoiceDecision(optionId){
+  const call=state.currentCall;
+  const contact=call?.queueContactId?findQueueContact(call.queueContactId):null;
+  if(!call||!contact||!call.voiceBehaviour?.pendingDecision){toast('There is no customer interruption or negotiation awaiting a response.','warning');return;}
+  try{
+    const result=resolveVoiceCustomerDecision(call.voiceBehaviour,optionId,{now:queueSimulationNowMs()});
+    call.behaviourScore=Math.max(-8,Math.min(8,(Number(call.behaviourScore)||0)+(Number(result.scoreDelta)||0)));
+    if(result.qualityFlag){call.behaviourScore=Math.max(-8,call.behaviourScore-1);}
+    const snapshot=voiceCustomerBehaviourSnapshot(call.voiceBehaviour);
+    call.voiceReplyRequired=!!call.voiceBehaviour.pendingDecision;
+    if(snapshot.needsSupervisor)ensureVoiceSupervisorRequest(call,contact,snapshot.supervisorReason);
+    addCallTimeline(call,`Agent resolved customer ${result.event.type.replace('_resolved','').replaceAll('_',' ')}: ${result.option.label}.`,{
+      voiceDecision:result.option.id,customerEmotion:snapshot.emotion,customerSentiment:snapshot.sentiment,
+      customerPatience:snapshot.patience,pendingCustomerDecision:call.voiceBehaviour.pendingDecision?.type||null,
+      needsSupervisor:snapshot.needsSupervisor,qualityFlag:result.qualityFlag||null
+    });
+    pushOperationEvent('voice-customer',contact.id,`Customer response decision recorded: ${result.option.label}.`,snapshot.needsSupervisor?'customer_escalation_risk':'customer_decision_resolved',{
+      decision:result.option.id,sentiment:snapshot.sentiment,patience:snapshot.patience,needsSupervisor:snapshot.needsSupervisor
+    });
+    saveState();renderView();
+    toast(result.pendingDecision?'Customer has moved to a further service-recovery decision.':'Customer response recorded. Continue the call.',snapshot.needsSupervisor?'warning':'success');
+  }catch(error){toast(error.message||'The customer decision could not be resolved.','warning');}
+}
+
 function applyCallChoice(index){
-  const call=state.currentCall;const scenario=inboundScenarios.find(s=>s.id===call.scenarioId);const option=scenario.steps[call.stepIndex].options[index];if(!option)return;
+  const call=state.currentCall;const scenario=inboundScenarios.find(s=>s.id===call?.scenarioId);const option=scenario?.steps?.[call.stepIndex]?.options?.[index];if(!option)return;
+  if(call.voiceBehaviour?.pendingDecision){toast('Resolve the customer response before selecting another call action.','warning');return;}
+  if((Number(call.voiceBehaviour?.turns)||0)>=VOICE_CUSTOMER_BEHAVIOUR_POLICY.maxAgentTurns){toast('The voice conversation reached its turn limit. Complete wrap-up or request supervisor support.','warning');return;}
+  const contact=findQueueContact(call.queueContactId);
   call.score+=option.score;call.feedback=option.feedback;call.feedbackType=option.breach||option.score<0?'bad':option.score>0?'good':'neutral';call.breach=call.breach||!!option.breach;
-  if(option.breach)state.incidents++;
+  if(contact){try{recordInboundVoiceTurn(call,contact,option.text,'guided_choice',option);}catch(error){toast(error.message,'warning');}}
   addCallTimeline(call,`Agent selected: ${option.text}`,{scoreDelta:option.score,breach:!!option.breach});
   saveState();renderView();
 }
@@ -1650,15 +1786,21 @@ function beginInboundWrapUp(transferred = false){
   const call=state.currentCall;
   if(!call)return;
   if(call.held){toast('Resume the call before moving it to wrap-up.','warning');return;}
+  if(call.voiceBehaviour?.pendingDecision){toast('Resolve the customer interruption or outstanding service-recovery question before closing the conversation.','warning');return;}
   const scenario=inboundScenarios.find(item=>item.id===call.scenarioId);
   const contact=findQueueContact(call.queueContactId);
   if(!scenario||!contact){toast('The active contact record is missing.','error');return;}
   if(contact.status==='connected')transitionContact(contact,CONTACT_STATUS.WRAP_UP,'Customer conversation completed; after-contact work started',queueSimulationNowMs());
   else if(contact.status==='transferred')transitionContact(contact,CONTACT_STATUS.WRAP_UP,'Transferred interaction entered after-contact work',queueSimulationNowMs());
-  const qa=Math.max(0,Math.min(100,Math.round(70+call.score*5-(call.breach?35:0))));
+  const finalVoiceBehaviour=voiceCustomerBehaviourSnapshot(call.voiceBehaviour);
+  const finalVoiceOutcome=voiceCustomerOutcome(call.voiceBehaviour);
+  const voiceQualityScore=finalVoiceBehaviour?Math.max(0,Math.min(100,Math.round(78+(finalVoiceBehaviour.sentiment-50)*0.30+(finalVoiceBehaviour.patience-50)*0.12-finalVoiceBehaviour.qualityFlags.length*13-finalVoiceBehaviour.interruptionCount*3))):null;
+  if(finalVoiceBehaviour)finalVoiceBehaviour.qualityScore=voiceQualityScore;
+  const voiceRequiresEscalation=transferred||call.breach||finalVoiceOutcome.defaultDisposition==='escalated';
+  const qa=Math.max(0,Math.min(100,Math.round(70+call.score*5+(Number(call.behaviourScore)||0)*2+(Number(voiceQualityScore??76)-76)*0.35-(call.breach?35:0))));
   stopVoiceTools();
   setAgentState('wrap-up','Inbound call entered after-contact work');
-  state.wrapUp={type:'inbound',contactId:contact.id,scenarioId:scenario.id,reference:scenario.reference,customer:scenario.customer,title:scenario.issue,channel:'Inbound',qa,score:call.score,breach:call.breach,transferred:!!transferred,transferTarget:call.transferredTo||'',startedAt:Date.now(),defaultDisposition:transferred||call.breach?'escalated':'resolved'};
+  state.wrapUp={type:'inbound',contactId:contact.id,scenarioId:scenario.id,reference:scenario.reference,customer:scenario.customer,title:scenario.issue,channel:'Inbound',qa,score:call.score,behaviourScore:Number(call.behaviourScore)||0,voiceBehaviour:finalVoiceBehaviour,voiceOutcome:finalVoiceOutcome,voiceRequiresEscalation,breach:call.breach,transferred:!!transferred,transferTarget:call.transferredTo||'',startedAt:Date.now(),defaultDisposition:voiceRequiresEscalation?'escalated':'resolved'};
   pushOperationEvent('wrap-up',contact.id,'After-contact work started.','wrap_up',{qa,breach:call.breach});
   saveState();renderView();
 }
@@ -1679,12 +1821,12 @@ function renderWrapUp(){
   if(!wrap)return;
   const inbound=wrap.type==='inbound';
   const allowed = inbound
-    ? ((wrap.breach || wrap.transferred) ? [['escalated','Escalate to specialist / quality review']] : [['resolved','Resolved'],['escalated','Escalated to specialist'],['callback','Callback required']])
+    ? ((wrap.breach || wrap.transferred || wrap.voiceRequiresEscalation) ? [['escalated','Escalate to specialist / quality review']] : [['resolved','Resolved'],['escalated','Escalated to specialist'],['callback','Callback required']])
     : (wrap.breach ? [['review','Compliance / quality review']] : [['completed','Completed'],['callback','Customer requested callback'],['declined','Customer declined'],...(wrap.suppressionRequested?[['opt_out','Do not contact — suppression required']]:[])]);
   const defaultDisposition=allowed.some(([value])=>value===wrap.defaultDisposition)?wrap.defaultDisposition:allowed[0][0];
   const contact=findQueueContact(wrap.contactId);
   const transferLine=wrap.transferTarget?`<div class="data-row"><span>Transfer destination</span><strong>${escapeHTML(wrap.transferTarget)}</strong></div>`:'';
-  viewRoot.innerHTML=`<div class="wrapup-layout"><section class="panel assessment-card"><div class="panel-head"><div><div class="question-kicker">${inbound?'INBOUND':'OUTBOUND'} · AFTER-CONTACT WORK</div><h3 style="margin-top:7px">Complete the interaction record</h3></div><span class="pill amber">WRAP-UP</span></div><div class="customer-strip"><div class="customer-avatar">${escapeHTML(initials(wrap.customer))}</div><div class="customer-info"><strong>${escapeHTML(wrap.customer)}</strong><small>${escapeHTML(wrap.title)} · ${escapeHTML(wrap.reference)}</small></div><span class="pill">QA ${wrap.qa}%</span></div><div class="form-field" style="margin-top:18px"><label for="wrapDisposition">FINAL DISPOSITION</label><select id="wrapDisposition">${allowed.map(([value,label])=>`<option value="${value}" ${value===defaultDisposition?'selected':''}>${label}</option>`).join('')}</select></div><div class="form-field" id="callbackDueWrap" style="display:none"><label for="callbackDueAt">CALLBACK DATE & TIME</label><input id="callbackDueAt" type="datetime-local" /></div><div class="form-field"><label for="wrapNotes">FACTUAL CASE NOTES</label><textarea id="wrapNotes" rows="5" minlength="12" maxlength="1200" placeholder="Record the customer's issue, checks performed, action taken and agreed next step. A minimum of 12 characters is required.">${escapeHTML(wrap.transferred?`Transferred to ${wrap.transferTarget}. `:'')}</textarea><small class="muted-note">Do not enter PINs, passwords, one-time codes or unnecessary sensitive information.</small></div><div class="article-box"><h4>After-contact checklist</h4><p>Confirm the disposition, document the actual action, set a callback only when requested, and route unresolved or security-sensitive cases correctly.</p></div><div class="assessment-footer"><small>${wrap.breach?'A critical breach requires escalation or review.':'Saving this record updates the queue, case history and performance metrics.'}</small><button class="btn primary" data-action="save-wrap-up">Save record & finish →</button></div></section><aside class="panel"><div class="panel-head"><div><h3>Interaction summary</h3><p>Operational event data.</p></div><span class="pill green">RECORDED ACTIVITY</span></div><div class="data-list"><div class="data-row"><span>Customer</span><strong>${escapeHTML(wrap.customer)}</strong></div><div class="data-row"><span>Channel</span><strong>${wrap.channel}</strong></div><div class="data-row"><span>Reference</span><strong>${escapeHTML(wrap.reference)}</strong></div><div class="data-row"><span>Quality estimate</span><strong>${wrap.qa}%</strong></div><div class="data-row"><span>Contact priority</span><strong>${contact?escapeHTML(contact.priority.toUpperCase()):'STANDARD'}</strong></div>${transferLine}</div><p class="muted-note" style="margin-top:14px">After-contact work is part of handling time and must be completed before the next contact is accepted.</p></aside></div>`;
+  viewRoot.innerHTML=`<div class="wrapup-layout"><section class="panel assessment-card"><div class="panel-head"><div><div class="question-kicker">${inbound?'INBOUND':'OUTBOUND'} · AFTER-CONTACT WORK</div><h3 style="margin-top:7px">Complete the interaction record</h3></div><span class="pill amber">WRAP-UP</span></div><div class="customer-strip"><div class="customer-avatar">${escapeHTML(initials(wrap.customer))}</div><div class="customer-info"><strong>${escapeHTML(wrap.customer)}</strong><small>${escapeHTML(wrap.title)} · ${escapeHTML(wrap.reference)}</small></div><span class="pill">QA ${wrap.qa}%</span></div><div class="form-field" style="margin-top:18px"><label for="wrapDisposition">FINAL DISPOSITION</label><select id="wrapDisposition">${allowed.map(([value,label])=>`<option value="${value}" ${value===defaultDisposition?'selected':''}>${label}</option>`).join('')}</select></div><div class="form-field" id="callbackDueWrap" style="display:none"><label for="callbackDueAt">CALLBACK DATE & TIME</label><input id="callbackDueAt" type="datetime-local" /></div><div class="form-field"><label for="wrapNotes">FACTUAL CASE NOTES</label><textarea id="wrapNotes" rows="5" minlength="12" maxlength="1200" placeholder="Record the customer's issue, checks performed, action taken and agreed next step. A minimum of 12 characters is required.">${escapeHTML(wrap.transferred?`Transferred to ${wrap.transferTarget}. `:'')}</textarea><small class="muted-note">Do not enter PINs, passwords, one-time codes or unnecessary sensitive information.</small></div><div class="article-box"><h4>After-contact checklist</h4><p>Confirm the disposition, document the actual action, set a callback only when requested, and route unresolved or security-sensitive cases correctly.</p></div><div class="assessment-footer"><small>${wrap.breach?'A critical breach requires escalation or review.':'Saving this record updates the queue, case history and performance metrics.'}</small><button class="btn primary" data-action="save-wrap-up">Save record & finish →</button></div></section><aside class="panel"><div class="panel-head"><div><h3>Interaction summary</h3><p>Operational event data.</p></div><span class="pill green">RECORDED ACTIVITY</span></div><div class="data-list"><div class="data-row"><span>Customer</span><strong>${escapeHTML(wrap.customer)}</strong></div><div class="data-row"><span>Channel</span><strong>${wrap.channel}</strong></div><div class="data-row"><span>Reference</span><strong>${escapeHTML(wrap.reference)}</strong></div><div class="data-row"><span>Quality estimate</span><strong>${wrap.qa}%</strong></div>${wrap.voiceBehaviour?`<div class="data-row"><span>Customer sentiment</span><strong>${wrap.voiceBehaviour.sentiment}/100 · ${escapeHTML(wrap.voiceBehaviour.emotion)}</strong></div><div class="data-row"><span>Interruptions</span><strong>${wrap.voiceBehaviour.interruptionCount}</strong></div><div class="data-row"><span>Voice QA</span><strong>${wrap.voiceBehaviour.qualityScore}%</strong></div><div class="data-row"><span>Negotiation status</span><strong>${escapeHTML((wrap.voiceBehaviour.negotiationResolved?'resolved':wrap.voiceBehaviour.negotiationCount?'review required':'not started').replaceAll('_',' '))}</strong></div><div class="data-row"><span>Call outcome</span><strong>${escapeHTML(wrap.voiceOutcome?.label||'Not assessed')}</strong></div>`:''}<div class="data-row"><span>Contact priority</span><strong>${contact?escapeHTML(contact.priority.toUpperCase()):'STANDARD'}</strong></div>${transferLine}</div><p class="muted-note" style="margin-top:14px">After-contact work is part of handling time and must be completed before the next contact is accepted.</p></aside></div>`;
   const disposition=$('#wrapDisposition');
   const callbackWrap=$('#callbackDueWrap');
   const updateCallback=()=>{if(callbackWrap)callbackWrap.style.display=disposition?.value==='callback'?'block':'none';};
@@ -1698,7 +1840,7 @@ function saveWrapUp(){
   if(notes.length<12){toast('Add factual case notes of at least 12 characters.','error');return;}
   const inbound=wrap.type==='inbound';
   const allowedDispositions=inbound
-    ? ((wrap.breach||wrap.transferred)?['escalated']:['resolved','escalated','callback'])
+    ? ((wrap.breach||wrap.transferred||wrap.voiceRequiresEscalation)?['escalated']:['resolved','escalated','callback'])
     : (wrap.breach?['review']:['completed','callback','declined',...(wrap.suppressionRequested?['opt_out']:[])]);
   if(!allowedDispositions.includes(disposition)){toast('Choose a permitted final disposition for this interaction.','error');return;}
   const createdAt=new Date().toISOString();
@@ -1735,11 +1877,14 @@ function saveWrapUp(){
     const resolved=disposition==='resolved'&&!wrap.breach;
     const status=disposition==='resolved'?'Resolved':disposition==='callback'?'Callback scheduled':disposition==='escalated'?'Escalated / review required':'Transferred / review required';
     const elapsedMinutes=Math.max(0.1,Math.round((((wrap.startedAt||Date.now())-(state.currentCall?.startedAt||wrap.startedAt||Date.now()))/60000)*10)/10);
-    state.callsHandled++;state.totalQA+=wrap.qa;state.qaCount++;state.totalCSAT+=resolved?4.6:wrap.breach?2.1:3.4;state.csatCount++;state.totalHandleMinutes+=elapsedMinutes;
+    const voiceSentiment=Number(wrap.voiceBehaviour?.sentiment);
+    const simulatedCsat=Number.isFinite(Number(wrap.voiceOutcome?.customerSatisfaction))?Number(wrap.voiceOutcome.customerSatisfaction):(Number.isFinite(voiceSentiment)?Math.max(1,Math.min(5,Math.round(voiceSentiment/20*10)/10)):(resolved?4.6:wrap.breach?2.1:3.4));
+    state.callsHandled++;state.totalQA+=wrap.qa;state.qaCount++;state.totalCSAT+=simulatedCsat;state.csatCount++;state.totalHandleMinutes+=elapsedMinutes;
     if(resolved)state.resolutions++;
-    const record={reference:wrap.reference,contactId:wrap.contactId,customer:wrap.customer,title:wrap.title,channel:'Inbound',status,disposition,notes,qa:wrap.qa,acwSeconds,createdAt,owner:state.applicantName||'Agent',timeline:contact.timeline.slice()};
+    const voiceFlags=wrap.voiceBehaviour?.qualityFlags||[];
+    const record={reference:wrap.reference,contactId:wrap.contactId,customer:wrap.customer,title:wrap.title,channel:'Inbound',status,disposition,notes,qa:wrap.qa,csat:simulatedCsat,customerSentiment:Number.isFinite(voiceSentiment)?voiceSentiment:null,customerEmotion:wrap.voiceBehaviour?.emotion||null,customerMood:wrap.voiceBehaviour?.emotion||null,customerPersona:wrap.voiceBehaviour?.personaLabel||null,customerInterruptions:wrap.voiceBehaviour?.interruptionCount||0,customerEscalationRisk:wrap.voiceBehaviour?.needsSupervisor===true,voiceNegotiationStatus:wrap.voiceBehaviour?.negotiationResolved?'resolved':wrap.voiceBehaviour?.negotiationCount?'review_required':'not_started',voiceQualityScore:wrap.voiceBehaviour?.qualityScore??null,voiceSecurityBreach:voiceFlags.includes('prohibited_secret_request')||voiceFlags.includes('critical_handling_breach'),voiceQualityFlags:voiceFlags,voiceSupervisorReason:wrap.voiceBehaviour?.supervisorReason||null,voiceOutcome:wrap.voiceOutcome?.outcome||'not_recorded',voiceTranscript:wrap.voiceBehaviour?.transcript||[],acwSeconds,createdAt,owner:state.applicantName||'Agent',timeline:contact.timeline.slice()};
     state.cases.push(record);state.experience+=resolved?14:7;state.bonus+=resolved?350:0;state.shiftMinutes+=Math.max(1,Math.round(elapsedMinutes+acwSeconds/60));
-    if(disposition==='escalated'||wrap.breach){state.supervisorRequests.push({id:makeCallReference('SUP'),contactId:wrap.contactId,reference:wrap.reference,customer:wrap.customer,reason:wrap.breach?'Critical compliance / security review':'Specialist escalation',status:'open',createdAt});}
+    if((disposition==='escalated'||wrap.breach)&&!state.supervisorRequests.some(item=>item.contactId===wrap.contactId&&item.status==='open')){state.supervisorRequests.push({id:makeCallReference('SUP'),contactId:wrap.contactId,reference:wrap.reference,customer:wrap.customer,reason:wrap.breach?'Critical compliance / security review':'Specialist escalation',status:'open',createdAt,channel:'Inbound voice'});}
     pushOperationEvent('case',wrap.reference,`Inbound case saved · ${status}`,'saved',{disposition,qa:wrap.qa,acwSeconds});
     state.currentCall=null;
   }else{
@@ -2044,7 +2189,9 @@ function handleAction(action,event={}){
     case 'stop-voice-recording':stopVoiceRecording();break;
     case 'start-voice-transcription':startVoiceTranscription();break;
     case 'stop-voice-transcription':stopVoiceTranscription();break;
+    case 'resolve-voice-decision':resolveInboundVoiceDecision(event.optionId);break;
     case 'play-customer-prompt':speakCustomerPrompt(event.text||'');break;
+    case 'play-customer-response':speakCustomerPrompt(event.text||'');break;
     case 'clear-voice-practice':clearVoicePractice();break;
     case 'refresh-queue':{if(!shiftTimeAvailable()){toast('The demand queue is closed for this shift.','warning');break;}const now=queueSimulationNowMs();const result=addManualDemandSurge({queue:state.inboundQueueItems,scenarios:inboundScenarios,count:6,day:state.day,elapsedMinute:state.shiftElapsedMinutes,now,sequence:state.queueSequence,queueState:state.liveQueueSimulation});state.liveQueueSimulation=result.queueState;state.queueSequence=result.nextSequence;syncQueueCount();pushOperationEvent('queue','INBOUND',`Demand surge requested 6 contacts; ${result.admitted} admitted and ${result.overflowed} rejected at queue capacity.`,'queued',{source:'manual_demand_surge',admitted:result.admitted,overflowed:result.overflowed});saveState();renderView();toast(`${result.admitted} contacts added; ${result.overflowed} demand overflow.`,result.overflowed?'warning':'success');break;}
     case 'toggle-call-hold':toggleCallHold();break;
@@ -2068,7 +2215,7 @@ function handleAction(action,event={}){
     case 'open-crm':state.currentView='crm';renderView();break;
     case 'open-knowledge':state.currentView='knowledge';state.viewedArticle=null;renderView();break;
     case 'answer-call':startInboundCall();break;
-    case 'next-call-step':if(state.currentCall?.held)return;state.currentCall.stepIndex++;state.currentCall.feedback=null;addCallTimeline(state.currentCall,'Agent progressed to the next call-handling step.');saveState();renderView();break;
+    case 'next-call-step':if(state.currentCall?.held)return;if(state.currentCall?.voiceBehaviour?.pendingDecision){toast('Resolve the customer interruption or service-recovery decision before continuing.','warning');return;}if((Number(state.currentCall?.voiceBehaviour?.turns)||0)>=VOICE_CUSTOMER_BEHAVIOUR_POLICY.maxAgentTurns){toast('The voice conversation reached its turn limit. Complete wrap-up or request supervisor support.','warning');return;}state.currentCall.stepIndex=Math.min(state.currentCall.stepIndex+1,(inboundScenarios.find(item=>item.id===state.currentCall.scenarioId)?.steps.length||1)-1);state.currentCall.feedback=null;addCallTimeline(state.currentCall,'Agent progressed to the next call-handling step.');saveState();renderView();break;
     case 'complete-call':beginInboundWrapUp(false);break;
     case 'end-call':returnCallToQueue();break;
     case 'next-outbound-step':state.activeOutbound.stepIndex++;state.activeOutbound.feedback=null;renderView();break;
@@ -2102,7 +2249,7 @@ function handleAction(action,event={}){
 document.addEventListener('click',e=>{
   const template=e.target.closest('[data-digital-template]');if(template){const field=$('#digitalReplyForm textarea[name="reply"]');if(field){const channel=state.digitalActiveId?findDigitalContact(state.digitalQueue,state.digitalActiveId)?.channel:'email';const selected=digitalReplyTemplates(channel).find(item=>item[0]===template.dataset.digitalTemplate);if(selected){field.value=selected[1];field.focus();}}return;}
   const nav=e.target.closest('.nav-item[data-view]');if(nav){if(nav.disabled){toast('Complete recruitment and accept an offer to unlock agent operations.');return;}if(nav.dataset.view!=='inbound'&&voiceStatus!=='inactive')stopVoiceTools();state.currentView=nav.dataset.view;renderView();return;}
-  const action=e.target.closest('[data-action]');if(action){if(action.dataset.action==='cloud-member-status'){setCloudMemberStatus(action.dataset.memberId,action.dataset.nextStatus).then(()=>{renderView();toast('Server-side staff access updated.','success');}).catch(error=>toast(error.message,'error'));return;}handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId,system:action.dataset.system,text:action.dataset.text,contactId:action.dataset.contactId,memberId:action.dataset.memberId,nextStatus:action.dataset.nextStatus,mode:action.dataset.mode});return;}
+  const action=e.target.closest('[data-action]');if(action){if(action.dataset.action==='cloud-member-status'){setCloudMemberStatus(action.dataset.memberId,action.dataset.nextStatus).then(()=>{renderView();toast('Server-side staff access updated.','success');}).catch(error=>toast(error.message,'error'));return;}handleAction(action.dataset.action,{callbackId:action.dataset.callbackId,requestId:action.dataset.requestId,system:action.dataset.system,text:action.dataset.text,contactId:action.dataset.contactId,memberId:action.dataset.memberId,nextStatus:action.dataset.nextStatus,mode:action.dataset.mode,optionId:action.dataset.optionId});return;}
   const answer=e.target.closest('[data-answer]');
 if(answer){const i=state.assessmentIndex;state.assessmentAnswers[i]=Number(answer.dataset.answer);renderView();return;}
   const practicalAnswer=e.target.closest('[data-practical-answer]');if(practicalAnswer){state.practicalAnswers[state.practicalIndex]=Number(practicalAnswer.dataset.practicalAnswer);renderView();return;}
@@ -2205,7 +2352,8 @@ document.addEventListener('submit',async e=>{
   }
   if(e.target.id==='voiceFallbackForm'){
     e.preventDefault();const textValue=new FormData(e.target).get('utterance');
-    if(!String(textValue||'').trim()){toast('Enter the practice response first.','warning');return;}
+    if(!String(textValue||'').trim()){toast('Enter or transcribe the response first.','warning');return;}
+    if(state.currentCall){submitInboundVoiceResponse(textValue);return;}
     voiceTranscript=sanitizeTranscript(String(textValue));
     toast('Text fallback captured in temporary practice memory.','success');renderView();
   }

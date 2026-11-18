@@ -62,3 +62,7 @@ The active shift now generates synthetic email, live-chat and social contacts au
 ## Runtime delivery note — CALLORIA v6.60
 
 The supervisor workspace now provides local simulated control over the v6.59 inbound arrival flow, a cross-channel voice/digital waiting-work snapshot, SLA-risk indicators, reason-required priority and route triage, and an audit trail. Pausing intake does not freeze waiting-customer patience. This is a meaningful supervisor-operations increment, not a live external call-centre control plane and not completion of v0.2 Advanced Contact Centre Operations. Real provider channels, real-time workforce management, multi-organisation administration and multiplayer remain separate work.
+
+## Runtime delivery note — CALLORIA v6.65
+
+Inbound voice contacts now have one adaptive local customer dialogue model for guided and free-form agent replies. The model tracks synthetic sentiment and patience, can interrupt the agent, can pause for conditional service-recovery decisions, flags prohibited credential requests, and saves the final voice outcome and sanitised transcript into the simulated case record. Supervisor risk indicators describe the active player's voice call. This improves the voice simulation layer; it does not create real telephony, live multi-agent speech monitoring or a production contact-centre provider connection, and it does not complete v0.2 Advanced Contact Centre Operations.

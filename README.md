@@ -1,10 +1,27 @@
-# CALLORIA v6.63 — Digital First-Response SLA Control
+# CALLORIA v6.65 — Adaptive Voice Customer Behaviour
 
-A cumulative upgrade built on the supplied v6.62 source snapshot. v6.63 adds a first-response SLA clock for synthetic Email, Live chat and Social contacts, with risk/breach/met tracking shared by the agent workbench and Supervisor Operations. It uses the accelerated shift clock, stores one-time contact and operations timeline events, and preserves the existing v6.62 concurrent agent workload, v6.61 automatic digital demand, v6.60 supervisor controls and v6.59 inbound voice queue.
+A cumulative upgrade built on the preserved v6.64 repository. v6.65 completes the adaptive inbound voice-customer module already wired into the agent call screen and Supervisor Operations. The customer reacts to the actual scripted, typed or transcribed agent response; the engine records conversational turns, sentiment, patience, interruptions, service-recovery status, quality effects and supervisor risk.
 
-The recruitment and assessment pathway remains the employment entry gate. The main gameplay remains employed agent work: queue handling, customer conversations, CRM and case records, service tools, after-contact work, QA, supervisor assistance and career progression. This is not a training-only conversion.
+Recruitment and candidate assessment remain the employment entry gate. The main gameplay remains the work of an employed agent: taking inbound and outbound contacts, handling voice and digital customers, working CRM/cases and knowledge resources, completing after-contact work, receiving QA and supervisor intervention, and progressing through a contact-centre career. This is not a training-only conversion.
 
+## v6.65 adaptive voice customer behaviour
 
+- Adds the previously missing `js/voice-customer-behaviour-engine.js` module that the cumulative `js/main.js` already imports. This closes a source-level integration gap that would otherwise prevent the application entry module from resolving.
+- Gives each accepted simulated voice contact a deterministic customer persona, opening statement, tone, sentiment, patience and a bounded dialogue history.
+- Evaluates the agent's guided response or free-form typed/transcribed response for acknowledgement, ownership, security handling, clarity and next-step explanation. The customer replies contextually and sentiment/patience and the call quality adjustment change accordingly.
+- Models customer interruptions, including repeat-complaint and time-pressured responses, and records them in the customer conversation and interaction timeline.
+- Flags requests for PINs, passwords, one-time codes, CVV/CVC or full payment-card details as critical security breaches, raises supervisor risk and produces a customer security objection. Protective warnings against sharing credentials are not misclassified as requests; mixed responses that still solicit credentials remain critical. Sensitive credential and card values are redacted from stored voice-dialogue messages.
+- Supports conditional service-recovery discussion for refunds, reversals, compensation and other remedies. A conditional remedy discussion opens a decision panel; choosing the simulated authority-check path records the negotiation as reviewed. No real approval system is queried, and unsupported guarantees are penalised and sent for supervisor review.
+- Enforces an eight-turn agent dialogue limit, keeps the message history bounded, migrates older saved voice-behaviour objects without discarding their available history, and exposes active-call voice-risk indicators in the existing Supervisor Customer Emotion Watch.
+- Persists customer sentiment, mood, persona, interruptions, escalation risk and negotiation status through the existing inbound wrap-up and CRM case record.
+
+## v6.65 boundaries
+
+- All customers, dialogue, emotion, queue and negotiation outcomes are fictional local gameplay mechanics. Sentiment and patience are game variables, not validated psychological assessments or real customer analytics.
+- The release does not connect to a real telephone network, PBX, dialler, external telephony provider, customer database or banking system. Optional browser microphone recording is local to the page; speech recognition support and processing depend on the browser/vendor. Audio and transcript are not uploaded to a telephone provider.
+- No database migration, new secret, environment variable, external service or new package dependency is added.
+- The legacy v3.6 inbound-conversation Vite transformer now yields to the v6.65 adaptive voice workflow instead of attempting a stale source rewrite.
+- The package's Node test and syntax checks do not establish successful Vite bundling, browser audio compatibility, device performance or a Vercel deployment.
 
 ## v6.63 digital first-response SLA control
 
@@ -15,7 +32,7 @@ The recruitment and assessment pathway remains the employment entry gate. The ma
 - The SLA clock uses the existing accelerated shift simulation time. Follow-up customer replies do not restart the first-response timer.
 - These are fictional local gameplay targets, not live provider clocks or contractual service levels. No database migration, secret, environment variable, external provider or new package dependency is added.
 
-The v6.63 test and verification record is in `TEST-RESULTS-v6.63.txt` and `VERIFICATION-v6.63.md`; GUI merge steps are in `INSTALL-GITHUB-v6.63.md`. Raw new-test, selected-regression, syntax, full-suite and build logs plus the direct v6.62 baseline comparison are included in the archive.
+The v6.65 test and verification record is in `TEST-RESULTS-v6.65.txt`, `VERIFICATION-v6.65.md` and `INSTALL-GITHUB-v6.65.md`. The v6.63 test and verification record is in `TEST-RESULTS-v6.63.txt` and `VERIFICATION-v6.63.md`; GUI merge steps are in `INSTALL-GITHUB-v6.63.md`.
 
 ## v6.62 unified agent workload and digital concurrency
 
@@ -98,9 +115,11 @@ The v6.58 visitor-preview behaviour, v6.59 live voice queue and v6.60 supervisor
 
 ## Package contents
 
+- `js/voice-customer-behaviour-engine.js`: v6.65 live simulated voice-customer dialogue, adaptive response scoring, security detection, interruption/negotiation behaviour, active-call supervisor risk flags and saved-state migration.
+- `tests/voice-customer-behaviour-v665.test.mjs` and `tests/voice-customer-behaviour-ui-v665.test.mjs`: focused behaviour and application-wiring regression tests.
 - `js/digital-sla-engine.js`: v6.63 first-response deadline, risk/breach/met transitions, response-outcome metrics and compact labels.
 - `js/agent-workload-engine.js`: v6.62 multi-contact worklist, capacity policy and assignment/resumption guards.
-- `js/main.js`: cumulative recruitment/operations application, v6.62 assigned-work tabs and multi-contact workload integration, plus v6.63 accelerated-clock SLA monitoring, event capture and agent/supervisor indicators.
+- `js/main.js`: cumulative recruitment/operations application, v6.62 assigned-work tabs and multi-contact workload integration, plus v6.63 accelerated-clock SLA monitoring, event capture and agent/supervisor indicators, and v6.65 live adaptive voice-customer dialogue.
 - `js/supervisor-queue-engine.js`: supervisor counts for concurrent active digital work and customer-waiting assignments, plus first-response risk and breach status.
 - `styles.css`: responsive work tabs, queue controls, workload/capacity indicators and digital SLA states.
 - `tests/digital-sla-engine-v663.test.mjs`, `tests/digital-sla-ui-v663.test.mjs` and `tests/supervisor-sla-integration-v663.test.mjs`: 30 v6.63 engine and integration tests.
@@ -109,7 +128,7 @@ The v6.58 visitor-preview behaviour, v6.59 live voice queue and v6.60 supervisor
 - `docs/CALLORIA-v6.62-UNIFIED-AGENT-WORKLOAD.md`, `INSTALL-GITHUB-v6.62.md`, `TEST-RESULTS-v6.62.txt` and `VERIFICATION-v6.62.md`: v6.62 release documentation.
 - v6.61 digital arrival engine and tests, v6.60 supervisor controls and tests, v6.59 inbound voice queue and tests, v6.58 Try-It Studio, and the existing recruitment, employment, 3D workplace runtime, operations, CRM, multichannel, voice, QA, career, organisation, Supabase and Vite configuration are retained from the supplied cumulative source snapshot.
 
-This is a cumulative replacement for the supplied v6.62 repository snapshot. The source archive did not include `public/assets/` or its GLB binaries; keep those files from the actual GitHub checkout when merging. Keep the hidden `.git` directory and local environment files. No credentials, provider secrets or database exports are included.
+This is a cumulative replacement for the preserved v6.64 repository snapshot. The source archive did not include `public/assets/` or its GLB binaries; keep those files from the actual GitHub checkout when merging. Keep the hidden `.git` directory and local environment files. No credentials, provider secrets or database exports are included.
 
 ## Commercial readiness boundary
 

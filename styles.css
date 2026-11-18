@@ -529,3 +529,39 @@ body.calloria-game-launch .world-vignette{position:absolute;inset:0;z-index:2;ba
 .customer-supervisor-warning small{font-size:9px;line-height:1.5;color:#8b6b36}
 .customer-risk-row{border-left:3px solid #d39a42;background:#fffcf5}
 @media(max-width:600px){.customer-behaviour-head{align-items:flex-start;flex-direction:column}.customer-behaviour-stats{grid-template-columns:1fr 1fr}.digital-customer-behaviour .btn{width:100%}}
+
+/* CALLORIA v6.65 — live inbound voice dialogue */
+.voice-live-dialogue{display:grid;gap:8px;margin:14px 0;padding:12px;border:1px solid var(--line);border-radius:11px;background:rgba(17,43,58,.035)}
+.voice-dialogue-line{max-width:94%;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.voice-dialogue-line.agent{justify-self:end;background:#edf8f6;border-color:#cde6df}
+.voice-dialogue-line.customer{justify-self:start}
+.voice-dialogue-line.interruption{border-color:#e7b7a7;background:#fff5f1}
+.voice-dialogue-line>span{display:block;margin-bottom:4px;font-size:8px;font-weight:900;letter-spacing:.7px;color:var(--muted)}
+.voice-dialogue-line p{margin:0;font-size:11px;line-height:1.55;color:var(--ink);overflow-wrap:anywhere}
+.voice-live-response textarea{width:100%;min-height:92px;resize:vertical}
+.voice-customer-monitor{display:grid;gap:10px}
+.voice-customer-monitor .customer-supervisor-warning{padding:10px;border:1px solid #ecc8a1;border-radius:8px;background:#fff8ef;color:#7c4c1c}
+.voice-customer-monitor .customer-supervisor-warning small{display:block;margin-top:4px;line-height:1.45}
+@media(max-width:600px){.voice-live-dialogue{padding:9px}.voice-dialogue-line{max-width:100%}.voice-live-response .form-stack .btn{width:100%}.voice-customer-monitor .customer-behaviour-head{align-items:flex-start;flex-direction:row}}
+/* CALLORIA v6.65 — explicit customer interruption and service-recovery decision controls */
+.voice-decision-panel{display:grid;gap:12px;margin:14px 0;border-color:#e8d8b4;background:#fffdf8}
+.voice-decision-panel .question-kicker{margin-bottom:6px;color:#9a6b26;font:900 8px Manrope,sans-serif;letter-spacing:1px}
+.voice-decision-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.voice-decision-option{display:grid;gap:6px;min-width:0;padding:12px;text-align:left;border:1px solid #e5e9ed;border-radius:9px;background:#fff;color:var(--ink);cursor:pointer;transition:border-color .15s,background .15s,transform .15s}
+.voice-decision-option:hover{border-color:#c89b50;background:#fffaf0;transform:translateY(-1px)}
+.voice-decision-option strong{font:800 10px/1.4 Manrope,sans-serif}
+.voice-decision-option small{font-size:9px;line-height:1.5;color:var(--muted)}
+@media(max-width:600px){.voice-decision-options{grid-template-columns:1fr}.voice-decision-option{padding:11px}.voice-decision-panel .panel-head{align-items:flex-start;flex-direction:column}}
+
+/* CALLORIA v6.65 — customer interruption and service-recovery decisions */
+.voice-decision-panel{margin:12px 0;padding:13px;border:1px solid #e7c98e;border-left:4px solid #c28a31;border-radius:10px;background:#fffaf0}
+.voice-decision-panel .panel-head{align-items:flex-start}
+.voice-decision-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.voice-decision-option{display:grid;gap:5px;min-width:0;padding:11px;text-align:left;border:1px solid #e5d6b7;border-radius:8px;background:#fff;color:#31495b;cursor:pointer}
+.voice-decision-option:hover{border-color:#b7832d;background:#fffdf7}
+.voice-decision-option strong{font:800 10px Manrope,sans-serif;line-height:1.4}
+.voice-decision-option small{font-size:9px;line-height:1.5;color:#71808b}
+.voice-decision-option:focus-visible{outline:3px solid rgba(44,128,121,.35);outline-offset:2px}
+.voice-decision-option:disabled{opacity:.5;cursor:not-allowed}
+.voice-turn-limit{padding:10px;border:1px solid #efd8a8;border-radius:8px;background:#fff8e9;color:#865c19}
+@media(max-width:600px){.voice-decision-options{grid-template-columns:1fr}.voice-decision-option{min-height:54px}.voice-decision-panel{padding:10px}.voice-decision-panel .panel-head{align-items:flex-start;flex-direction:column}}
