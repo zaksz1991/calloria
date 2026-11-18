@@ -587,3 +587,23 @@ body.calloria-game-launch .world-vignette{position:absolute;inset:0;z-index:2;ba
 .outbound-live-actions .btn{min-height:40px}
 .outbound-live-policy{padding-left:19px;font-size:12px;line-height:1.65;color:var(--muted,#81909c)}
 @media(max-width:760px){.outbound-live-transcript{max-height:34dvh}.outbound-live-message{max-width:96%}.outbound-live-reply-foot{align-items:stretch;flex-direction:column}.outbound-live-reply-foot small{max-width:none}.outbound-live-reply-foot .btn{width:100%;min-height:46px}.outbound-live-actions{display:grid;grid-template-columns:1fr 1fr}.outbound-live-actions .btn{width:100%;font-size:11px}}
+
+/* CALLORIA v6.67 — outbound campaign worklists and dial outcome handling */
+.campaign-contact-summary{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 12px}
+.campaign-contact-summary span{padding:5px 7px;border:1px solid var(--line,rgba(120,150,170,.2));border-radius:6px;color:var(--muted,#81909c);font-size:9px;font-weight:800}
+.campaign-contact-list{display:grid;gap:7px;max-height:440px;overflow:auto;padding-right:2px}
+.campaign-contact-row{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:8px 9px;border:1px solid var(--line,rgba(120,150,170,.18));border-radius:8px;background:var(--surface-2,rgba(120,150,170,.035));min-width:0}
+.campaign-contact-row>div:first-child{display:grid;gap:3px;min-width:0}
+.campaign-contact-row strong{font-size:10px;overflow-wrap:anywhere}
+.campaign-contact-row small{font-size:8px;color:var(--muted,#81909c)}
+.campaign-contact-right{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.campaign-contact-state{display:inline-flex;align-items:center;padding:5px 7px;border-radius:5px;background:rgba(120,150,170,.09);color:var(--muted,#81909c);font-size:8px;font-weight:800;white-space:nowrap}
+.campaign-contact-state.ready{background:rgba(89,224,202,.1);color:#83e4d2}
+.campaign-contact-state.complete{background:rgba(120,150,170,.1);color:var(--muted,#81909c)}
+.campaign-contact-state.blocked{background:rgba(241,109,116,.1);color:#ff989d}
+.campaign-contact-row .btn{min-height:30px;padding:5px 9px;font-size:9px}
+.dialler-result-panel .call-console-body{display:grid;gap:12px}
+.dialler-result-panel h2{margin:0;font:800 clamp(24px,4vw,36px) Manrope,sans-serif}
+.dialler-result-panel p{max-width:720px;color:var(--muted,#81909c);line-height:1.55}
+.dialler-result-panel .assessment-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+@media(max-width:760px){.campaign-contact-row{align-items:flex-start;flex-direction:column}.campaign-contact-right{width:100%;justify-content:space-between}.campaign-contact-right .btn{min-width:76px}.campaign-contact-list{max-height:360px}.dialler-result-panel .assessment-footer{align-items:stretch;flex-direction:column}.dialler-result-panel .assessment-footer .btn{width:100%;min-height:44px}}

@@ -1,3 +1,35 @@
+# CALLORIA v6.67 — Campaign Contact Worklists & Dialler Retry Governance
+
+A cumulative upgrade built on the complete v6.66 source archive. v6.67 expands outbound operations from one campaign template contact into persistent campaign worklists containing eight fictional contact records per campaign. The dialler now records contact-level attempt references and deterministic outcomes, enforces retry cooling-off periods and attempt limits, preserves customer-requested callback identity, and tracks completed, suppressed, review-required and exhausted work.
+
+Recruitment and candidate assessment remain the employment entry gate. The main gameplay remains employed-agent work: handling inbound and outbound contacts, responding to customers, working CRM/cases and knowledge resources, completing after-contact work, receiving QA and supervisor intervention, and progressing through a contact-centre career. This is not a training-only conversion.
+
+## v6.67 campaign contact worklists and dialler retry governance
+
+- Adds `js/campaign-operations-engine.js` with stable campaign-contact IDs and a deterministic eight-contact worklist for each existing outbound campaign. The original campaign template customer remains the first worklist entry; additional entries use synthetic names.
+- Adds contact-level lifecycle states for Ready, In progress, Retry waiting/due, Callback scheduled/due, Completed, Suppressed, Review required and Attempt limit reached.
+- Records each attempt's reference, number, agent owner, start/finish timestamps, outcome and next permitted attempt time.
+- Resolves each dial attempt deterministically as Answered, No answer, Busy or Voicemail. Only an Answered result launches the v6.66 live customer conversation; unconnected outcomes do not manufacture a customer dialogue.
+- Applies simulated cooling-off rules: 15 minutes after no answer, 30 minutes after a busy line and 120 minutes after voicemail. The default maximum is three attempts per contact; further attempts are blocked and the contact is marked exhausted.
+- Keeps customer-requested callbacks attached to the same worklist contact and due timestamp. A callback must be future-dated, cannot be resumed early and is resumed from the callback control rather than the normal campaign Dial action.
+- Preserves immediate suppression for opt-outs and keeps completed, declined, review-required, suppressed and exhausted contacts out of future dial attempts.
+- Adds worklist totals for eligible contacts, attempts, callback due, retry waiting, completed, suppressed, review and exhausted work. Adds responsive contact-row and dialler-result presentation.
+- Migrates existing local saves into the worklist representation while retaining v6.66 attempt and callback history where it can be matched to a campaign template.
+
+## v6.67 boundaries and verification
+
+- Every contact identity, campaign item, connection result, retry and callback remains synthetic local gameplay data. No real phone number or email is generated; no real call is placed.
+- No real PBX, dialler, campaign provider, external customer database or bank system is connected. The retry intervals and attempt ceiling are illustrative gameplay rules, not a legal policy for real outbound campaigns.
+- No Supabase migration, Edge Function, secret, environment variable, external service or package dependency is added.
+- `npm run check` passed. The focused v6.67 engine/UI tests plus v6.66 outbound regression tests passed: 35/35.
+- The full repository suite has 1,981 tests: 1,437 passed and 544 failed. A comparison against the captured v6.66 baseline found the same 544 failing test instances and 526 distinct failing test names; no new failing test names were introduced.
+- `npm run build` could not be verified because Vite was not installed in the preparation environment. Browser gameplay and Vercel deployment were not verified.
+- The uploaded source archive did not include `public/assets/`; the user's actual GLB assets are neither included nor overwritten. Preserve the real repository's `public/assets/` and `.git` folders when merging.
+
+Installation steps are in `INSTALL-GITHUB-v6.67.md`; verification details are in `VERIFICATION-v6.67.md` and `TEST-RESULTS-v6.67.txt`.
+
+---
+
 # CALLORIA v6.66 — Live Conversational Outbound Operations
 
 A cumulative upgrade built on the complete v6.65 source archive. v6.66 replaces the quiz-style outbound campaign interaction with a live synthetic customer conversation in the actual agent workspace. Agents now respond in their own words, hear browser-generated customer speech, request supervisor assistance, record customer preferences and complete an auditable after-contact record.

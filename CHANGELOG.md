@@ -1,3 +1,33 @@
+# CALLORIA v6.67 — Campaign Contact Worklists & Dialler Retry Governance
+
+## Added
+
+- Eight deterministic synthetic contacts per outbound campaign, with stable contact IDs and the existing campaign customer retained as the first entry.
+- Contact-level attempt history with agent owner, attempt number, timestamp, outcome and retry/callback eligibility.
+- Deterministic Answered, No answer, Busy and Voicemail dial outcomes connected to the v6.66 live conversational workflow.
+- Separate retry delays of 15 minutes (no answer), 30 minutes (busy) and 120 minutes (voicemail), with a default maximum of three attempts and an exhausted state.
+- Customer-requested callbacks tied to their campaign contact, protected by future-date and due-time checks.
+- Completed, declined, opt-out/suppressed, review-required and attempt-limit states, with worklist metrics and responsive UI.
+- Legacy local-save migration from existing campaign attempts and callbacks where a template match is available.
+- 15 engine tests and 13 application integration tests; syntax check and package-manifest test updated.
+
+## Verification
+
+- `npm run check`: passed.
+- Focused v6.67 and v6.66 outbound regression suite: 35 passed, 0 failed.
+- Full repository suite: 1,981 tests; 1,437 passed; 544 failed. Compared with v6.66 by failing test names: same 544 failing instances and 526 distinct failing names; zero new failing names.
+- Vite production build: not verified (`vite: not found` because `node_modules` was not installed in the preparation environment).
+- Browser walkthrough and Vercel deployment: not performed.
+
+## Boundaries
+
+- All campaign records and dial outcomes are synthetic gameplay; there is no external dialler, PBX, provider or real customer contact data.
+- No Supabase migration, secret, environment variable, external provider or npm dependency is added.
+- Recruitment remains an entry gate; the core gameplay is agent operations and career progression.
+- Preserve the real repository's `public/assets/` GLB folder and `.git` directory; the source archive used for this release did not contain `public/assets/`.
+
+---
+
 # CALLORIA v6.66 — Live Conversational Outbound Operations
 
 ## Added

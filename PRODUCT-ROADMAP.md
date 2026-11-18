@@ -71,3 +71,8 @@ Inbound voice contacts now have one adaptive local customer dialogue model for g
 ## Runtime delivery note — CALLORIA v6.66
 
 Outbound campaign work now uses the existing synthetic conversation engine directly inside the main agent application. The previous quiz-style outbound steps are replaced by a customer transcript and typed agent response flow, with preference-aware replies, permission checks, opt-out suppression, callback recording, compliance flags, supervisor requests and persisted CRM/attempt histories. Product-offer sales credit requires explicit synthetic customer acceptance. This is simulated gameplay only: no telephone call is placed and no provider is connected. It is a further v0.2 operations increment, not a claim that Advanced Contact Centre Operations is complete.
+
+
+## Runtime delivery note — CALLORIA v6.67
+
+Outbound campaign worklists now contain eight stable synthetic contacts per campaign. Each contact has an attempt history and guarded lifecycle. Dialling resolves into an answered contact conversation or a no-answer, busy or voicemail outcome. Unconnected contacts enter separate cooling-off periods, callbacks retain their original worklist identity and due time, opt-outs are suppressed, and attempt limits are enforced. This deepens simulated outbound operations, but remains a local game system: it does not connect to real telephony or an external campaign database and does not complete v0.2 Advanced Contact Centre Operations.

@@ -1,0 +1,22 @@
+CALLORIA v6.67 — TEST RESULTS
+Runtime: Node.js v22.16.0
+
+Focused regression:
+- Command: node --test tests/outbound-live-workflow-v666.test.mjs tests/campaign-operations-engine-v667.test.mjs tests/campaign-operations-ui-v667.test.mjs
+- 35 passed, 0 failed (28 v6.67 tests plus 7 v6.66 outbound regression tests).
+
+Syntax:
+- npm run check: PASSED.
+
+Full repository:
+- v6.66 baseline: 1,953 total; 1,409 passed; 544 failed; 526 distinct failing test names.
+- v6.67 result: 1,981 total; 1,437 passed; 544 failed; 526 distinct failing test names.
+- Failing-name comparison: 0 new failing test names; 0 baseline failing test names removed.
+
+Production build:
+- npm run build: NOT VERIFIED. Preparation environment had no installed node_modules; command stopped at "vite: not found".
+
+Browser/mobile/Vercel:
+- Browser walkthrough: not performed.
+- Physical mobile test: not performed.
+- Vercel deployment: not performed.
