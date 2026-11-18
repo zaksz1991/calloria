@@ -685,3 +685,30 @@ body.calloria-game-launch .world-vignette{position:absolute;inset:0;z-index:2;ba
 .case-resolution-evidence small{font-size:10px;color:#5f8678}
 @media(max-width:760px){.case-followup-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.case-followup-queue-row{grid-template-columns:minmax(0,1fr) auto}.case-followup-queue-row .btn{grid-column:1/-1;width:100%}}
 @media(max-width:480px){.case-followup-panel{padding:12px;margin:12px 0}.case-followup-panel .form-grid{grid-template-columns:1fr}.case-followup-facts{gap:10px}.case-followup-heading{align-items:flex-start;flex-direction:column}}
+
+/* v6.72 — supervisor escalation ownership and response control */
+.supervisor-escalation-desk .supervisor-escalation-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin:14px 0}
+.supervisor-escalation-metrics>div{padding:11px 12px;border:1px solid var(--line,rgba(120,140,160,.22));border-radius:12px;background:var(--surface-soft,rgba(120,140,160,.07));display:flex;flex-direction:column;gap:5px;min-width:0}
+.supervisor-escalation-metrics span{font-size:11px;color:var(--muted,#8c9aaa);text-transform:uppercase;letter-spacing:.05em}
+.supervisor-escalation-metrics strong{font-size:21px;line-height:1.15}
+.supervisor-escalation-card{border:1px solid var(--line,rgba(120,140,160,.22));border-radius:13px;padding:13px;margin:10px 0;background:var(--surface,rgba(120,140,160,.035))}
+.supervisor-escalation-card.critical{border-left:4px solid #c94747}
+.supervisor-escalation-card.high{border-left:4px solid #d08a31}
+.supervisor-escalation-card.normal{border-left:4px solid #428c73}
+.supervisor-escalation-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.supervisor-escalation-head>strong{font-size:14px;flex:1 1 240px;min-width:160px}
+.supervisor-escalation-main>p{margin:9px 0;color:var(--text,#dbe4ee);font-size:13px;line-height:1.5}
+.supervisor-escalation-meta{display:flex;gap:8px 14px;flex-wrap:wrap;color:var(--muted,#8c9aaa);font-size:11px;margin:8px 0 12px}
+.supervisor-escalation-resolution{display:grid;grid-template-columns:minmax(150px,.7fr) minmax(240px,2fr) auto;gap:9px;align-items:end;margin-top:10px}
+.supervisor-escalation-resolution label,.supervisor-escalation-reassign label{display:flex;flex-direction:column;gap:5px;min-width:0}
+.supervisor-escalation-resolution label>span,.supervisor-escalation-reassign label>span{font-size:11px;color:var(--muted,#8c9aaa);text-transform:uppercase;letter-spacing:.04em}
+.supervisor-escalation-resolution textarea,.supervisor-escalation-reassign input{width:100%;min-width:0}
+.supervisor-escalation-reassign{margin-top:10px;padding-top:8px;border-top:1px solid var(--line,rgba(120,140,160,.18))}
+.supervisor-escalation-reassign summary{font-size:12px;color:var(--muted,#8c9aaa);cursor:pointer}
+.supervisor-escalation-reassign form{display:grid;grid-template-columns:1fr 1.5fr auto;align-items:end;gap:9px;margin-top:10px}
+@media(max-width:760px){
+ .supervisor-escalation-desk .supervisor-escalation-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .supervisor-escalation-resolution{grid-template-columns:1fr}
+ .supervisor-escalation-reassign form{grid-template-columns:1fr}
+ .supervisor-escalation-head>strong{flex-basis:100%}
+}

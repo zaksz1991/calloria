@@ -22,7 +22,7 @@ test('CRM renders a reopened-case worklist and resolution evidence workflow', ()
 });
 
 test('case follow-up escalation is routed to CRM from the supervisor assistance desk', () => {
-  assert.match(main, /caseReference\?`<button class="btn small primary" data-action="open-case-followup"/);
+  assert.match(main, /else if \(request\.caseReference\)[\s\S]*data-action="open-case-followup"/);
   assert.match(main, /caseReference:action\.dataset\.caseReference/);
   assert.match(main, /caseReference:caseRecord\.reference[\s\S]*channel:'Case follow-up'/);
 });

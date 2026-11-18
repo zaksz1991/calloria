@@ -334,3 +334,33 @@
 - All cases, customers, owners, times and outcomes remain fictional local CALLORIA save data. No real CRM, customer, email, telephone or ticketing provider is connected.
 - Follow-up targets are gameplay controls, not contractual or regulatory SLAs. They use the accelerated simulated workday clock and pause while the agent is off shift.
 - No database migration, provider credential, environment variable or external dependency is added. Existing recruitment, employment, agent operations, CRM history and supervisor controls remain intact.
+
+---
+
+# CALLORIA v6.72 — Supervisor Escalation Ownership & Response Control
+
+## Added
+
+- Normalised legacy supervisor requests into a shared escalation record without removing existing request fields, channel identifiers, CRM links or commitment links.
+- Automatic illustrative severity and response targets: critical 5 minutes, high 15 minutes and normal 30 minutes.
+- Response-risk states for on-track, due-soon, overdue and resolved escalations.
+- Named supervisor claim/ownership before a request can be worked; a second supervisor cannot silently take a request already owned by someone else.
+- Reason-required supervisor reassignment with retained from/to ownership history.
+- Evidence-required generic supervisor decisions; a request cannot be closed by a one-click "mark reviewed" action.
+- Linked CRM case and customer-promise review closure now synchronises the shared escalation audit record and checks that the assigned supervisor completes the review.
+- Supervisor desk workload counters for unassigned, critical, overdue, due-soon and in-progress requests.
+- Responsive escalation cards and reassignment/evidence forms.
+
+## Boundaries
+
+- Escalations, owners, evidence and response timers are synthetic local CALLORIA gameplay records. No real CRM, telephony provider, workforce directory or ticketing system is contacted.
+- The 5/15/30-minute response targets are illustrative wall-clock controls for this local simulation, not contractual, regulatory or organisation-approved service levels.
+- Existing requests are migrated in-place when loaded; their prior fields and linked case/commitment identifiers are retained.
+- No Supabase migration, environment variable, secret, external dependency or live provider connection is added.
+- Recruitment remains the employment entry gate; the core gameplay remains agent operations, supervisor accountability, customer resolution and career progression.
+
+## Verification boundary
+
+- Focused v6.71 case-lifecycle plus v6.72 escalation engine/UI regression: **44 passed, 0 failed**.
+- JavaScript syntax checks for `js/main.js` and `js/supervisor-escalation-engine.js`: passed.
+- Full repository test suite, Vite production build, browser walkthrough and Vercel deployment were not run or are not established by this updated-files package.
