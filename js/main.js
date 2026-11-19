@@ -37,6 +37,7 @@ import { normalizeSupervisorRequests, assessSupervisorEscalation, claimSuperviso
 import { normalizeSupervisorHandovers, supervisorHandoverCandidates, createSupervisorHandover, acceptSupervisorHandover, cancelSupervisorHandover, supervisorHandoverMetrics } from './supervisor-handover-engine.js';
 import { normalizeAgentHandovers, collectAgentHandoverCandidates, createAgentShiftHandover, acceptAgentShiftHandover, cancelAgentShiftHandover, agentShiftHandoverMetrics } from './agent-handover-engine.js';
 import { nextAssessmentStep, previousAssessmentStep, jumpToAssessmentResponse, buildAssessmentReview, applyAssessmentProgress, readAssessmentProgress, assessmentAnswerShortcut } from './assessment-flow-engine.js';
+import { assessmentDraftSummary, normaliseAssessmentDraftStatus, startAssessmentDraft, suspendAssessmentDraft, markAssessmentSubmitted, markAssessmentOutcome } from './assessment-draft-engine.js';
 
 let THREE = null;
 
@@ -59,6 +60,9 @@ const initialState = () => ({
   practicalAnswers: [],
   assessmentReturnToReview: false,
   assessmentSavedAt: null,
+  assessmentStartedAt: null,
+  assessmentSubmittedAt: null,
+  assessmentStatus: 'not_started',
   hired: false,
   roleTitle: 'Customer Experience Associate',
   department: 'Banking Operations',
@@ -152,6 +156,9 @@ function loadState() {
     if (!['aptitude', 'practical', 'review'].includes(migrated.assessmentPhase)) migrated.assessmentPhase = 'aptitude';
     migrated.assessmentReturnToReview = migrated.assessmentReturnToReview === true;
     if (typeof migrated.assessmentSavedAt !== 'string') migrated.assessmentSavedAt = null;
+    if (typeof migrated.assessmentStartedAt !== 'string') migrated.assessmentStartedAt = null;
+    if (typeof migrated.assessmentSubmittedAt !== 'string') migrated.assessmentSubmittedAt = null;
+    migrated.assessmentStatus = normaliseAssessmentDraftStatus(migrated.assessmentStatus, migrated);
     migrated.customerContinuity = normalizeCustomerContinuityState(migrated.customerContinuity);
     migrated.customerCommitments = globalThis.CalloriaCommitmentEngine?.normaliseState?.(migrated.customerCommitments) || { version: '6.9.0', commitments: [], activity: [] };
     migrated.cases = Array.isArray(migrated.cases) ? migrated.cases.map(row => { try { return normalizeCaseLifecycle(row); } catch (_) { return row; } }) : [];
@@ -673,18 +680,38 @@ function renderOverview() {
   if (state.stage === 'assessment') return renderAssessment();
   if (state.stage === 'offer') return renderOffer();
   if (!state.hired) {
+    const draft = assessmentDraftSummary(state, {
+      aptitudeCount: recruitmentQuestions.length,
+      practicalCount: practicalCallSteps.length,
+      aptitudeOptionCounts: recruitmentQuestions.map(item => item.options.length),
+      practicalOptionCounts: practicalCallSteps.map(item => item.options.length)
+    });
+    const draftInProgress = state.applicationSubmitted && draft.status === 'in_progress';
+    const aptitudeComplete = draft.aptitudeAnswered === recruitmentQuestions.length;
+    const practicalComplete = draft.practicalAnswered === practicalCallSteps.length;
+    const candidateAction = !state.applicationSubmitted ? 'open-application' : 'begin-assessment';
+    const candidateActionLabel = !state.applicationSubmitted ? 'Apply for a position →' : draftInProgress ? 'Resume assessment →' : state.stage === 'failed' ? 'Retake assessment →' : 'Begin recruitment assessment →';
+    const candidateHeadline = state.stage === 'failed' ? 'Your assessment needs to be retaken.' : draftInProgress ? 'Your assessment draft is saved.' : state.applicationSubmitted ? 'Your application is ready for assessment.' : 'Build a career on the contact-centre floor.';
+    const candidateDescription = state.stage === 'failed' ? 'The recruitment result did not meet the required standard. Retake the aptitude and practical call stages to continue.' : draftInProgress ? 'Your saved responses are still here. Resume at the same question, or continue to final review without starting over.' : state.applicationSubmitted ? 'Your candidate profile has been created. Complete the recruitment assessment to qualify for an agent appointment.' : 'Apply for a role, demonstrate your aptitude and communication skills, then begin a working career across customer operations.';
+    const recruitmentSteps = [
+      { number: '01', title: 'Candidate application', detail: 'Profile and role selection', done: state.applicationSubmitted, active: !state.applicationSubmitted },
+      { number: '02', title: 'Aptitude & judgement', detail: `${draft.aptitudeAnswered}/${recruitmentQuestions.length} responses recorded`, done: aptitudeComplete, active: state.applicationSubmitted && !aptitudeComplete },
+      { number: '03', title: 'Practical call assessment', detail: `${draft.practicalAnswered}/${practicalCallSteps.length} responses recorded`, done: practicalComplete, active: state.applicationSubmitted && aptitudeComplete && !practicalComplete },
+      { number: '04', title: 'Interview & appointment', detail: 'Employment decision', done: state.stage === 'offer' || state.hired, active: state.stage === 'offer' }
+    ];
     viewRoot.innerHTML = `
       <div class="grid two">
         <section class="panel welcome-card">
           <div class="subtle-label">MERIDIAN SERVICE GROUP · CAREER OPPORTUNITY</div>
-          <h3>${state.stage==='failed' ? 'Your assessment needs to be retaken.' : state.applicationSubmitted ? 'Your application is ready for assessment.' : 'Build a career on the contact-centre floor.'}</h3>
-          <p>${state.stage==='failed' ? 'The recruitment result did not meet the required standard. Retake the aptitude and practical call stages to continue.' : state.applicationSubmitted ? 'Your candidate profile has been created. Complete the recruitment assessment to qualify for an agent appointment.' : 'Apply for a role, demonstrate your aptitude and communication skills, then begin a working career across customer operations.'}</p>
-          <button class="btn primary" data-action="${state.applicationSubmitted ? 'begin-assessment' : 'open-application'}">${state.applicationSubmitted ? 'Begin recruitment assessment →' : 'Apply for a position →'}</button>
+          <h3>${candidateHeadline}</h3>
+          <p>${candidateDescription}</p>
+          <button class="btn primary" data-action="${candidateAction}">${candidateActionLabel}</button>
+          ${draftInProgress ? `<div class="assessment-draft-resume" role="status"><div class="assessment-draft-resume-top"><strong>Saved assessment progress</strong><span>${draft.progressPercent}%</span></div><div class="progress-track" role="progressbar" aria-label="Saved recruitment assessment progress" aria-valuemin="0" aria-valuemax="${draft.totalCount}" aria-valuenow="${draft.answeredCount}"><div class="progress-fill" style="width:${draft.progressPercent}%"></div></div><small>${draft.answeredCount} of ${draft.totalCount} responses recorded · Last saved ${escapeHTML(assessmentSavedDisplay())}. This draft is stored in this browser profile.</small></div>` : ''}
         </section>
         <section class="panel">
-          <div class="panel-head"><div><h3>Recruitment pathway</h3><p>Progress through the hiring process.</p></div><span class="pill amber">${state.applicationSubmitted ? 'APPLICATION READY' : 'NOT STARTED'}</span></div>
+          <div class="panel-head"><div><h3>Recruitment pathway</h3><p>Progress through the hiring process.</p></div><span class="pill ${draftInProgress ? 'green' : 'amber'}">${draftInProgress ? 'DRAFT SAVED' : state.applicationSubmitted ? 'APPLICATION READY' : 'NOT STARTED'}</span></div>
           <div class="step-list">
-            ${[['01','Candidate application','Profile and role selection'],['02','Aptitude & judgement','Reasoning, listening and security'],['03','Practical call assessment','Customer interaction simulation'],['04','Interview & appointment','Employment decision']].map((s,i)=>`<div class="step-row ${state.applicationSubmitted&&i===0?'done':i===1&&state.applicationSubmitted?'active':''}"><div class="step-number">${state.applicationSubmitted&&i===0?'✓':s[0]}</div><div class="step-copy"><strong>${s[1]}</strong><small>${s[2]}</small></div><span class="step-state">${state.applicationSubmitted&&i===0?'COMPLETE':i===1&&state.applicationSubmitted?'NEXT':'PENDING'}</span></div>`).join('')}
+            ${recruitmentSteps.map(step=>`<div class="step-row ${step.done?'done':step.active?'active':''}"><div class="step-number">${step.done?'✓':step.number}</div><div class="step-copy"><strong>${step.title}</strong><small>${step.detail}</small></div><span class="step-state">${step.done?'COMPLETE':step.active?'IN PROGRESS':'PENDING'}</span></div>`).join('')}
           </div>
         </section>
       </div>
@@ -743,8 +770,20 @@ function currentAssessmentProgress() {
 
 function applyAssessmentNavigation(progress) {
   applyAssessmentProgress(state, progress);
+  state.assessmentStatus = 'in_progress';
   state.assessmentSavedAt = new Date().toISOString();
   saveState();
+}
+
+function assessmentExitButton() {
+  return '<button type="button" class="btn small outline assessment-save-exit" data-action="assessment-save-exit">Save & exit</button>';
+}
+
+function assessmentSavedDisplay() {
+  const stamp = Date.parse(state.assessmentSavedAt || '');
+  return Number.isFinite(stamp)
+    ? new Date(stamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+    : 'Not yet saved';
 }
 
 function assessmentBackButton() {
@@ -770,6 +809,7 @@ function recordAssessmentResponse(section, selected) {
   const answers = practical ? state.practicalAnswers : state.assessmentAnswers;
   if (!source || !Array.isArray(source.options) || !Number.isInteger(selected) || selected < 0 || selected >= source.options.length) return false;
   answers[index] = selected;
+  state.assessmentStatus = 'in_progress';
   state.assessmentSavedAt = new Date().toISOString();
   saveState();
   renderView();
@@ -810,7 +850,7 @@ function renderAssessment() {
   const footerHint = answer === undefined
     ? 'Select an answer above (or press 1, 2 or 3). Continue unlocks after selection.'
     : assessmentSavedHint(answer);
-  viewRoot.innerHTML = `<div class="grid two assessment-layout"><section class="panel assessment-card" aria-label="Aptitude assessment question"><div class="panel-head"><div><div class="question-kicker">RECRUITMENT ASSESSMENT · ${q.category}</div><h3 style="margin-top:7px">Candidate screening</h3></div><div class="assessment-head-actions">${assessmentBackButton()}<span class="pill" aria-live="polite">APTITUDE · ${i+1} OF ${recruitmentQuestions.length}</span></div></div><div class="progress-track" role="progressbar" aria-label="Aptitude assessment progress" aria-valuemin="0" aria-valuemax="${recruitmentQuestions.length}" aria-valuenow="${i+1}"><div class="progress-fill" style="width:${((i+1)/recruitmentQuestions.length)*100}%"></div></div><div class="assessment-journey-label"><span>APTITUDE & JUDGEMENT</span><span>STAGE 1 OF 2</span></div><div class="question-title" id="aptitudeQuestionText" tabindex="-1" role="heading" aria-level="2">${q.question}</div><p class="question-help">${q.help}</p><div class="answer-list" role="group" aria-label="Aptitude answer options" aria-describedby="aptitudeQuestionText">${q.options.map((o,j)=>`<button type="button" class="answer-option ${answer===j?'selected':''}" data-answer="${j}" aria-keyshortcuts="${j+1}" title="Press ${j+1} to select" aria-pressed="${answer===j?'true':'false'}"><span class="answer-letter">${String.fromCharCode(65+j)}</span><span>${o.label}</span></button>`).join('')}</div><div class="assessment-footer"><small class="assessment-footer-status" aria-live="polite">${footerHint}</small><button type="button" class="btn primary" data-action="assessment-next" aria-label="${continueLabel}" ${answer===undefined?'disabled':''}>${state.assessmentReturnToReview?'Save response & return to review →':i===recruitmentQuestions.length-1?'Continue to practical call →':'Continue →'}</button></div></section><aside class="panel assessment-progress-panel" aria-label="Assessment progress and guidance"><div class="panel-head"><div><h3>Assessment stages</h3><p>Recruitment requirements for ${escapeHTML(state.department)}.</p></div><span class="pill">${state.assessmentAnswers.filter(value=>value!==undefined).length}/${recruitmentQuestions.length} ANSWERED</span></div><div class="step-list">${['Communication and listening','Customer information security','Service comprehension','Workplace judgement','Digital work skills','Outbound contact ethics','Reasoning and prioritisation'].map((x,j)=>`<div class="step-row ${j<i?'done':j===i?'active':''}"><div class="step-number">${j<i?'✓':String(j+1).padStart(2,'0')}</div><div class="step-copy"><strong>${x}</strong><small>${state.assessmentAnswers[j]!==undefined?'Response recorded':j===i?'Current question':'Awaiting response'}</small></div><span class="step-state">${state.assessmentAnswers[j]!==undefined?'DONE':j===i?'NOW':'UP NEXT'}</span></div>`).join('')}</div><div class="article-box"><h4>Assessment integrity</h4><p>Some security and customer-consent decisions are critical. A critical breach can prevent appointment even where the overall score is high.</p></div></aside></div>`;
+  viewRoot.innerHTML = `<div class="grid two assessment-layout"><section class="panel assessment-card" aria-label="Aptitude assessment question"><div class="panel-head"><div><div class="question-kicker">RECRUITMENT ASSESSMENT · ${q.category}</div><h3 style="margin-top:7px">Candidate screening</h3></div><div class="assessment-head-actions">${assessmentBackButton()}${assessmentExitButton()}<span class="pill" aria-live="polite">APTITUDE · ${i+1} OF ${recruitmentQuestions.length}</span></div></div><div class="progress-track" role="progressbar" aria-label="Aptitude assessment progress" aria-valuemin="0" aria-valuemax="${recruitmentQuestions.length}" aria-valuenow="${i+1}"><div class="progress-fill" style="width:${((i+1)/recruitmentQuestions.length)*100}%"></div></div><div class="assessment-journey-label"><span>APTITUDE & JUDGEMENT</span><span>STAGE 1 OF 2</span></div><div class="question-title" id="aptitudeQuestionText" tabindex="-1" role="heading" aria-level="2">${q.question}</div><p class="question-help">${q.help}</p><div class="answer-list" role="group" aria-label="Aptitude answer options" aria-describedby="aptitudeQuestionText">${q.options.map((o,j)=>`<button type="button" class="answer-option ${answer===j?'selected':''}" data-answer="${j}" aria-keyshortcuts="${j+1}" title="Press ${j+1} to select" aria-pressed="${answer===j?'true':'false'}"><span class="answer-letter">${String.fromCharCode(65+j)}</span><span>${o.label}</span></button>`).join('')}</div><div class="assessment-footer"><small class="assessment-footer-status" aria-live="polite">${footerHint}</small><button type="button" class="btn primary" data-action="assessment-next" aria-label="${continueLabel}" ${answer===undefined?'disabled':''}>${state.assessmentReturnToReview?'Save response & return to review →':i===recruitmentQuestions.length-1?'Continue to practical call →':'Continue →'}</button></div></section><aside class="panel assessment-progress-panel" aria-label="Assessment progress and guidance"><div class="panel-head"><div><h3>Assessment stages</h3><p>Recruitment requirements for ${escapeHTML(state.department)}.</p></div><span class="pill">${state.assessmentAnswers.filter(value=>value!==undefined).length}/${recruitmentQuestions.length} ANSWERED</span></div><div class="step-list">${['Communication and listening','Customer information security','Service comprehension','Workplace judgement','Digital work skills','Outbound contact ethics','Reasoning and prioritisation'].map((x,j)=>`<div class="step-row ${j<i?'done':j===i?'active':''}"><div class="step-number">${j<i?'✓':String(j+1).padStart(2,'0')}</div><div class="step-copy"><strong>${x}</strong><small>${state.assessmentAnswers[j]!==undefined?'Response recorded':j===i?'Current question':'Awaiting response'}</small></div><span class="step-state">${state.assessmentAnswers[j]!==undefined?'DONE':j===i?'NOW':'UP NEXT'}</span></div>`).join('')}</div><div class="article-box"><h4>Assessment integrity</h4><p>Some security and customer-consent decisions are critical. A critical breach can prevent appointment even where the overall score is high.</p></div></aside></div>`;
 }
 
 function renderAssessmentReview() {
@@ -835,7 +875,7 @@ function renderAssessmentReview() {
   const renderSection = (section, title, entries) => `<section class="assessment-review-section"><div class="assessment-review-section-head"><h4>${title}</h4><span class="pill">${entries.length} RESPONSES</span></div>${entries.map(item=>`<article class="assessment-review-item"><div class="assessment-review-item-head"><span>${escapeHTML(item.title || `${title} ${item.number}`)}</span><small>QUESTION ${item.number}</small></div><p class="assessment-review-prompt">${escapeHTML(item.prompt)}</p><div class="assessment-review-response"><small>YOUR SELECTED RESPONSE</small><strong>${escapeHTML(item.response)}</strong></div><button type="button" class="btn small outline" data-action="assessment-review-jump" data-assessment-section="${item.section}" data-assessment-index="${item.index}">Edit response</button></article>`).join('')}</section>`;
   const aptitudeItems = review.items.filter(item=>item.section==='aptitude');
   const practicalItems = review.items.filter(item=>item.section==='practical');
-  viewRoot.innerHTML = `<div class="assessment-review-layout"><section class="panel assessment-card assessment-review-card" aria-label="Review recruitment assessment responses"><div class="panel-head"><div><div class="question-kicker">RECRUITMENT · FINAL RESPONSE REVIEW</div><h3 style="margin-top:7px" tabindex="-1">Review your answers before submission</h3></div><span class="pill green">${review.answeredCount}/${review.totalCount} COMPLETE</span></div><div class="progress-track" role="progressbar" aria-label="Assessment completion" aria-valuemin="0" aria-valuemax="${review.totalCount}" aria-valuenow="${review.answeredCount}"><div class="progress-fill" style="width:${review.totalCount ? review.answeredCount/review.totalCount*100 : 0}%"></div></div><p class="question-help">Check each selected response. Use Edit response to change an answer. Your answers are saved automatically; scoring and the recruitment decision happen only after final submission.</p><div class="assessment-review-sections">${renderSection('aptitude','Aptitude & judgement',aptitudeItems)}${renderSection('practical','Practical customer call',practicalItems)}</div><div class="article-box"><h4>Before you submit</h4><p>Confirm that your choices reflect safe customer handling, accurate information, appropriate consent, professional judgement and honest expectation setting. Critical security or contact-preference breaches can affect the recruitment decision.</p></div><div class="assessment-footer"><small class="assessment-footer-status" aria-live="polite">${review.complete?'All responses are recorded. You can still edit any answer before submitting.':'Some responses are missing; return to the unanswered item before submission.'}</small><button type="button" class="btn primary" data-action="assessment-submit" ${review.complete?'':'disabled'}>Submit final assessment →</button></div></section></div>`;
+  viewRoot.innerHTML = `<div class="assessment-review-layout"><section class="panel assessment-card assessment-review-card" aria-label="Review recruitment assessment responses"><div class="panel-head"><div><div class="question-kicker">RECRUITMENT · FINAL RESPONSE REVIEW</div><h3 style="margin-top:7px" tabindex="-1">Review your answers before submission</h3></div><div class="assessment-head-actions">${assessmentExitButton()}<span class="pill green">${review.answeredCount}/${review.totalCount} COMPLETE</span></div></div><div class="progress-track" role="progressbar" aria-label="Assessment completion" aria-valuemin="0" aria-valuemax="${review.totalCount}" aria-valuenow="${review.answeredCount}"><div class="progress-fill" style="width:${review.totalCount ? review.answeredCount/review.totalCount*100 : 0}%"></div></div><p class="question-help">Check each selected response. Use Edit response to change an answer. Your answers are saved automatically; scoring and the recruitment decision happen only after final submission.</p><div class="assessment-review-sections">${renderSection('aptitude','Aptitude & judgement',aptitudeItems)}${renderSection('practical','Practical customer call',practicalItems)}</div><div class="article-box"><h4>Before you submit</h4><p>Confirm that your choices reflect safe customer handling, accurate information, appropriate consent, professional judgement and honest expectation setting. Critical security or contact-preference breaches can affect the recruitment decision.</p></div><div class="assessment-footer"><small class="assessment-footer-status" aria-live="polite">${review.complete?'All responses are recorded. You can still edit any answer before submitting.':'Some responses are missing; return to the unanswered item before submission.'}</small><button type="button" class="btn primary" data-action="assessment-submit" ${review.complete?'':'disabled'}>Submit final assessment →</button></div></section></div>`;
 }
 
 const practicalCallSteps = [
@@ -866,7 +906,7 @@ function renderPracticalAssessment() {
   const footerHint = answer === undefined
     ? 'Select one response above to unlock Continue. You can return to earlier questions without losing answers.'
     : assessmentSavedHint(answer);
-  viewRoot.innerHTML=`<div class="grid two assessment-layout"><section class="panel assessment-card" aria-label="Practical customer call assessment"><div class="panel-head"><div><div class="question-kicker">RECRUITMENT · PRACTICAL CALL ASSESSMENT</div><h3 style="margin-top:7px">Customer roleplay simulation</h3></div><div class="assessment-head-actions">${assessmentBackButton()}<span class="pill" aria-live="polite">PRACTICAL · ${i+1} OF ${practicalCallSteps.length}</span></div></div><div class="progress-track" role="progressbar" aria-label="Practical call progress" aria-valuemin="0" aria-valuemax="${practicalCallSteps.length}" aria-valuenow="${i+1}"><div class="progress-fill" style="width:${((i+1)/practicalCallSteps.length)*100}%"></div></div><div class="assessment-journey-label"><span>PRACTICAL CUSTOMER CALL</span><span>STAGE 2 OF 2</span></div><div class="customer-strip"><div class="customer-avatar">SO</div><div class="customer-info"><strong>Sola Oladipo</strong><small>Recruitment roleplay · Inbound banking enquiry</small></div><span class="pill amber">PRACTICAL TEST</span></div><div class="question-kicker">${step.label}</div><div class="question-title" id="practicalQuestionText" tabindex="-1" role="heading" aria-level="2">${step.prompt}</div><p class="question-help">Choose how you would handle this moment in a real customer conversation. The assessment evaluates judgement, not memorised product facts.</p><div class="answer-list" role="group" aria-label="Practical call answer options" aria-describedby="practicalQuestionText">${step.options.map((o,j)=>`<button type="button" class="answer-option ${answer===j?'selected':''}" data-practical-answer="${j}" aria-keyshortcuts="${j+1}" title="Press ${j+1} to select" aria-pressed="${answer===j?'true':'false'}"><span class="answer-letter">${String.fromCharCode(65+j)}</span><span>${o.label}</span></button>`).join('')}</div><div class="assessment-footer"><small class="assessment-footer-status" aria-live="polite">${footerHint}</small><button type="button" class="btn primary" data-action="practical-next" aria-label="${continueLabel}" ${answer===undefined?'disabled':''}>${state.assessmentReturnToReview?'Save response & return to review →':i===practicalCallSteps.length-1?'Review responses →':'Continue →'}</button></div></section><aside class="panel assessment-progress-panel" aria-label="Practical assessment scorecard"><div class="panel-head"><div><h3>Recruitment scorecard</h3><p>Practical contact-centre readiness.</p></div><span class="pill">${state.practicalAnswers.filter(value=>value!==undefined).length}/${practicalCallSteps.length} ANSWERED</span></div><div class="step-list">${['Opening and professionalism','Listening and focused questions','Expectation setting and ownership'].map((x,j)=>`<div class="step-row ${j<i?'done':j===i?'active':''}"><div class="step-number">${j<i?'✓':String(j+1).padStart(2,'0')}</div><div class="step-copy"><strong>${x}</strong><small>${state.practicalAnswers[j]!==undefined?'Response recorded':j===i?'Current call stage':'Awaiting response'}</small></div><span class="step-state">${state.practicalAnswers[j]!==undefined?'DONE':j===i?'NOW':'UP NEXT'}</span></div>`).join('')}</div><div class="article-box"><h4>What is being assessed?</h4><p>Greeting, active listening, relevant questioning, safe handling of customer information, accurate expectation setting and professional call ownership.</p></div></aside></div>`;
+  viewRoot.innerHTML=`<div class="grid two assessment-layout"><section class="panel assessment-card" aria-label="Practical customer call assessment"><div class="panel-head"><div><div class="question-kicker">RECRUITMENT · PRACTICAL CALL ASSESSMENT</div><h3 style="margin-top:7px">Customer roleplay simulation</h3></div><div class="assessment-head-actions">${assessmentBackButton()}${assessmentExitButton()}<span class="pill" aria-live="polite">PRACTICAL · ${i+1} OF ${practicalCallSteps.length}</span></div></div><div class="progress-track" role="progressbar" aria-label="Practical call progress" aria-valuemin="0" aria-valuemax="${practicalCallSteps.length}" aria-valuenow="${i+1}"><div class="progress-fill" style="width:${((i+1)/practicalCallSteps.length)*100}%"></div></div><div class="assessment-journey-label"><span>PRACTICAL CUSTOMER CALL</span><span>STAGE 2 OF 2</span></div><div class="customer-strip"><div class="customer-avatar">SO</div><div class="customer-info"><strong>Sola Oladipo</strong><small>Recruitment roleplay · Inbound banking enquiry</small></div><span class="pill amber">PRACTICAL TEST</span></div><div class="question-kicker">${step.label}</div><div class="question-title" id="practicalQuestionText" tabindex="-1" role="heading" aria-level="2">${step.prompt}</div><p class="question-help">Choose how you would handle this moment in a real customer conversation. The assessment evaluates judgement, not memorised product facts.</p><div class="answer-list" role="group" aria-label="Practical call answer options" aria-describedby="practicalQuestionText">${step.options.map((o,j)=>`<button type="button" class="answer-option ${answer===j?'selected':''}" data-practical-answer="${j}" aria-keyshortcuts="${j+1}" title="Press ${j+1} to select" aria-pressed="${answer===j?'true':'false'}"><span class="answer-letter">${String.fromCharCode(65+j)}</span><span>${o.label}</span></button>`).join('')}</div><div class="assessment-footer"><small class="assessment-footer-status" aria-live="polite">${footerHint}</small><button type="button" class="btn primary" data-action="practical-next" aria-label="${continueLabel}" ${answer===undefined?'disabled':''}>${state.assessmentReturnToReview?'Save response & return to review →':i===practicalCallSteps.length-1?'Review responses →':'Continue →'}</button></div></section><aside class="panel assessment-progress-panel" aria-label="Practical assessment scorecard"><div class="panel-head"><div><h3>Recruitment scorecard</h3><p>Practical contact-centre readiness.</p></div><span class="pill">${state.practicalAnswers.filter(value=>value!==undefined).length}/${practicalCallSteps.length} ANSWERED</span></div><div class="step-list">${['Opening and professionalism','Listening and focused questions','Expectation setting and ownership'].map((x,j)=>`<div class="step-row ${j<i?'done':j===i?'active':''}"><div class="step-number">${j<i?'✓':String(j+1).padStart(2,'0')}</div><div class="step-copy"><strong>${x}</strong><small>${state.practicalAnswers[j]!==undefined?'Response recorded':j===i?'Current call stage':'Awaiting response'}</small></div><span class="step-state">${state.practicalAnswers[j]!==undefined?'DONE':j===i?'NOW':'UP NEXT'}</span></div>`).join('')}</div><div class="article-box"><h4>What is being assessed?</h4><p>Greeting, active listening, relevant questioning, safe handling of customer information, accurate expectation setting and professional call ownership.</p></div></aside></div>`;
 }
 
 function renderAssessmentResult() {
@@ -875,6 +915,7 @@ function renderAssessmentResult() {
   const practicalScore=state.practicalAnswers.reduce((sum,ans,i)=>sum+(practicalCallSteps[i]?.options[ans]?.points||0),0);
   const breached = state.assessmentAnswers.some((ans,i)=>recruitmentQuestions[i]?.options[ans]?.breach) || state.practicalAnswers.some((ans,i)=>practicalCallSteps[i]?.options[ans]?.breach);
   const passed = correct >= 5 && practicalScore >= 2 && !breached;
+  markAssessmentOutcome(state, passed);
   state.stage = passed ? 'offer' : 'failed';
   state.assessmentScore = correct;
   state.practicalScore = practicalScore;
@@ -2157,7 +2198,15 @@ function openApplication() {
     [state.department,state.roleTitle,state.salary]=map[state.selectedTrack];state.applicationSubmitted=true;state.stage='applicant';modal.remove();toast('Application submitted. Recruitment assessment is ready.','success');renderView();
   };
 }
-function beginAssessment(){state.stage='assessment';state.assessmentPhase='aptitude';state.assessmentIndex=0;state.assessmentAnswers=[];state.practicalIndex=0;state.practicalAnswers=[];state.assessmentReturnToReview=false;state.assessmentSavedAt=new Date().toISOString();selectedAnswer=null;saveState();renderView();scrollAssessmentToTop();}
+function beginAssessment() {
+  const options = arguments[0] || {};
+  const reset = options === true || options.reset === true;
+  const transition = startAssessmentDraft(state, { reset, now: new Date().toISOString(), aptitudeCount: recruitmentQuestions.length, practicalCount: practicalCallSteps.length });
+  selectedAnswer = null;
+  saveState();
+  renderView();scrollAssessmentToTop();
+  if (transition.resumed) toast(`Assessment draft restored: ${transition.summary.answeredCount} of ${transition.summary.totalCount} responses saved.`, 'success');
+}
 function acceptOffer(){state.stage='employee';state.hired=true;state.shiftActive=false;state.level=1;state.experience=0;state.agentStatus='offline';state.currentView='overview';saveState();toast('Employment accepted. Welcome to the operations floor.','success');renderView();}
 function setAgentState(status, reason = '') {
   if (!AGENT_STATES.includes(status)) throw new TypeError('Unknown agent state.');
@@ -2936,6 +2985,14 @@ function handleAction(action,event={}){
     case 'return-to-game': enter3dFloor(); break;
     case 'open-application':openApplication();break;
     case 'begin-assessment':beginAssessment();break;
+    case 'assessment-save-exit': {
+      const suspended = suspendAssessmentDraft(state, new Date().toISOString());
+      if (!suspended) return;
+      saveState();
+      renderView();
+      toast('Assessment draft saved. Resume from this candidate page whenever you are ready.', 'success');
+      break;
+    }
     case 'assessment-next':
     case 'practical-next': {
       const transition = nextAssessmentStep(currentAssessmentProgress(), { aptitudeCount: recruitmentQuestions.length, practicalCount: practicalCallSteps.length });
@@ -2964,13 +3021,12 @@ function handleAction(action,event={}){
     case 'assessment-submit': {
       const review = buildAssessmentReview({ aptitudeQuestions: recruitmentQuestions, practicalSteps: practicalCallSteps, aptitudeAnswers: state.assessmentAnswers, practicalAnswers: state.practicalAnswers });
       if (!review.complete) { toast('Complete every aptitude and practical-call response before submitting.', 'warning'); return; }
-      state.assessmentReturnToReview = false;
-      state.assessmentSavedAt = new Date().toISOString();
+      markAssessmentSubmitted(state, new Date().toISOString());
       saveState();
       renderAssessmentResult();
       break;
     }
-    case 'retake-assessment':state.stage='applicant';beginAssessment();break;
+    case 'retake-assessment':state.stage='applicant';beginAssessment({reset:true});break;
     case 'accept-offer':acceptOffer();break;
     case 'start-shift':startShift();break;
     case 'advance-workday':advanceWorkday();break;
