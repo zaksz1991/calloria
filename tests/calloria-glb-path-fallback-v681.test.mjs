@@ -100,7 +100,8 @@ test('Vite plugin repairs stale agent approvals and instruments the staff loader
     '/repo/js/glb-world-integration.js');
   assert.ok(result.code.includes("import { loadCalloriaGLBWithPathFallback } from './glb-asset-path-fallback.js';"));
   assert.ok(result.code.includes('approvedCandidateIds.length ? approvedCandidateIds : PRIMARY_CANDIDATES'));
-  assert.ok(result.code.includes('const pathLoad = await loadCalloriaGLBWithPathFallback(loader, asset);'));
+  assert.ok(result.code.includes('const pathLoad = await loadCalloriaGLBWithPathFallback(loader, asset, (attempt) => {'));
+  assert.ok(result.code.includes("kind: 'staff'"));
   assert.ok(result.code.includes('asset: resolvedAsset'));
 });
 

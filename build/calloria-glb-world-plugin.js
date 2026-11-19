@@ -23,7 +23,8 @@ const SPAWN_ANCHOR =
 const IMPORTS = [
   "import { integrateCalloriaGLBStaff } from './glb-world-integration.js';",
   "import { integrateCalloriaGLBOfficeAssets } from './glb-office-world-integration.js';",
-  "import { createCalloriaWorldMission } from './world-gameplay-mission.js';"
+  "import { createCalloriaWorldMission } from './world-gameplay-mission.js';",
+  "import { createCalloriaGLBHealthPanel } from './glb-asset-health-panel.js';"
 ].join('\n');
 const PATH_IMPORT = "import { loadCalloriaGLBWithPathFallback } from './glb-asset-path-fallback.js';";
 const MARKER = '__CALLORIA_GLB_FIRST_WORKPLACE_V22__';
@@ -43,6 +44,7 @@ const OFFICE_LOAD_ANCHOR = '        gltf = await loader.loadAsync(asset.url);';
 const OFFICE_DETAIL_PATH_ANCHOR = '        path: asset.path,';
 const OFFICE_DETAIL_URL_ANCHOR = '        url: asset.url,';
 const OFFICE_STORE_ANCHOR = '      const record = { asset, gltf, metrics, role: check.role };';
+const HEALTH_MARKER = '__CALLORIA_GLB_RUNTIME_HEALTH_V682__';
 
 function count(source, needle) {
   return source.split(needle).length - 1;
@@ -79,7 +81,9 @@ function transformStaffPaths(context, source) {
   code = code.replace(STAFF_CANDIDATE_ANCHOR, candidateReplacement);
   code = code.replace(
     STAFF_LOAD_ANCHOR,
-    `      const pathLoad = await loadCalloriaGLBWithPathFallback(loader, asset);
+    `      const pathLoad = await loadCalloriaGLBWithPathFallback(loader, asset, (attempt) => {
+        window.dispatchEvent(new CustomEvent('calloria:glb-load-attempt', { detail: { ...attempt, kind: 'staff', assetId: asset.id, assetName: asset.name || asset.id } }));
+      });
       const gltf = pathLoad.gltf;
       const resolvedAsset = { ...asset, url: pathLoad.resolvedUrl, path: pathLoad.resolvedPath };`
   );
@@ -106,7 +110,9 @@ function transformOfficePaths(context, source) {
   );
   code = code.replace(
     OFFICE_LOAD_ANCHOR,
-    `        const pathLoad = await loadCalloriaGLBWithPathFallback(loader, asset);
+    `        const pathLoad = await loadCalloriaGLBWithPathFallback(loader, asset, (attempt) => {
+          window.dispatchEvent(new CustomEvent('calloria:glb-load-attempt', { detail: { ...attempt, kind: 'office', assetId: asset.id, assetName: asset.name || asset.id } }));
+        });
         gltf = pathLoad.gltf;
         resolvedAsset = { ...asset, url: pathLoad.resolvedUrl, path: pathLoad.resolvedPath };`
   );
@@ -146,7 +152,7 @@ export function calloriaGLBWorldPlugin() {
       if (normalizedId.endsWith(STAFF_TARGET)) return transformStaffPaths(this, source);
       if (normalizedId.endsWith(OFFICE_TARGET)) return transformOfficeCoverage(this, source);
       if (!normalizedId.endsWith(TARGET)) return null;
-      if (source.includes(MARKER)) return null;
+      if (source.includes(MARKER) || source.includes(HEALTH_MARKER)) return null;
       const anchors = [
         [READY_ANCHOR, 'GLB-ready callback'],
         [UPDATE_ANCHOR, 'render-loop update'],
@@ -157,12 +163,19 @@ export function calloriaGLBWorldPlugin() {
         [SPAWN_ANCHOR, 'initial player spawn']
       ];
       for (const [anchor, label] of anchors) requireExactlyOnce(this, source, anchor, label);
-      let code = `${IMPORTS}\nconst ${MARKER} = true;\n${source}`;
+      let code = `${IMPORTS}\nconst ${MARKER} = true;\nconst ${HEALTH_MARKER} = true;\n${source}`;
       code = code.replace(
         READY_ANCHOR,
         `  let glbWorldLayer = null;
   let glbOfficeLayer = null;
   let worldMissionLayer = null;
+  let glbHealthPanel = null;
+  try {
+    // Attach before GLB requests begin so no initial load attempt is missed.
+    glbHealthPanel = createCalloriaGLBHealthPanel({ host, tier });
+  } catch (error) {
+    console.warn('CALLORIA GLB health panel unavailable.', error);
+  }
   try {
     glbWorldLayer = await integrateCalloriaGLBStaff({ THREE, scene, staff, tier });
   } catch (error) {
@@ -186,6 +199,9 @@ export function calloriaGLBWorldPlugin() {
     officePlaced: Number(officeAssetStatus.placed) || 0,
     officeAssets: Array.isArray(officeAssetStatus.assets) ? officeAssetStatus.assets : [],
     officeErrors: Array.isArray(officeAssetStatus.errors) ? officeAssetStatus.errors : [],
+    staffFailed: Number(staffAssetStatus.failed) || 0,
+    staffErrors: Array.isArray(staffAssetStatus.errors) ? staffAssetStatus.errors : [],
+    worldReady: true,
     tier
   };
   callbacks.onAssetsReady?.(combinedAssetStatus);
@@ -199,7 +215,9 @@ export function calloriaGLBWorldPlugin() {
       \`GLB STAFF: \${staffCount}  ·  OFFICE GLB OBJECTS: \${officeCount}\`
       + (failedCount ? \`  ·  REVIEW: \${failedCount}\` : '')
       + \`  ·  \${String(tier).toUpperCase()}\`;
-  }`
+  }
+  window.dispatchEvent(new CustomEvent('calloria:glb-world-assets-ready', { detail: combinedAssetStatus }));
+  glbHealthPanel?.update?.(combinedAssetStatus);`
       );
       code = code.replace(
         UPDATE_ANCHOR,
@@ -211,6 +229,7 @@ export function calloriaGLBWorldPlugin() {
       code = code.replace(
         DISPOSE_ANCHOR,
         `      disposed = true; stopLoop();
+      glbHealthPanel?.dispose?.();
       glbWorldLayer?.dispose?.();
       glbOfficeLayer?.dispose?.();
       worldMissionLayer?.dispose?.();

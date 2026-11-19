@@ -1,0 +1,17 @@
+CALLORIA v6.82 focused verification
+
+Node.js: v22.16.0
+Combined focused tests: 14 passed, 0 failed.
+- 8 retained v6.81 path recovery tests
+- 6 new v6.82 runtime health / Vite transform tests
+
+Syntax checks passed for:
+- js/glb-asset-path-fallback.js
+- js/glb-asset-health-panel.js
+- build/calloria-glb-world-plugin.js
+- both v6.82 test files
+
+Actual available js/production-world.js was transformed through the replacement Vite plugin; transformed JavaScript passed node --check.
+ZIP integrity checked after archive creation.
+
+Not run: full Vite build, Vercel deployment, real production GLB fetch/decode/placement, physical phone browser test.
