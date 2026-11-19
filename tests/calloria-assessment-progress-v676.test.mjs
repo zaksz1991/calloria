@@ -133,7 +133,7 @@ test('application wires the response review and the mobile dock to the final sub
   assert.match(main, /buildAssessmentReview\([\s\S]*?review\.complete/);
   assert.match(main, /case 'assessment-back':/);
   assert.match(main, /case 'assessment-review-jump':/);
-  assert.match(main, /assessmentSavedAt=new Date\(\)\.toISOString\(\);saveState\(\);renderView\(\)/);
+  assert.match(main, /function recordAssessmentResponse\(section, selected\)[\s\S]*?state\.assessmentSavedAt = new Date\(\)\.toISOString\(\);[\s\S]*?saveState\(\);[\s\S]*?renderView\(\)/);
   assert.match(guard, /button\[data-action="assessment-submit"\]/);
   assert.match(css, /assessment-review-item/);
   assert.match(css, /assessment-head-actions/);

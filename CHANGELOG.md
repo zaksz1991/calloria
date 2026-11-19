@@ -464,3 +464,13 @@
 - Focused v6.71 case-lifecycle plus v6.72 escalation engine/UI regression: **44 passed, 0 failed**.
 - JavaScript syntax checks for `js/main.js` and `js/supervisor-escalation-engine.js`: passed.
 - Full repository test suite, Vite production build, browser walkthrough and Vercel deployment were not run or are not established by this updated-files package.
+
+## v6.77 — Recruitment assessment keyboard and short-viewport hardening
+
+- Added numeric keyboard selection shortcuts (1–9, limited to the options actually present on the current question) for aptitude and practical-call responses.
+- Routed keyboard and pointer answer selection through one validation, persistence, re-render and focus-restoration path.
+- Exposed answer shortcuts through `aria-keyshortcuts` and button titles; the live save hint explains how to continue by keyboard.
+- Moved focus to the new question or final review heading after assessment navigation so keyboard and assistive-technology users are not returned to the document start.
+- Corrected the short-landscape mobile assessment dock: it now spans the lower viewport rather than covering answer options on the right, with reserved safe-area space and a reduced-height layout.
+- Kept the full recruitment question set, scoring, critical-breach rules, pass threshold, retake flow, and employment gate unchanged.
+- No Supabase schema, secret, environment variable, external provider or public 3D model changed.

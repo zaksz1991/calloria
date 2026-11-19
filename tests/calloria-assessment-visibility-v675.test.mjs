@@ -45,8 +45,10 @@ test('assessment progression supports backward navigation, saves responses and r
   assert.match(main, /case 'practical-next':[\s\S]*?nextAssessmentStep\(currentAssessmentProgress\(\)/);
   assert.match(main, /case 'assessment-back':/);
   assert.match(main, /case 'assessment-review-jump':/);
-  assert.match(main, /state\.assessmentAnswers\[i\]=selected;state\.assessmentSavedAt=new Date\(\)\.toISOString\(\);saveState\(\);renderView\(\)/);
-  assert.match(main, /state\.practicalAnswers\[state\.practicalIndex\]=selected;state\.assessmentSavedAt=new Date\(\)\.toISOString\(\);saveState\(\);renderView\(\)/);
+  assert.match(main, /recordAssessmentResponse\('aptitude', Number\(answer\.dataset\.answer\)\)/);
+  assert.match(main, /recordAssessmentResponse\('practical', Number\(practicalAnswer\.dataset\.practicalAnswer\)\)/);
+  assert.match(main, /function recordAssessmentResponse\(section, selected\)[\s\S]*?saveState\(\);[\s\S]*?renderView\(\)/);
+  assert.match(main, /function recordAssessmentResponse\(section, selected\)[\s\S]*?const answers = practical \? state\.practicalAnswers : state\.assessmentAnswers;[\s\S]*?answers\[index\] = selected/);
 });
 
 test('desktop sticky action, phone dock and final review submit remain visible and operable', async () => {

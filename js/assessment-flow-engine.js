@@ -148,3 +148,11 @@ export function readAssessmentProgress(state) {
     returnToReview: state.assessmentReturnToReview
   };
 }
+
+/** Resolve a numeric keyboard shortcut (1-based) to an answer option index. */
+export function assessmentAnswerShortcut(key, optionCount) {
+  const count = Math.max(0, Number(optionCount) || 0);
+  if (typeof key !== 'string' || !/^[1-9]$/.test(key)) return null;
+  const index = Number(key) - 1;
+  return index >= 0 && index < count ? index : null;
+}
