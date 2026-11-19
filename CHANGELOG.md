@@ -1,3 +1,28 @@
+# CALLORIA v6.75 — Recruitment Assessment Visibility & Viewport Repair
+
+## Fixed
+
+- Added a dedicated assessment presentation mode that removes the 3D hero, global navigation and fixed game chrome while recruitment aptitude and practical-call assessments, the recruitment decision and the employment offer are active.
+- The assessment uses the full available viewport on desktop, laptop, tablet and phone rather than placing the controls below the oversized workplace preview. On phones, the duplicate page heading is removed so the full answer list has more room above the fixed Continue dock.
+- Added a responsive aptitude/practical layout, readable full-width answer targets, explicit selected-state accessibility, persistent Continue guidance and a sticky desktop action area.
+- Reused the existing v6.11 mobile assessment dock but moved it to the actual viewport edge while the assessment mode is active; the fixed game navigation no longer covers the controls.
+- Kept the original recruitment questions, practical-call stages, answer scoring, critical-breach rules, pass thresholds, retake action and employment offer flow intact.
+- New-question transitions now return to the question heading; selecting an answer restores keyboard focus to that same answer without forcing the page back to the top.
+
+## Verification boundary
+
+- See `VERIFICATION-v6.75.md` for focused assessment, responsive UI and regression checks.
+- Automated source tests and syntax checks do not replace a real browser walkthrough at multiple viewport sizes.
+- Production Vite build, physical-device testing and Vercel deployment are not claimed unless separately verified.
+
+## Compatibility
+
+- Applies to the v6.74-integrated project and preserves its agent shift handover, customer continuity, promise control, case lifecycle and supervisor operations modules.
+- No database migration, environment variable, secret, dependency or public 3D asset is changed.
+- This package contains only the changed source files, assessment stylesheet, regression tests and release notes.
+
+---
+
 # CALLORIA v6.74 — Agent Shift Handover & Open Work Continuity
 
 ## Added
