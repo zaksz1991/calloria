@@ -3,7 +3,7 @@
   'use strict';
 
   const ROOT_SELECTOR = '#viewRoot';
-  const ACTION_SELECTOR = 'button[data-action="assessment-next"], button[data-action="practical-next"]';
+  const ACTION_SELECTOR = 'button[data-action="assessment-next"], button[data-action="practical-next"], button[data-action="assessment-submit"]';
   const DOCK_ID = 'calloriaMobileAssessmentDockV611';
   const isMobile = () => Boolean(
     window.matchMedia?.('(pointer: coarse)').matches ||

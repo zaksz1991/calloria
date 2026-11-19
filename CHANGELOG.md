@@ -1,3 +1,29 @@
+# CALLORIA v6.76 — Recruitment Progress Recovery & Final Response Review
+
+## Added
+
+- Candidates can move backward through all seven aptitude questions and all three practical-call stages without losing recorded responses.
+- Completing the aptitude section now opens the practical-call section; completing the practical-call section opens a final response-review page before any score or recruitment decision is calculated.
+- The review page shows every selected response and provides a direct Edit response action for each item. Saving an edited answer returns the candidate to the review page instead of forcing a restart through later questions.
+- The final submission action is disabled unless all ten answers are valid against their actual option lists. The existing score calculation, critical-breach rules, pass threshold, retake and employment-offer flow remain unchanged.
+- Each selected answer and navigation change is saved to the current CALLORIA profile, including the review/edit destination, so an in-progress assessment can resume after a page reload.
+- The existing mobile assessment dock now proxies the final review submission action as well as aptitude/practical Continue actions. Desktop sticky actions and keyboard-operable buttons remain in place.
+- Added isolated assessment navigation/review engine tests and updated the prior viewport regression tests.
+
+## Verification boundary
+
+- Focused v6.76 flow tests and v6.75 viewport regressions: see `VERIFICATION-v6.76.md`.
+- JavaScript syntax checks: see the verification report.
+- The previous v6.75 viewport harness is not a full live-app end-to-end test. Physical device checks, production Vite build and Vercel deployment are not claimed unless separately verified.
+
+## Compatibility
+
+- Applies to the v6.75-integrated CALLORIA repository.
+- No question content, score weights, pass threshold, critical-breach rule, offer flow, Supabase schema, secret, environment variable, external provider or 3D asset is changed.
+- This package contains only updated folders and files. Preserve all other project files and the existing `public/assets/` content.
+
+---
+
 # CALLORIA v6.75 — Recruitment Assessment Visibility & Viewport Repair
 
 ## Fixed

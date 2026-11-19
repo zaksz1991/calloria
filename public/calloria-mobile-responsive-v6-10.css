@@ -1376,3 +1376,160 @@ body.calloria-assessment-mode .article-box {
     transition: none !important;
   }
 }
+
+/* CALLORIA v6.76 — candidate answer navigation and final response review. */
+body.calloria-assessment-mode .assessment-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+body.calloria-assessment-mode .assessment-back-button {
+  min-height: 40px;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+body.calloria-assessment-mode .assessment-journey-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 4px 0 12px;
+  color: #a8c8cf;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+body.calloria-assessment-mode .assessment-review-layout {
+  width: 100%;
+  min-width: 0;
+}
+
+body.calloria-assessment-mode .assessment-review-card {
+  max-width: 100%;
+}
+
+body.calloria-assessment-mode .assessment-review-sections {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin: 18px 0;
+}
+
+body.calloria-assessment-mode .assessment-review-section {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+body.calloria-assessment-mode .assessment-review-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(151, 199, 203, .2);
+}
+
+body.calloria-assessment-mode .assessment-review-section-head h4 {
+  margin: 0;
+  color: #eef8f7;
+  font-size: 15px;
+}
+
+body.calloria-assessment-mode .assessment-review-item {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(153, 198, 204, .2);
+  border-radius: 12px;
+  background: rgba(10, 28, 42, .76);
+}
+
+body.calloria-assessment-mode .assessment-review-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #c5e0e1;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .045em;
+}
+
+body.calloria-assessment-mode .assessment-review-item-head small {
+  color: #8fadb5;
+  font-size: 10px;
+}
+
+body.calloria-assessment-mode .assessment-review-prompt {
+  margin: 0;
+  color: #eff7f7;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+body.calloria-assessment-mode .assessment-review-response {
+  display: grid;
+  gap: 5px;
+  padding: 11px 12px;
+  border-left: 3px solid #54d4bf;
+  border-radius: 7px;
+  background: rgba(40, 148, 133, .14);
+}
+
+body.calloria-assessment-mode .assessment-review-response small {
+  color: #91c6c1;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+body.calloria-assessment-mode .assessment-review-response strong {
+  color: #ecf8f6;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+body.calloria-assessment-mode .assessment-review-item > .btn {
+  justify-self: start;
+  min-height: 40px;
+}
+
+body.calloria-assessment-mode .assessment-review-card .assessment-footer {
+  z-index: 36;
+}
+
+@media (max-width: 760px), (pointer: coarse) {
+  body.calloria-assessment-mode .assessment-head-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  body.calloria-assessment-mode .assessment-back-button {
+    min-height: 42px;
+  }
+
+  body.calloria-assessment-mode .assessment-review-item {
+    padding: 12px;
+  }
+
+  body.calloria-assessment-mode .assessment-review-prompt {
+    font-size: 13px;
+  }
+
+  body.calloria-assessment-mode .assessment-review-response strong {
+    font-size: 12px;
+  }
+}

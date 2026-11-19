@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import path from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (file) => readFile(path.join(root, file), 'utf8');
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const read = (file) => readFile(resolve(root, file), 'utf8');
 
 test('assessment entry, result and offer use a dedicated viewport mode that removes the 3D hero and navigation chrome', async () => {
   const main = await read('js/main.js');
@@ -22,7 +23,7 @@ test('assessment entry, result and offer use a dedicated viewport mode that remo
 
 test('aptitude and practical assessments expose visible, labelled, keyboard-operable answer buttons', async () => {
   const main = await read('js/main.js');
-  const aptitude = main.slice(main.indexOf('function renderAssessment()'), main.indexOf('const practicalCallSteps'));
+  const aptitude = main.slice(main.indexOf('function renderAssessment()'), main.indexOf('function renderAssessmentReview()'));
   const practical = main.slice(main.indexOf('function renderPracticalAssessment()'), main.indexOf('function renderAssessmentResult()'));
   for (const [name, source, selector, label] of [
     ['aptitude', aptitude, 'data-answer', 'Aptitude answer options'],
@@ -37,25 +38,27 @@ test('aptitude and practical assessments expose visible, labelled, keyboard-oper
   }
 });
 
-test('assessment progression keeps answer selection focused and scrolls each new question into view', async () => {
+test('assessment progression supports backward navigation, saves responses and routes completed stages into review', async () => {
   const main = await read('js/main.js');
   assert.match(main, /function scrollAssessmentToTop\(\)[\s\S]*?scrollIntoView\(\{ block: 'start', behavior: 'auto' \}\)/);
-  assert.match(main, /case 'assessment-next':[\s\S]*?if\(state\.assessmentAnswers\[i\]===undefined\)return[\s\S]*?renderView\(\);scrollAssessmentToTop\(\);break/);
-  assert.match(main, /case 'practical-next':[\s\S]*?if\(state\.practicalAnswers\[i\]===undefined\)return[\s\S]*?scrollAssessmentToTop\(\);break/);
-  assert.match(main, /state\.assessmentAnswers\[i\]=selected;renderView\(\);requestAnimationFrame\(\(\)=>viewRoot\.querySelector\(`\[data-answer=/);
-  assert.match(main, /state\.practicalAnswers\[state\.practicalIndex\]=selected;renderView\(\);requestAnimationFrame\(\(\)=>viewRoot\.querySelector\(`\[data-practical-answer=/);
+  assert.match(main, /case 'assessment-next':[\s\S]*?nextAssessmentStep\(currentAssessmentProgress\(\)/);
+  assert.match(main, /case 'practical-next':[\s\S]*?nextAssessmentStep\(currentAssessmentProgress\(\)/);
+  assert.match(main, /case 'assessment-back':/);
+  assert.match(main, /case 'assessment-review-jump':/);
+  assert.match(main, /state\.assessmentAnswers\[i\]=selected;state\.assessmentSavedAt=new Date\(\)\.toISOString\(\);saveState\(\);renderView\(\)/);
+  assert.match(main, /state\.practicalAnswers\[state\.practicalIndex\]=selected;state\.assessmentSavedAt=new Date\(\)\.toISOString\(\);saveState\(\);renderView\(\)/);
 });
 
-test('assessment desktop sticky action and phone dock remain inside the visible viewport', async () => {
+test('desktop sticky action, phone dock and final review submit remain visible and operable', async () => {
   const css = await read('public/calloria-mobile-responsive-v6-10.css');
   const script = await read('public/js/calloria-mobile-ui-guard-v6-10.js');
   assert.match(css, /body\.calloria-assessment-mode \.assessment-card \.assessment-footer\s*\{[\s\S]*?position:\s*sticky[\s\S]*?bottom:\s*0/);
   assert.match(css, /body\.calloria-assessment-mode #calloriaMobileAssessmentDockV611\s*\{[\s\S]*?bottom:\s*calc\(10px \+ env\(safe-area-inset-bottom\)/);
   assert.match(css, /body\.calloria-assessment-mode \.page-heading\s*\{\s*display:\s*none\s*!important/);
   assert.match(css, /body\.calloria-assessment-mode \.assessment-card \.answer-option\s*\{[\s\S]*?min-height:\s*60px/);
-  assert.match(script, /button\[data-action="assessment-next"\], button\[data-action="practical-next"\]/);
+  assert.match(script, /button\[data-action="assessment-next"\][\s\S]*?button\[data-action="assessment-submit"\]/);
   assert.match(script, /target\.click\(\)/);
-  assert.match(script, /Choose one response above to unlock the next question/);
+  assert.match(script, /Choose an answer/);
 });
 
 test('recruitment still contains seven aptitude questions, three practical call stages and original score/pass controls', async () => {
