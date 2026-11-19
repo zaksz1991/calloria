@@ -1,0 +1,8 @@
+CALLORIA v6.80 focused verification
+
+Node focused tests: 7 passed, 0 failed.
+Runtime guard JavaScript syntax: passed (`node --check`).
+Test file JavaScript syntax: passed (`node --check`).
+CSS parse: 0 errors (tinycss2 parser).
+
+Not run: full Vite production build, Vercel deployment, physical Android/iOS browser test, or real GLB load/placement validation.
