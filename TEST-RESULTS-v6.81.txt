@@ -1,0 +1,23 @@
+CALLORIA v6.81 focused verification
+
+Node version used: v22.16.0
+
+Focused regression tests: 8 passed, 0 failed.
+JavaScript syntax checks: passed for the new path resolver and replacement Vite plugin.
+Production-world transform: current production-world.js source transformed through the replacement plugin; transformed JavaScript passed node --check.
+ZIP integrity: checked after archive creation.
+
+Coverage:
+- Registered URL is preferred.
+- Nested model.glb path is retried only after the registered URL fails.
+- Existing model.glb paths are not expanded into incorrect nested paths.
+- Sequential loader retries and terminal error path reporting.
+- External origins and paths outside /assets/models/ are rejected.
+- Staff inspector recovery is applied by the registered Vite plugin.
+- Office asset loader recovery is applied by the registered Vite plugin.
+
+Not verified:
+- Full Vite production build.
+- Actual GLB downloads from the user's production public/assets/models directory.
+- Model parse, quality validation, placement or visual fit in the live 3D workplace.
+- Vercel deployment and physical phone-browser walkthrough.

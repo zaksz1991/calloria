@@ -1,11 +1,11 @@
 /**
  * CALLORIA GLB-first workplace activation + first-station onboarding.
- *
- * v2.9 extends the already-registered office GLB plan across more stations
- * without changing production-world.js, the Vite entry map, or the asset files.
- * The original v2.2 production-world transform remains intact.
+ * v6.81 adds a narrowly scoped path retry for registered GLB assets. Registry
+ * paths remain first choice; nested <asset-folder>/model.glb is attempted only
+ * when the registered .glb URL fails. Existing Vite transforms are retained.
  */
 const TARGET = '/js/production-world.js';
+const STAFF_TARGET = '/js/glb-world-integration.js';
 const OFFICE_TARGET = '/js/glb-office-world-integration.js';
 const READY_ANCHOR =
   "  callbacks.onAssetsReady?.({ loaded: 0, fallback: staff.length, mode: 'merged-articulated-local-staff', tier });";
@@ -17,8 +17,7 @@ const NEAREST_ANCHOR =
   '      callbacks.onNearestStation?.(nearestStation ? { id: nearestStation.id, label: nearestStation.label, department: nearestStation.department } : null);';
 const USE_ANCHOR =
   '    callbacks.onStation?.({ id: nearestStation.id, label: nearestStation.label, department: nearestStation.department });';
-const IMMERSIVE_ANCHOR =
-  '    callbacks.onImmersiveChange?.(immersive);';
+const IMMERSIVE_ANCHOR = '    callbacks.onImmersiveChange?.(immersive);';
 const SPAWN_ANCHOR =
   '      player.x = 0; player.z = 15.0; player.yaw = 0; player.pitch = -0.04;';
 const IMPORTS = [
@@ -26,11 +25,24 @@ const IMPORTS = [
   "import { integrateCalloriaGLBOfficeAssets } from './glb-office-world-integration.js';",
   "import { createCalloriaWorldMission } from './world-gameplay-mission.js';"
 ].join('\n');
-
+const PATH_IMPORT = "import { loadCalloriaGLBWithPathFallback } from './glb-asset-path-fallback.js';";
 const MARKER = '__CALLORIA_GLB_FIRST_WORKPLACE_V22__';
+const STAFF_PATH_MARKER = '__CALLORIA_GLB_STAFF_PATH_RECOVERY_V681__';
+const OFFICE_PATH_MARKER = '__CALLORIA_GLB_OFFICE_PATH_RECOVERY_V681__';
 const OFFICE_MARKER = '__CALLORIA_GLB_WORKSTATION_COVERAGE_V29__';
 const OFFICE_PLAN_ANCHOR = /const preferred = safeTier === 'low'\s*\?\s*\[[^\]]*\]\s*:\s*safeTier === 'high'\s*\?\s*\[[^\]]*\]\s*:\s*\[[^\]]*\];/g;
 const HEADSET_PLAN_ANCHOR = /headsetStationIndexes:\s*safeTier === 'low'\s*\?\s*\[[^\]]*\]\s*:\s*\[\.\.\.deskStationIndexes\]/g;
+const STAFF_CANDIDATE_ANCHOR = `  const candidates = CANDIDATE_IDS
+    .filter((id) => approvedIds.has(id))
+    .map((id) => GLB_ASSET_REGISTRY.find((asset) => asset.id === id))
+    .filter(Boolean);`;
+const STAFF_LOAD_ANCHOR = '      const gltf = await loader.loadAsync(asset.url);';
+const STAFF_STORE_ANCHOR = '      loadedModels.set(asset.id, { gltf, asset, metrics });';
+const OFFICE_ASSET_ANCHOR = '      const asset = getAsset(id);\n      let gltf;';
+const OFFICE_LOAD_ANCHOR = '        gltf = await loader.loadAsync(asset.url);';
+const OFFICE_DETAIL_PATH_ANCHOR = '        path: asset.path,';
+const OFFICE_DETAIL_URL_ANCHOR = '        url: asset.url,';
+const OFFICE_STORE_ANCHOR = '      const record = { asset, gltf, metrics, role: check.role };';
 
 function count(source, needle) {
   return source.split(needle).length - 1;
@@ -39,13 +51,76 @@ function requireExactlyOnce(context, source, anchor, label) {
   const occurrences = count(source, anchor);
   if (occurrences !== 1) {
     context.error(
-      `CALLORIA GLB-first workplace v2.2 expected exactly one ${label} anchor (${occurrences} found). Refusing a partial transform.`
+      `CALLORIA GLB v6.81 expected exactly one ${label} anchor (${occurrences} found). Refusing a partial transform.`
     );
   }
 }
+function requireOneOf(context, source, anchor, label) {
+  if (!source.includes(anchor)) {
+    context.error(`CALLORIA GLB v6.81 could not locate the ${label} anchor. Refusing a partial transform.`);
+  }
+}
+
+function transformStaffPaths(context, source) {
+  if (source.includes(STAFF_PATH_MARKER)) return null;
+  let code = String(source).replace(/\r\n?/g, '\n');
+  requireExactlyOnce(context, code, STAFF_CANDIDATE_ANCHOR, 'staff candidate selection');
+  requireExactlyOnce(context, code, STAFF_LOAD_ANCHOR, 'staff GLB load');
+  requireExactlyOnce(context, code, STAFF_STORE_ANCHOR, 'staff model cache');
+
+  const candidateReplacement = `  const approvedCandidateIds = CANDIDATE_IDS.filter((id) => approvedIds.has(id));
+  // A stale/office-only inspector approval list must not silently disable all
+  // agent models. Use the two primary candidates only when none of the six
+  // eligible staff IDs is selected; normal approved selections remain honoured.
+  const selectedCandidateIds = approvedCandidateIds.length ? approvedCandidateIds : PRIMARY_CANDIDATES;
+  const candidates = selectedCandidateIds
+    .map((id) => GLB_ASSET_REGISTRY.find((asset) => asset.id === id))
+    .filter(Boolean);`;
+  code = code.replace(STAFF_CANDIDATE_ANCHOR, candidateReplacement);
+  code = code.replace(
+    STAFF_LOAD_ANCHOR,
+    `      const pathLoad = await loadCalloriaGLBWithPathFallback(loader, asset);
+      const gltf = pathLoad.gltf;
+      const resolvedAsset = { ...asset, url: pathLoad.resolvedUrl, path: pathLoad.resolvedPath };`
+  );
+  code = code.replace(
+    STAFF_STORE_ANCHOR,
+    '      loadedModels.set(asset.id, { gltf, asset: resolvedAsset, metrics });'
+  );
+  code = `${PATH_IMPORT}\nconst ${STAFF_PATH_MARKER} = true;\n${code}`;
+  return { code, map: null };
+}
+
+function transformOfficePaths(context, source) {
+  if (source.includes(OFFICE_PATH_MARKER)) return String(source).replace(/\r\n?/g, '\n');
+  let code = String(source).replace(/\r\n?/g, '\n');
+  requireExactlyOnce(context, code, OFFICE_ASSET_ANCHOR, 'office asset declaration');
+  requireExactlyOnce(context, code, OFFICE_LOAD_ANCHOR, 'office GLB load');
+  requireExactlyOnce(context, code, OFFICE_DETAIL_PATH_ANCHOR, 'office resolved path detail');
+  requireExactlyOnce(context, code, OFFICE_DETAIL_URL_ANCHOR, 'office resolved URL detail');
+  requireExactlyOnce(context, code, OFFICE_STORE_ANCHOR, 'office model cache');
+
+  code = code.replace(
+    OFFICE_ASSET_ANCHOR,
+    '      const asset = getAsset(id);\n      let resolvedAsset = asset;\n      let gltf;'
+  );
+  code = code.replace(
+    OFFICE_LOAD_ANCHOR,
+    `        const pathLoad = await loadCalloriaGLBWithPathFallback(loader, asset);
+        gltf = pathLoad.gltf;
+        resolvedAsset = { ...asset, url: pathLoad.resolvedUrl, path: pathLoad.resolvedPath };`
+  );
+  code = code.replace(OFFICE_DETAIL_PATH_ANCHOR, '        path: resolvedAsset.path,');
+  code = code.replace(OFFICE_DETAIL_URL_ANCHOR, '        url: resolvedAsset.url,');
+  code = code.replace(OFFICE_STORE_ANCHOR, '      const record = { asset: resolvedAsset, gltf, metrics, role: check.role };');
+  code = `${PATH_IMPORT}\nconst ${OFFICE_PATH_MARKER} = true;\n${code}`;
+  return code;
+}
+
 function transformOfficeCoverage(context, source) {
-  if (source.includes(OFFICE_MARKER)) return null;
-  const normalized = String(source).replace(/\r\n?/g, '\n');
+  let normalized = transformOfficePaths(context, source);
+  if (normalized === null) normalized = String(source).replace(/\r\n?/g, '\n');
+  if (normalized.includes(OFFICE_MARKER)) return null;
   const planMatches = normalized.match(OFFICE_PLAN_ANCHOR) || [];
   const headsetMatches = normalized.match(HEADSET_PLAN_ANCHOR) || [];
   if (planMatches.length !== 1 || headsetMatches.length !== 1) {
@@ -61,18 +136,15 @@ function transformOfficeCoverage(context, source) {
   return { code, map: null };
 }
 
-/**
- * Vite plugin. Already registered through calloriaGLBWorldPlugin() in vite.config.js.
- */
+/** Vite plugin; already registered in vite.config.js. */
 export function calloriaGLBWorldPlugin() {
   return {
     name: 'calloria-glb-first-workplace-v2-2',
     enforce: 'pre',
     transform(source, id) {
       const normalizedId = String(id || '').split('?')[0].replaceAll('\\', '/');
-      if (normalizedId.endsWith(OFFICE_TARGET)) {
-        return transformOfficeCoverage(this, source);
-      }
+      if (normalizedId.endsWith(STAFF_TARGET)) return transformStaffPaths(this, source);
+      if (normalizedId.endsWith(OFFICE_TARGET)) return transformOfficeCoverage(this, source);
       if (!normalizedId.endsWith(TARGET)) return null;
       if (source.includes(MARKER)) return null;
       const anchors = [
@@ -84,13 +156,8 @@ export function calloriaGLBWorldPlugin() {
         [IMMERSIVE_ANCHOR, 'immersive-state callback'],
         [SPAWN_ANCHOR, 'initial player spawn']
       ];
-      for (const [anchor, label] of anchors) {
-        requireExactlyOnce(this, source, anchor, label);
-      }
+      for (const [anchor, label] of anchors) requireExactlyOnce(this, source, anchor, label);
       let code = `${IMPORTS}\nconst ${MARKER} = true;\n${source}`;
-
-      // Load staff and office GLBs independently. A missing/rejected GLB must
-      // not prevent the world from starting or hide the original fallback.
       code = code.replace(
         READY_ANCHOR,
         `  let glbWorldLayer = null;
@@ -101,7 +168,6 @@ export function calloriaGLBWorldPlugin() {
   } catch (error) {
     console.warn('CALLORIA staff GLB layer unavailable; retaining original staff.', error);
   }
-
   try {
     glbOfficeLayer = await integrateCalloriaGLBOfficeAssets({ THREE, scene, stations, tier });
   } catch (error) {
@@ -123,8 +189,6 @@ export function calloriaGLBWorldPlugin() {
     tier
   };
   callbacks.onAssetsReady?.(combinedAssetStatus);
-  // Keep GLB telemetry honest: report actual model placements separately from
-  // the procedural fallback objects that remain elsewhere on the office floor.
   const assetStatusNode = document.getElementById('assetStatus');
   if (assetStatusNode) {
     const staffCount = combinedAssetStatus.staffLoaded;
@@ -137,8 +201,6 @@ export function calloriaGLBWorldPlugin() {
       + \`  ·  \${String(tier).toUpperCase()}\`;
   }`
       );
-      // Feed the two GLB layers from the existing frame loop. No second renderer
-      // and no additional requestAnimationFrame loop are created.
       code = code.replace(
         UPDATE_ANCHOR,
         `      updateStaff(delta, timestamp / 1000);
@@ -154,7 +216,6 @@ export function calloriaGLBWorldPlugin() {
       worldMissionLayer?.dispose?.();
       visibilityObserver?.disconnect(); resizeObserver?.disconnect();`
       );
-      // Start at station 11, which is included in every device-tier asset plan.
       code = code.replace(
         SPAWN_ANCHOR,
         `      const assignedStartStation = stations.find((station) => station.id === 11) || stations[0];
@@ -187,7 +248,6 @@ export function calloriaGLBWorldPlugin() {
         `    callbacks.onImmersiveChange?.(immersive);
     window.dispatchEvent(new CustomEvent('calloria:world-immersive', { detail: { active: immersive } }));`
       );
-
       return { code, map: null };
     }
   };
