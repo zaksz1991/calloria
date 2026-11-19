@@ -21,6 +21,8 @@
   let dock = null;
   let proxyButton = null;
   let hint = null;
+  let dockResizeObserver = null;
+  let dockMeasureFrame = 0;
 
   function syncViewportMetrics() {
     const viewport = window.visualViewport;
@@ -31,6 +33,26 @@
     if (height > 0) document.documentElement.style.setProperty('--calloria-v611-visual-height', `${Math.round(height)}px`);
     if (width > 0) document.documentElement.style.setProperty('--calloria-v611-visual-width', `${Math.round(width)}px`);
     document.documentElement.style.setProperty('--calloria-v611-browser-bottom-inset', `${Math.round(hiddenBottom)}px`);
+    scheduleDockClearanceMeasure();
+  }
+
+  function measureDockClearance() {
+    dockMeasureFrame = 0;
+    if (!dock || dock.hidden || !dock.isConnected) {
+      document.documentElement.style.setProperty('--calloria-v611-assessment-dock-clearance', '0px');
+      return;
+    }
+    const box = dock.getBoundingClientRect();
+    const css = window.getComputedStyle(dock);
+    const bottom = Number.parseFloat(css.bottom) || 0;
+    const height = Math.max(box.height || 0, dock.offsetHeight || 0);
+    const reserve = Math.max(0, Math.ceil(height + bottom + 16));
+    document.documentElement.style.setProperty('--calloria-v611-assessment-dock-clearance', `${reserve}px`);
+  }
+
+  function scheduleDockClearanceMeasure() {
+    if (dockMeasureFrame) cancelAnimationFrame(dockMeasureFrame);
+    dockMeasureFrame = requestAnimationFrame(measureDockClearance);
   }
 
   function createDock() {
@@ -51,6 +73,10 @@
     document.body.append(dock);
     proxyButton = dock.querySelector('[data-calloria-proxy-continue]');
     hint = dock.querySelector('[data-calloria-hint]');
+    if (typeof ResizeObserver === 'function') {
+      dockResizeObserver = new ResizeObserver(scheduleDockClearanceMeasure);
+      dockResizeObserver.observe(dock);
+    }
     proxyButton.addEventListener('click', () => {
       const target = currentOriginal;
       if (!target?.isConnected || target.disabled || target.getAttribute('aria-disabled') === 'true') return;
@@ -78,6 +104,7 @@
     restoreOriginalFooter();
     document.documentElement.classList.remove('calloria-mobile-assessment-active-v611');
     if (dock) dock.hidden = true;
+    document.documentElement.style.setProperty('--calloria-v611-assessment-dock-clearance', '0px');
   }
 
   function getAssessmentAction(root) {
@@ -121,6 +148,7 @@
 
     dock.hidden = false;
     document.documentElement.classList.add('calloria-mobile-assessment-active-v611');
+    scheduleDockClearanceMeasure();
   }
 
   function scheduleRefresh() {
