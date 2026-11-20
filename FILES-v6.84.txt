@@ -1,0 +1,17 @@
+CALLORIA v6.84 — file manifest
+
+build/calloria-glb-world-plugin.js
+js/glb-asset-health-panel.js
+js/glb-asset-path-fallback.js
+tests/calloria-glb-diagnostics-consolidation-v683.test.mjs
+tests/calloria-glb-nonblocking-startup-v684.test.mjs
+tests/calloria-glb-path-fallback-v681.test.mjs
+tests/calloria-glb-runtime-health-v682.test.mjs
+docs/CALLORIA-v6.84-SOURCE-AUDIT.md
+INSTALL-GITHUB-v6.84.md
+VERIFICATION-v6.84.md
+TEST-RESULTS-v6.84.txt
+TEST-RUN-OUTPUT.txt
+FILES-v6.84.txt
+
+This is an updated-files overlay, not a complete copy of the CALLORIA repository.

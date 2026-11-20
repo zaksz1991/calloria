@@ -1,5 +1,5 @@
 /**
- * CALLORIA v6.83 — single immersive-only runtime GLB diagnostics panel.
+ * CALLORIA v6.84 — immersive-only GLB diagnostics with explicit background-load state.
  * It reports real loader attempts emitted by the v6.81 path resolver and the
  * final staff/office integration summary. It never fabricates a successful load.
  */
@@ -29,21 +29,29 @@ export function summarizeCalloriaGLBHealth(status = {}, attempts = []) {
   const staffFailed = numberOrZero(status.staffFailed ?? status.failed);
   const officeErrors = listOrEmpty(status.officeErrors ?? status.errors);
   const staffErrors = listOrEmpty(status.staffErrors);
-  const declaredProblems = staffFailed + officeErrors.length + staffErrors.length;
+  const officeFailed = numberOrZero(status.officeFailed);
+  const declaredProblems = Math.max(staffFailed, staffErrors.length)
+    + Math.max(officeFailed, officeErrors.length);
+  const staffPending = Boolean(status.staffPending);
+  const officePending = Boolean(status.officePending);
+  const pending = Boolean(status.assetsPending ?? (staffPending || officePending));
 
   return {
     staffLoaded,
     staffFallback,
     officePlaced,
     staffFailed,
-    officeErrorCount: officeErrors.length,
-    staffErrorCount: staffErrors.length,
+    officeErrorCount: Math.max(officeFailed, officeErrors.length),
+    staffErrorCount: Math.max(staffFailed, staffErrors.length),
     failedPaths,
     loadedPaths,
     loadingPaths,
     declaredProblems,
     totalAttempts: attemptList.length,
     worldReady: Boolean(status.worldReady ?? status.ready),
+    staffPending,
+    officePending,
+    pending,
     tier: String(status.tier || 'unknown'),
   };
 }
@@ -188,17 +196,19 @@ export function createCalloriaGLBHealthPanel({ tier = 'unknown' } = {}) {
 
   function render() {
     const summary = summarizeCalloriaGLBHealth(state.status, state.attempts);
-    const warning = !summary.worldReady
-      ? 'The workplace asset integration has not reported completion yet.'
-      : summary.staffLoaded === 0 && summary.officePlaced === 0
-        ? 'The integration completed but placed no GLB staff or office objects. Review the attempted file paths below.'
-        : summary.declaredProblems || summary.failedPaths
-          ? 'Some asset paths or model integrations failed. The details below show what the browser actually attempted.'
-          : '';
+    const warning = summary.pending
+      ? 'GLB assets are loading in the background. The workplace, touch controls and local fallback objects remain available while downloads and decoding continue.'
+      : !summary.worldReady
+        ? 'The workplace asset integration has not reported completion yet.'
+        : summary.staffLoaded === 0 && summary.officePlaced === 0
+          ? 'Asset loading has finished, but no GLB staff or office objects were placed. Review the attempted paths and integration errors below.'
+          : summary.declaredProblems || summary.failedPaths
+            ? 'Some asset paths or model integrations failed. The details below show what the browser actually attempted.'
+            : '';
     const attempts = [...state.attempts].slice(-18).reverse();
     panel.innerHTML = `
       <header class="calloria-glb-head">
-        <div><h2>3D ASSET LOADING REPORT</h2><p class="calloria-glb-sub">Live browser attempts · ${escapeHTML(summary.tier)} graphics tier · ${escapeHTML(state.lastUpdated || 'waiting')}</p></div>
+        <div><h2>3D ASSET LOADING REPORT</h2><p class="calloria-glb-sub">${summary.pending ? 'Background loading in progress' : 'Live browser results'} · ${escapeHTML(summary.tier)} graphics tier · ${escapeHTML(state.lastUpdated || 'waiting')}</p></div>
         <button class="calloria-glb-close" type="button" data-close aria-label="Close report">×</button>
       </header>
       <div class="calloria-glb-content">
@@ -207,15 +217,16 @@ export function createCalloriaGLBHealthPanel({ tier = 'unknown' } = {}) {
           <div class="calloria-glb-stat"><span class="calloria-glb-value">${summary.officePlaced}</span><span class="calloria-glb-label">Office objects placed</span></div>
           <div class="calloria-glb-stat"><span class="calloria-glb-value">${summary.staffFallback}</span><span class="calloria-glb-label">Local staff fallbacks</span></div>
           <div class="calloria-glb-stat"><span class="calloria-glb-value">${summary.failedPaths}</span><span class="calloria-glb-label">Failed file paths</span></div>
+          <div class="calloria-glb-stat"><span class="calloria-glb-value">${summary.pending ? '…' : '✓'}</span><span class="calloria-glb-label">${summary.pending ? 'Asset startup pending' : 'Asset startup settled'}</span></div>
         </div>
         ${warning ? `<p class="calloria-glb-notice">${escapeHTML(warning)}</p>` : ''}
         <h3 class="calloria-glb-section">Actual model file attempts (${summary.totalAttempts})</h3>
-        <div class="calloria-glb-list">${attempts.length ? attempts.map(renderAttempt).join('') : '<p class="calloria-glb-empty">No GLB load attempts have been recorded. This can mean the GLB integration did not run, or the asset modules have not started loading.</p>'}</div>
+        <div class="calloria-glb-list">${attempts.length ? attempts.map(renderAttempt).join('') : summary.pending ? '<p class="calloria-glb-empty">The workplace is ready. Staff and office asset requests are starting in the background; this report will update as each request completes.</p>' : '<p class="calloria-glb-empty">No GLB load attempts were recorded. Check whether build-time bundling and world integration were enabled.</p>'}</div>
         <h3 class="calloria-glb-section">Integration errors</h3>
         <div class="calloria-glb-list">${[...listOrEmpty(state.status.staffErrors), ...listOrEmpty(state.status.officeErrors)].length
           ? [...listOrEmpty(state.status.staffErrors), ...listOrEmpty(state.status.officeErrors)].map((error) => `<p class="calloria-glb-error">${escapeHTML(error?.message || error)}</p>`).join('')
           : '<p class="calloria-glb-empty">No integration-level error was reported.</p>'}</div>
-        <footer class="calloria-glb-footer">A successful HTTP/GLB load is not the same as a visible placement. Counts above come from the workplace integration status. <a href="/asset-inspector.html">Open full asset inspector</a>.</footer>
+        <footer class="calloria-glb-footer">A successful HTTP/GLB load is not the same as a visible placement. Counts above come from the workplace integration status. Background loading does not block the workplace. <a href="/asset-inspector.html">Open full asset inspector</a>.</footer>
       </div>`;
     panel.querySelector('[data-close]')?.addEventListener('click', close);
   }

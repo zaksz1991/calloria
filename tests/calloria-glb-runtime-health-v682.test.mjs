@@ -31,6 +31,8 @@ const OFFICE_SOURCE = `
 const WORLD_SOURCE = `
 async function initProductionWorld() {
   callbacks.onAssetsReady?.({ loaded: 0, fallback: staff.length, mode: 'merged-articulated-local-staff', tier });
+  callbacks.onRenderStatus?.({ state: 'ready', tier, stations: stations.length, staff: staff.length });
+  renderStill();
       updateStaff(delta, timestamp / 1000); animate.lastStaffAt = timestamp;
       disposed = true; stopLoop(); visibilityObserver?.disconnect(); resizeObserver?.disconnect();
       callbacks.onNearestStation?.(nearestStation ? { id: nearestStation.id, label: nearestStation.label, department: nearestStation.department } : null);
@@ -57,13 +59,16 @@ test('health summary reports real counts and path outcomes without inventing suc
     officePlaced: 4,
     staffFailed: 1,
     officeErrorCount: 1,
-    staffErrorCount: 0,
+    staffErrorCount: 1,
     failedPaths: 1,
     loadedPaths: 1,
     loadingPaths: 1,
     declaredProblems: 2,
     totalAttempts: 3,
     worldReady: true,
+    staffPending: false,
+    officePending: false,
+    pending: false,
     tier: 'balanced',
   });
 });

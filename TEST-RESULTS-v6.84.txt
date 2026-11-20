@@ -1,0 +1,22 @@
+CALLORIA v6.84 — TEST RESULTS
+
+Focused command:
+  node --test tests/*.test.mjs
+
+Result:
+  32 tests passed
+  0 tests failed
+  0 skipped
+
+Additional checks:
+  node --check build/calloria-glb-world-plugin.js             PASS
+  node --check js/glb-asset-health-panel.js                    PASS
+  node --check transformed production-world source snapshot    PASS
+  node --check transformed staff integration fixture           PASS
+  node --check transformed office-anchor fixture                PASS
+  CC0 office post-transform marker compatibility                PASS
+  ZIP archive integrity                                         PASS (verified after creation)
+
+Not run:
+  full npm test suite, npm run build, Vercel production build/deployment,
+  physical-device browser test, live GLB downloads, visual model placement.

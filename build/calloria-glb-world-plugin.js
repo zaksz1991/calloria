@@ -1,8 +1,8 @@
 /**
  * CALLORIA GLB-first workplace activation + first-station onboarding.
- * v6.81 adds a narrowly scoped path retry for registered GLB assets. Registry
- * paths remain first choice; nested <asset-folder>/model.glb is attempted only
- * when the registered .glb URL fails. Existing Vite transforms are retained.
+ * v6.84 keeps the local world renderable while optional staff/office GLBs load
+ * in the background. It retains v6.81 registered-path-first fallback and the
+ * existing Vite transform contracts.
  */
 const TARGET = '/js/production-world.js';
 const STAFF_TARGET = '/js/glb-world-integration.js';
@@ -20,6 +20,7 @@ const USE_ANCHOR =
 const IMMERSIVE_ANCHOR = '    callbacks.onImmersiveChange?.(immersive);';
 const SPAWN_ANCHOR =
   '      player.x = 0; player.z = 15.0; player.yaw = 0; player.pitch = -0.04;';
+const INITIAL_RENDER_READY_ANCHOR = "  callbacks.onRenderStatus?.({ state: 'ready', tier, stations: stations.length, staff: staff.length });\n  renderStill();";
 const IMPORTS = [
   "import { integrateCalloriaGLBStaff } from './glb-world-integration.js';",
   "import { integrateCalloriaGLBOfficeAssets } from './glb-office-world-integration.js';",
@@ -160,7 +161,8 @@ export function calloriaGLBWorldPlugin() {
         [NEAREST_ANCHOR, 'nearest-workstation callback'],
         [USE_ANCHOR, 'workstation USE callback'],
         [IMMERSIVE_ANCHOR, 'immersive-state callback'],
-        [SPAWN_ANCHOR, 'initial player spawn']
+        [SPAWN_ANCHOR, 'initial player spawn'],
+        [INITIAL_RENDER_READY_ANCHOR, 'initial render readiness']
       ];
       for (const [anchor, label] of anchors) requireExactlyOnce(this, source, anchor, label);
       let code = `${IMPORTS}\nconst ${MARKER} = true;\nconst ${HEALTH_MARKER} = true;\n${source}`;
@@ -170,54 +172,188 @@ export function calloriaGLBWorldPlugin() {
   let glbOfficeLayer = null;
   let worldMissionLayer = null;
   let glbHealthPanel = null;
+  let glbStartIdleHandle = null;
+  let glbStartTimer = null;
+  const glbRuntimeState = {
+    staffPending: true,
+    officePending: true,
+    staffStatus: { loaded: 0, fallback: staff.length, failed: 0, errors: [], reason: 'Staff GLB loading has started.' },
+    officeStatus: { placed: 0, assets: [], errors: [], reason: 'Office GLB loading has started.' }
+  };
+
+  // The local workplace and its usable fallback staff/furniture must render
+  // immediately. GLB downloads, parsing, validation and placement are optional
+  // upgrades that finish in the background; they never block world startup.
   try {
-    // Attach before GLB requests begin so no initial load attempt is missed.
     glbHealthPanel = createCalloriaGLBHealthPanel({ host, tier });
   } catch (error) {
     console.warn('CALLORIA GLB health panel unavailable.', error);
-  }
-  try {
-    glbWorldLayer = await integrateCalloriaGLBStaff({ THREE, scene, staff, tier });
-  } catch (error) {
-    console.warn('CALLORIA staff GLB layer unavailable; retaining original staff.', error);
-  }
-  try {
-    glbOfficeLayer = await integrateCalloriaGLBOfficeAssets({ THREE, scene, stations, tier });
-  } catch (error) {
-    console.warn('CALLORIA office GLB layer unavailable; retaining original office objects.', error);
   }
   try {
     worldMissionLayer = createCalloriaWorldMission({ host });
   } catch (error) {
     console.warn('CALLORIA first-shift mission overlay unavailable.', error);
   }
-  const staffAssetStatus = glbWorldLayer?.status || { loaded: 0, fallback: staff.length };
-  const officeAssetStatus = glbOfficeLayer?.status || { placed: 0, assets: [], errors: [] };
-  const combinedAssetStatus = {
-    ...staffAssetStatus,
-    staffLoaded: Number(staffAssetStatus.loaded) || 0,
-    officePlaced: Number(officeAssetStatus.placed) || 0,
-    officeAssets: Array.isArray(officeAssetStatus.assets) ? officeAssetStatus.assets : [],
-    officeErrors: Array.isArray(officeAssetStatus.errors) ? officeAssetStatus.errors : [],
-    staffFailed: Number(staffAssetStatus.failed) || 0,
-    staffErrors: Array.isArray(staffAssetStatus.errors) ? staffAssetStatus.errors : [],
-    worldReady: true,
-    tier
+
+  const publishGLBStatus = () => {
+    const staffAssetStatus = glbRuntimeState.staffStatus || { loaded: 0, fallback: staff.length, errors: [] };
+    const officeAssetStatus = glbRuntimeState.officeStatus || { placed: 0, assets: [], errors: [] };
+    const rawOfficeErrors = Array.isArray(officeAssetStatus.errors) ? officeAssetStatus.errors : [];
+    const officeFailedIds = Array.isArray(officeAssetStatus.failedAssetIds) ? officeAssetStatus.failedAssetIds : [];
+    const officeAssetDetails = Array.isArray(officeAssetStatus.assetDetails) ? officeAssetStatus.assetDetails : [];
+    const officeErrorIds = new Set(rawOfficeErrors.map((item) => item?.assetId).filter(Boolean));
+    const officeFailureDetails = officeFailedIds
+      .filter((assetId) => !officeErrorIds.has(assetId))
+      .map((assetId) => {
+        const detail = officeAssetDetails.find((item) => item?.id === assetId);
+        const reasons = Array.isArray(detail?.reasons) ? detail.reasons.filter(Boolean).join('; ') : '';
+        return { assetId, message: reasons || detail?.reason || 'Asset did not load, validate or place; the original office object remains visible.' };
+      });
+    const officeErrors = [...rawOfficeErrors, ...officeFailureDetails];
+    const rawStaffErrors = Array.isArray(staffAssetStatus.errors) ? staffAssetStatus.errors : [];
+    const staffRejected = Array.isArray(staffAssetStatus.rejected) ? staffAssetStatus.rejected : [];
+    const staffRejectionDetails = staffRejected.map((item) => ({
+      assetId: item?.id || 'staff-model',
+      message: Array.isArray(item?.reasons) && item.reasons.length
+        ? item.reasons.join('; ')
+        : 'Staff model was rejected by runtime validation.'
+    }));
+    const staffErrors = [...rawStaffErrors, ...staffRejectionDetails];
+    const staffFailedCount = Math.max(
+      Number(staffAssetStatus.failed) || 0,
+      staffRejected.length,
+      rawStaffErrors.length
+    );
+    const combinedAssetStatus = {
+      ...staffAssetStatus,
+      staffLoaded: Number(staffAssetStatus.loaded) || 0,
+      officePlaced: Number(officeAssetStatus.placed ?? officeAssetStatus.officeObjectsPlaced) || 0,
+      officeAssets: Array.isArray(officeAssetStatus.assets) ? officeAssetStatus.assets : [],
+      officeErrors,
+      officeFailed: Math.max(officeErrors.length, officeFailedIds.length),
+      staffFailed: staffFailedCount,
+      staffRejected,
+      staffErrors,
+      staffPending: Boolean(glbRuntimeState.staffPending),
+      officePending: Boolean(glbRuntimeState.officePending),
+      assetsPending: Boolean(glbRuntimeState.staffPending || glbRuntimeState.officePending),
+      worldReady: true,
+      tier
+    };
+    try { callbacks.onAssetsReady?.(combinedAssetStatus); }
+    catch (error) { console.warn('CALLORIA GLB status callback failed.', error); }
+    const assetStatusNode = document.getElementById('assetStatus');
+    if (assetStatusNode) {
+      const staffCount = combinedAssetStatus.staffLoaded;
+      const officeCount = combinedAssetStatus.officePlaced;
+      const failedCount = combinedAssetStatus.officeFailed + staffFailedCount;
+      const pendingNames = [combinedAssetStatus.staffPending ? 'STAFF' : '', combinedAssetStatus.officePending ? 'OFFICE' : ''].filter(Boolean).join(' + ');
+      const progressLabel = combinedAssetStatus.assetsPending
+        ? '  ·  LOADING: ' + pendingNames
+        : failedCount ? '  ·  REVIEW: ' + failedCount : '';
+      assetStatusNode.textContent = 'GLB STAFF: ' + staffCount
+        + '  ·  OFFICE GLB OBJECTS: ' + officeCount
+        + progressLabel + '  ·  ' + String(tier).toUpperCase();
+    }
+    if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('calloria:glb-world-assets-ready', { detail: combinedAssetStatus }));
+    }
+    glbHealthPanel?.update?.(combinedAssetStatus);
+    return combinedAssetStatus;
   };
-  callbacks.onAssetsReady?.(combinedAssetStatus);
-  const assetStatusNode = document.getElementById('assetStatus');
-  if (assetStatusNode) {
-    const staffCount = combinedAssetStatus.staffLoaded;
-    const officeCount = combinedAssetStatus.officePlaced;
-    const failedCount = combinedAssetStatus.officeErrors.length
-      + (Array.isArray(staffAssetStatus.rejected) ? staffAssetStatus.rejected.length : 0);
-    assetStatusNode.textContent =
-      \`GLB STAFF: \${staffCount}  ·  OFFICE GLB OBJECTS: \${officeCount}\`
-      + (failedCount ? \`  ·  REVIEW: \${failedCount}\` : '')
-      + \`  ·  \${String(tier).toUpperCase()}\`;
-  }
-  window.dispatchEvent(new CustomEvent('calloria:glb-world-assets-ready', { detail: combinedAssetStatus }));
-  glbHealthPanel?.update?.(combinedAssetStatus);`
+
+  // Publish a truthful pending state before either loader starts. A zero count
+  // during this phase means “not loaded yet”, not “the integration failed”.
+  publishGLBStatus();
+
+  const startBackgroundGLBLoads = () => {
+    glbStartIdleHandle = null;
+    glbStartTimer = null;
+    if (disposed) return;
+
+    const staffGLBPromise = Promise.resolve()
+    .then(() => integrateCalloriaGLBStaff({ THREE, scene, staff, tier }))
+    .then((layer) => {
+      if (disposed) {
+        layer?.dispose?.();
+        return null;
+      }
+      glbWorldLayer = layer || null;
+      glbRuntimeState.staffStatus = layer?.status || {
+        loaded: 0, fallback: staff.length, failed: 0, errors: [],
+        reason: 'Staff GLB integration returned no status.'
+      };
+      glbRuntimeState.staffPending = false;
+      publishGLBStatus();
+      renderStill();
+      return layer;
+    })
+    .catch((error) => {
+      if (disposed) return null;
+      const message = String(error?.message || error);
+      glbRuntimeState.staffStatus = {
+        loaded: 0, fallback: staff.length, failed: 1,
+        errors: [{ message }], reason: message
+      };
+      glbRuntimeState.staffPending = false;
+      console.warn('CALLORIA staff GLB layer unavailable; retaining original staff.', error);
+      publishGLBStatus();
+      renderStill();
+      return null;
+    });
+
+    const officeGLBPromise = Promise.resolve()
+    .then(() => integrateCalloriaGLBOfficeAssets({ THREE, scene, stations, tier }))
+    .then((layer) => {
+      if (disposed) {
+        layer?.dispose?.();
+        return null;
+      }
+      glbOfficeLayer = layer || null;
+      glbRuntimeState.officeStatus = layer?.status || {
+        placed: 0, assets: [], errors: [], reason: 'Office GLB integration returned no status.'
+      };
+      glbRuntimeState.officePending = false;
+      publishGLBStatus();
+      renderStill();
+      return layer;
+    })
+    .catch((error) => {
+      if (disposed) return null;
+      const message = String(error?.message || error);
+      glbRuntimeState.officeStatus = {
+        placed: 0, assets: [], errors: [{ message }], reason: message
+      };
+      glbRuntimeState.officePending = false;
+      console.warn('CALLORIA office GLB layer unavailable; retaining original office objects.', error);
+      publishGLBStatus();
+      renderStill();
+      return null;
+    });
+
+    // Both independent asset families start together, but only after the browser
+    // has had an idle slice (or a short timeout) to paint the workplace and mount
+    // its touch controls. This keeps first interaction ahead of network/decode work.
+    void Promise.allSettled([staffGLBPromise, officeGLBPromise]);
+  };
+
+  const cancelPendingGLBStart = () => {
+    if (glbStartIdleHandle !== null && typeof window.cancelIdleCallback === 'function') {
+      window.cancelIdleCallback(glbStartIdleHandle);
+    }
+    if (glbStartTimer !== null) window.clearTimeout(glbStartTimer);
+    glbStartIdleHandle = null;
+    glbStartTimer = null;
+  };
+
+  /* __CALLORIA_OFFICE_GLB_RUNTIME_V615__ — office runtime is bootstrapped by the GLB-first workplace plugin. */`
+      );
+      // Schedule background model work only after the existing world-ready
+      // callback and first still render have run. The browser can paint and
+      // mount touch controls before GLTF network/decoder work is queued.
+      code = code.replace(
+        INITIAL_RENDER_READY_ANCHOR,
+        `${INITIAL_RENDER_READY_ANCHOR}\n  if (typeof window.requestIdleCallback === 'function') {\n    glbStartIdleHandle = window.requestIdleCallback(startBackgroundGLBLoads, { timeout: 1200 });\n  } else {\n    glbStartTimer = window.setTimeout(startBackgroundGLBLoads, 220);\n  }`
       );
       code = code.replace(
         UPDATE_ANCHOR,
@@ -229,6 +365,7 @@ export function calloriaGLBWorldPlugin() {
       code = code.replace(
         DISPOSE_ANCHOR,
         `      disposed = true; stopLoop();
+      cancelPendingGLBStart();
       glbHealthPanel?.dispose?.();
       glbWorldLayer?.dispose?.();
       glbOfficeLayer?.dispose?.();
