@@ -1,0 +1,9 @@
+build/calloria-third-person-player-plugin.mjs
+INSTALL-GITHUB-v6.85.md
+BUILD-LOG-DIAGNOSIS-v6.85.md
+VERIFICATION-v6.85.md
+TEST-RESULTS-v6.85.txt
+FILES-v6.85.txt
+tests/calloria-third-person-current-world-v685.test.mjs
+tests/fixtures/production-world-current-snapshot.js
+tests/fixtures/production-world-after-v684.js

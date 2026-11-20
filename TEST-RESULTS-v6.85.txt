@@ -1,0 +1,12 @@
+CALLORIA v6.85 focused test run
+Command run internally: node --test tests/calloria-third-person-current-world-v685.test.mjs
+
+1..7
+# tests 7
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+
+Both transformed production-world fixtures passed `node --check`.
