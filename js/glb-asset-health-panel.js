@@ -1,5 +1,5 @@
 /**
- * CALLORIA v6.82 — non-obstructive runtime GLB health panel.
+ * CALLORIA v6.83 — single immersive-only runtime GLB diagnostics panel.
  * It reports real loader attempts emitted by the v6.81 path resolver and the
  * final staff/office integration summary. It never fabricates a successful load.
  */
@@ -7,6 +7,7 @@ const PANEL_ID = 'calloria-glb-health-panel-v682';
 const BUTTON_ID = 'calloria-glb-health-toggle-v682';
 const STYLE_ID = 'calloria-glb-health-style-v682';
 const MAX_ATTEMPTS = 40;
+let activePanelController = null;
 
 function numberOrZero(value) {
   const parsed = Number(value);
@@ -75,6 +76,7 @@ function renderAttempt(item) {
 function styleText() {
   return `
     #${BUTTON_ID}, #${PANEL_ID}, #${PANEL_ID} * { box-sizing: border-box; }
+    #${BUTTON_ID}[hidden], #calloriaGlbAudit { display: none !important; }
     #${BUTTON_ID} {
       position: fixed; z-index: 9998;
       top: calc(env(safe-area-inset-top, 0px) + 12px); left: 12px;
@@ -148,6 +150,9 @@ export function createCalloriaGLBHealthPanel({ tier = 'unknown' } = {}) {
     return { update() {}, dispose() {} };
   }
 
+  // Dispose a previous world instance before replacing its UI/listeners.
+  activePanelController?.dispose?.();
+  activePanelController = null;
   document.getElementById(BUTTON_ID)?.remove();
   document.getElementById(PANEL_ID)?.remove();
   document.getElementById(STYLE_ID)?.remove();
@@ -156,6 +161,7 @@ export function createCalloriaGLBHealthPanel({ tier = 'unknown' } = {}) {
     status: { tier, worldReady: false },
     attempts: [],
     expanded: false,
+    immersive: Boolean(document.body.classList?.contains?.('calloria-game-playing')),
     lastUpdated: null,
   };
 
@@ -171,6 +177,7 @@ export function createCalloriaGLBHealthPanel({ tier = 'unknown' } = {}) {
   button.setAttribute('aria-controls', PANEL_ID);
   button.setAttribute('aria-expanded', 'false');
   button.setAttribute('aria-label', 'Open 3D asset loading status');
+  button.hidden = !state.immersive;
 
   const panel = document.createElement('section');
   panel.id = PANEL_ID;
@@ -214,6 +221,7 @@ export function createCalloriaGLBHealthPanel({ tier = 'unknown' } = {}) {
   }
 
   function open() {
+    if (!state.immersive) return;
     state.expanded = true;
     panel.hidden = false;
     button.setAttribute('aria-expanded', 'true');
@@ -243,6 +251,14 @@ export function createCalloriaGLBHealthPanel({ tier = 'unknown' } = {}) {
   function handleReady(event) {
     update(event?.detail || {});
   }
+  function syncImmersiveVisibility(active = document.body.classList?.contains?.('calloria-game-playing')) {
+    state.immersive = Boolean(active);
+    button.hidden = !state.immersive;
+    if (!state.immersive) close();
+  }
+  function handleImmersive(event) {
+    syncImmersiveVisibility(event?.detail?.active);
+  }
   function handleKey(event) {
     if (event.key === 'Escape' && state.expanded) close();
   }
@@ -250,19 +266,34 @@ export function createCalloriaGLBHealthPanel({ tier = 'unknown' } = {}) {
   button.addEventListener('click', () => state.expanded ? close() : open());
   window.addEventListener('calloria:glb-load-attempt', handleAttempt);
   window.addEventListener('calloria:glb-world-assets-ready', handleReady);
+  window.addEventListener('calloria:world-immersive', handleImmersive);
   window.addEventListener('keydown', handleKey);
 
-  return {
+  // The body class is the source of truth in the main app. Observe it as a
+  // fallback so the status control still hides if an integration event is
+  // missed during a rapid enter/exit or a world reinitialisation.
+  const immersiveObserver = typeof MutationObserver !== 'undefined'
+    ? new MutationObserver(() => syncImmersiveVisibility())
+    : null;
+  immersiveObserver?.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  syncImmersiveVisibility();
+
+  const controller = {
     update,
     open,
     close,
     dispose() {
       window.removeEventListener('calloria:glb-load-attempt', handleAttempt);
       window.removeEventListener('calloria:glb-world-assets-ready', handleReady);
+      window.removeEventListener('calloria:world-immersive', handleImmersive);
       window.removeEventListener('keydown', handleKey);
+      immersiveObserver?.disconnect();
       button.remove();
       panel.remove();
       style.remove();
+      if (activePanelController === controller) activePanelController = null;
     },
   };
+  activePanelController = controller;
+  return controller;
 }

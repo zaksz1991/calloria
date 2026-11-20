@@ -1,0 +1,21 @@
+CALLORIA v6.83 focused verification
+Node.js: v22.16.0
+
+New v6.83 tests: 7 passed, 0 failed.
+Combined v6.81 + v6.82 + v6.83 focused tests: 21 passed, 0 failed.
+
+Coverage:
+- Real GLB counts remain accurately summarized.
+- Status button stays hidden outside immersive mode.
+- Immersive entry reveals the one status button.
+- Exit closes and hides the report.
+- Body class observer covers a missed immersive event.
+- Legacy auto-expanding #calloriaGlbAudit is suppressed.
+- Reinitialisation disposes prior controls/listeners.
+- Escape closes the status report.
+- Existing v6.81 path resolver and v6.82 Vite transform/telemetry tests remain green.
+
+Syntax checks: passed for updated health panel and test file.
+ZIP test: passed.
+
+Not run: full Vite production build, full repository test suite, Vercel deployment, or physical-device browser test.
