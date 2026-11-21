@@ -1,0 +1,3 @@
+CALLORIA v6.87 regression verification
+Node test suite: 48 passed, 0 failed, 0 skipped.
+Full Vite build and Vercel deployment: not run.

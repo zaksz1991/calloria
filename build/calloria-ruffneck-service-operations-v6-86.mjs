@@ -1,8 +1,10 @@
 /**
- * CALLORIA v6.86 — re-based RuffNeck service operations integration.
+ * CALLORIA v6.87 — current-source compatibility repair for RuffNeck service operations.
  *
  * Replaces the stale v6.51–v6.54 main.js transform chain with one source-aware
- * plugin. The existing v6.51 catalogue remains the source of service content.
+ * plugin. This hotfix tolerates applicant defaults changed by earlier transforms
+ * and injects its panel at the stable Workforce system-activity heading. The
+ * existing v6.51 catalogue remains the source of service content.
  * All customer references and case records created here are synthetic/local.
  */
 import { PLATFORM_SUPPORT_CATALOG_V651 } from './calloria-ruffneck-platform-support-v6-51.mjs';
@@ -18,7 +20,7 @@ const ROLE_TITLE_ANCHOR = "roleTitle: 'Customer Experience Associate',";
 const SALARY_ANCHOR = 'salary: 185000,';
 const MIGRATION_ANCHOR = 'const migrated = { ...initialState(), ...parsed };';
 const WORKFORCE_RENDER_ANCHOR = 'function renderWorkforce() {';
-const WORKFORCE_INSERT_ANCHOR = '</div>\n         <h4 style="margin-top:16px">System activity</h4>';
+const WORKFORCE_INSERT_ANCHOR = '<h4 style="margin-top:16px">System activity</h4>';
 const SYSTEM_LAUNCH_GUARD = 'if(!system)break;';
 const CLICK_TEMPLATE_ANCHOR = "  const template=e.target.closest('[data-digital-template]');";
 const CRM_QA_ANCHOR = '<td>${Number(c.qa)||0}%</td>';
@@ -60,6 +62,18 @@ function replaceExactlyOnce(context, source, anchor, replacement, label) {
   const found = count(source, anchor);
   if (found !== 1) {
     context.error(`CALLORIA v6.86 expected one ${label} anchor; found ${found}. No partial source transform was applied.`);
+  }
+  return source.replace(anchor, replacement);
+}
+
+function replaceIfPresentExactlyOnce(context, source, anchor, replacement, label) {
+  const found = count(source, anchor);
+  if (found === 0) {
+    context.warn?.(`CALLORIA v6.87 left ${label} unchanged because an earlier transform or current source revision has already changed that default.`);
+    return source;
+  }
+  if (found !== 1) {
+    context.error(`CALLORIA v6.87 found ${found} ${label} anchors; expected at most one. No partial source transform was applied.`);
   }
   return source.replace(anchor, replacement);
 }
@@ -351,8 +365,6 @@ export function transformMainV686(context, input) {
   const original = String(input || '').replace(/\r\n?/g, '\n');
   if (original.includes(MAIN_MARKER) || original.includes('__CALLORIA_RUFFNECK_PLATFORM_SUPPORT_V651__')) return null;
   const required = [
-    [TRACK_ANCHOR, 'applicant default track'],
-    [DEPARTMENT_ANCHOR, 'applicant default department'],
     [ROLE_TITLE_ANCHOR, 'applicant default role title'],
     [SALARY_ANCHOR, 'applicant default salary'],
     [MIGRATION_ANCHOR, 'legacy applicant default migration point'],
@@ -369,13 +381,16 @@ export function transformMainV686(context, input) {
     context.error(`CALLORIA v6.86 source rebase failed: ${missing.map(([, label]) => label).join(', ')}. No partial transform was applied.`);
   }
   let code = original;
-  code = replaceExactlyOnce(context, code, TRACK_ANCHOR, "selectedTrack: 'service',", 'applicant default track');
-  code = replaceExactlyOnce(context, code, DEPARTMENT_ANCHOR, "department: 'Customer Experience',", 'applicant default department');
+  // Defaults are optional: upstream transforms may already have changed them.
+  // The gameplay/service integration must not fail the entire production build
+  // because those non-critical literals are no longer present.
+  code = replaceIfPresentExactlyOnce(context, code, TRACK_ANCHOR, "selectedTrack: 'service',", 'applicant default track');
+  code = replaceIfPresentExactlyOnce(context, code, DEPARTMENT_ANCHOR, "department: 'Customer Experience',", 'applicant default department');
   code = replaceExactlyOnce(context, code, ROLE_TITLE_ANCHOR, "roleTitle: 'Customer Service Associate',", 'applicant default role title');
   code = replaceExactlyOnce(context, code, SALARY_ANCHOR, 'salary: 170000,', 'applicant default salary');
   code = replaceExactlyOnce(context, code, MIGRATION_ANCHOR, `${MIGRATION_ANCHOR}\n    if (!migrated.applicationSubmitted && migrated.stage === 'applicant' && !migrated.hired && !String(migrated.applicantName || '').trim() && migrated.selectedTrack === 'banking' && migrated.department === 'Banking Operations') { migrated.selectedTrack='service'; migrated.department='Customer Experience'; migrated.roleTitle='Customer Service Associate'; migrated.salary=170000; }`, 'legacy applicant default migration point');
   code = replaceExactlyOnce(context, code, WORKFORCE_RENDER_ANCHOR, `${buildHelperSource()}\n${WORKFORCE_RENDER_ANCHOR}\n  calloriaEnsureSupportStylesV686();\n  calloriaInstallSupportWatchdogV686();\n  calloriaInstallSupportSubmitHandlersV686();\n  calloriaInstallSupportRequestOptionsV686();`, 'Workforce renderer');
-  code = replaceExactlyOnce(context, code, WORKFORCE_INSERT_ANCHOR, `</div>\n         \${calloriaRenderPlatformOperationsV686()}\n         <h4 style="margin-top:16px">System activity</h4>`, 'Workforce systems directory insertion point');
+  code = replaceExactlyOnce(context, code, WORKFORCE_INSERT_ANCHOR, `\${calloriaRenderPlatformOperationsV686()}\n         ${WORKFORCE_INSERT_ANCHOR}`, 'Workforce systems activity heading');
   code = replaceExactlyOnce(context, code, SYSTEM_LAUNCH_GUARD, `${SYSTEM_LAUNCH_GUARD}\n       if (CALLORIA_PLATFORM_SUPPORT_CATALOG_V686[system.id]) state.activePlatformId=system.id;`, 'simulated system launch guard');
   code = replaceExactlyOnce(context, code, CLICK_TEMPLATE_ANCHOR, `  const platformScenario=e.target.closest('[data-platform-scenario]');
   if(platformScenario){

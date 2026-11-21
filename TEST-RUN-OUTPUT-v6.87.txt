@@ -1,0 +1,298 @@
+TAP version 13
+# Subtest: asset summary preserves the real loaded/placed/fallback counts
+ok 1 - asset summary preserves the real loaded/placed/fallback counts
+  ---
+  duration_ms: 1.258996
+  type: 'test'
+  ...
+# Subtest: diagnostics button is hidden outside the immersive workplace
+ok 2 - diagnostics button is hidden outside the immersive workplace
+  ---
+  duration_ms: 1.268189
+  type: 'test'
+  ...
+# Subtest: the one diagnostics panel appears on immersive entry and closes on exit
+ok 3 - the one diagnostics panel appears on immersive entry and closes on exit
+  ---
+  duration_ms: 0.970968
+  type: 'test'
+  ...
+# Subtest: body-class observer is a fallback for missed immersive events
+ok 4 - body-class observer is a fallback for missed immersive events
+  ---
+  duration_ms: 0.503183
+  type: 'test'
+  ...
+# Subtest: legacy auto-expanding GLB card is suppressed so it cannot duplicate the report
+ok 5 - legacy auto-expanding GLB card is suppressed so it cannot duplicate the report
+  ---
+  duration_ms: 0.643803
+  type: 'test'
+  ...
+# Subtest: world exit closes an open report and the new instance owns one event listener
+ok 6 - world exit closes an open report and the new instance owns one event listener
+  ---
+  duration_ms: 0.446949
+  type: 'test'
+  ...
+# Subtest: Escape closes the asset report
+ok 7 - Escape closes the asset report
+  ---
+  duration_ms: 0.487969
+  type: 'test'
+  ...
+# Subtest: world initialisation starts GLB work in the background instead of awaiting models
+ok 8 - world initialisation starts GLB work in the background instead of awaiting models
+  ---
+  duration_ms: 2.185559
+  type: 'test'
+  ...
+# Subtest: the original render readiness path is left synchronous and GLB startup is deferred
+ok 9 - the original render readiness path is left synchronous and GLB startup is deferred
+  ---
+  duration_ms: 4.521298
+  type: 'test'
+  ...
+# Subtest: runtime status marks zero counts as pending until each loader settles
+ok 10 - runtime status marks zero counts as pending until each loader settles
+  ---
+  duration_ms: 0.388606
+  type: 'test'
+  ...
+# Subtest: staff and office loaders settle independently and publish partial results
+ok 11 - staff and office loaders settle independently and publish partial results
+  ---
+  duration_ms: 0.26337
+  type: 'test'
+  ...
+# Subtest: late GLB layers are disposed instead of attached to a closed world
+ok 12 - late GLB layers are disposed instead of attached to a closed world
+  ---
+  duration_ms: 0.498618
+  type: 'test'
+  ...
+# Subtest: pre-transform declares the office-runtime marker expected by the post-transform plugin
+ok 13 - pre-transform declares the office-runtime marker expected by the post-transform plugin
+  ---
+  duration_ms: 1.383537
+  type: 'test'
+  ...
+# Subtest: disposed world cancels a not-yet-started idle callback or timer
+ok 14 - disposed world cancels a not-yet-started idle callback or timer
+  ---
+  duration_ms: 0.305212
+  type: 'test'
+  ...
+# Subtest: staff validator rejections and office failed asset IDs are included in status
+ok 15 - staff validator rejections and office failed asset IDs are included in status
+  ---
+  duration_ms: 0.2394
+  type: 'test'
+  ...
+# Subtest: health summary distinguishes in-progress loading from a settled zero-placement failure
+ok 16 - health summary distinguishes in-progress loading from a settled zero-placement failure
+  ---
+  duration_ms: 0.600426
+  type: 'test'
+  ...
+# Subtest: health summary counts staff rejection arrays and office failed IDs without double-counting
+ok 17 - health summary counts staff rejection arrays and office failed IDs without double-counting
+  ---
+  duration_ms: 0.504882
+  type: 'test'
+  ...
+# Subtest: health panel labels pending startup and does not call it a completed zero-placement failure
+ok 18 - health panel labels pending startup and does not call it a completed zero-placement failure
+  ---
+  duration_ms: 15.723849
+  type: 'test'
+  ...
+# Subtest: registry URL remains first and nested model.glb is second
+ok 19 - registry URL remains first and nested model.glb is second
+  ---
+  duration_ms: 1.596976
+  type: 'test'
+  ...
+# Subtest: an existing model.glb path does not create a duplicate nested fallback
+ok 20 - an existing model.glb path does not create a duplicate nested fallback
+  ---
+  duration_ms: 0.404672
+  type: 'test'
+  ...
+# Subtest: loader stops after the registered model URL succeeds
+ok 21 - loader stops after the registered model URL succeeds
+  ---
+  duration_ms: 0.391284
+  type: 'test'
+  ...
+# Subtest: loader retries nested model.glb after the registered file fails
+ok 22 - loader retries nested model.glb after the registered file fails
+  ---
+  duration_ms: 0.255126
+  type: 'test'
+  ...
+# Subtest: failed candidate errors retain both attempted first-party paths
+ok 23 - failed candidate errors retain both attempted first-party paths
+  ---
+  duration_ms: 0.669031
+  type: 'test'
+  ...
+# Subtest: external URLs and paths outside the model root are rejected
+ok 24 - external URLs and paths outside the model root are rejected
+  ---
+  duration_ms: 0.141587
+  type: 'test'
+  ...
+# Subtest: Vite plugin repairs stale agent approvals and instruments the staff loader
+ok 25 - Vite plugin repairs stale agent approvals and instruments the staff loader
+  ---
+  duration_ms: 0.596402
+  type: 'test'
+  ...
+# Subtest: Vite plugin instruments office GLB loading without changing the existing plan
+ok 26 - Vite plugin instruments office GLB loading without changing the existing plan
+  ---
+  duration_ms: 6.840709
+  type: 'test'
+  ...
+# Subtest: health summary reports real counts and path outcomes without inventing success
+ok 27 - health summary reports real counts and path outcomes without inventing success
+  ---
+  duration_ms: 1.788635
+  type: 'test'
+  ...
+# Subtest: health summary keeps empty integration counts at zero
+ok 28 - health summary keeps empty integration counts at zero
+  ---
+  duration_ms: 0.324574
+  type: 'test'
+  ...
+# Subtest: panel safely returns a no-DOM controller in Node or server rendering
+ok 29 - panel safely returns a no-DOM controller in Node or server rendering
+  ---
+  duration_ms: 0.484918
+  type: 'test'
+  ...
+# Subtest: staff and office path loaders emit channel-specific attempt telemetry
+ok 30 - staff and office path loaders emit channel-specific attempt telemetry
+  ---
+  duration_ms: 1.063689
+  type: 'test'
+  ...
+# Subtest: world transform creates the status panel before any staff or office loaders run
+ok 31 - world transform creates the status panel before any staff or office loaders run
+  ---
+  duration_ms: 1.962322
+  type: 'test'
+  ...
+# Subtest: health panel is a collapsed, safe-area-aware mobile control with detailed error output
+ok 32 - health panel is a collapsed, safe-area-aware mobile control with detailed error output
+  ---
+  duration_ms: 6.376424
+  type: 'test'
+  ...
+# Subtest: redacts passwords, one-time codes, email addresses, phone numbers and long numeric identifiers
+ok 33 - redacts passwords, one-time codes, email addresses, phone numbers and long numeric identifiers
+  ---
+  duration_ms: 12.876969
+  type: 'test'
+  ...
+# Subtest: creates a critical synthetic service case with the 30-minute SLA and specialist routing
+ok 34 - creates a critical synthetic service case with the 30-minute SLA and specialist routing
+  ---
+  duration_ms: 1.123702
+  type: 'test'
+  ...
+# Subtest: rejects real-looking customer identifiers and request types outside the service catalogue
+ok 35 - rejects real-looking customer identifiers and request types outside the service catalogue
+  ---
+  duration_ms: 0.657699
+  type: 'test'
+  ...
+# Subtest: scores a service practice response and rejects unknown options
+ok 36 - scores a service practice response and rejects unknown options
+  ---
+  duration_ms: 0.462249
+  type: 'test'
+  ...
+# Subtest: records case status, reassignment and resolution history
+ok 37 - records case status, reassignment and resolution history
+  ---
+  duration_ms: 0.56533
+  type: 'test'
+  ...
+# Subtest: rebases the Workforce systems registry and removes Finacle
+ok 38 - rebases the Workforce systems registry and removes Finacle
+  ---
+  duration_ms: 43.243589
+  type: 'test'
+  ...
+# Subtest: rebases current main.js anchors, installs service operations and produces valid JavaScript
+ok 39 - rebases current main.js anchors, installs service operations and produces valid JavaScript
+  ---
+  duration_ms: 41.771424
+  type: 'test'
+  ...
+# Subtest: tolerates upstream applicant-default changes and anchors service UI to the current Workforce heading
+ok 40 - tolerates upstream applicant-default changes and anchors service UI to the current Workforce heading
+  ---
+  duration_ms: 27.603654
+  type: 'test'
+  ...
+# Subtest: fails closed when source anchors drift
+ok 41 - fails closed when source anchors drift
+  ---
+  duration_ms: 0.554691
+  type: 'test'
+  ...
+# Subtest: current production-world source exposes all v2.6 anchors once
+ok 42 - current production-world source exposes all v2.6 anchors once
+  ---
+  duration_ms: 1.091558
+  type: 'test'
+  ...
+# Subtest: current local-world source transforms without the obsolete combined GLB-ready callback
+ok 43 - current local-world source transforms without the obsolete combined GLB-ready callback
+  ---
+  duration_ms: 4.49482
+  type: 'test'
+  ...
+# Subtest: current-world avatar startup is appended after the first render and remains asynchronous
+ok 44 - current-world avatar startup is appended after the first render and remains asynchronous
+  ---
+  duration_ms: 2.82071
+  type: 'test'
+  ...
+# Subtest: v6.84-transformed world uses the GLB disposal and immersive-event anchors
+ok 45 - v6.84-transformed world uses the GLB disposal and immersive-event anchors
+  ---
+  duration_ms: 2.304599
+  type: 'test'
+  ...
+# Subtest: both current and v6.84-transformed world outputs pass JavaScript syntax checking
+ok 46 - both current and v6.84-transformed world outputs pass JavaScript syntax checking
+  ---
+  duration_ms: 70.129663
+  type: 'test'
+  ...
+# Subtest: transformation is idempotent and does not insert duplicate imports or listeners
+ok 47 - transformation is idempotent and does not insert duplicate imports or listeners
+  ---
+  duration_ms: 0.888409
+  type: 'test'
+  ...
+# Subtest: a missing current-world update anchor fails safely before returning partial code
+ok 48 - a missing current-world update anchor fails safely before returning partial code
+  ---
+  duration_ms: 1.465423
+  type: 'test'
+  ...
+1..48
+# tests 48
+# suites 0
+# pass 48
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 682.000445

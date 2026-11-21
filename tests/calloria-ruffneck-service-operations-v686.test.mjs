@@ -166,6 +166,41 @@ function renderCRM(c){ return \`<td>\${Number(c.qa)||0}%</td><p><strong>Issue:</
   assert.equal(api.transformMain(context(), transformed.code), null, 'transformation should be idempotent');
 });
 
+test('tolerates upstream applicant-default changes and anchors service UI to the current Workforce heading', () => {
+  const alreadyRebased = `
+const SYSTEMS = [{id:'icc',name:'ICC',purpose:'Queue'}];
+const state = { applicationSubmitted:false, stage:'applicant', hired:false, applicantName:'', systemEvents:[], cases:[], currentView:'workforce' };
+const escapeHTML = value => String(value ?? '');
+const toast = () => {};
+const renderView = () => {};
+const saveState = () => {};
+const pushOperationEvent = () => {};
+const createSystemEvent = (events, systemId) => events.push({systemId});
+function initialState(){ return { selectedTrack: 'service', department: 'Customer Experience', roleTitle: 'Customer Experience Associate', salary: 185000, }; }
+function loadState(parsed){ const migrated = { ...initialState(), ...parsed }; return migrated; }
+function renderWorkforce() {
+  const markup = \`<section class="panel"><div class="grid three">\${SYSTEMS.map(s=>\`<article>\${s.name}</article>\`).join('')}</div>
+         <h4 style="margin-top:16px">System activity</h4>
+         \${state.systemEvents.slice(-8).reverse().map(e=>e.systemId).join('')}
+         Connected workflow practice using synthetic records only. No real banking systems or transactions.</section>\`;
+  return markup;
+}
+function launch(){ switch('launch-system'){ case 'launch-system': { const system=SYSTEMS.find(x=>x.id==='icc'); if(!system)break; return system; } } }
+document.addEventListener('click',e=>{
+  const template=e.target.closest('[data-digital-template]');
+});
+function renderCRM(c){ return \`<td>\${Number(c.qa)||0}%</td><p><strong>Issue:</strong> \${escapeHTML(c.title)}</p>\`; }
+`;
+  const transformed = api.transformMain(context(), alreadyRebased);
+  assert.ok(transformed.code.includes(api.markers.MAIN_MARKER));
+  assert.ok(transformed.code.includes("selectedTrack: 'service'"));
+  assert.ok(transformed.code.includes("department: 'Customer Experience'"));
+  assert.ok(transformed.code.includes('calloriaRenderPlatformOperationsV686()'));
+  assert.ok(transformed.code.includes('<h4 style="margin-top:16px">System activity</h4>'));
+  assert.ok(transformed.code.indexOf('calloriaRenderPlatformOperationsV686()') < transformed.code.indexOf('<h4 style="margin-top:16px">System activity</h4>'));
+  syntaxCheck(transformed.code, 'main-already-rebased.fixture.mjs');
+});
+
 test('fails closed when source anchors drift', () => {
   assert.throws(() => api.transformMain(context(), 'const initialState = () => ({ });'), /source rebase failed/i);
 });

@@ -1,0 +1,20 @@
+Cumulative runtime files:
+build/calloria-glb-world-plugin.js
+build/calloria-third-person-player-plugin.mjs
+build/calloria-ruffneck-service-operations-v6-86.mjs (patched v6.87 implementation)
+js/glb-asset-health-panel.js
+js/glb-asset-path-fallback.js
+
+Regression tests:
+tests/calloria-glb-diagnostics-consolidation-v683.test.mjs
+tests/calloria-glb-nonblocking-startup-v684.test.mjs
+tests/calloria-glb-path-fallback-v681.test.mjs
+tests/calloria-glb-runtime-health-v682.test.mjs
+tests/calloria-ruffneck-service-operations-v686.test.mjs
+tests/calloria-third-person-current-world-v685.test.mjs
+
+Fixtures:
+tests/fixtures/production-world-after-v684.js
+tests/fixtures/production-world-current-snapshot.js
+
+No vite.config.js replacement is included; keep the v6.86 plugin registration already in commit c8a48d6.
