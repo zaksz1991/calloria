@@ -1,0 +1,11 @@
+CALLORIA v6.93 — two additions to the existing vite.config.js
+
+1) Add this import alongside the other build-plugin imports, immediately after the Career Development plugin import:
+
+import { calloriaCustomerRecoveryInsightsPluginV693 } from './build/calloria-customer-recovery-insights-v6-93.mjs';
+
+2) In the plugins array, add this call immediately after calloriaCareerDevelopmentPluginV688(), and before the Public Experience Hub plugin:
+
+calloriaCustomerRecoveryInsightsPluginV693(),
+
+Do not add the plugin twice. Keep the existing plugin registrations and order otherwise unchanged.

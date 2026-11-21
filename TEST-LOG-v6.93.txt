@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: first prior interaction is previous history, not a repeat customer
+ok 1 - first prior interaction is previous history, not a repeat customer
+  ---
+  duration_ms: 3.649549
+  type: 'test'
+  ...
+# Subtest: second distinct interaction is correctly classified as a repeat customer
+ok 2 - second distinct interaction is correctly classified as a repeat customer
+  ---
+  duration_ms: 0.519205
+  type: 'test'
+  ...
+# Subtest: generic recorded interaction is not miscounted as an open follow-up
+ok 3 - generic recorded interaction is not miscounted as an open follow-up
+  ---
+  duration_ms: 0.201786
+  type: 'test'
+  ...
+# Subtest: explicit open and in-progress statuses count as follow-ups
+ok 4 - explicit open and in-progress statuses count as follow-ups
+  ---
+  duration_ms: 0.241145
+  type: 'test'
+  ...
+# Subtest: resolved and closed outcomes do not remain open after follow-up
+ok 5 - resolved and closed outcomes do not remain open after follow-up
+  ---
+  duration_ms: 0.719378
+  type: 'test'
+  ...
+# Subtest: reopened, escalated and callback-pending statuses remain open
+ok 6 - reopened, escalated and callback-pending statuses remain open
+  ---
+  duration_ms: 0.251801
+  type: 'test'
+  ...
+# Subtest: duplicate interaction identifiers do not inflate repeat counts
+ok 7 - duplicate interaction identifiers do not inflate repeat counts
+  ---
+  duration_ms: 0.255145
+  type: 'test'
+  ...
+# Subtest: normalisation migrates older saved states without losing interaction history
+ok 8 - normalisation migrates older saved states without losing interaction history
+  ---
+  duration_ms: 0.175655
+  type: 'test'
+  ...
+# Subtest: missing QA and sentiment values remain unknown, not zero
+ok 9 - missing QA and sentiment values remain unknown, not zero
+  ---
+  duration_ms: 0.329038
+  type: 'test'
+  ...
+# Subtest: explicit QA and sentiment values are clamped to valid percentages
+ok 10 - explicit QA and sentiment values are clamped to valid percentages
+  ---
+  duration_ms: 1.127024
+  type: 'test'
+  ...
+# Subtest: injects recovery brief once into current Customer 360 template
+ok 11 - injects recovery brief once into current Customer 360 template
+  ---
+  duration_ms: 1.539087
+  type: 'test'
+  ...
+# Subtest: transform is idempotent
+ok 12 - transform is idempotent
+  ---
+  duration_ms: 0.215476
+  type: 'test'
+  ...
+# Subtest: refuses changed source without returning a partial transform
+ok 13 - refuses changed source without returning a partial transform
+  ---
+  duration_ms: 0.291691
+  type: 'test'
+  ...
+# Subtest: repeat contact plus open follow-up is prioritised for recovery
+ok 14 - repeat contact plus open follow-up is prioritised for recovery
+  ---
+  duration_ms: 0.677725
+  type: 'test'
+  ...
+# Subtest: one contact and no outstanding work remains routine
+ok 15 - one contact and no outstanding work remains routine
+  ---
+  duration_ms: 0.205321
+  type: 'test'
+  ...
+# Subtest: contacts outside the 72-hour window do not create cross-channel bounce signals
+ok 16 - contacts outside the 72-hour window do not create cross-channel bounce signals
+  ---
+  duration_ms: 0.136236
+  type: 'test'
+  ...
+# Subtest: low recorded sentiment raises an attention flag but unknown sentiment does not
+ok 17 - low recorded sentiment raises an attention flag but unknown sentiment does not
+  ---
+  duration_ms: 0.192141
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 111.555212

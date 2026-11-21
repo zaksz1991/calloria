@@ -1,0 +1,10 @@
+CALLORIA-v6.93-CUSTOMER-RECOVERY/
+  js/customer-continuity-engine.js                         REPLACE
+  build/calloria-customer-recovery-insights-v6-93.mjs      ADD
+  tests/customer-continuity-engine-v693.test.mjs           ADD
+  tests/customer-recovery-transform-v693.test.mjs         ADD
+  VITE-CONFIG-ADDITIONS-v6.93.txt                          APPLY TWO ADDITIONS
+  INSTALL-GITHUB-v6.93.md                                  GUIDE
+  CHANGELOG-v6.93.md                                       CHANGELOG
+  SOURCE-BASELINE-v6.93.md                                 SOURCE AUDIT
+  VERIFICATION-v6.93.md                                    TEST REPORT

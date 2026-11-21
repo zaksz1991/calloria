@@ -1,16 +1,14 @@
 /**
- * CALLORIA v6.68 — cross-channel customer continuity for the fictional game simulation.
- * Stores minimal interaction metadata only; it never stores free-form notes or transcripts.
+ * CALLORIA customer continuity engine — synthetic local gameplay metadata.
+ * v6.93 fixes repeat-customer classification and open-follow-up detection.
+ * It stores no free-form notes, messages, credentials or voice transcripts.
  */
-export const CUSTOMER_CONTINUITY_VERSION = '6.68.0';
+export const CUSTOMER_CONTINUITY_VERSION = '6.93.0';
 export const MAX_CUSTOMER_PROFILES = 500;
 export const MAX_INTERACTIONS_PER_CUSTOMER = 20;
 
-const CLOSED_STATUSES = new Set([
-  'resolved', 'completed', 'customer declined', 'declined', 'opt-out recorded',
-  'suppressed', 'closed', 'no further action'
-]);
-
+const CLOSED_STATUS_PATTERN = /\b(resolved|completed|closed|declined|opt[ -]?out|suppressed|no further action)\b/i;
+const OPEN_STATUS_PATTERN = /\b(open|active|assigned|in progress|working|pending|awaiting|reopened|escalated|unresolved|follow[ -]?up|callback|review required|action required)\b/i;
 function clean(value, maximum = 140) {
   return String(value ?? '')
     .replace(/[<>\u0000-\u001f]/g, ' ')
@@ -18,16 +16,18 @@ function clean(value, maximum = 140) {
     .trim()
     .slice(0, maximum);
 }
-
 function normalizedName(value) {
   return clean(value, 100).normalize('NFKC').toLocaleLowerCase('en').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 }
-
 function validIso(value, fallback = Date.now()) {
   const parsed = value ? Date.parse(value) : (typeof fallback === 'string' ? Date.parse(fallback) : Number(fallback));
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : new Date().toISOString();
 }
-
+function optionalScore(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, Math.min(100, number)) : null;
+}
 function safeChannel(value) {
   const source = clean(value, 40).toLowerCase().replace(/[\s-]+/g, '_');
   const aliases = {
@@ -37,11 +37,14 @@ function safeChannel(value) {
   };
   return aliases[source] || aliases[String(value || '').toLowerCase()] || source || 'unknown';
 }
-
+function isOpenFollowUp(item) {
+  const status = clean(item?.status, 80).toLowerCase().replace(/[_-]+/g, ' ');
+  if (!status || CLOSED_STATUS_PATTERN.test(status)) return false;
+  return OPEN_STATUS_PATTERN.test(status);
+}
 export function createCustomerContinuityState() {
   return { version: CUSTOMER_CONTINUITY_VERSION, profiles: {} };
 }
-
 export function normalizeCustomerContinuityState(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return createCustomerContinuityState();
   const profiles = {};
@@ -62,8 +65,8 @@ export function normalizeCustomerContinuityState(value) {
         status: clean(item.status, 80),
         disposition: clean(item.disposition, 50),
         occurredAt: validIso(item.occurredAt),
-        qa: Number.isFinite(Number(item.qa)) ? Math.max(0, Math.min(100, Number(item.qa))) : null,
-        sentiment: Number.isFinite(Number(item.sentiment)) ? Math.max(0, Math.min(100, Number(item.sentiment))) : null
+        qa: optionalScore(item.qa),
+        sentiment: optionalScore(item.sentiment)
       }));
     if (!interactions.length) continue;
     profiles[key] = {
@@ -79,11 +82,7 @@ export function normalizeCustomerContinuityState(value) {
   const newest = Object.values(profiles).sort((a, b) => Date.parse(b.lastSeenAt) - Date.parse(a.lastSeenAt)).slice(0, MAX_CUSTOMER_PROFILES);
   return { version: CUSTOMER_CONTINUITY_VERSION, profiles: Object.fromEntries(newest.map(profile => [profile.key, profile])) };
 }
-
-/**
- * Resolve a synthetic customer identity. Shared customer references take priority;
- * otherwise the simulation falls back to a normalised customer display name.
- */
+/** Resolve a synthetic customer identity. Shared references take priority over display names. */
 export function resolveCustomerContinuityIdentity({ customer, customerName, customerRef, customerId } = {}) {
   const displayName = clean(customerName || customer || 'Customer', 100) || 'Customer';
   const reference = clean(customerRef || customerId, 100).toLocaleLowerCase('en').replace(/\s+/g, '');
@@ -92,8 +91,7 @@ export function resolveCustomerContinuityIdentity({ customer, customerName, cust
   if (!nameKey) return null;
   return { key: `name:${nameKey}`, displayName, matchBasis: 'name' };
 }
-
-/** Records only minimal case metadata; free-form notes, message bodies and transcripts are excluded. */
+/** Records minimal case metadata; free-form notes, message bodies and transcripts are excluded. */
 export function recordCustomerInteraction(value, input = {}) {
   const state = normalizeCustomerContinuityState(value);
   const identity = resolveCustomerContinuityIdentity(input);
@@ -109,8 +107,8 @@ export function recordCustomerInteraction(value, input = {}) {
     status: clean(input.status || 'Recorded', 80),
     disposition: clean(input.disposition, 50),
     occurredAt: at,
-    qa: Number.isFinite(Number(input.qa)) ? Math.max(0, Math.min(100, Number(input.qa))) : null,
-    sentiment: Number.isFinite(Number(input.sentiment)) ? Math.max(0, Math.min(100, Number(input.sentiment))) : null
+    qa: optionalScore(input.qa),
+    sentiment: optionalScore(input.sentiment)
   };
   const existing = state.profiles[identity.key] || {
     key: identity.key,
@@ -140,30 +138,24 @@ export function recordCustomerInteraction(value, input = {}) {
     .slice(0, MAX_CUSTOMER_PROFILES);
   return { version: CUSTOMER_CONTINUITY_VERSION, profiles: Object.fromEntries(retained.map(item => [item.key, item])) };
 }
-
 export function getCustomerContinuityContext(value, identityInput, { limit = 5 } = {}) {
   const state = normalizeCustomerContinuityState(value);
   const identity = resolveCustomerContinuityIdentity(identityInput || {});
   const profile = identity ? state.profiles[identity.key] || null : null;
   if (!profile) {
     return {
-      found: false,
-      repeatCustomer: false,
-      identity,
-      profile: null,
-      interactions: [],
-      previousChannels: [],
-      openCases: [],
-      lastInteraction: null,
+      found: false, repeatCustomer: false, identity, profile: null, interactions: [],
+      previousChannels: [], openCases: [], lastInteraction: null,
       matchBasis: identity?.matchBasis || 'unavailable'
     };
   }
   const interactions = profile.interactions.slice().sort((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt));
-  const openCases = interactions.filter(item => !CLOSED_STATUSES.has(item.status.toLowerCase()));
+  const openCases = interactions.filter(isOpenFollowUp);
   const previousChannels = [...new Set(interactions.map(item => item.channel))];
   return {
     found: true,
-    repeatCustomer: profile.totalInteractions >= 1,
+    // A single previous interaction is history, not a repeat-customer pattern.
+    repeatCustomer: profile.totalInteractions > 1,
     identity,
     profile,
     interactions: interactions.slice(0, Math.max(1, Math.min(10, Math.trunc(Number(limit) || 5)))),
@@ -173,13 +165,12 @@ export function getCustomerContinuityContext(value, identityInput, { limit = 5 }
     matchBasis: profile.matchBasis
   };
 }
-
 export function customerContinuityMetrics(value) {
   const state = normalizeCustomerContinuityState(value);
   const profiles = Object.values(state.profiles);
   const repeatCustomers = profiles.filter(profile => profile.totalInteractions > 1);
   const crossChannelCustomers = profiles.filter(profile => new Set(profile.interactions.map(item => item.channel)).size > 1);
-  const openFollowUps = profiles.reduce((sum, profile) => sum + profile.interactions.filter(item => !CLOSED_STATUSES.has(item.status.toLowerCase())).length, 0);
+  const openFollowUps = profiles.reduce((sum, profile) => sum + profile.interactions.filter(isOpenFollowUp).length, 0);
   return {
     customers: profiles.length,
     repeatCustomers: repeatCustomers.length,
@@ -188,7 +179,6 @@ export function customerContinuityMetrics(value) {
     openFollowUps
   };
 }
-
 export function listCustomerContinuityProfiles(value, { limit = 10 } = {}) {
   const state = normalizeCustomerContinuityState(value);
   return Object.values(state.profiles)
