@@ -1,0 +1,12 @@
+CALLORIA-v6.95-SLA-CLOCK-INTEGRITY/
+  build/calloria-case-resolution-transaction-guard-v6-94.mjs   required cumulative dependency
+  build/calloria-case-sla-clock-accuracy-v6-95.mjs               new Vite plugin
+  tests/calloria-case-resolution-transaction-guard-v6-94.test.mjs inherited v6.94 regression tests
+  tests/calloria-case-sla-clock-accuracy-v6-95.test.mjs           new v6.95 regression tests
+  tests/fixtures/case-lifecycle-before-v694.mjs                   source fixture only
+  VITE-CONFIG-ADDITIONS-v6.95.txt                                  registration snippet
+  INSTALL-GITHUB-v6.95.md                                          GUI installation guide
+  CHANGELOG-v6.95.md                                               release notes
+  SOURCE-BASELINE-v6.95.md                                         source audit
+  VERIFICATION-v6.95.md                                            test report
+  TEST-LOG-v6.95.txt                                               local regression output

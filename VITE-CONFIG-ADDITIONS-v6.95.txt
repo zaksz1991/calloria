@@ -1,0 +1,9 @@
+ADD THIS IMPORT beside the other Vite build-plugin imports:
+
+import { calloriaCaseSlaClockAccuracyPluginV695 } from './build/calloria-case-sla-clock-accuracy-v6-95.mjs';
+
+ADD THIS PLUGIN ENTRY once in the plugins array, after the existing career-development and case-lifecycle transforms and before visitor-facing/public-hub transforms:
+
+calloriaCaseSlaClockAccuracyPluginV695(),
+
+The v6.95 plugin includes the v6.94 transactional guard internally. If your branch already registers calloriaCaseResolutionTransactionGuardPluginV694(), keep that registration; v6.95 is marker-aware and will not apply the v6.94 rewrite twice. Ensure v6.95 is registered only once.

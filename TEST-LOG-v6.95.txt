@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: transform is idempotent and injects one marker
+ok 1 - transform is idempotent and injects one marker
+  ---
+  duration_ms: 1.428943
+  type: 'test'
+  ...
+# Subtest: plugin only transforms the intended case lifecycle module
+ok 2 - plugin only transforms the intended case lifecycle module
+  ---
+  duration_ms: 0.733285
+  type: 'test'
+  ...
+# Subtest: agent resolution without customer confirmation leaves outcome fields untouched
+ok 3 - agent resolution without customer confirmation leaves outcome fields untouched
+  ---
+  duration_ms: 5.810565
+  type: 'test'
+  ...
+# Subtest: confirmed agent resolution still completes and records evidence
+ok 4 - confirmed agent resolution still completes and records evidence
+  ---
+  duration_ms: 0.437009
+  type: 'test'
+  ...
+# Subtest: supervisor closure without customer confirmation leaves review metadata untouched
+ok 5 - supervisor closure without customer confirmation leaves review metadata untouched
+  ---
+  duration_ms: 0.629789
+  type: 'test'
+  ...
+# Subtest: independently confirmed supervisor closure still records the review
+ok 6 - independently confirmed supervisor closure still records the review
+  ---
+  duration_ms: 0.393653
+  type: 'test'
+  ...
+# Subtest: same-owner supervisor review remains rejected before review metadata is written
+ok 7 - same-owner supervisor review remains rejected before review metadata is written
+  ---
+  duration_ms: 0.601296
+  type: 'test'
+  ...
+# Subtest: pending-customer and escalation outcomes are not blocked by the closure guard
+ok 8 - pending-customer and escalation outcomes are not blocked by the closure guard
+  ---
+  duration_ms: 0.341845
+  type: 'test'
+  ...
+# Subtest: missing source anchors fail closed instead of emitting a partial transform
+ok 9 - missing source anchors fail closed instead of emitting a partial transform
+  ---
+  duration_ms: 0.492341
+  type: 'test'
+  ...
+# Subtest: v6.95 composes the v6.94 transactional guard and is idempotent
+ok 10 - v6.95 composes the v6.94 transactional guard and is idempotent
+  ---
+  duration_ms: 1.462814
+  type: 'test'
+  ...
+# Subtest: Vite plugin transforms only the case lifecycle module
+ok 11 - Vite plugin transforms only the case lifecycle module
+  ---
+  duration_ms: 0.828348
+  type: 'test'
+  ...
+# Subtest: pending-customer deadline is consistently next simulated day at 10:00 after an early shift contact
+ok 12 - pending-customer deadline is consistently next simulated day at 10:00 after an early shift contact
+  ---
+  duration_ms: 6.070536
+  type: 'test'
+  ...
+# Subtest: pending-customer deadline does not drift when completed late in the simulated day
+ok 13 - pending-customer deadline does not drift when completed late in the simulated day
+  ---
+  duration_ms: 0.395196
+  type: 'test'
+  ...
+# Subtest: pending-customer deadline and history carry the same due day and clock
+ok 14 - pending-customer deadline and history carry the same due day and clock
+  ---
+  duration_ms: 0.51142
+  type: 'test'
+  ...
+# Subtest: confirmed resolution remains protected by the v6.94 guard without partial mutation
+ok 15 - confirmed resolution remains protected by the v6.94 guard without partial mutation
+  ---
+  duration_ms: 0.688337
+  type: 'test'
+  ...
+# Subtest: escalation remains unaffected by the due-time correction
+ok 16 - escalation remains unaffected by the due-time correction
+  ---
+  duration_ms: 0.759654
+  type: 'test'
+  ...
+# Subtest: source anchor drift fails closed without returning a partial transform
+ok 17 - source anchor drift fails closed without returning a partial transform
+  ---
+  duration_ms: 0.761998
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 159.059922
