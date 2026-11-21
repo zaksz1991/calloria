@@ -24,7 +24,7 @@ const activeState = overrides => ({
 });
 
 test('declares the expected command-centre version', () => {
-  assert.equal(SHIFT_COMMAND_VERSION, '6.90.0');
+  assert.equal(SHIFT_COMMAND_VERSION, '6.91.0');
 });
 
 test('hides work priorities when no shift is active', () => {

@@ -1,0 +1,7 @@
+Updated runtime files:
+- js/calloria-shift-command-centre-v6-90.mjs (now runtime v6.91)
+- calloria-shift-command-centre-v6-90.css (adds shift rhythm UI)
+- tests/calloria-shift-command-centre-v6-90.test.mjs (version assertion)
+- tests/calloria-shift-rhythm-v6-91.test.mjs (new tests)
+
+No HTML, Vite config, package manifest, lockfile, main application source, database or model asset is changed by the v6.91 patch.

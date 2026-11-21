@@ -63,3 +63,39 @@
 @media (prefers-reduced-motion: reduce) {
   .calloria-command-launcher { transition: none; }
 }
+
+
+/* CALLORIA v6.91 — planned break and shift-adherence panel */
+.calloria-command-rhythm { display: grid; gap: 9px; margin: 0 0 12px; padding: 12px; border: 1px solid #d7e4e2; border-radius: 13px; background: linear-gradient(135deg, #fff 0%, #f1f8f6 100%); }
+.calloria-rhythm-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 7px 12px; }
+.calloria-rhythm-heading > div { display: grid; gap: 3px; }
+.calloria-rhythm-heading > div > span { color: #62807e; font-size: 8px; font-weight: 900; letter-spacing: .13em; }
+.calloria-rhythm-heading > div > strong { color: #173e43; font-size: 19px; line-height: 1.1; }
+.calloria-rhythm-state { max-width: 100%; padding: 6px 8px; border: 1px solid #c6e1d7; border-radius: 999px; background: #eaf7f0; color: #267051; font-size: 8px; font-weight: 900; letter-spacing: .045em; text-align: center; }
+.calloria-rhythm-state.attention { border-color: #f0d6a9; background: #fff5e5; color: #8b5b17; }
+.calloria-rhythm-progress { height: 6px; overflow: hidden; border-radius: 999px; background: #e1ebea; }
+.calloria-rhythm-progress > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #43a78f, #267d75); }
+.calloria-rhythm-facts { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 7px; }
+.calloria-rhythm-facts > div { min-width: 0; padding: 8px; border: 1px solid #e3ecea; border-radius: 9px; background: rgba(255,255,255,.8); }
+.calloria-rhythm-facts small { display: block; margin-bottom: 4px; color: #7a9090; font-size: 7px; font-weight: 900; letter-spacing: .08em; }
+.calloria-rhythm-facts strong { display: block; color: #28474b; font-size: 9px; line-height: 1.4; overflow-wrap: anywhere; }
+.calloria-rhythm-timeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.calloria-rhythm-break { display: grid; gap: 3px; min-width: 0; padding: 7px; border: 1px solid #dce8e6; border-radius: 8px; background: #fff; }
+.calloria-rhythm-break i { width: 6px; height: 6px; border-radius: 50%; background: #b7c8c5; }
+.calloria-rhythm-break b { color: #526e70; font-size: 8px; overflow-wrap: anywhere; }
+.calloria-rhythm-break small { color: #819594; font-size: 7px; }
+.calloria-rhythm-break.active { border-color: #e6c98f; background: #fff8eb; }
+.calloria-rhythm-break.active i { background: #c48a2e; }
+.calloria-rhythm-break.completed { opacity: .62; }
+.calloria-rhythm-break.completed i { background: #3a9b79; }
+.calloria-rhythm-no-breaks { grid-column: 1 / -1; color: #718786; font-size: 9px; }
+.calloria-rhythm-guidance { margin: 0; color: #647b7c; font-size: 9px; line-height: 1.45; }
+@media (max-width: 620px) {
+  .calloria-command-rhythm { padding: 10px; }
+  .calloria-rhythm-heading > div > strong { font-size: 17px; }
+  .calloria-rhythm-state { font-size: 7px; }
+  .calloria-rhythm-facts { grid-template-columns: 1fr 1fr; }
+  .calloria-rhythm-facts > div:first-child { grid-column: 1 / -1; }
+  .calloria-rhythm-timeline { grid-template-columns: 1fr; }
+  .calloria-rhythm-break { grid-template-columns: 8px minmax(0,1fr) auto; align-items: center; }
+}

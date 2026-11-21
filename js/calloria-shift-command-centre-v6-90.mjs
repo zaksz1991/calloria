@@ -3,7 +3,7 @@
  * Read-only operational overlay. It derives priorities from the application's
  * existing local save and routes the agent to existing work views.
  */
-export const SHIFT_COMMAND_VERSION = '6.90.0';
+export const SHIFT_COMMAND_VERSION = '6.91.0';
 const SAVE_PREFIX = 'calloria.save.';
 const LEGACY_SAVE_KEY = 'floorshift3d.save.v1';
 const PRIORITY_WEIGHT = Object.freeze({ critical: 100, overdue: 96, supervisor: 92, high: 84, breached: 88, due_soon: 78, at_risk: 74, normal: 62, low: 48, active: 42 });
@@ -47,6 +47,120 @@ function shiftClock(state = {}) {
   const day = Math.max(1, Math.floor(finite(state.day, 1)));
   const seconds = Math.min(86399, Math.max(0, finite(state.simulationClockSeconds, 7 * 3600)));
   return { day, minutes: Math.floor(seconds / 60), active: state.shiftActive === true };
+}
+
+/**
+ * Read-only shift plan summary. Mirrors the public shift-engine schedule and
+ * adherence calculation without writing to or normalising the saved record.
+ */
+export function buildShiftRhythmSnapshot(state = {}) {
+  const active = state.shiftActive === true;
+  const record = state.shiftRecord && typeof state.shiftRecord === 'object' ? state.shiftRecord : {};
+  const sourcePlan = record.plan && typeof record.plan === 'object' ? record.plan : {};
+  const startMinute = Number.isFinite(Number(sourcePlan.startMinute))
+    ? Math.max(0, Math.min(1439, Number(sourcePlan.startMinute))) : 8 * 60;
+  const endMinute = Number.isFinite(Number(sourcePlan.endMinute))
+    ? Math.max(startMinute + 1, Math.min(1440, Number(sourcePlan.endMinute))) : 17 * 60;
+  const rawBreaks = Array.isArray(sourcePlan.breaks) ? sourcePlan.breaks : [
+    { id: 'morning-break', label: 'Morning break', startMinute: 10 * 60, endMinute: 10 * 60 + 15 },
+    { id: 'lunch-break', label: 'Lunch break', startMinute: 12 * 60 + 30, endMinute: 13 * 60 },
+    { id: 'afternoon-break', label: 'Afternoon break', startMinute: 15 * 60, endMinute: 15 * 60 + 15 }
+  ];
+  const breaks = rawBreaks.map((item, index) => ({
+    id: String(item?.id || `break-${index + 1}`).slice(0, 60),
+    label: String(item?.label || `Break ${index + 1}`).slice(0, 60),
+    startMinute: finite(item?.startMinute, -1),
+    endMinute: finite(item?.endMinute, -1)
+  })).filter(item => item.startMinute >= startMinute && item.endMinute > item.startMinute && item.endMinute <= endMinute)
+    .sort((a, b) => a.startMinute - b.startMinute);
+
+  const elapsedMinutes = Math.max(0, finite(state.shiftElapsedMinutes));
+  const absoluteMinute = startMinute + elapsedMinutes;
+  const currentBreak = breaks.find(item => absoluteMinute >= item.startMinute && absoluteMinute < item.endMinute) || null;
+  const nextBreak = currentBreak || breaks.find(item => item.startMinute > absoluteMinute) || null;
+  const expectedMode = absoluteMinute >= endMinute ? 'off-duty' : currentBreak ? 'break' : 'working';
+  const events = list(record.events).filter(item => Number.isFinite(Number(item?.elapsedMinute)) && typeof item?.status === 'string')
+    .slice().sort((a, b) => Number(a.elapsedMinute) - Number(b.elapsedMinute));
+  const actualStatus = String(events.at(-1)?.status || state.agentStatus || 'offline');
+
+  const total = Math.max(0, Math.min(1440, Math.floor(elapsedMinutes)));
+  let eventIndex = 0;
+  let actual = events[0]?.status || actualStatus;
+  let matchedMinutes = 0;
+  let plannedMinutes = 0;
+  let deviations = 0;
+  for (let minute = 0; minute < total; minute += 1) {
+    while (eventIndex + 1 < events.length && Number(events[eventIndex + 1].elapsedMinute) <= minute) {
+      eventIndex += 1;
+      actual = events[eventIndex].status;
+    }
+    const atMinute = startMinute + minute;
+    const scheduledBreak = breaks.some(item => atMinute >= item.startMinute && atMinute < item.endMinute);
+    const expected = atMinute >= endMinute ? 'off-duty' : scheduledBreak ? 'break' : 'working';
+    if (expected === 'working') {
+      plannedMinutes += 1;
+      if (['available', 'busy', 'wrap-up'].includes(actual)) matchedMinutes += 1;
+      else deviations += 1;
+    } else if (expected === 'break') {
+      plannedMinutes += 1;
+      if (actual === 'break') matchedMinutes += 1;
+      else deviations += 1;
+    }
+  }
+  const adherence = plannedMinutes ? Math.round((matchedMinutes / plannedMinutes) * 1000) / 10 : 100;
+
+  const digitalIds = new Set([...list(state.digitalActiveIds), state.digitalActiveId].filter(Boolean).map(String));
+  const activeWork = Number(Boolean(state.currentCall)) + Number(Boolean(state.activeOutbound)) + Number(Boolean(state.wrapUp)) + digitalIds.size;
+  const breakReady = expectedMode === 'break' && actualStatus !== 'break' && activeWork === 0;
+  const minutesToBreak = nextBreak ? (currentBreak ? 0 : Math.max(0, Math.ceil(nextBreak.startMinute - absoluteMinute))) : null;
+  const breakLabel = currentBreak
+    ? `${currentBreak.label} · ends ${clockLabel(currentBreak.endMinute)} (${Math.max(0, Math.ceil(currentBreak.endMinute - absoluteMinute))}m left)`
+    : nextBreak
+      ? `${nextBreak.label} · ${clockLabel(nextBreak.startMinute)} (${minutesToBreak}m)`
+      : 'No scheduled breaks remaining';
+  const statusLabel = expectedMode === 'break'
+    ? actualStatus === 'break' ? 'ON SCHEDULED BREAK' : activeWork ? 'BREAK WINDOW · FINISH CUSTOMER WORK' : 'SCHEDULED BREAK READY'
+    : expectedMode === 'off-duty' ? 'SHIFT WINDOW ENDED'
+      : actualStatus === 'offline' ? 'OFFLINE DURING WORK HOURS'
+        : actualStatus === 'break' ? 'BREAK OUTSIDE SCHEDULE' : 'ON DUTY';
+  const guidance = expectedMode === 'break'
+    ? actualStatus === 'break'
+      ? `Scheduled break is in progress. Return by ${clockLabel(currentBreak.endMinute)}.`
+      : activeWork
+        ? 'The scheduled break window is open. Finish or safely close active customer work before taking the break.'
+        : 'The scheduled break window is open. Use the existing scheduled-break control when ready.'
+    : expectedMode === 'off-duty'
+      ? 'The planned shift window has ended. Close the shift through the existing Workforce controls.'
+      : actualStatus === 'offline'
+        ? 'Your agent state is offline during planned working time. Restore the appropriate state in the application.'
+        : actualStatus === 'break'
+          ? 'The current agent state is break outside the scheduled break window.'
+          : nextBreak
+            ? `${nextBreak.label} starts at ${clockLabel(nextBreak.startMinute)}. Complete active work and keep your agent state accurate.`
+            : `The planned shift ends at ${clockLabel(endMinute)}.`;
+
+  return {
+    active,
+    startLabel: clockLabel(startMinute),
+    endLabel: clockLabel(endMinute),
+    expectedMode,
+    actualStatus,
+    statusLabel,
+    adherence,
+    matchedMinutes,
+    plannedMinutes,
+    deviations,
+    activeWork,
+    breakReady,
+    breakLabel,
+    minutesToBreak,
+    shiftRemainingMinutes: Math.max(0, Math.ceil(endMinute - absoluteMinute)),
+    guidance,
+    breaks: breaks.map(item => ({
+      ...item,
+      state: absoluteMinute >= item.endMinute ? 'completed' : absoluteMinute >= item.startMinute ? 'active' : 'upcoming'
+    }))
+  };
 }
 
 function queueNow(state = {}, now = Date.now()) {
@@ -118,6 +232,7 @@ export function buildShiftCommandSnapshot(state = {}, options = {}) {
     clockMinutes: clock.minutes,
     elapsedMinutes: Math.max(0, finite(state.shiftElapsedMinutes)),
     agentStatus: String(state.agentStatus || (state.shiftActive ? 'available' : 'offline')),
+    rhythm: buildShiftRhythmSnapshot(state),
     tasks: [],
     metrics: {
       inboundWaiting: 0,
@@ -287,6 +402,22 @@ function taskHTML(task, index) {
   </article>`;
 }
 
+function shiftRhythmHTML(rhythm) {
+  if (!rhythm?.active) return '';
+  const statusTone = ['SCHEDULED BREAK READY', 'OFFLINE DURING WORK HOURS', 'BREAK OUTSIDE SCHEDULE', 'BREAK WINDOW · FINISH CUSTOMER WORK'].includes(rhythm.statusLabel) ? 'attention' : 'steady';
+  const adherence = Math.max(0, Math.min(100, finite(rhythm.adherence)));
+  const breakItems = list(rhythm.breaks).map(item => `<span class="calloria-rhythm-break ${escapeHTML(item.state)}"><i></i><b>${escapeHTML(item.label)}</b><small>${escapeHTML(clockLabel(item.startMinute))}–${escapeHTML(clockLabel(item.endMinute))}</small></span>`).join('');
+  const activeWorkLabel = `${rhythm.activeWork} active work item${rhythm.activeWork === 1 ? '' : 's'}`;
+  const shiftTimeLabel = rhythm.shiftRemainingMinutes > 0 ? `${Math.floor(rhythm.shiftRemainingMinutes / 60)}h ${String(rhythm.shiftRemainingMinutes % 60).padStart(2, '0')}m left` : 'planned end reached';
+  return `<section class="calloria-command-rhythm" aria-label="Shift schedule and adherence" aria-live="polite">
+    <div class="calloria-rhythm-heading"><div><span>SHIFT RHYTHM</span><strong>${adherence.toFixed(1)}% adherence</strong></div><b class="calloria-rhythm-state ${statusTone}">${escapeHTML(rhythm.statusLabel)}</b></div>
+    <div class="calloria-rhythm-progress" role="progressbar" aria-label="Shift schedule adherence" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${adherence.toFixed(1)}"><span style="width:${adherence}%"></span></div>
+    <div class="calloria-rhythm-facts"><div><small>NEXT BREAK</small><strong>${escapeHTML(rhythm.breakLabel)}</strong></div><div><small>SHIFT WINDOW</small><strong>${escapeHTML(rhythm.startLabel)}–${escapeHTML(rhythm.endLabel)} · ${escapeHTML(shiftTimeLabel)}</strong></div><div><small>WORKLOAD</small><strong>${escapeHTML(activeWorkLabel)} · ${escapeHTML(rhythm.actualStatus.replaceAll('-', ' '))}</strong></div></div>
+    <div class="calloria-rhythm-timeline">${breakItems || '<span class="calloria-rhythm-no-breaks">No scheduled breaks on this shift plan.</span>'}</div>
+    <p class="calloria-rhythm-guidance">${escapeHTML(rhythm.guidance)}${rhythm.deviations ? ` · ${rhythm.deviations} schedule deviation minute${rhythm.deviations === 1 ? '' : 's'} recorded.` : ''}</p>
+  </section>`;
+}
+
 export function buildShiftCommandPanelHTML(snapshot) {
   if (!snapshot?.active) return '';
   const metrics = snapshot.metrics;
@@ -299,6 +430,7 @@ export function buildShiftCommandPanelHTML(snapshot) {
         <button type="button" class="calloria-command-close" data-command-close aria-label="Close shift command centre">×</button>
       </header>
       <div class="calloria-command-statusbar"><span class="calloria-command-live-dot"></span><strong>${escapeHTML(snapshot.agentStatus.replaceAll('-', ' ').toUpperCase())}</strong><span>DAY ${escapeHTML(snapshot.day)}</span><span>${escapeHTML(clockLabel(snapshot.clockMinutes))} SIM TIME</span></div>
+      ${shiftRhythmHTML(snapshot.rhythm)}
       <div class="calloria-command-metrics">
         <div><strong>${metrics.inboundWaiting}</strong><span>VOICE WAITING</span></div>
         <div><strong>${metrics.digitalWaiting}</strong><span>DIGITAL WAITING</span></div>
@@ -343,7 +475,7 @@ function getInitialSavedState(storage) {
 
 export function installShiftCommandRuntime(windowRef = globalThis.window, documentRef = globalThis.document) {
   if (!windowRef || !documentRef || !windowRef.localStorage || !documentRef.body) return () => {};
-  if (windowRef.__CALLORIA_SHIFT_COMMAND_V690__) return () => {};
+  if (windowRef.__CALLORIA_SHIFT_COMMAND_V691__) return () => {};
 
   const storage = windowRef.localStorage;
   const proto = windowRef.Storage?.prototype || Object.getPrototypeOf(storage);
@@ -526,7 +658,7 @@ export function installShiftCommandRuntime(windowRef = globalThis.window, docume
     root.hidden = true;
   }
 
-  windowRef.__CALLORIA_SHIFT_COMMAND_V690__ = true;
+  windowRef.__CALLORIA_SHIFT_COMMAND_V691__ = true;
   return () => {
     closed = true;
     closePanel({ restoreFocus: false });
@@ -534,7 +666,7 @@ export function installShiftCommandRuntime(windowRef = globalThis.window, docume
     documentRef.removeEventListener('visibilitychange', visibilityHandler);
     if (proto.setItem === patchedSetItem) proto.setItem = originalSetItem;
     root.remove();
-    delete windowRef.__CALLORIA_SHIFT_COMMAND_V690__;
+    delete windowRef.__CALLORIA_SHIFT_COMMAND_V691__;
   };
 }
 
