@@ -1,0 +1,208 @@
+TAP version 13
+# Subtest: empty or invalid input produces a zeroed workload snapshot
+ok 1 - empty or invalid input produces a zeroed workload snapshot
+  ---
+  duration_ms: 1.320393
+  type: 'test'
+  ...
+# Subtest: completed or malformed follow-ups are excluded
+ok 2 - completed or malformed follow-ups are excluded
+  ---
+  duration_ms: 0.213913
+  type: 'test'
+  ...
+# Subtest: cases are grouped by owner without mutating original records
+ok 3 - cases are grouped by owner without mutating original records
+  ---
+  duration_ms: 0.389197
+  type: 'test'
+  ...
+# Subtest: urgent, overdue, due-soon, in-progress and supervisor-review counts are accurate
+ok 4 - urgent, overdue, due-soon, in-progress and supervisor-review counts are accurate
+  ---
+  duration_ms: 0.285882
+  type: 'test'
+  ...
+# Subtest: missing owner and inconsistent claim-state metadata are flagged
+ok 5 - missing owner and inconsistent claim-state metadata are flagged
+  ---
+  duration_ms: 6.354389
+  type: 'test'
+  ...
+# Subtest: next due deadline selects the earliest simulated day and minute
+ok 6 - next due deadline selects the earliest simulated day and minute
+  ---
+  duration_ms: 0.199131
+  type: 'test'
+  ...
+# Subtest: owner groups sort by exposure before raw case volume
+ok 7 - owner groups sort by exposure before raw case volume
+  ---
+  duration_ms: 0.170136
+  type: 'test'
+  ...
+# Subtest: renderer escapes owner, handler and case references
+ok 8 - renderer escapes owner, handler and case references
+  ---
+  duration_ms: 1.076264
+  type: 'test'
+  ...
+# Subtest: renderer provides a compact empty state and integrity explanation
+ok 9 - renderer provides a compact empty state and integrity explanation
+  ---
+  duration_ms: 0.353673
+  type: 'test'
+  ...
+# Subtest: main transform injects module, styles, workload model and visible CRM panel
+ok 10 - main transform injects module, styles, workload model and visible CRM panel
+  ---
+  duration_ms: 0.416668
+  type: 'test'
+  ...
+# Subtest: main transform is idempotent
+ok 11 - main transform is idempotent
+  ---
+  duration_ms: 0.215054
+  type: 'test'
+  ...
+# Subtest: source drift fails closed at each required anchor
+ok 12 - source drift fails closed at each required anchor
+  ---
+  duration_ms: 0.365412
+  type: 'test'
+  ...
+# Subtest: Vite plugin transforms only js/main.js and reports source drift through Vite context
+ok 13 - Vite plugin transforms only js/main.js and reports source drift through Vite context
+  ---
+  duration_ms: 0.261094
+  type: 'test'
+  ...
+# Subtest: transformed fixture passes Node syntax validation
+ok 14 - transformed fixture passes Node syntax validation
+  ---
+  duration_ms: 32.307341
+  type: 'test'
+  ...
+# Subtest: mobile workload table remains horizontally scrollable with compact cards
+ok 15 - mobile workload table remains horizontally scrollable with compact cards
+  ---
+  duration_ms: 1.475587
+  type: 'test'
+  ...
+# Subtest: empty or invalid input produces a zeroed plan
+ok 16 - empty or invalid input produces a zeroed plan
+  ---
+  duration_ms: 3.043052
+  type: 'test'
+  ...
+# Subtest: completed and malformed follow-ups are excluded
+ok 17 - completed and malformed follow-ups are excluded
+  ---
+  duration_ms: 0.542319
+  type: 'test'
+  ...
+# Subtest: supervisor decisions rank before overdue and due-soon work
+ok 18 - supervisor decisions rank before overdue and due-soon work
+  ---
+  duration_ms: 0.273863
+  type: 'test'
+  ...
+# Subtest: deadline boundaries classify due now, 15, 60 and 61 minutes correctly
+ok 19 - deadline boundaries classify due now, 15, 60 and 61 minutes correctly
+  ---
+  duration_ms: 0.846096
+  type: 'test'
+  ...
+# Subtest: overdue delta is retained even if the upstream risk label is inconsistent
+ok 20 - overdue delta is retained even if the upstream risk label is inconsistent
+  ---
+  duration_ms: 0.190668
+  type: 'test'
+  ...
+# Subtest: unassigned and claim-state inconsistencies produce concrete next actions
+ok 21 - unassigned and claim-state inconsistencies produce concrete next actions
+  ---
+  duration_ms: 6.630555
+  type: 'test'
+  ...
+# Subtest: off-shift and clock-unavailable states are separate from live SLA counts
+ok 22 - off-shift and clock-unavailable states are separate from live SLA counts
+  ---
+  duration_ms: 0.882862
+  type: 'test'
+  ...
+# Subtest: plan generation does not mutate the supplied case rows
+ok 23 - plan generation does not mutate the supplied case rows
+  ---
+  duration_ms: 0.328976
+  type: 'test'
+  ...
+# Subtest: visible worklist is bounded and reports hidden item count
+ok 24 - visible worklist is bounded and reports hidden item count
+  ---
+  duration_ms: 0.646816
+  type: 'test'
+  ...
+# Subtest: renderer escapes customer, case reference, title, owner and claimant values
+ok 25 - renderer escapes customer, case reference, title, owner and claimant values
+  ---
+  duration_ms: 0.697903
+  type: 'test'
+  ...
+# Subtest: renderer produces accessible compact empty state
+ok 26 - renderer produces accessible compact empty state
+  ---
+  duration_ms: 0.161333
+  type: 'test'
+  ...
+# Subtest: plugin transforms only after v6.96 and adds the planner module and panel
+ok 27 - plugin transforms only after v6.96 and adds the planner module and panel
+  ---
+  duration_ms: 0.17887
+  type: 'test'
+  ...
+# Subtest: v6.96 and v6.97 transforms compose in order on the CRM baseline fixture
+ok 28 - v6.96 and v6.97 transforms compose in order on the CRM baseline fixture
+  ---
+  duration_ms: 0.160893
+  type: 'test'
+  ...
+# Subtest: combined v6.96/v6.97 transformed fixture passes Node syntax validation
+ok 29 - combined v6.96/v6.97 transformed fixture passes Node syntax validation
+  ---
+  duration_ms: 31.507959
+  type: 'test'
+  ...
+# Subtest: plugin is idempotent
+ok 30 - plugin is idempotent
+  ---
+  duration_ms: 0.181103
+  type: 'test'
+  ...
+# Subtest: missing v6.96 transform fails clearly without returning partial source
+ok 31 - missing v6.96 transform fails clearly without returning partial source
+  ---
+  duration_ms: 0.472573
+  type: 'test'
+  ...
+# Subtest: source drift at a required v6.96 anchor fails closed
+ok 32 - source drift at a required v6.96 anchor fails closed
+  ---
+  duration_ms: 0.158379
+  type: 'test'
+  ...
+# Subtest: Vite plugin is scoped to main.js and exposes source errors through Vite context
+ok 33 - Vite plugin is scoped to main.js and exposes source errors through Vite context
+  ---
+  duration_ms: 0.37114
+  type: 'test'
+  ...
+1..33
+# tests 33
+# suites 0
+# pass 33
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 195.004922

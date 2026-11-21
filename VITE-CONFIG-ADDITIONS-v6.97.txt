@@ -1,0 +1,16 @@
+1. Keep the existing v6.96 import:
+
+import { calloriaCaseFollowUpWorkloadIntelligencePluginV696 } from './build/calloria-case-followup-workload-intelligence-v6-96.mjs';
+
+2. Add the v6.97 import alongside it:
+
+import { calloriaCaseRecoveryPlannerPluginV697 } from './build/calloria-case-recovery-planner-v6-97.mjs';
+
+3. In the plugins array, ensure these two entries are in this exact order:
+
+calloriaCaseFollowUpWorkloadIntelligencePluginV696(),
+calloriaCaseRecoveryPlannerPluginV697(),
+
+Place both after the application-logic plugins (for the public c8a48d6 baseline, after calloriaCareerDevelopmentPluginV688()) and before the visitor-facing plugins. Register each import and plugin exactly once.
+
+Do not remove or duplicate existing GLB, mobile, RuffNeck, career, v6.94 or v6.95 plugins.
