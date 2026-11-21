@@ -27,15 +27,11 @@ import { calloriaGuidedCoachingPracticePlugin } from './build/calloria-guided-co
 import { calloriaCareerCompetencyPassportPlugin } from './build/calloria-career-competency-passport-v6-48.mjs';
 import { calloriaPromotionReadinessDossierPlugin } from './build/calloria-promotion-readiness-dossier-v6-49.mjs';
 import { calloriaScenarioBasedPromotionExamPlugin } from './build/calloria-scenario-based-promotion-exam-v6-50.mjs';
-import { calloriaRuffNeckPlatformSupportPlugin } from './build/calloria-ruffneck-platform-support-v6-51.mjs';
-import { calloriaPlatformSupportCaseDeskPluginV652 } from './build/calloria-platform-support-case-desk-v6-52.mjs';
-import { calloriaSupportSlaCommandCentrePluginV653 } from './build/calloria-support-sla-command-centre-v6-53.mjs';
-import { calloriaSupportCaseOwnershipPluginV654 } from './build/calloria-support-case-ownership-v6-54.mjs';
+import { calloriaRuffNeckServiceOperationsPluginV686 } from './build/calloria-ruffneck-service-operations-v6-86.mjs';
 import { calloriaPublicExperienceHubPlugin } from './build/calloria-public-experience-hub-v6-55.mjs';
 import { calloriaRuffNeckDiscoveryGuidePlugin } from './build/calloria-ruffneck-discovery-guide-v6-56.mjs';
 import { calloriaSeamlessProductHandoffPlugin } from './build/calloria-seamless-product-handoff-v6-57.mjs';
 import { calloriaTryItStudioPlugin } from './build/calloria-try-it-studio-v6-58.mjs';
-
 export default defineConfig({
   base: '/',
   publicDir: 'public',
@@ -82,14 +78,8 @@ export default defineConfig({
     calloriaPromotionReadinessDossierPlugin(),
     // The scenario exam replaces self-entered marks and records scored response evidence.
     calloriaScenarioBasedPromotionExamPlugin(),
-    // Service directory and RuffNeck customer-support practice run after the Workforce exam transforms.
-    calloriaRuffNeckPlatformSupportPlugin(),
-    // The v6.52 ticket desk extends the service playbooks into CRM-backed case handling.
-    calloriaPlatformSupportCaseDeskPluginV652(),
-    // Cross-platform SLA ageing and breach escalation run after the v6.52 case desk.
-    calloriaSupportSlaCommandCentrePluginV653(),
-    // Adds agent ownership, product-specialist routing and supervisor queue controls.
-    calloriaSupportCaseOwnershipPluginV654(),
+    // Re-based, single-pass RuffNeck service support replaces the stale v6.51–v6.54 chain.
+    calloriaRuffNeckServiceOperationsPluginV686(),
     // Last: visitor-facing HTML and navigation only; gameplay logic remains unchanged.
     calloriaPublicExperienceHubPlugin(),
     // Guided visitor intent selection routes people to the most relevant official RuffNeck destination.

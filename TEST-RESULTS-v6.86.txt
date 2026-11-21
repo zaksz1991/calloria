@@ -1,0 +1,27 @@
+CALLORIA v6.86 regression verification
+Date: 21 November 2026
+
+Node regression suite:
+  Total: 47
+  Passed: 47
+  Failed: 0
+  Skipped: 0
+
+Breakdown:
+  v6.81-v6.84 GLB path/startup/diagnostics tests: 32 passed
+  v6.85 third-person transform tests: 7 passed
+  v6.86 RuffNeck service-operations tests: 8 passed
+
+Syntax checks:
+  build/calloria-glb-world-plugin.js: PASS
+  build/calloria-third-person-player-plugin.mjs: PASS
+  build/calloria-ruffneck-service-operations-v6-86.mjs: PASS
+  js/glb-asset-health-panel.js: PASS
+  js/glb-asset-path-fallback.js: PASS
+  vite.config.js: PASS
+
+Not run:
+  Full npm run build against the full repository
+  Vercel deployment
+  Physical mobile browser tests
+  Live GLB download and model placement verification

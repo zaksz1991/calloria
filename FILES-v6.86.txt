@@ -1,0 +1,30 @@
+CALLORIA v6.86 cumulative overlay
+
+Runtime replacements/additions:
+  vite.config.js
+  build/calloria-glb-world-plugin.js
+  build/calloria-third-person-player-plugin.mjs
+  build/calloria-ruffneck-service-operations-v6-86.mjs (new)
+  js/glb-asset-health-panel.js
+  js/glb-asset-path-fallback.js
+
+Regression tests and fixtures:
+  tests/calloria-glb-diagnostics-consolidation-v683.test.mjs
+  tests/calloria-glb-nonblocking-startup-v684.test.mjs
+  tests/calloria-glb-path-fallback-v681.test.mjs
+  tests/calloria-glb-runtime-health-v682.test.mjs
+  tests/calloria-third-person-current-world-v685.test.mjs
+  tests/calloria-ruffneck-service-operations-v686.test.mjs
+  tests/fixtures/production-world-after-v684.js
+  tests/fixtures/production-world-current-snapshot.js
+
+Required existing repository dependency (not included; preserve it):
+  build/calloria-ruffneck-platform-support-v6-51.mjs
+
+Release documentation:
+  INSTALL-GITHUB-v6.86.md
+  VERIFICATION-v6.86.md
+  BUILD-LOG-DIAGNOSIS-v6.86.md
+  TEST-RESULTS-v6.86.txt
+  TEST-RUN-OUTPUT-v6.86.txt
+  docs/CALLORIA-v6.86-SOURCE-AUDIT.md
