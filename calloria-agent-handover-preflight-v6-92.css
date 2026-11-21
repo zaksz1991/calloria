@@ -1,0 +1,37 @@
+/* CALLORIA v6.92 — handover preflight and reconciliation */
+.calloria-handover-preflight { display: grid; gap: 12px; margin: 14px 0; padding: clamp(13px, 2vw, 18px); border: 1px solid #d3e3e0; background: linear-gradient(145deg, #fbfefd 0%, #eef7f4 100%); }
+.calloria-handover-preflight-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.calloria-handover-preflight-kicker { color: #4a8279; font-size: 8px; font-weight: 900; letter-spacing: .14em; }
+.calloria-handover-preflight-head h3 { margin: 4px 0; color: #173b42; font-size: clamp(16px, 2.4vw, 20px); }
+.calloria-handover-preflight-head p { margin: 0; color: #667c7f; font-size: 11px; line-height: 1.45; }
+.calloria-handover-preflight-state { flex: 0 0 auto; max-width: 48%; padding: 7px 9px; border: 1px solid #d4e4e0; border-radius: 999px; background: #edf5f2; color: #426a62; font-size: 8px; font-weight: 900; text-align: center; }
+.calloria-handover-preflight-state.ready { border-color: #b7dfcd; background: #e8f7ee; color: #226746; }
+.calloria-handover-preflight-state.blocked { border-color: #f0c7b9; background: #fff0eb; color: #a3442d; }
+.calloria-handover-preflight-state.empty { border-color: #e5d5b6; background: #fff7e8; color: #89611e; }
+.calloria-handover-preflight-message { margin: 0; padding: 10px 12px; border-left: 3px solid #5b9c8c; border-radius: 0 9px 9px 0; background: rgba(255,255,255,.85); color: #355b5d; font-size: 11px; line-height: 1.5; }
+.calloria-handover-preflight-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.calloria-handover-preflight-box { min-width: 0; padding: 12px; border: 1px solid #dfeae7; border-radius: 11px; background: #fff; }
+.calloria-handover-preflight-box > span { display: block; margin-bottom: 8px; color: #63817e; font-size: 8px; font-weight: 900; letter-spacing: .1em; }
+.calloria-handover-preflight-box > strong { display: block; margin-bottom: 3px; color: #17434a; font-size: 27px; line-height: 1; }
+.calloria-handover-preflight-box > small { display: block; margin-bottom: 8px; color: #819395; font-size: 9px; }
+.calloria-handover-preflight-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid #edf2f1; }
+.calloria-handover-preflight-row span { color: #657b7d; font-size: 10px; line-height: 1.35; }
+.calloria-handover-preflight-row strong { color: #214d51; font-size: 12px; }
+.calloria-handover-preflight-exclusions { border: 1px solid #e4e9e6; border-radius: 10px; background: rgba(255,255,255,.78); }
+.calloria-handover-preflight-exclusions summary { padding: 10px 12px; color: #536f70; font-size: 10px; font-weight: 800; cursor: pointer; }
+.calloria-handover-preflight-exclusion-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 7px; padding: 0 10px 10px; }
+.calloria-handover-preflight-exclusion-grid > div { display: grid; gap: 4px; padding: 8px; border-radius: 8px; background: #f4f7f6; }
+.calloria-handover-preflight-exclusion-grid strong { color: #274f52; font-size: 18px; }
+.calloria-handover-preflight-exclusion-grid span { color: #718486; font-size: 8px; line-height: 1.35; }
+.calloria-handover-preflight-exclusions > p { margin: 0; padding: 0 12px 11px; color: #748587; font-size: 9px; line-height: 1.45; }
+.calloria-handover-preflight-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.calloria-handover-preflight-actions .btn { min-height: 36px; }
+.calloria-handover-preflight-feedback { min-height: 15px; margin: 0; color: #78908e; font-size: 9px; line-height: 1.45; }
+@media (max-width: 700px) {
+  .calloria-handover-preflight-head { display: grid; }
+  .calloria-handover-preflight-state { max-width: none; justify-self: start; }
+  .calloria-handover-preflight-grid { grid-template-columns: minmax(0,1fr); }
+  .calloria-handover-preflight-exclusion-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .calloria-handover-preflight-actions { display: grid; grid-template-columns: minmax(0,1fr); }
+  .calloria-handover-preflight-actions .btn { width: 100%; white-space: normal; }
+}
