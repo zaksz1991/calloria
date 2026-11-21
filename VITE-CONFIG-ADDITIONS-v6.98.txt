@@ -1,0 +1,11 @@
+CALLORIA v6.98 Vite registration
+
+1. Add this import with the other build-plugin imports:
+
+import { calloriaQAQualityIntelligencePluginV698 } from './build/calloria-qa-quality-intelligence-v6-98.mjs';
+
+2. Add this as the LAST plugin entry in the existing plugins array, after the current visitor/public experience plugins:
+
+calloriaQAQualityIntelligencePluginV698()
+
+The plugin uses enforce: 'post' and transforms only js/main.js. Register it once. Do not remove, duplicate, or reorder existing plugins. The plugin safely warns and skips if the QA source anchors differ; it does not intentionally fail the production build on a source mismatch.
