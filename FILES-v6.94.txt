@@ -1,0 +1,9 @@
+CALLORIA-v6.94-CASE-OUTCOME-INTEGRITY/
+  build/calloria-case-resolution-transaction-guard-v6-94.mjs  ADD
+  tests/calloria-case-resolution-transaction-guard-v6-94.test.mjs  ADD
+  tests/fixtures/case-lifecycle-before-v694.mjs  ADD (TEST FIXTURE ONLY)
+  VITE-CONFIG-ADDITIONS-v6.94.txt  APPLY TWO ADDITIONS
+  INSTALL-GITHUB-v6.94.md  GUIDE
+  CHANGELOG-v6.94.md  CHANGELOG
+  SOURCE-BASELINE-v6.94.md  SOURCE AUDIT
+  VERIFICATION-v6.94.md  TEST REPORT

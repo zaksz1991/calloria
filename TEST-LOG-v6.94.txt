@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: transform is idempotent and injects one marker
+ok 1 - transform is idempotent and injects one marker
+  ---
+  duration_ms: 0.785576
+  type: 'test'
+  ...
+# Subtest: plugin only transforms the intended case lifecycle module
+ok 2 - plugin only transforms the intended case lifecycle module
+  ---
+  duration_ms: 0.361435
+  type: 'test'
+  ...
+# Subtest: agent resolution without customer confirmation leaves outcome fields untouched
+ok 3 - agent resolution without customer confirmation leaves outcome fields untouched
+  ---
+  duration_ms: 3.879263
+  type: 'test'
+  ...
+# Subtest: confirmed agent resolution still completes and records evidence
+ok 4 - confirmed agent resolution still completes and records evidence
+  ---
+  duration_ms: 0.361336
+  type: 'test'
+  ...
+# Subtest: supervisor closure without customer confirmation leaves review metadata untouched
+ok 5 - supervisor closure without customer confirmation leaves review metadata untouched
+  ---
+  duration_ms: 0.528427
+  type: 'test'
+  ...
+# Subtest: independently confirmed supervisor closure still records the review
+ok 6 - independently confirmed supervisor closure still records the review
+  ---
+  duration_ms: 0.305321
+  type: 'test'
+  ...
+# Subtest: same-owner supervisor review remains rejected before review metadata is written
+ok 7 - same-owner supervisor review remains rejected before review metadata is written
+  ---
+  duration_ms: 0.392953
+  type: 'test'
+  ...
+# Subtest: pending-customer and escalation outcomes are not blocked by the closure guard
+ok 8 - pending-customer and escalation outcomes are not blocked by the closure guard
+  ---
+  duration_ms: 0.323989
+  type: 'test'
+  ...
+# Subtest: missing source anchors fail closed instead of emitting a partial transform
+ok 9 - missing source anchors fail closed instead of emitting a partial transform
+  ---
+  duration_ms: 0.274895
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 61.092221

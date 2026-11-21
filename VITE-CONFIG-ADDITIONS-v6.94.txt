@@ -1,0 +1,9 @@
+ADD THIS IMPORT beside the other build-plugin imports in vite.config.js:
+
+import { calloriaCaseResolutionTransactionGuardPluginV694 } from './build/calloria-case-resolution-transaction-guard-v6-94.mjs';
+
+ADD THIS PLUGIN ENTRY exactly once in the plugins array, after calloriaCareerDevelopmentPluginV688() and before the visitor-facing/public hub plugins:
+
+calloriaCaseResolutionTransactionGuardPluginV694(),
+
+If a v6.93 Customer Recovery plugin is already registered in your branch, keep it and place this v6.94 entry after it. Do not delete or duplicate any existing plugin.
