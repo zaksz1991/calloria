@@ -1,0 +1,9 @@
+Add this import alongside the existing CALLORIA build-plugin imports:
+
+import { calloriaCaseFollowUpWorkloadIntelligencePluginV696 } from './build/calloria-case-followup-workload-intelligence-v6-96.mjs';
+
+Add this entry to the plugins array after the existing application-logic plugins (after calloriaRuffNeckServiceOperationsPluginV686(), or after calloriaCareerDevelopmentPluginV688() if that later plugin is already present) and before the visitor-facing plugins:
+
+calloriaCaseFollowUpWorkloadIntelligencePluginV696(),
+
+Register the import and plugin exactly once. Do not remove or duplicate existing plugin registrations.

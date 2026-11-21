@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: empty or invalid input produces a zeroed workload snapshot
+ok 1 - empty or invalid input produces a zeroed workload snapshot
+  ---
+  duration_ms: 1.474884
+  type: 'test'
+  ...
+# Subtest: completed or malformed follow-ups are excluded
+ok 2 - completed or malformed follow-ups are excluded
+  ---
+  duration_ms: 0.211369
+  type: 'test'
+  ...
+# Subtest: cases are grouped by owner without mutating original records
+ok 3 - cases are grouped by owner without mutating original records
+  ---
+  duration_ms: 0.447495
+  type: 'test'
+  ...
+# Subtest: urgent, overdue, due-soon, in-progress and supervisor-review counts are accurate
+ok 4 - urgent, overdue, due-soon, in-progress and supervisor-review counts are accurate
+  ---
+  duration_ms: 0.286162
+  type: 'test'
+  ...
+# Subtest: missing owner and inconsistent claim-state metadata are flagged
+ok 5 - missing owner and inconsistent claim-state metadata are flagged
+  ---
+  duration_ms: 6.599773
+  type: 'test'
+  ...
+# Subtest: next due deadline selects the earliest simulated day and minute
+ok 6 - next due deadline selects the earliest simulated day and minute
+  ---
+  duration_ms: 0.199411
+  type: 'test'
+  ...
+# Subtest: owner groups sort by exposure before raw case volume
+ok 7 - owner groups sort by exposure before raw case volume
+  ---
+  duration_ms: 0.156606
+  type: 'test'
+  ...
+# Subtest: renderer escapes owner, handler and case references
+ok 8 - renderer escapes owner, handler and case references
+  ---
+  duration_ms: 1.249554
+  type: 'test'
+  ...
+# Subtest: renderer provides a compact empty state and integrity explanation
+ok 9 - renderer provides a compact empty state and integrity explanation
+  ---
+  duration_ms: 0.29193
+  type: 'test'
+  ...
+# Subtest: main transform injects module, styles, workload model and visible CRM panel
+ok 10 - main transform injects module, styles, workload model and visible CRM panel
+  ---
+  duration_ms: 0.402867
+  type: 'test'
+  ...
+# Subtest: main transform is idempotent
+ok 11 - main transform is idempotent
+  ---
+  duration_ms: 0.195705
+  type: 'test'
+  ...
+# Subtest: source drift fails closed at each required anchor
+ok 12 - source drift fails closed at each required anchor
+  ---
+  duration_ms: 0.368145
+  type: 'test'
+  ...
+# Subtest: Vite plugin transforms only js/main.js and reports source drift through Vite context
+ok 13 - Vite plugin transforms only js/main.js and reports source drift through Vite context
+  ---
+  duration_ms: 0.261665
+  type: 'test'
+  ...
+# Subtest: transformed fixture passes Node syntax validation
+ok 14 - transformed fixture passes Node syntax validation
+  ---
+  duration_ms: 37.551219
+  type: 'test'
+  ...
+# Subtest: mobile workload table remains horizontally scrollable with compact cards
+ok 15 - mobile workload table remains horizontally scrollable with compact cards
+  ---
+  duration_ms: 1.287792
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 110.363957

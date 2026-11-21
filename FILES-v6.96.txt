@@ -1,0 +1,11 @@
+build/calloria-case-followup-workload-intelligence-v6-96.mjs
+js/case-followup-workload-engine-v696.js
+js/case-followup-workload-v696.css
+VITE-CONFIG-ADDITIONS-v6.96.txt
+INSTALL-GITHUB-v6.96.md
+CHANGELOG-v6.96.md
+SOURCE-BASELINE-v6.96.md
+VERIFICATION-v6.96.md
+TEST-LOG-v6.96.txt
+tests/calloria-case-followup-workload-v696.test.mjs
+tests/fixtures/main-before-v696.js
