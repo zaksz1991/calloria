@@ -18,16 +18,8 @@ import { calloriaGlazedDepartmentPartitionsPlugin } from './build/calloria-glaze
 import { calloriaOJTGLBActivationPlugin } from './build/calloria-ojt-glb-activation-plugin.mjs';
 import { calloriaFirstWorkingShiftV44Plugin } from './build/calloria-first-working-shift-v4-4-plugin.mjs';
 import { calloriaMobileResponsiveRepairPlugin } from './build/calloria-mobile-responsive-repair-v6-10.mjs';
-import { calloriaVoiceResponseWorkflowPlugin } from './build/calloria-voice-response-workflow-v6-42.mjs';
-import { calloriaInboundCustomerDialoguePlugin } from './build/calloria-inbound-customer-dialogue-v6-43.mjs';
-import { calloriaInboundConversationWrapUpPlugin } from './build/calloria-inbound-conversation-wrapup-v6-44.mjs';
-import { calloriaInboundQAReviewBridgePlugin } from './build/calloria-inbound-qa-review-bridge-v6-45.mjs';
-import { calloriaQACoachingFollowThroughPlugin } from './build/calloria-qa-coaching-followthrough-v6-46.mjs';
-import { calloriaGuidedCoachingPracticePlugin } from './build/calloria-guided-coaching-practice-v6-47.mjs';
-import { calloriaCareerCompetencyPassportPlugin } from './build/calloria-career-competency-passport-v6-48.mjs';
-import { calloriaPromotionReadinessDossierPlugin } from './build/calloria-promotion-readiness-dossier-v6-49.mjs';
-import { calloriaScenarioBasedPromotionExamPlugin } from './build/calloria-scenario-based-promotion-exam-v6-50.mjs';
 import { calloriaRuffNeckServiceOperationsPluginV686 } from './build/calloria-ruffneck-service-operations-v6-86.mjs';
+import { calloriaCareerDevelopmentPluginV688 } from './build/calloria-career-development-v6-88.mjs';
 import { calloriaPublicExperienceHubPlugin } from './build/calloria-public-experience-hub-v6-55.mjs';
 import { calloriaRuffNeckDiscoveryGuidePlugin } from './build/calloria-ruffneck-discovery-guide-v6-56.mjs';
 import { calloriaSeamlessProductHandoffPlugin } from './build/calloria-seamless-product-handoff-v6-57.mjs';
@@ -61,25 +53,12 @@ export default defineConfig({
     calloriaFirstWorkingShiftV44Plugin(),
     // Final post-transform: mobile first-person safety, responsive CSS and assessment controls.
     calloriaMobileResponsiveRepairPlugin(),
-    // Voice transcript logging must run before the scripted customer dialogue bridge.
-    calloriaVoiceResponseWorkflowPlugin(),
-    calloriaInboundCustomerDialoguePlugin(),
-    // Conversation-aware after-contact work runs after the v6.43 dialogue injection.
-    calloriaInboundConversationWrapUpPlugin(),
-    // Completed inbound cases enter the existing evidence-based human QA workspace.
-    calloriaInboundQAReviewBridgePlugin(),
-    // QA review outcomes now create trackable coaching actions with evidence-based follow-up.
-    calloriaQACoachingFollowThroughPlugin(),
-    // Criterion-based practice sits inside the existing QA coaching action plans.
-    calloriaGuidedCoachingPracticePlugin(),
-    // Career profile consumes only human-confirmed QA coaching outcomes.
-    calloriaCareerCompetencyPassportPlugin(),
-    // Promotion dossier reuses the exact Workforce promotion KPI and attempt rules.
-    calloriaPromotionReadinessDossierPlugin(),
-    // The scenario exam replaces self-entered marks and records scored response evidence.
-    calloriaScenarioBasedPromotionExamPlugin(),
-    // Re-based, single-pass RuffNeck service support replaces the stale v6.51–v6.54 chain.
+    // Native voice response, inbound dialogue and after-contact work already live in main.js.
+    // The consolidated career plugin bridges completed voice transcripts into human QA,
+    // then links QA evidence to coaching, guided practice, coach sign-off and scenario exams.
+    // It runs after the RuffNeck workforce transform so both feature panels share the final view.
     calloriaRuffNeckServiceOperationsPluginV686(),
+    calloriaCareerDevelopmentPluginV688(),
     // Last: visitor-facing HTML and navigation only; gameplay logic remains unchanged.
     calloriaPublicExperienceHubPlugin(),
     // Guided visitor intent selection routes people to the most relevant official RuffNeck destination.

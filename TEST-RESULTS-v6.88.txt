@@ -1,0 +1,15 @@
+CALLORIA v6.88 regression test results
+Command: node --test tests/*.test.mjs
+Tests: 67
+Passed: 67
+Failed: 0
+Skipped: 0
+
+Syntax checks:
+- build/*.js and build/*.mjs: PASS
+- js/*.js and js/*.mjs: PASS
+- vite.config.js: PASS
+- transformed focused main.js anchor fixture: PASS
+
+Full npm run build: NOT RUN (full repository checkout unavailable)
+Vercel deployment: NOT VERIFIED
