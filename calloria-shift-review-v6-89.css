@@ -1,0 +1,185 @@
+/* CALLORIA v6.89 — responsive shift close-out report */
+.calloria-shift-review-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: rgba(2, 9, 15, .82);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.calloria-shift-review-dialog {
+  position: relative;
+  width: min(720px, 100%);
+  max-height: min(92dvh, 900px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: clamp(18px, 4vw, 30px);
+  border: 1px solid rgba(101, 197, 185, .28);
+  border-radius: 18px;
+  background: linear-gradient(155deg, #112b38 0%, #091923 62%, #07131c 100%);
+  color: #edf7f5;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .52);
+  font-family: Manrope, "DM Sans", system-ui, sans-serif;
+}
+.calloria-shift-review-dialog:focus { outline: none; }
+.calloria-shift-review-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(196, 224, 223, .2);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .06);
+  color: #eaf7f4;
+  font: 500 26px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+.calloria-shift-review-kicker {
+  margin: 0 48px 10px 0;
+  color: #77dec9;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+}
+.calloria-shift-review-dialog h2 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(25px, 5vw, 36px);
+  font-weight: 800;
+  letter-spacing: -.045em;
+  line-height: 1.1;
+}
+.calloria-shift-review-lead {
+  margin: 10px 0 5px;
+  color: #d9eae7;
+  font-size: clamp(14px, 2.6vw, 18px);
+  font-weight: 700;
+}
+.calloria-shift-review-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  color: #9eb7bc;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.calloria-shift-review-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 22px;
+}
+.calloria-shift-review-metric {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 94px;
+  box-sizing: border-box;
+  padding: 13px 12px;
+  border: 1px solid rgba(141, 194, 192, .16);
+  border-radius: 12px;
+  background: rgba(11, 39, 49, .72);
+}
+.calloria-shift-review-metric > span {
+  color: #a9c4c4;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  line-height: 1.35;
+}
+.calloria-shift-review-metric > strong {
+  margin-top: 9px;
+  color: #f6fffc;
+  font-size: clamp(21px, 4vw, 29px);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.calloria-shift-review-metric > small {
+  margin-top: 7px;
+  color: #87a5ab;
+  font-size: 9px;
+  line-height: 1.4;
+}
+.calloria-shift-review-footer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  margin-top: 14px;
+  padding: 14px 15px;
+  border: 1px solid rgba(116, 220, 200, .19);
+  border-radius: 12px;
+  background: rgba(34, 91, 88, .16);
+}
+.calloria-shift-review-footer > div { display: grid; gap: 5px; }
+.calloria-shift-review-footer span {
+  color: #9bb9bb;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.calloria-shift-review-footer strong {
+  color: #8ce8d5;
+  font-size: 24px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.calloria-shift-review-footer p {
+  margin: 0;
+  color: #a9c0c4;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.calloria-shift-review-done {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 15px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(100deg, #60d6bd, #54bda9);
+  color: #06201f;
+  font: 800 11px/1 Manrope, system-ui, sans-serif;
+  letter-spacing: .7px;
+  cursor: pointer;
+}
+.calloria-shift-review-disclaimer {
+  display: block;
+  margin-top: 11px;
+  color: #78949b;
+  font-size: 9px;
+  line-height: 1.45;
+  text-align: center;
+}
+.calloria-shift-review-dialog button:focus-visible {
+  outline: 3px solid #9af1df;
+  outline-offset: 3px;
+}
+@media (max-width: 640px) {
+  .calloria-shift-review-backdrop { padding-left: 9px; padding-right: 9px; }
+  .calloria-shift-review-dialog { padding: 18px 13px 14px; border-radius: 14px; }
+  .calloria-shift-review-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin-top: 16px; }
+  .calloria-shift-review-metric { min-height: 84px; padding: 11px 10px; }
+  .calloria-shift-review-metric > span { font-size: 7px; }
+  .calloria-shift-review-footer { grid-template-columns: 1fr; gap: 7px; padding: 12px; }
+  .calloria-shift-review-footer strong { font-size: 21px; }
+}
+@media (max-width: 360px) {
+  .calloria-shift-review-dialog { padding-left: 10px; padding-right: 10px; }
+  .calloria-shift-review-metric { padding: 9px; }
+  .calloria-shift-review-metric > strong { font-size: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .calloria-shift-review-backdrop *,
+  .calloria-shift-review-backdrop *::before,
+  .calloria-shift-review-backdrop *::after { animation: none !important; transition: none !important; }
+}
