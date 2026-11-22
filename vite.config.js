@@ -29,6 +29,7 @@ import { calloriaDigitalFollowUpSupervisorPluginV723 } from './build/calloria-di
 import { calloriaDigitalFollowUpPerformancePluginV724 } from './build/calloria-digital-followup-performance-v724.mjs';
 import { calloriaDigitalFollowUpCoachingPluginV725 } from './build/calloria-digital-followup-coaching-v725.mjs';
 import { calloriaDigitalFollowUpCoachingOutcomesPluginV726 } from './build/calloria-digital-followup-coaching-outcomes-v726.mjs';
+import { calloriaDigitalFollowUpCoachingCheckpointsPluginV727 } from './build/calloria-digital-followup-coaching-checkpoints-v727.mjs';
 
 export default defineConfig({
   base: '/',
@@ -70,7 +71,9 @@ export default defineConfig({
     // v7.25 converts follow-up scorecards into supervisor-owned coaching plans.
     calloriaDigitalFollowUpCoachingPluginV725(),
     // v7.26 compares completed coaching plans with fresh agent response evidence.
-    calloriaDigitalFollowUpCoachingOutcomesPluginV726()
+    calloriaDigitalFollowUpCoachingOutcomesPluginV726(),
+    // v7.27 adds dated 7-day and 30-day sustainment checks after outcome reviews.
+    calloriaDigitalFollowUpCoachingCheckpointsPluginV727()
   ],
   build: {
     outDir: 'dist',

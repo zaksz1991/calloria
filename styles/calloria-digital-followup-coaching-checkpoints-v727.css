@@ -1,0 +1,46 @@
+.digital-followup-checkpoint-panel { margin-top: 14px; }
+.digital-followup-checkpoint-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+  margin: 12px 0 14px;
+}
+.digital-followup-checkpoint-metrics > div {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border, rgba(148, 163, 184, .2));
+  border-radius: 12px;
+  background: var(--surface-soft, rgba(148, 163, 184, .05));
+}
+.digital-followup-checkpoint-metrics span,
+.digital-followup-checkpoint-metrics strong { display: block; }
+.digital-followup-checkpoint-metrics span { color: var(--muted, #94a3b8); font-size: .76rem; }
+.digital-followup-checkpoint-metrics strong { margin-top: 4px; font-size: 1.3rem; }
+.digital-followup-checkpoint-list { display: grid; gap: 8px; }
+.digital-followup-checkpoint-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border, rgba(148, 163, 184, .2));
+  border-radius: 12px;
+  background: var(--surface-soft, rgba(148, 163, 184, .04));
+}
+.digital-followup-checkpoint-main { min-width: 0; }
+.digital-followup-checkpoint-main strong,
+.digital-followup-checkpoint-main small { display: block; overflow-wrap: anywhere; }
+.digital-followup-checkpoint-main small { margin-top: 4px; color: var(--muted, #94a3b8); font-size: .78rem; line-height: 1.4; }
+.digital-followup-checkpoint-actions { display: flex; justify-content: flex-end; min-width: 0; }
+.digital-followup-checkpoint-actions .btn { min-height: 38px; white-space: normal; }
+@media (max-width: 760px) {
+  .digital-followup-checkpoint-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .digital-followup-checkpoint-row { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .digital-followup-checkpoint-actions { grid-column: 1 / -1; justify-content: stretch; }
+  .digital-followup-checkpoint-actions .btn { width: 100%; min-height: 42px; }
+}
+@media (max-width: 380px) {
+  .digital-followup-checkpoint-row { padding: 10px; }
+  .digital-followup-checkpoint-metrics > div { padding: 9px; }
+}

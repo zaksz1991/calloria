@@ -1,0 +1,17 @@
+CALLORIA v7.27 RELEASE STATUS
+
+Release: Digital Follow-up Coaching Sustainment Checkpoints
+Release type: cumulative v7.23–v7.27 digital follow-up source overlay
+Automated tests: 62 passed, 0 failed
+JavaScript/MJS syntax checks: 22 passed, 0 failed
+Generated transformed-main syntax: passed
+ZIP integrity: checked after archive creation
+Production Vite build: not run
+Vercel production deployment: not run
+Supabase changes: none
+New environment variables/secrets: none
+
+Baseline limitation:
+The preparation workspace contains the v7.23–v7.26 digital follow-up overlay and its Vite configuration snapshot, not the full current CALLORIA repository. The release adds the v7.27 checkpoint engine, Vite transform, styling and tests while retaining the prior overlay files. It does not contain all CALLORIA application source, the real public/assets GLB collection, repository metadata, deployment secrets or environment files. Merge this overlay into the existing checkout. Compare the supplied vite.config.js with the live repository and merge only the v7.27 import and ordered plugin registration if the live file has moved beyond the v7.26 snapshot.
+
+No production deployment or physical-device result is claimed.

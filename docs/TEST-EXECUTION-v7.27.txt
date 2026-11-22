@@ -1,0 +1,382 @@
+TAP version 13
+# Subtest: schedules 7-day and 30-day checks from the outcome review timestamp
+ok 1 - schedules 7-day and 30-day checks from the outcome review timestamp
+  ---
+  duration_ms: 1.859634
+  type: 'test'
+  ...
+# Subtest: checkpoint scheduling is immutable, idempotent and rejects ineligible plans
+ok 2 - checkpoint scheduling is immutable, idempotent and rejects ineligible plans
+  ---
+  duration_ms: 0.230016
+  type: 'test'
+  ...
+# Subtest: checkpoint assessment refuses early attempts and mismatched agent scorecards
+ok 3 - checkpoint assessment refuses early attempts and mismatched agent scorecards
+  ---
+  duration_ms: 0.35249
+  type: 'test'
+  ...
+# Subtest: maintained target, further improvement and regression are differentiated
+ok 4 - maintained target, further improvement and regression are differentiated
+  ---
+  duration_ms: 0.497387
+  type: 'test'
+  ...
+# Subtest: insufficient new workload is recorded as insufficient evidence, not zero
+ok 5 - insufficient new workload is recorded as insufficient evidence, not zero
+  ---
+  duration_ms: 0.254463
+  type: 'test'
+  ...
+# Subtest: response-rate checkpoint requires three new completed follow-ups
+ok 6 - response-rate checkpoint requires three new completed follow-ups
+  ---
+  duration_ms: 0.992582
+  type: 'test'
+  ...
+# Subtest: records a due checkpoint once and preserves the source plan
+ok 7 - records a due checkpoint once and preserves the source plan
+  ---
+  duration_ms: 0.320151
+  type: 'test'
+  ...
+# Subtest: checkpoint board reports due, overdue, recorded and legacy unscheduled plans
+ok 8 - checkpoint board reports due, overdue, recorded and legacy unscheduled plans
+  ---
+  duration_ms: 0.390556
+  type: 'test'
+  ...
+# Subtest: plugin adds checkpoint panel and actions after v7.26, safely and idempotently
+ok 9 - plugin adds checkpoint panel and actions after v7.26, safely and idempotently
+  ---
+  duration_ms: 39.675626
+  type: 'test'
+  ...
+# Subtest: plugin skips safely if any required v7.26 integration anchor has drifted
+ok 10 - plugin skips safely if any required v7.26 integration anchor has drifted
+  ---
+  duration_ms: 0.567343
+  type: 'test'
+  ...
+# Subtest: overdue recovery records achieved when current overdue workload reaches zero
+ok 11 - overdue recovery records achieved when current overdue workload reaches zero
+  ---
+  duration_ms: 1.288576
+  type: 'test'
+  ...
+# Subtest: overdue and at-risk reviews distinguish improvement from no improvement
+ok 12 - overdue and at-risk reviews distinguish improvement from no improvement
+  ---
+  duration_ms: 0.330446
+  type: 'test'
+  ...
+# Subtest: response target review requires a comparable completed sample and checks target attainment
+ok 13 - response target review requires a comparable completed sample and checks target attainment
+  ---
+  duration_ms: 0.170917
+  type: 'test'
+  ...
+# Subtest: assessments reject active plans, mismatched agents, invalid plans and previously reviewed plans
+ok 14 - assessments reject active plans, mismatched agents, invalid plans and previously reviewed plans
+  ---
+  duration_ms: 0.188644
+  type: 'test'
+  ...
+# Subtest: recording an outcome immutably updates exactly one completed plan and prevents duplicates
+ok 15 - recording an outcome immutably updates exactly one completed plan and prevents duplicates
+  ---
+  duration_ms: 0.33932
+  type: 'test'
+  ...
+# Subtest: outcome board counts reviewed states and keeps newest completed plans first
+ok 16 - outcome board counts reviewed states and keeps newest completed plans first
+  ---
+  duration_ms: 0.423276
+  type: 'test'
+  ...
+# Subtest: v7.26 adds outcome panel and review action after v7.25, and transform is idempotent
+ok 17 - v7.26 adds outcome panel and review action after v7.25, and transform is idempotent
+  ---
+  duration_ms: 1.593094
+  type: 'test'
+  ...
+# Subtest: v7.26 safely skips when upstream v7.25 anchors drift
+ok 18 - v7.26 safely skips when upstream v7.25 anchors drift
+  ---
+  duration_ms: 0.150957
+  type: 'test'
+  ...
+# Subtest: plans without comparable evidence are shown as waiting, not counted as ready for review
+ok 19 - plans without comparable evidence are shown as waiting, not counted as ready for review
+  ---
+  duration_ms: 0.461574
+  type: 'test'
+  ...
+# Subtest: missing metric fields are treated as insufficient evidence instead of zero
+ok 20 - missing metric fields are treated as insufficient evidence instead of zero
+  ---
+  duration_ms: 0.316045
+  type: 'test'
+  ...
+# Subtest: overdue follow-up work creates a high-priority recovery recommendation with evidence
+ok 21 - overdue follow-up work creates a high-priority recovery recommendation with evidence
+  ---
+  duration_ms: 1.29762
+  type: 'test'
+  ...
+# Subtest: at-risk work is prioritised before response-rate coaching when no overdue work remains
+ok 22 - at-risk work is prioritised before response-rate coaching when no overdue work remains
+  ---
+  duration_ms: 0.148053
+  type: 'test'
+  ...
+# Subtest: response-rate coaching requires a minimum completed sample and proposes a measurable target
+ok 23 - response-rate coaching requires a minimum completed sample and proposes a measurable target
+  ---
+  duration_ms: 0.209295
+  type: 'test'
+  ...
+# Subtest: one strongest recommendation is produced per agent and unassigned rows are excluded
+ok 24 - one strongest recommendation is produced per agent and unassigned rows are excluded
+  ---
+  duration_ms: 0.732992
+  type: 'test'
+  ...
+# Subtest: an agent with an open or in-progress plan is suppressed from duplicate recommendations
+ok 25 - an agent with an open or in-progress plan is suppressed from duplicate recommendations
+  ---
+  duration_ms: 0.403677
+  type: 'test'
+  ...
+# Subtest: malformed legacy plan statuses do not suppress fresh coaching recommendations
+ok 26 - malformed legacy plan statuses do not suppress fresh coaching recommendations
+  ---
+  duration_ms: 0.172469
+  type: 'test'
+  ...
+# Subtest: completed coaching plans do not suppress a later evidence-based recommendation
+ok 27 - completed coaching plans do not suppress a later evidence-based recommendation
+  ---
+  duration_ms: 0.182244
+  type: 'test'
+  ...
+# Subtest: invalid agents, malformed boards and malformed plan collections are handled safely
+ok 28 - invalid agents, malformed boards and malformed plan collections are handled safely
+  ---
+  duration_ms: 0.229144
+  type: 'test'
+  ...
+# Subtest: plan creation validates agent/focus and sets a seven-day due date by default
+ok 29 - plan creation validates agent/focus and sets a seven-day due date by default
+  ---
+  duration_ms: 0.430577
+  type: 'test'
+  ...
+# Subtest: plan creation rejects due dates that are not later than creation
+ok 30 - plan creation rejects due dates that are not later than creation
+  ---
+  duration_ms: 0.324097
+  type: 'test'
+  ...
+# Subtest: plan transitions are immutable and enforce open → in progress → completed
+ok 31 - plan transitions are immutable and enforce open → in progress → completed
+  ---
+  duration_ms: 0.321984
+  type: 'test'
+  ...
+# Subtest: unknown plan IDs and invalid transitions do not alter records
+ok 32 - unknown plan IDs and invalid transitions do not alter records
+  ---
+  duration_ms: 0.147131
+  type: 'test'
+  ...
+# Subtest: v7.25 transforms only a v7.24 performance panel and is idempotent
+ok 33 - v7.25 transforms only a v7.24 performance panel and is idempotent
+  ---
+  duration_ms: 0.947975
+  type: 'test'
+  ...
+# Subtest: v7.25 skips safely when the upstream v7.24 anchor set has drifted
+ok 34 - v7.25 skips safely when the upstream v7.24 anchor set has drifted
+  ---
+  duration_ms: 0.361363
+  type: 'test'
+  ...
+# Subtest: completed follow-up cycles are attributed to the responding agent, not a later contact owner
+ok 35 - completed follow-up cycles are attributed to the responding agent, not a later contact owner
+  ---
+  duration_ms: 1.778923
+  type: 'test'
+  ...
+# Subtest: open follow-up cycles use the currently assigned agent and separate overdue from completed-late
+ok 36 - open follow-up cycles use the currently assigned agent and separate overdue from completed-late
+  ---
+  duration_ms: 0.269174
+  type: 'test'
+  ...
+# Subtest: multiple agents and channels are aggregated without combining first-response SLA
+ok 37 - multiple agents and channels are aggregated without combining first-response SLA
+  ---
+  duration_ms: 6.938145
+  type: 'test'
+  ...
+# Subtest: unassigned and invalid records are handled safely and calculations do not mutate source history
+ok 38 - unassigned and invalid records are handled safely and calculations do not mutate source history
+  ---
+  duration_ms: 0.47913
+  type: 'test'
+  ...
+# Subtest: agent scorecard response rate is based only on completed follow-up cycles
+ok 39 - agent scorecard response rate is based only on completed follow-up cycles
+  ---
+  duration_ms: 0.360491
+  type: 'test'
+  ...
+# Subtest: v7.24 transforms only a v7.23 supervisor source and is idempotent
+ok 40 - v7.24 transforms only a v7.23 supervisor source and is idempotent
+  ---
+  duration_ms: 0.358388
+  type: 'test'
+  ...
+# Subtest: v7.24 skips safely when v7.23 anchors have drifted
+ok 41 - v7.24 skips safely when v7.23 anchors have drifted
+  ---
+  duration_ms: 0.397217
+  type: 'test'
+  ...
+# Subtest: v7.23 supervisor transform feeds the v7.24 analytics transform in sequence
+ok 42 - v7.23 supervisor transform feeds the v7.24 analytics transform in sequence
+  ---
+  duration_ms: 0.410307
+  type: 'test'
+  ...
+# Subtest: supervisor board identifies overdue and at-risk follow-up cycles only
+ok 43 - supervisor board identifies overdue and at-risk follow-up cycles only
+  ---
+  duration_ms: 2.057121
+  type: 'test'
+  ...
+# Subtest: customer follow-up bursts group repeated customer messages until an agent replies
+ok 44 - customer follow-up bursts group repeated customer messages until an agent replies
+  ---
+  duration_ms: 0.47297
+  type: 'test'
+  ...
+# Subtest: open supervisor requests are detected and do not create duplicate intervention prompts
+ok 45 - open supervisor requests are detected and do not create duplicate intervention prompts
+  ---
+  duration_ms: 0.27284
+  type: 'test'
+  ...
+# Subtest: alert revalidation rejects stale, responded, closed and mismatched cycles
+ok 46 - alert revalidation rejects stale, responded, closed and mismatched cycles
+  ---
+  duration_ms: 0.477107
+  type: 'test'
+  ...
+# Subtest: non-main modules are not transformed
+ok 47 - non-main modules are not transformed
+  ---
+  duration_ms: 0.398319
+  type: 'test'
+  ...
+# Subtest: main transform adds the supervisor panel, navigation and guarded escalation action once
+ok 48 - main transform adds the supervisor panel, navigation and guarded escalation action once
+  ---
+  duration_ms: 0.323026
+  type: 'test'
+  ...
+# Subtest: source drift causes a safe skip with no partial edits
+ok 49 - source drift causes a safe skip with no partial edits
+  ---
+  duration_ms: 0.325459
+  type: 'test'
+  ...
+# Subtest: Vite configuration imports v7.23 supervisor plugin
+ok 50 - Vite configuration imports v7.23 supervisor plugin
+  ---
+  duration_ms: 0.629977
+  type: 'test'
+  ...
+# Subtest: v7.23 executes after the v7.22 digital experience suite
+ok 51 - v7.23 executes after the v7.22 digital experience suite
+  ---
+  duration_ms: 0.151337
+  type: 'test'
+  ...
+# Subtest: existing Vite multi-page inputs and core plugins are retained
+ok 52 - existing Vite multi-page inputs and core plugins are retained
+  ---
+  duration_ms: 0.127351
+  type: 'test'
+  ...
+# Subtest: Vite config imports the v7.24 digital follow-up performance plugin
+ok 53 - Vite config imports the v7.24 digital follow-up performance plugin
+  ---
+  duration_ms: 0.628585
+  type: 'test'
+  ...
+# Subtest: v7.24 executes after the v7.23 supervisor integration
+ok 54 - v7.24 executes after the v7.23 supervisor integration
+  ---
+  duration_ms: 0.150155
+  type: 'test'
+  ...
+# Subtest: existing application entries and earlier visual/runtime plugins remain registered
+ok 55 - existing application entries and earlier visual/runtime plugins remain registered
+  ---
+  duration_ms: 0.127852
+  type: 'test'
+  ...
+# Subtest: Vite config imports the v7.25 digital follow-up coaching plugin
+ok 56 - Vite config imports the v7.25 digital follow-up coaching plugin
+  ---
+  duration_ms: 0.896177
+  type: 'test'
+  ...
+# Subtest: v7.25 executes after the v7.24 performance integration
+ok 57 - v7.25 executes after the v7.24 performance integration
+  ---
+  duration_ms: 0.184598
+  type: 'test'
+  ...
+# Subtest: existing 3D, OJT, multichannel and Vite page-entry registrations remain present
+ok 58 - existing 3D, OJT, multichannel and Vite page-entry registrations remain present
+  ---
+  duration_ms: 0.234913
+  type: 'test'
+  ...
+# Subtest: Vite imports and registers the v7.26 coaching outcome plugin
+ok 59 - Vite imports and registers the v7.26 coaching outcome plugin
+  ---
+  duration_ms: 0.655485
+  type: 'test'
+  ...
+# Subtest: Vite retains core 3D, multichannel, supervisor and prior coaching plugins
+ok 60 - Vite retains core 3D, multichannel, supervisor and prior coaching plugins
+  ---
+  duration_ms: 0.984549
+  type: 'test'
+  ...
+# Subtest: Vite imports and registers the v7.27 checkpoint plugin after v7.26
+ok 61 - Vite imports and registers the v7.27 checkpoint plugin after v7.26
+  ---
+  duration_ms: 0.603266
+  type: 'test'
+  ...
+# Subtest: Vite retains previous game, channel, supervisor and coaching plugins
+ok 62 - Vite retains previous game, channel, supervisor and coaching plugins
+  ---
+  duration_ms: 0.147842
+  type: 'test'
+  ...
+1..62
+# tests 62
+# suites 0
+# pass 62
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 603.951557

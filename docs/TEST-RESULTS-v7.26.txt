@@ -33,4 +33,4 @@ Not verified:
 - Production GitHub source, Vercel deployment or live runtime.
 - Physical Android/iOS responsive rendering.
 
-The 50 passing tests validate this cumulative overlay and a representative transform fixture. They do not prove that the user's current full repository is identical to the supplied v7.25 baseline.
+The 49 passing tests validate this cumulative overlay and a representative transform fixture. They do not prove that the user's current full repository is identical to the supplied v7.25 baseline.

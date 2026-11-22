@@ -1,0 +1,31 @@
+CALLORIA v7.27 — TEST RESULTS
+
+Automated suite: node --test tests/*.test.mjs
+Total tests: 62
+Passed: 62
+Failed: 0
+Skipped: 0
+
+Syntax validation:
+JavaScript/MJS files checked with node --check: 22
+Syntax failures: 0
+Generated Vite-transformed main.js fixture: syntax check passed inside the v7.27 integration test.
+
+Coverage includes:
+- 7-day and 30-day checkpoint schedule generation.
+- Immutable and duplicate-safe schedule creation.
+- Due-date enforcement and prevention of early checkpoint recording.
+- Agent identity matching.
+- Previously achieved target maintained, target newly reached, improvement, regression, stable and insufficient-data classifications.
+- Minimum new-workload evidence thresholds.
+- Immutable checkpoint recording and duplicate prevention.
+- Supervisor board counts and legacy v7.26 plan scheduling.
+- Automatic checkpoint scheduling immediately after a new v7.26 outcome review.
+- Ordered v7.23–v7.27 Vite transform integration, generated source syntax and safe source-drift handling.
+- Vite registration order and preservation of earlier game/application plugins.
+
+Not tested in this environment:
+- Full production Vite build of the complete CALLORIA repository.
+- Live Vercel deployment or production browser behaviour.
+- Live Supabase state (no database change is included).
+- Physical Android/iOS device behaviour.
