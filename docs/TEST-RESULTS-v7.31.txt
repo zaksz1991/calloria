@@ -1,0 +1,40 @@
+CALLORIA v7.31 — TEST RESULTS
+
+Automated suite:
+- Command: node --experimental-default-type=module --test tests/*.test.mjs
+- Total tests: 121
+- Passed: 121
+- Failed: 0
+- Skipped: 0
+
+JavaScript/MJS syntax validation:
+- Files checked: 38
+- Syntax failures: 0
+- Vite configuration syntax check: passed
+
+v7.31-specific coverage:
+- Aggregate workforce snapshots exclude agent IDs, customer details and transcripts.
+- Snapshot counts and percentage rates are bounded.
+- Unapproved workstream identifiers are not retained.
+- Invalid dates and malformed snapshot data are rejected safely.
+- Stored snapshots are reconstructed from the permitted schema; unknown fields are discarded.
+- Completed, open, overdue, at-risk and response-target changes are scored with explicit direction rules.
+- Missing comparison values remain unscored.
+- Channel comparisons require matching workstream IDs; new channels are not given fabricated deltas.
+- Department comparisons require matching explicit department labels; new and removed groups are identified.
+- Snapshot history is chronological, timestamp-deduplicated and capped at 90 records.
+- CSV export includes aggregate sections and neutralises formula-leading cells.
+- v7.31 plugin applies after v7.30, inserts the trend panel and browser-local capture/export/clear handlers, and is idempotent.
+- Plugin safely skips if required v7.30 anchors are missing or changed.
+- Generated v7.23 → v7.31 transformed main module passes JavaScript syntax validation.
+- Vite config registers v7.31 exactly once after v7.30.
+
+NOT RUN:
+- Full Vite production build: the preparation package is an overlay and does not contain the complete repository or the project's installed dependency tree.
+- Full production browser rendering against the deployed site.
+- Browser localStorage checks on actual production browsers/devices.
+- GitHub push, Vercel production deployment, Supabase remote state or physical Android/iOS verification.
+
+RESULT:
+- All focused and carried-forward automated tests passed in the preparation workspace.
+- Release is prepared but not deployed. A successful Vercel production build is still required.

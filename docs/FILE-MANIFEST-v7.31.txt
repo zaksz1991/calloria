@@ -1,0 +1,28 @@
+CALLORIA v7.31 — NEW / CHANGED FILE MANIFEST
+
+New runtime engine:
+- js/workforce-trend-history-engine-v731.js
+
+New Vite transform:
+- build/calloria-workforce-trend-history-v731.mjs
+
+New presentation layer:
+- styles/calloria-workforce-trend-history-v731.css
+
+New automated tests:
+- tests/workforce-trend-history-v731.test.mjs
+- tests/vite-config-v731.test.mjs
+
+Updated integration file:
+- vite.config.js (imports and registers v7.31 after v7.30)
+
+New release documentation:
+- CHANGELOG-v7.31.md
+- README.md
+- INSTALL-GITHUB-v7.31.md
+- docs/TEST-RESULTS-v7.31.txt
+- docs/TEST-EXECUTION-v7.31.txt
+- docs/RELEASE-STATUS-v7.31.txt
+- docs/FILE-MANIFEST-v7.31.txt
+
+The archive carries forward the workforce overlay files from v7.23–v7.30. It does not contain the complete CALLORIA application, private .git metadata, local environment files, or the existing public/assets GLB binaries. Preserve those from the actual repository checkout.

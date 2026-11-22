@@ -1,0 +1,33 @@
+/* CALLORIA v7.31 — responsive aggregate workforce trend history. */
+.workforce-trend-history-panel{display:grid;gap:13px;margin-top:14px;padding:15px;border:1px solid var(--line,#dce4ee);border-radius:13px;background:var(--surface,#fff);color:var(--ink,#142033);min-width:0}
+.workforce-trend-history-panel .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.workforce-trend-history-panel .panel-head h3{margin:0;font-size:15px;line-height:1.3}
+.workforce-trend-history-panel .panel-head p{margin:5px 0 0;color:var(--muted,#718096);font-size:11px;line-height:1.5}
+.wth-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.wth-summary>div{min-width:0;padding:11px;border:1px solid var(--line,#e2e8f0);border-radius:9px;background:var(--soft,#f6f8fb)}
+.wth-summary span,.wth-summary strong,.wth-summary small{display:block}
+.wth-summary span{color:var(--muted,#718096);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.wth-summary strong{margin-top:5px;color:var(--ink,#142033);font-size:20px;line-height:1.2;overflow-wrap:anywhere}
+.wth-summary small{margin-top:4px;color:var(--muted,#718096);font-size:9px;line-height:1.4}
+.wth-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.wth-actions .btn{min-height:36px;font-size:10px}
+.wth-actions button:disabled{opacity:.45;cursor:not-allowed}
+.wth-status{margin:0;padding:9px 11px;border:1px solid var(--line,#dce4ee);border-radius:8px;background:var(--soft,#f6f8fb);color:var(--muted,#64748b);font-size:10px;line-height:1.5}
+.wth-section{display:grid;gap:9px;min-width:0;padding:12px;border:1px solid var(--line,#e2e8f0);border-radius:10px;background:var(--surface,#fff)}
+.wth-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.wth-section-head h4{margin:0;color:var(--ink,#142033);font-size:12px}
+.wth-section-head p{margin:4px 0 0;color:var(--muted,#718096);font-size:10px;line-height:1.45}
+.wth-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 7px;border-radius:999px;background:#edf2f7;color:#475569;font-size:9px;font-weight:800;line-height:1.2;white-space:nowrap}
+.wth-badge.good{background:#e8f7ef;color:#08754f}.wth-badge.warn{background:#fff4dc;color:#946200}.wth-badge.blue{background:#eaf1ff;color:#2454a6}
+.wth-table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.wth-table{width:100%;min-width:560px;border-collapse:collapse;font-size:10px}
+.wth-table th,.wth-table td{padding:8px 9px;border-bottom:1px solid var(--line,#e2e8f0);text-align:left;vertical-align:top;white-space:nowrap}
+.wth-table th{color:var(--muted,#718096);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.wth-table td{color:var(--ink,#142033)}
+.wth-table td strong{display:block}
+.wth-empty{display:grid;gap:5px;padding:13px;border:1px dashed var(--line,#cbd5e1);border-radius:8px;background:var(--soft,#f6f8fb)}
+.wth-empty strong{color:var(--ink,#142033);font-size:11px}.wth-empty span{color:var(--muted,#718096);font-size:10px;line-height:1.5}
+.wth-boundaries{display:grid;gap:5px;padding-top:9px;border-top:1px solid var(--line,#e2e8f0)}
+.wth-boundaries span{color:var(--muted,#718096);font-size:9px;line-height:1.5}
+@media(max-width:900px){.wth-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.workforce-trend-history-panel{padding:11px}.workforce-trend-history-panel .panel-head{flex-direction:column}.wth-summary{gap:7px}.wth-summary>div{padding:9px}.wth-summary strong{font-size:18px}.wth-actions{display:grid;grid-template-columns:1fr}.wth-actions .btn{width:100%}.wth-section{padding:10px}.wth-section-head{flex-direction:column;align-items:flex-start}}

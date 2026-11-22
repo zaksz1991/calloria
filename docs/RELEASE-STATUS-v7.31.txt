@@ -1,0 +1,19 @@
+CALLORIA v7.31 RELEASE STATUS
+
+Source overlay: prepared
+Automated tests: 121 passed / 0 failed
+JavaScript/MJS syntax: 38 files passed
+Vite config syntax: passed
+Generated v7.23-v7.31 transform syntax: passed
+Plugin order and safe-skip checks: passed
+ZIP integrity: to be checked after archive creation
+Full Vite production build: not run
+GitHub main update: not performed
+Vercel production deployment: not performed
+Physical mobile verification: not performed
+
+Classification: cumulative additive source overlay based on the provided v7.30 package. Not a complete CALLORIA repository replacement.
+
+Storage model: aggregate snapshot history is stored in browser localStorage only. It is not backed by Supabase and does not synchronise between devices or users.
+
+Data boundary: snapshots exclude employee identifiers, customer details, case references and transcripts. Department labels and aggregate metrics may be included where explicit source mappings exist.

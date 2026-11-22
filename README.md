@@ -1,57 +1,59 @@
-# CALLORIA v7.30 — Workforce Intelligence Command Centre
+# CALLORIA v7.31 — Workforce Trend & Evidence History
 
-A cumulative v7.23–v7.30 source overlay for the existing CALLORIA Supervisor workspace. It extends the v7.29 Workforce Performance Intelligence panel with operational workstream comparisons, explicit department scorecards, a risk-prioritised supervisor queue, capacity stress scenarios and CSV export.
+A cumulative v7.23–v7.31 source overlay for the existing CALLORIA Supervisor workspace. It extends the v7.30 Workforce Intelligence Command Centre with manually captured aggregate snapshots, trend comparisons and local history export.
 
-## Included features
+## What's new in v7.31
 
-### Operational workstreams
+### Aggregate workforce snapshots
 
-Voice is scoped to the current local employee profile. Email, Live Chat and Social use the retained attributed per-agent response-cycle data. Agent-level totals with missing channel metadata are shown in a separate `Channel not recorded` row, preventing unexplained loss from the backlog calculation.
+A supervisor can capture the current v7.30 command-centre board as a dated baseline. Snapshots contain aggregate operational counts and rates, available workstream values, and department groups that already have explicit mappings.
 
-### Department comparisons
+### Change comparisons
 
-Department performance is grouped only when a digital agent has an explicit `departmentName`, `department`, `teamName`, `team` or department ID, or when an exact agent ID matches a row in `state.workforceRoster`, `state.staff` or `state.employees`. `state.departments` can map department IDs to display names. The current local employee can also map through the existing exact `EMP-<nameInitials>` identifier and `state.department` value.
+When a saved snapshot exists, the panel compares the current board with the most recent saved snapshot:
 
-Where that data does not exist, the dashboard displays a clear unavailable state instead of inventing department membership.
+- completed digital replies;
+- open digital work;
+- overdue digital work;
+- at-risk digital work;
+- response-target rate;
+- channel-specific completion, open, overdue and response-target changes;
+- mapped-department completion, open, overdue, at-risk and response-target changes.
 
-### Supervisor attention queue
+The trend direction is calculated according to the measure: an increase in completed replies or response-target rate is positive, while a decrease in open, overdue or at-risk work is positive. Missing comparison values are not scored. New channels and departments do not receive fabricated baseline values.
 
-Flags attributed agents with overdue work, at-risk work or response-target rates below 80%. The queue gives a suggested supervisor focus based on the recorded signal. It does not perform reassignment or disciplinary actions.
+### Local history and export
 
-### Capacity scenario planner
+- Up to 90 snapshots are retained in browser localStorage.
+- Snapshots are ordered by capture timestamp; duplicate timestamps replace the matching snapshot.
+- A CSV export includes aggregate summary, workstream and department rows.
+- The supervisor can clear this browser's history after a confirmation step.
 
-The planner stress-tests current open digital backlog at 80%, 100% and 130% of current load. Enter:
-- planned available seats;
-- maximum open items per seat, an editable planning assumption.
+## Data privacy and operating limits
 
-The dashboard calculates modelled seats required and the gap to the entered staffing plan. This is not a time-series forecast because the retained source does not provide a validated organisation-wide arrival rate, active-seat feed or occupancy history.
-
-### Reporting
-
-The CSV export contains operational workstream summaries, mapped department summaries and flagged digital-agent rows. CSV cells are quoted and formula-leading values are neutralised.
-
-## Important boundaries
-
-This is a read-only local-simulation command centre, not verified organisation-wide workforce reporting. Voice remains scoped to the current employee profile. Digital metrics are based on retained simulated response cycles. Department comparisons require explicit mapping. Missing source evidence remains unavailable. No staffing, rota, case assignment, employee, compensation or career data is changed.
-
-No Supabase migration, Edge Function deployment, secret, environment variable or npm dependency is required.
+The snapshot schema excludes individual employee IDs, customer details, case references and transcripts. It does include aggregate department labels and counts where those department mappings exist. Browser-local history is not a cloud backup, not shared with the organisation, and not synchronised between devices or browsers. Capture is manual, not scheduled or automatic. Trend comparisons do not prove cause or constitute HR decisions.
 
 ## Package contents
 
-- `js/workforce-command-centre-engine-v730.js`
-- `build/calloria-workforce-command-centre-v730.mjs`
-- `styles/calloria-workforce-command-centre-v730.css`
-- `tests/workforce-command-centre-v730.test.mjs`
-- `tests/vite-config-v730.test.mjs`
+- `js/workforce-trend-history-engine-v731.js`
+- `build/calloria-workforce-trend-history-v731.mjs`
+- `styles/calloria-workforce-trend-history-v731.css`
+- `tests/workforce-trend-history-v731.test.mjs`
+- `tests/vite-config-v731.test.mjs`
 - Updated `vite.config.js`
-- v7.23–v7.29 overlay source, tests and release documentation carried forward from the previous cumulative package.
+- v7.23–v7.30 source overlays, tests and release documents carried forward from the provided v7.30 package.
 
-The ZIP is not the full CALLORIA repository. It does not include the private `.git` directory, all original application source, local environment files, or `public/assets/` GLB binaries. Preserve those from the existing checkout.
+This is not the complete CALLORIA repository. It does not contain the private `.git` metadata, all original application source, local environment files or the existing `public/assets/` GLB binaries. Preserve those from the actual repository checkout.
 
 ## Validation
 
-See `docs/TEST-RESULTS-v7.30.txt` and `docs/TEST-EXECUTION-v7.30.txt`. Tests and syntax checks passed in the preparation workspace. A complete Vite production build and live deployment were not performed.
+- 121 automated tests passed; 0 failed.
+- 38 JavaScript/MJS files passed Node syntax checks.
+- Generated v7.23–v7.31 transform-chain syntax passed.
+- A complete Vite production build, live deployment and physical mobile checks remain unverified.
+
+See `docs/TEST-RESULTS-v7.31.txt` and `docs/RELEASE-STATUS-v7.31.txt`.
 
 ## Installation
 
-Follow `INSTALL-GITHUB-v7.30.md`. The public repository's latest readable Vite configuration during this release check contains registrations through v7.27 but not v7.28/v7.29. Do not install only the v7.30 plugin over that older state. Merge the complete cumulative overlay and verify the ordered v7.23–v7.30 plugin chain before pushing.
+Use `INSTALL-GITHUB-v7.31.md`. Merge the v7.31 files into the existing repository and register the plugin immediately after v7.30. Keep the `.git` directory, original application files, `public/assets/`, GLB models and existing environment configuration untouched.

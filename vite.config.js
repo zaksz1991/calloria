@@ -33,6 +33,7 @@ import { calloriaDigitalFollowUpCoachingCheckpointsPluginV727 } from './build/ca
 import { calloriaDigitalCareerEvidencePluginV728 } from './build/calloria-digital-career-evidence-v728.mjs';
 import { calloriaWorkforceIntelligencePluginV729 } from './build/calloria-workforce-intelligence-v729.mjs';
 import { calloriaWorkforceCommandCentrePluginV730 } from './build/calloria-workforce-command-centre-v730.mjs';
+import { calloriaWorkforceTrendHistoryPluginV731 } from './build/calloria-workforce-trend-history-v731.mjs';
 
 export default defineConfig({
   base: '/',
@@ -82,7 +83,9 @@ export default defineConfig({
     // v7.29 adds a source-labelled, read-only cross-channel workforce evidence view.
     calloriaWorkforceIntelligencePluginV729(),
     // v7.30 adds read-only supervisor command-centre analytics and backlog scenarios.
-    calloriaWorkforceCommandCentrePluginV730()
+    calloriaWorkforceCommandCentrePluginV730(),
+    // v7.31 adds manually captured, browser-local aggregate workforce trend history after v7.30.
+    calloriaWorkforceTrendHistoryPluginV731()
   ],
   build: {
     outDir: 'dist',
