@@ -1,5 +1,5 @@
 /**
- * CALLORIA v8.0 — single ordered registration group for the digital/workforce suite.
+ * CALLORIA v8.2 — single ordered digital/workforce registration group for the digital/workforce suite.
  * Keeps each release plugin independently testable while centralising its order.
  */
 import { calloriaDigitalExperienceSuitePluginV722 } from './calloria-digital-experience-suite-v722.mjs';
@@ -12,6 +12,7 @@ import { calloriaDigitalCareerEvidencePluginV728 } from './calloria-digital-care
 import { calloriaWorkforceIntelligencePluginV729 } from './calloria-workforce-intelligence-v729.mjs';
 import { calloriaWorkforceCommandCentrePluginV730 } from './calloria-workforce-command-centre-v730.mjs';
 import { calloriaWorkforceTrendHistoryPluginV731 } from './calloria-workforce-trend-history-v731.mjs';
+import { calloriaWorkforceTrendCloudSyncPluginV801 } from './calloria-workforce-trend-cloud-sync-v801.mjs';
 
 export const CALLORIA_WORKFORCE_DEVELOPMENT_PLUGIN_ORDER_V8 = Object.freeze([
   'calloria-digital-experience-suite-v7-22',
@@ -23,7 +24,8 @@ export const CALLORIA_WORKFORCE_DEVELOPMENT_PLUGIN_ORDER_V8 = Object.freeze([
   'calloria-digital-career-evidence-v7-28',
   'calloria-workforce-intelligence-v7-29',
   'calloria-workforce-command-centre-v7-30',
-  'calloria-workforce-trend-history-v7-31'
+  'calloria-workforce-trend-history-v7-31',
+  'calloria-workforce-trend-cloud-sync-v8-1'
 ]);
 
 export function calloriaWorkforceDevelopmentSuitePluginsV8() {
@@ -37,13 +39,14 @@ export function calloriaWorkforceDevelopmentSuitePluginsV8() {
     calloriaDigitalCareerEvidencePluginV728(),
     calloriaWorkforceIntelligencePluginV729(),
     calloriaWorkforceCommandCentrePluginV730(),
-    calloriaWorkforceTrendHistoryPluginV731()
+    calloriaWorkforceTrendHistoryPluginV731(),
+    calloriaWorkforceTrendCloudSyncPluginV801()
   ];
   const names = plugins.map((plugin) => plugin?.name);
   if (names.length !== CALLORIA_WORKFORCE_DEVELOPMENT_PLUGIN_ORDER_V8.length ||
       names.some((name, index) => name !== CALLORIA_WORKFORCE_DEVELOPMENT_PLUGIN_ORDER_V8[index])) {
     throw new Error(
-      `CALLORIA v8.0 workforce suite order mismatch. Expected ${CALLORIA_WORKFORCE_DEVELOPMENT_PLUGIN_ORDER_V8.join(' -> ')}; received ${names.join(' -> ')}.`
+      `CALLORIA v8.2 workforce suite order mismatch. Expected ${CALLORIA_WORKFORCE_DEVELOPMENT_PLUGIN_ORDER_V8.join(' -> ')}; received ${names.join(' -> ')}.`
     );
   }
   return plugins;

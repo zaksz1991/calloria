@@ -1,0 +1,27 @@
+CALLORIA v8.2 — TEST RESULTS
+
+Environment
+- Node.js: v22.16.0
+- Full repository source: not present in the release-preparation workspace
+- Production dependencies/node_modules: not present
+
+Passed
+- Full available regression suite: 143 passed, 0 failed.
+- JavaScript/MJS/CJS syntax checks: 49 passed, 0 failed.
+- v8 integration suite tests: 9 passed.
+- v8.2 workforce cloud integration tests: 3 passed.
+- v8.1 cloud-history feature tests (engine, UI transform, contract): 9 passed.
+- Plugin ordering: 11 modules specified; v7.31 precedes v8.1 cloud sync.
+- Vite config: one central suite registration; one production gate; no separate cloud plugin registration.
+- Import-audit regression: template/string/comment import anchors are ignored; actual module imports remain checked.
+- Cloud migration static security contract: RLS, reports:read permission, allow-list sanitisation, direct-write revocation and 90-row retention checks passed.
+
+Not run / not claimed
+- Full `npm run build` / Vite production compilation. The package is an overlay and does not contain all original repository pages, original build plugins or node_modules.
+- Execution of migration 202611220001 against the shared Supabase project.
+- Live RLS and role-matrix verification.
+- Real cross-device organisation sync.
+- Desktop/mobile browser rendering, 3D GLB loading or gameplay smoke tests.
+- GitHub push or Vercel production deployment.
+
+The source audit was run directly against the overlay-only folder and reported expected missing baseline files (main pages and existing plugins). The integration audit's isolated complete-fixture regression test passed. The live repository audit must be run after applying this overlay to the full repository.

@@ -1,20 +1,31 @@
-# CALLORIA v8.1 — Organisation Workforce Trend Sync
+# CALLORIA v8.2 — Unified Workforce Cloud-History Integration
 
-This additive release extends v7.31 browser-local trend history with an explicit, permission-checked Supabase organisation sync option.
+## Purpose
 
-## Main behaviour
+v8.2 closes the integration gap between the v8.0.1 production gate and the v8.1 organisation workforce trend-history feature. It does not add another standalone dashboard or another independently registered Vite plugin.
 
-- **Save local history to organisation:** uploads up to 90 validated snapshots to the active CALLORIA organisation.
-- **Load and merge organisation history:** loads the last 90 organisation snapshots, merges them with local history, removes duplicate capture times and stores the merged result in the current browser.
-- Guest mode remains local-only. Sign-in and organisation workspace membership are required for cloud actions.
-- Local history is not uploaded automatically.
+## What changed
 
-## Privacy and permissions
+- Promotes the v8.1 organisation cloud-history plugin into the central `calloriaWorkforceDevelopmentSuitePluginsV8()` registration group.
+- Establishes one deterministic 11-plugin sequence: v7.22 through v7.31, followed by v8.1 cloud trend synchronisation.
+- Extends the production integration gate to require the cloud-history plugin exactly once and after v7.31.
+- Removes the separate v8.1 Vite registration so the same transformer cannot be registered twice.
+- Extends the V8 integration audit and install/build preflight to require the cloud plugin, engine, CSS, SQL migration and regression tests.
+- Retains the v8.0.1 import lexer repair and the existing 20 HTML entries plus the embeddable chat widget.
+- Preserves the v8.1 aggregate-only, explicit organisation sync workflow and its existing security model.
 
-The database RPC reconstructs each snapshot from a strict allow-list and ignores any additional client-supplied properties. Persisted fields are aggregate totals, workstream labels/measures, department labels/measures, snapshot timestamp and schema/source version. No employee identifiers, customer details, case references, transcripts or narrative notes are persisted.
+## Cloud-history behavior retained
 
-Reads and writes require the existing organisation `reports:read` permission. Direct authenticated table writes are revoked. Supabase RLS checks membership scope. The last 90 snapshots are retained per organisation.
+- Browser-local history remains the default and remains available to guests.
+- Cloud synchronisation is explicit; it does not upload automatically.
+- Cloud operations require an authenticated user in an active CALLORIA organisation with `reports:read` permission.
+- The database RPC reconstructs the snapshot from an allow-list. Employee identifiers, customer information, case references, transcripts and narrative notes are not persisted.
+- Organisation history is limited to 90 aggregate snapshots.
 
 ## Package type
 
-This ZIP is an additive overlay for the v8.0.1-integrated CALLORIA `main` baseline, not a complete copy of the full repository. It includes complete replacement `vite.config.js` and `package.json` files plus new plugin, engine, CSS, tests and SQL migration. Preserve all other repository files, `.git`, `public/assets/`, GLB models, credentials and Supabase configuration.
+This is a cumulative **source overlay**, not a copy of the entire repository. It includes replacement integration/build files and the complete v8.1 cloud-history feature files. It deliberately does not replace existing 3D world modules, the app's HTML pages, `.git`, `public/assets/`, GLB models, or unrelated application modules.
+
+## Verification boundary
+
+The packaged regression suite passes. The source overlay does not contain every original repository file or the full `node_modules` tree, so it cannot independently prove the full Vite build, actual browser rendering, live Supabase RLS, cross-device cloud sync or Vercel deployment. Those checks must run against the merged repository and configured Supabase project.

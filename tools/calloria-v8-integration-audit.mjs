@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * CALLORIA v8.0 source-level integration audit.
+ * CALLORIA v8.2 source-level integration audit.
  * Verifies the Vite plugin dependency chain, multi-page entry map, package/build hooks,
  * Node 22 pin and Vercel output contract using Node built-ins only.
  */
@@ -20,7 +20,16 @@ const REQUIRED_MODULES = Object.freeze([
   { file: 'build/calloria-digital-career-evidence-v728.mjs', exported: 'calloriaDigitalCareerEvidencePluginV728', plugin: 'calloria-digital-career-evidence-v7-28' },
   { file: 'build/calloria-workforce-intelligence-v729.mjs', exported: 'calloriaWorkforceIntelligencePluginV729', plugin: 'calloria-workforce-intelligence-v7-29' },
   { file: 'build/calloria-workforce-command-centre-v730.mjs', exported: 'calloriaWorkforceCommandCentrePluginV730', plugin: 'calloria-workforce-command-centre-v7-30' },
-  { file: 'build/calloria-workforce-trend-history-v731.mjs', exported: 'calloriaWorkforceTrendHistoryPluginV731', plugin: 'calloria-workforce-trend-history-v7-31' }
+  { file: 'build/calloria-workforce-trend-history-v731.mjs', exported: 'calloriaWorkforceTrendHistoryPluginV731', plugin: 'calloria-workforce-trend-history-v7-31' },
+  { file: 'build/calloria-workforce-trend-cloud-sync-v801.mjs', exported: 'calloriaWorkforceTrendCloudSyncPluginV801', plugin: 'calloria-workforce-trend-cloud-sync-v8-1' }
+]);
+const REQUIRED_CLOUD_HISTORY_FILES = Object.freeze([
+  'js/workforce-trend-cloud-sync-engine-v801.js',
+  'styles/calloria-workforce-trend-cloud-sync-v801.css',
+  'supabase/migrations/202611220001_calloria_workforce_trend_cloud_history.sql',
+  'tests/workforce-trend-cloud-sync-v801.test.mjs',
+  'tests/workforce-trend-cloud-sync-v801-ui.test.mjs',
+  'tests/workforce-trend-cloud-sync-v801-contract.test.mjs'
 ]);
 const REQUIRED_HTML_INPUTS = Object.freeze([
   'main', 'customerCare', 'caseDesk', 'customer360', 'agentDesk', 'workforce',
@@ -45,7 +54,8 @@ const REQUIRED_TOOLS = [
   'tools/calloria-build-artifact-audit.mjs',
   'tools/calloria-v8-integration-audit.mjs',
   'build/calloria-workforce-development-suite-v8.mjs',
-  'build/calloria-production-integration-gate-v8.mjs'
+  'build/calloria-production-integration-gate-v8.mjs',
+  'build/calloria-workforce-trend-cloud-sync-v801.mjs'
 ];
 
 function readText(root, relative, failures) {
@@ -214,6 +224,8 @@ export function auditCalloriaV8Integration({ root = process.cwd() } = {}) {
     if (pkg.scripts?.prebuild !== EXPECTED_PREBUILD) failures.push('package.json prebuild must run preflight, navigation audit and v8 integration audit in that order.');
     if (pkg.scripts?.check !== EXPECTED_CHECK) failures.push('package.json check must run the manifest, navigation and v8 integration audits.');
     if (pkg.scripts?.['verify:integration'] !== 'node tools/calloria-v8-integration-audit.mjs') failures.push('package.json must expose verify:integration.');
+    if (pkg.scripts?.['verify:workforce-cloud-history'] !== 'node --test tests/workforce-trend-cloud-sync-v801.test.mjs tests/workforce-trend-cloud-sync-v801-ui.test.mjs tests/workforce-trend-cloud-sync-v801-contract.test.mjs') failures.push('package.json must expose the focused workforce cloud-history regression check.');
+    if (!/tests\/\*\.test\.mjs/.test(pkg.scripts?.test || '')) failures.push('package.json test script must include the complete .test.mjs regression suite.');
     if (pkg.scripts?.build !== 'vite build' || pkg.scripts?.postbuild !== 'node tools/calloria-build-artifact-audit.mjs') {
       failures.push('The Vite build and post-build artifact audit hooks must remain unchanged.');
     }
@@ -234,9 +246,13 @@ export function auditCalloriaV8Integration({ root = process.cwd() } = {}) {
   for (const file of REQUIRED_TOOLS) {
     if (!fs.existsSync(path.join(projectRoot, file))) failures.push(`Required build/integration tool is missing: ${file}.`);
   }
+  for (const file of REQUIRED_CLOUD_HISTORY_FILES) {
+    if (!fs.existsSync(path.join(projectRoot, file))) failures.push(`Required workforce cloud-history file is missing: ${file}.`);
+  }
 
   if (!viteConfig.includes("from './build/calloria-workforce-development-suite-v8.mjs'")) failures.push('vite.config.js does not import the v8 workforce suite.');
   if (!viteConfig.includes("from './build/calloria-production-integration-gate-v8.mjs'")) failures.push('vite.config.js does not import the v8 production integration gate.');
+  if (viteConfig.includes("from './build/calloria-workforce-trend-cloud-sync-v801.mjs'") || viteConfig.includes('calloriaWorkforceTrendCloudSyncPluginV801()')) failures.push('vite.config.js must not register the cloud-history plugin separately; it must be part of the central workforce suite.');
   if ((viteConfig.match(/\.\.\.calloriaWorkforceDevelopmentSuitePluginsV8\(\)/g) || []).length !== 1) failures.push('vite.config.js must spread the v8 suite exactly once.');
   if ((viteConfig.match(/calloriaProductionIntegrationGatePluginV8\(\)/g) || []).length !== 1) failures.push('vite.config.js must register the v8 integration gate exactly once.');
   const suiteRegistration = viteConfig.indexOf('...calloriaWorkforceDevelopmentSuitePluginsV8()');

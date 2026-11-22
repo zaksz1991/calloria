@@ -109,8 +109,12 @@ for (const file of [
   'tools/calloria-navigation-integrity-audit.mjs',
   'tools/calloria-v8-integration-audit.mjs',
   'build/calloria-workforce-development-suite-v8.mjs',
-  'build/calloria-production-integration-gate-v8.mjs'
-]) requireFile(file, 'CALLORIA v8 production integration requirement');
+  'build/calloria-production-integration-gate-v8.mjs',
+  'build/calloria-workforce-trend-cloud-sync-v801.mjs',
+  'js/workforce-trend-cloud-sync-engine-v801.js',
+  'styles/calloria-workforce-trend-cloud-sync-v801.css',
+  'supabase/migrations/202611220001_calloria_workforce_trend_cloud_history.sql'
+]) requireFile(file, 'CALLORIA v8.2 integrated workforce cloud-history requirement');
 if (mode === 'build') {
   for (const [name, expectedVersion] of [
     ['vite', '6.4.5'], ['three', '0.170.0'],

@@ -68,7 +68,8 @@ function makeAuditFixture() {
     ['calloria-digital-career-evidence-v728.mjs', 'calloriaDigitalCareerEvidencePluginV728', 'calloria-digital-career-evidence-v7-28'],
     ['calloria-workforce-intelligence-v729.mjs', 'calloriaWorkforceIntelligencePluginV729', 'calloria-workforce-intelligence-v7-29'],
     ['calloria-workforce-command-centre-v730.mjs', 'calloriaWorkforceCommandCentrePluginV730', 'calloria-workforce-command-centre-v7-30'],
-    ['calloria-workforce-trend-history-v731.mjs', 'calloriaWorkforceTrendHistoryPluginV731', 'calloria-workforce-trend-history-v7-31']
+    ['calloria-workforce-trend-history-v731.mjs', 'calloriaWorkforceTrendHistoryPluginV731', 'calloria-workforce-trend-history-v7-31'],
+    ['calloria-workforce-trend-cloud-sync-v801.mjs', 'calloriaWorkforceTrendCloudSyncPluginV801', 'calloria-workforce-trend-cloud-sync-v8-1']
   ];
   for (const [file, exported, name] of moduleDefinitions) {
     fs.writeFileSync(path.join(root, 'build', file), `export function ${exported}() { return { name: '${name}' }; }\n`);
@@ -88,6 +89,7 @@ function makeAuditFixture() {
     'verify:build-manifest': 'node tools/calloria-build-preflight.mjs --manifest',
     'verify:build-artifacts': 'node tools/calloria-build-artifact-audit.mjs',
     'verify:integration': 'node tools/calloria-v8-integration-audit.mjs',
+    'verify:workforce-cloud-history': 'node --test tests/workforce-trend-cloud-sync-v801.test.mjs tests/workforce-trend-cloud-sync-v801-ui.test.mjs tests/workforce-trend-cloud-sync-v801-contract.test.mjs',
     check: 'node tools/calloria-build-preflight.mjs --manifest && node tools/calloria-navigation-integrity-audit.mjs && node tools/calloria-v8-integration-audit.mjs',
     dev: 'vite --host 0.0.0.0', preview: 'vite preview --host 0.0.0.0', test: 'node --test tests/*.test.mjs',
     'verify:navigation': 'node tools/calloria-navigation-integrity-audit.mjs'
@@ -106,6 +108,15 @@ function makeAuditFixture() {
   for (const tool of ['calloria-navigation-integrity-audit.mjs', 'calloria-build-artifact-audit.mjs']) {
     fs.writeFileSync(path.join(root, 'tools', tool), '// fixture placeholder\n');
   }
+  fs.mkdirSync(path.join(root, 'js'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'js/workforce-trend-cloud-sync-engine-v801.js'), 'export const WORKFORCE_TREND_CLOUD_SYNC_VERSION = \"8.1.0\";\n');
+  for (const relative of [
+    'styles/calloria-workforce-trend-cloud-sync-v801.css',
+    'supabase/migrations/202611220001_calloria_workforce_trend_cloud_history.sql',
+    'tests/workforce-trend-cloud-sync-v801.test.mjs',
+    'tests/workforce-trend-cloud-sync-v801-ui.test.mjs',
+    'tests/workforce-trend-cloud-sync-v801-contract.test.mjs'
+  ]) { const file = path.join(root, relative); fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, '/* fixture */\n'); }
   for (const [name, file] of Object.entries(expectedFiles)) {
     const absolute = path.join(root, file);
     fs.mkdirSync(path.dirname(absolute), { recursive: true });
@@ -128,12 +139,12 @@ test('source import scanner ignores transform-anchor strings, templates, comment
   assert.deepEqual(collectRelativeImports(source), ['./real-module.js', './side-effect.js', '../shared.js']);
 });
 
-test('v8 suite centralises ten plugins and records deterministic order', () => {
+test('v8 suite centralises eleven plugins including cloud-history sync and records deterministic order', () => {
   const source = fs.readFileSync(path.join(projectRoot, 'build/calloria-workforce-development-suite-v8.mjs'), 'utf8');
-  assert.equal(CALLORIA_V8_REQUIRED_WORKFORCE_PLUGIN_NAMES.length, 10);
+  assert.equal(CALLORIA_V8_REQUIRED_WORKFORCE_PLUGIN_NAMES.length, 11);
   for (const name of CALLORIA_V8_REQUIRED_WORKFORCE_PLUGIN_NAMES) assert.ok(source.includes(name));
   const calls = source.match(/\b(?:calloria\w+PluginV\d+|calloriaDigitalExperienceSuitePluginV722)\(\)/g) || [];
-  assert.equal(calls.length, 10);
+  assert.equal(calls.length, 11);
   assert.ok(source.includes('return plugins;'));
 });
 
@@ -207,10 +218,10 @@ test('v8 source integration audit ignores transform import anchors and passes a 
     fs.writeFileSync(path.join(fixtureRoot, 'js/digital-response-cycle-engine-v721.js'), 'export const engine = true;\n');
     const report = auditCalloriaV8Integration({ root: fixtureRoot });
     assert.equal(report.ok, true, report.failures.join('\n'));
-    assert.equal(report.workforcePlugins, 10);
+    assert.equal(report.workforcePlugins, 11);
     assert.equal(report.htmlEntries, 20);
     assert.equal(report.totalEntries, 21);
-    assert.ok(report.importGraphFiles >= 13);
+    assert.ok(report.importGraphFiles >= 14);
   } finally { fs.rmSync(fixtureRoot, { recursive: true, force: true }); }
 });
 

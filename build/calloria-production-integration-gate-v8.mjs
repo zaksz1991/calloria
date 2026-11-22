@@ -1,5 +1,5 @@
 /**
- * CALLORIA v8.0 — fail-fast Vite integration gate.
+ * CALLORIA v8.2 — fail-fast Vite integration gate.
  * Validates the digital/workforce plugin order and every configured application entry.
  */
 import fs from 'node:fs';
@@ -14,7 +14,8 @@ const REQUIRED_WORKFORCE_PLUGIN_NAMES = Object.freeze([
   'calloria-digital-career-evidence-v7-28',
   'calloria-workforce-intelligence-v7-29',
   'calloria-workforce-command-centre-v7-30',
-  'calloria-workforce-trend-history-v7-31'
+  'calloria-workforce-trend-history-v7-31',
+  'calloria-workforce-trend-cloud-sync-v8-1'
 ]);
 
 const REQUIRED_HTML_ENTRIES = Object.freeze([
@@ -27,7 +28,7 @@ const REQUIRED_ALL_ENTRIES = Object.freeze([...REQUIRED_HTML_ENTRIES, 'calloriaC
 const WIDGET_OUTPUT = 'widgets/calloria-chat.js';
 
 function fail(message) {
-  throw new Error(`[CALLORIA v8.0 integration gate] ${message}`);
+  throw new Error(`[CALLORIA v8.2 integration gate] ${message}`);
 }
 
 function toEntries(input) {

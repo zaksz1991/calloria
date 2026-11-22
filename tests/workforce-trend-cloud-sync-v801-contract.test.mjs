@@ -7,14 +7,19 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('Vite adds cloud sync after the complete v8 suite and gate', () => {
+test('cloud sync is centralised as the eleventh plugin after v7.31 and before the V8 gate', () => {
   const vite = read('vite.config.js');
-  assert.match(vite, /import \{ calloriaWorkforceTrendCloudSyncPluginV801 \} from '\.\/build\/calloria-workforce-trend-cloud-sync-v801\.mjs';/);
-  const gateAt = vite.indexOf('calloriaProductionIntegrationGatePluginV8()');
-  const cloudAt = vite.indexOf('calloriaWorkforceTrendCloudSyncPluginV801()');
-  assert.ok(gateAt >= 0 && cloudAt > gateAt);
-  assert.equal((vite.match(/calloriaWorkforceTrendCloudSyncPluginV801\(\)/g) || []).length, 1);
-  assert.match(vite, /\.\.\.calloriaWorkforceDevelopmentSuitePluginsV8\(\)/);
+  const suite = read('build/calloria-workforce-development-suite-v8.mjs');
+  const gate = read('build/calloria-production-integration-gate-v8.mjs');
+  assert.match(suite, /import \{ calloriaWorkforceTrendCloudSyncPluginV801 \} from '\.\/calloria-workforce-trend-cloud-sync-v801\.mjs';/);
+  const trendAt = suite.indexOf('calloriaWorkforceTrendHistoryPluginV731()');
+  const cloudAt = suite.indexOf('calloriaWorkforceTrendCloudSyncPluginV801()');
+  assert.ok(trendAt >= 0 && cloudAt > trendAt);
+  assert.equal((suite.match(/calloriaWorkforceTrendCloudSyncPluginV801\(\)/g) || []).length, 1);
+  assert.match(gate, /calloria-workforce-trend-cloud-sync-v8-1/);
+  assert.equal((vite.match(/\.\.\.calloriaWorkforceDevelopmentSuitePluginsV8\(\)/g) || []).length, 1);
+  assert.ok(vite.indexOf('calloriaProductionIntegrationGatePluginV8()') > vite.indexOf('...calloriaWorkforceDevelopmentSuitePluginsV8()'));
+  assert.doesNotMatch(vite, /calloriaWorkforceTrendCloudSyncPluginV801/);
 });
 
 test('package scripts preserve v8 production audits and expose a focused cloud-history check', () => {
