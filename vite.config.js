@@ -31,6 +31,7 @@ import { calloriaDigitalFollowUpCoachingPluginV725 } from './build/calloria-digi
 import { calloriaDigitalFollowUpCoachingOutcomesPluginV726 } from './build/calloria-digital-followup-coaching-outcomes-v726.mjs';
 import { calloriaDigitalFollowUpCoachingCheckpointsPluginV727 } from './build/calloria-digital-followup-coaching-checkpoints-v727.mjs';
 import { calloriaDigitalCareerEvidencePluginV728 } from './build/calloria-digital-career-evidence-v728.mjs';
+import { calloriaWorkforceIntelligencePluginV729 } from './build/calloria-workforce-intelligence-v729.mjs';
 
 export default defineConfig({
   base: '/',
@@ -76,7 +77,9 @@ export default defineConfig({
     // v7.27 adds dated 7-day and 30-day sustainment checks after outcome reviews.
     calloriaDigitalFollowUpCoachingCheckpointsPluginV727(),
     // v7.28 combines digital performance, coaching and sustainment into a human career-review dossier.
-    calloriaDigitalCareerEvidencePluginV728()
+    calloriaDigitalCareerEvidencePluginV728(),
+    // v7.29 adds a source-labelled, read-only cross-channel workforce evidence view.
+    calloriaWorkforceIntelligencePluginV729()
   ],
   build: {
     outDir: 'dist',

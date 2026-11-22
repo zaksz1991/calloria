@@ -1,0 +1,27 @@
+CALLORIA v7.29 — NEW / CHANGED FILE MANIFEST
+
+New runtime engine:
+- js/workforce-intelligence-engine-v729.js
+
+New Vite transform:
+- build/calloria-workforce-intelligence-v729.mjs
+
+New presentation layer:
+- styles/calloria-workforce-intelligence-v729.css
+
+New automated tests:
+- tests/workforce-intelligence-v729.test.mjs
+- tests/vite-config-v729.test.mjs
+
+Updated integration file:
+- vite.config.js (adds v7.29 import and registration after v7.28)
+
+New release documentation:
+- CHANGELOG-v7.29.md
+- README.md
+- INSTALL-GITHUB-v7.29.md
+- docs/TEST-RESULTS-v7.29.txt
+- docs/RELEASE-STATUS-v7.29.txt
+- docs/FILE-MANIFEST-v7.29.txt
+
+The archive carries forward the v7.23–v7.28 overlay files, tests and supporting documentation. It does not contain the complete CALLORIA repository, .git or the existing public/assets GLB binaries.

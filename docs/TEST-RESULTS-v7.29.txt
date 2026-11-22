@@ -1,0 +1,40 @@
+CALLORIA v7.29 — TEST RESULTS
+
+Automated suite:
+- Command: node --test tests/*.test.mjs
+- Total tests: 91
+- Passed: 91
+- Failed: 0
+- Skipped: 0
+
+JavaScript/MJS syntax validation:
+- Files checked: 29
+- Syntax failures: 0
+- Vite config syntax: passed
+
+Generated integration validation:
+- v7.23 → v7.24 → v7.25 → v7.26 → v7.27 → v7.28 → v7.29 plugin sequence: passed.
+- Generated transformed main.js syntax: passed.
+- v7.29 transform idempotency: passed.
+- Wrong module path guard: passed.
+- Missing/changed v7.28 integration contract safely skips without partial edits: passed.
+
+v7.29 coverage:
+- Exact employee-key join across local voice/QA/CSAT/shift profile and digital performance.
+- Protection against attributing another agent's digital activity to the current employee.
+- Missing source evidence remains unscored.
+- Weighted Service Evidence Index requires at least two dimensions and exposes coverage.
+- Shift adherence uses retained shift-history values only.
+- Compliance alerting uses retained incident and known critical voice-flag records.
+- Digital operation totals exclude unassigned and aggregate records.
+- Digital operations totals remain separate from the current employee profile.
+- Unassigned and aggregate agent rows are excluded from the agent table.
+- Source-coverage reporting.
+- Malformed/partial input resilience.
+- Responsive Supervisor panel transform and ordered Vite registration.
+
+NOT RUN:
+- Full Vite production build (complete app repository and installed dependencies unavailable in this preparation workspace).
+- Live GitHub push or Vercel production deployment.
+- Production Supabase state (no schema change included).
+- Physical Android/iOS browser/device verification.

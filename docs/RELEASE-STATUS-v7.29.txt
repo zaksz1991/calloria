@@ -1,0 +1,16 @@
+CALLORIA v7.29 RELEASE STATUS
+
+Source preparation: complete
+Automated tests: 91 passed / 0 failed
+JavaScript/MJS syntax checks: 29 files passed
+Vite config syntax check: passed
+Generated v7.23→v7.29 main.js syntax: passed
+Transform idempotency and safe source-drift handling: passed
+ZIP archive integrity: checked after archive creation
+Full production Vite build: not run
+GitHub push: not performed
+Vercel deployment: not verified
+Live browser/device test: not performed
+
+Release type: cumulative v7.23–v7.29 source overlay, not a complete CALLORIA repository snapshot.
+Required baseline: v7.23, v7.24, v7.25, v7.26, v7.27 and v7.28 must be present before v7.29.
