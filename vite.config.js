@@ -24,6 +24,8 @@ import { calloriaPublicExperienceHubPlugin } from './build/calloria-public-exper
 import { calloriaRuffNeckDiscoveryGuidePlugin } from './build/calloria-ruffneck-discovery-guide-v6-56.mjs';
 import { calloriaSeamlessProductHandoffPlugin } from './build/calloria-seamless-product-handoff-v6-57.mjs';
 import { calloriaTryItStudioPlugin } from './build/calloria-try-it-studio-v6-58.mjs';
+import { calloriaDigitalExperienceSuitePluginV722 } from './build/calloria-digital-experience-suite-v722.mjs';
+
 export default defineConfig({
   base: '/',
   publicDir: 'public',
@@ -32,9 +34,7 @@ export default defineConfig({
     calloriaGLBWorldPlugin(),
     calloriaMeshoptRuntimePlugin(),
     calloriaStaticGLBStaffPlugin(),
-    // Keep this after the static staff transform and before the OJT plugin.
-    // It downloads validated CC0 GLBs during buildStart, then the OJT plugin
-    // checks the same public asset paths and wires the runtime decoders.
+    // Download and validate CC0 staff GLBs before the OJT runtime checks them.
     calloriaCC0StaffGLBBundlePlugin(),
     calloriaCustomerAvatarPlugin(),
     calloriaCustomerWorldPlugin(),
@@ -47,26 +47,18 @@ export default defineConfig({
     calloriaErgonomicOfficeChairsPlugin(),
     calloriaCC0LobbyGreeneryPlugin(),
     calloriaGlazedDepartmentPartitionsPlugin(),
-    // Keep the GLB/OJT transformer after all existing world and office transforms.
+    // Keep GLB/OJT activation after all world and office transforms.
     calloriaOJTGLBActivationPlugin(),
-    // The live-shift integration runs after OJT has inserted its employment gate.
     calloriaFirstWorkingShiftV44Plugin(),
-    // Final post-transform: mobile first-person safety, responsive CSS and assessment controls.
     calloriaMobileResponsiveRepairPlugin(),
-    // Native voice response, inbound dialogue and after-contact work already live in main.js.
-    // The consolidated career plugin bridges completed voice transcripts into human QA,
-    // then links QA evidence to coaching, guided practice, coach sign-off and scenario exams.
-    // It runs after the RuffNeck workforce transform so both feature panels share the final view.
     calloriaRuffNeckServiceOperationsPluginV686(),
     calloriaCareerDevelopmentPluginV688(),
-    // Last: visitor-facing HTML and navigation only; gameplay logic remains unchanged.
     calloriaPublicExperienceHubPlugin(),
-    // Guided visitor intent selection routes people to the most relevant official RuffNeck destination.
     calloriaRuffNeckDiscoveryGuidePlugin(),
-    // Product cards now prefill the existing consent-based human support router for interested visitors.
     calloriaSeamlessProductHandoffPlugin(),
-    // Adds guest-friendly, fictional sample experiences before visitors leave for official RuffNeck destinations.
-    calloriaTryItStudioPlugin()
+    calloriaTryItStudioPlugin(),
+    // Unified digital overlays run last in deterministic v7.20 -> v7.21 order.
+    calloriaDigitalExperienceSuitePluginV722()
   ],
   build: {
     outDir: 'dist',

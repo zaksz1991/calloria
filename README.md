@@ -1,32 +1,23 @@
-# CALLORIA v7.21 — Digital Follow-up Response Cycle SLA
+# CALLORIA v7.22 — Digital Experience Suite Activation
 
-A self-contained additive upgrade for the current public CALLORIA `main` source.
+A cumulative activation package for the digital workflow features already present in the public repository.
 
-## What changes
+## Why v7.22 exists
 
-CALLORIA's existing digital SLA engine correctly measures the first agent response and stops that timer when the first response is recorded. It does not measure later customer turns. v7.21 adds a separate read-only timer for each subsequent customer-response cycle.
+The public `main` Vite configuration currently ends with `calloriaTryItStudioPlugin()` and does not import or register either the v7.20 Digital Workflow Suite or the separate v7.21 Digital Response Cycle plugin. The v7.20 and v7.21 source modules exist in the repository, but without Vite registration their transforms are not active in the application build.
 
-- Excludes the original first-response cycle so it is not double-counted.
-- Starts a new cycle after a customer follows up following an agent reply.
-- Groups consecutive customer messages into one pending turn, using the latest message timestamp.
-- Uses the existing per-contact `slaMinutes` value; otherwise uses channel targets (email 240m, live chat 2m, social 20m).
-- Marks open cycles on track, due soon at 75% of target, or overdue at the target deadline.
-- Marks completed cycles met or late based on the next agent message timestamp.
-- Rejects a response timestamp that predates its customer turn rather than recording a false SLA success.
-- Adds a compact FOLLOW-UP RESPONSE SLA card to the active digital thread.
-- Exposes queue-level, channel-level metrics for later supervisor/performance integration.
+v7.22 replaces the current Vite config with a source-matched version that adds one final plugin registration. That plugin invokes the v7.20 digital workflow in its existing deterministic order, then applies v7.21 multi-turn response-cycle SLA UI.
 
-All timing uses the timestamp passed by CALLORIA's existing `queueSimulationNowMs()` render flow. No live inboxes or external providers are connected.
+## Included features
 
-## Files
+- v7.15 digital response quality coach and hard privacy blockers.
+- v7.16 accurate distinction between active threads awaiting customer and CRM pending-customer cases.
+- v7.17 specialist handoff draft and supervisor routing.
+- v7.18 SLA-first digital queue triage with bounded ageing fairness.
+- v7.20 digital disposition evidence gate.
+- v7.21 follow-up response-cycle SLA for subsequent customer turns.
+- One v7.22 Vite suite registration, with source-drift checks and idempotency.
 
-- `js/digital-response-cycle-engine-v721.js`
-- `build/calloria-digital-response-cycle-v721.mjs`
-- `styles/calloria-digital-response-cycle-v721.css`
-- `tests/digital-response-cycle-v721.test.mjs`
-- `VITE-CONFIG-ADDITIONS-v7.21.txt`
-- `INSTALL-GITHUB-v7.21.md`
+## Package scope
 
-## Verification summary
-
-20 focused regression tests passed. JavaScript syntax and a transformed `main.js` fixture syntax check passed. A full Vite build and Vercel deployment were not run because a complete checkout of the user's current working tree was not supplied.
+This is an additive overlay plus a complete replacement `vite.config.js`. It is not a complete CALLORIA repository. It intentionally does not replace `package.json`, `package-lock.json`, `.npmrc`, `.nvmrc`, `vercel.json`, `.env` files, Supabase configuration, application pages, or public 3D assets.

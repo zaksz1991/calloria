@@ -1,0 +1,616 @@
+TAP version 13
+# Subtest: exports the complete deterministic v7.15-to-v7.21 order
+ok 1 - exports the complete deterministic v7.15-to-v7.21 order
+  ---
+  duration_ms: 1.199751
+  type: 'test'
+  ...
+# Subtest: one plugin activates v7.20 workflow before v7.21 response-cycle UI
+ok 2 - one plugin activates v7.20 workflow before v7.21 response-cycle UI
+  ---
+  duration_ms: 2.390489
+  type: 'test'
+  ...
+# Subtest: v7.20 multichannel engine metrics are still transformed by the same registration
+ok 3 - v7.20 multichannel engine metrics are still transformed by the same registration
+  ---
+  duration_ms: 0.296913
+  type: 'test'
+  ...
+# Subtest: v7.21 does not partially activate when v7.20 anchors drift
+ok 4 - v7.21 does not partially activate when v7.20 anchors drift
+  ---
+  duration_ms: 0.354514
+  type: 'test'
+  ...
+# Subtest: v7.20 remains applied when only the v7.21 response-cycle anchors drift
+ok 5 - v7.20 remains applied when only the v7.21 response-cycle anchors drift
+  ---
+  duration_ms: 0.576936
+  type: 'test'
+  ...
+# Subtest: the full transformed main fixture passes Node syntax validation
+ok 6 - the full transformed main fixture passes Node syntax validation
+  ---
+  duration_ms: 33.83179
+  type: 'test'
+  ...
+# Subtest: adds v7.21 to a source where the v7.20 suite is already transformed
+ok 7 - adds v7.21 to a source where the v7.20 suite is already transformed
+  ---
+  duration_ms: 0.372757
+  type: 'test'
+  ...
+# Subtest: the combined plugin is idempotent after both markers exist
+ok 8 - the combined plugin is idempotent after both markers exist
+  ---
+  duration_ms: 2.518961
+  type: 'test'
+  ...
+# Subtest: the combined plugin transforms only its intended application modules
+ok 9 - the combined plugin transforms only its intended application modules
+  ---
+  duration_ms: 0.672969
+  type: 'test'
+  ...
+# Subtest: replacement Vite config registers one suite plugin after existing visitor plugins
+ok 10 - replacement Vite config registers one suite plugin after existing visitor plugins
+  ---
+  duration_ms: 2.170101
+  type: 'test'
+  ...
+# Subtest: replacement Vite config parses as JavaScript
+ok 11 - replacement Vite config parses as JavaScript
+  ---
+  duration_ms: 34.988527
+  type: 'test'
+  ...
+# Subtest: first response is excluded; only later customer turns start reply cycles
+ok 12 - first response is excluded; only later customer turns start reply cycles
+  ---
+  duration_ms: 1.724891
+  type: 'test'
+  ...
+# Subtest: an open follow-up remains on track before 75 percent of its target
+ok 13 - an open follow-up remains on track before 75 percent of its target
+  ---
+  duration_ms: 0.651553
+  type: 'test'
+  ...
+# Subtest: an open follow-up enters the risk window at 75 percent of its target
+ok 14 - an open follow-up enters the risk window at 75 percent of its target
+  ---
+  duration_ms: 0.29891
+  type: 'test'
+  ...
+# Subtest: an open follow-up becomes overdue at its channel deadline
+ok 15 - an open follow-up becomes overdue at its channel deadline
+  ---
+  duration_ms: 0.219675
+  type: 'test'
+  ...
+# Subtest: a subsequent agent reply is marked met when it arrives inside target
+ok 16 - a subsequent agent reply is marked met when it arrives inside target
+  ---
+  duration_ms: 0.26561
+  type: 'test'
+  ...
+# Subtest: a subsequent agent reply is marked late when it arrives after target
+ok 17 - a subsequent agent reply is marked late when it arrives after target
+  ---
+  duration_ms: 0.179333
+  type: 'test'
+  ...
+# Subtest: consecutive customer messages share one pending response cycle
+ok 18 - consecutive customer messages share one pending response cycle
+  ---
+  duration_ms: 0.26216
+  type: 'test'
+  ...
+# Subtest: multiple customer turns form separate response cycles
+ok 19 - multiple customer turns form separate response cycles
+  ---
+  duration_ms: 0.206881
+  type: 'test'
+  ...
+# Subtest: explicit SLA override is honoured within the safe bounds
+ok 20 - explicit SLA override is honoured within the safe bounds
+  ---
+  duration_ms: 0.430957
+  type: 'test'
+  ...
+# Subtest: invalid timestamps are ignored without crashing the report
+ok 21 - invalid timestamps are ignored without crashing the report
+  ---
+  duration_ms: 2.045049
+  type: 'test'
+  ...
+# Subtest: queue metrics aggregate met, late and open cycles by channel
+ok 22 - queue metrics aggregate met, late and open cycles by channel
+  ---
+  duration_ms: 0.606908
+  type: 'test'
+  ...
+# Subtest: response timestamps earlier than the customer turn are rejected as corrupt
+ok 23 - response timestamps earlier than the customer turn are rejected as corrupt
+  ---
+  duration_ms: 0.112312
+  type: 'test'
+  ...
+# Subtest: response cycle channel is inherited from its parent digital contact
+ok 24 - response cycle channel is inherited from its parent digital contact
+  ---
+  duration_ms: 0.078481
+  type: 'test'
+  ...
+# Subtest: assessment does not mutate customer messages or contact state
+ok 25 - assessment does not mutate customer messages or contact state
+  ---
+  duration_ms: 0.149487
+  type: 'test'
+  ...
+# Subtest: invalid contacts return a stable empty report
+ok 26 - invalid contacts return a stable empty report
+  ---
+  duration_ms: 0.063633
+  type: 'test'
+  ...
+# Subtest: Vite transform injects the independent response-cycle engine and panel
+ok 27 - Vite transform injects the independent response-cycle engine and panel
+  ---
+  duration_ms: 0.439303
+  type: 'test'
+  ...
+# Subtest: Vite transform skips source drift without applying partial edits
+ok 28 - Vite transform skips source drift without applying partial edits
+  ---
+  duration_ms: 0.155508
+  type: 'test'
+  ...
+# Subtest: Vite transform is limited to js/main.js
+ok 29 - Vite transform is limited to js/main.js
+  ---
+  duration_ms: 0.06009
+  type: 'test'
+  ...
+# Subtest: Vite transform is idempotent after its marker is present
+ok 30 - Vite transform is idempotent after its marker is present
+  ---
+  duration_ms: 0.106895
+  type: 'test'
+  ...
+# Subtest: transformed application fixture passes Node syntax checking
+ok 31 - transformed application fixture passes Node syntax checking
+  ---
+  duration_ms: 87.402834
+  type: 'test'
+  ...
+# Subtest: strong digital reply satisfies all five coaching dimensions
+ok 32 - strong digital reply satisfies all five coaching dimensions
+  ---
+  duration_ms: 3.594368
+  type: 'test'
+  ...
+# Subtest: reply missing acknowledgement and ownership receives coaching warnings, not a hard block
+ok 33 - reply missing acknowledgement and ownership receives coaching warnings, not a hard block
+  ---
+  duration_ms: 0.488671
+  type: 'test'
+  ...
+# Subtest: explicitly warning customers not to share secrets is not misclassified as a request
+ok 34 - explicitly warning customers not to share secrets is not misclassified as a request
+  ---
+  duration_ms: 0.317727
+  type: 'test'
+  ...
+# Subtest: requesting OTP or password is blocked
+ok 35 - requesting OTP or password is blocked
+  ---
+  duration_ms: 0.23555
+  type: 'test'
+  ...
+# Subtest: public social reply requesting account or personal details is blocked
+ok 36 - public social reply requesting account or personal details is blocked
+  ---
+  duration_ms: 1.277104
+  type: 'test'
+  ...
+# Subtest: social support request explicitly routed to a verified private channel is allowed
+ok 37 - social support request explicitly routed to a verified private channel is allowed
+  ---
+  duration_ms: 0.355895
+  type: 'test'
+  ...
+# Subtest: public social reply without a private-channel route remains allowed but gets a warning
+ok 38 - public social reply without a private-channel route remains allowed but gets a warning
+  ---
+  duration_ms: 0.526061
+  type: 'test'
+  ...
+# Subtest: unverified guarantees are flagged for factual review but not automatically blocked
+ok 39 - unverified guarantees are flagged for factual review but not automatically blocked
+  ---
+  duration_ms: 0.321001
+  type: 'test'
+  ...
+# Subtest: unmasked card-number content is blocked
+ok 40 - unmasked card-number content is blocked
+  ---
+  duration_ms: 1.70889
+  type: 'test'
+  ...
+# Subtest: rendered coach only emits controlled channel data
+ok 41 - rendered coach only emits controlled channel data
+  ---
+  duration_ms: 0.629155
+  type: 'test'
+  ...
+# Subtest: invalid channel falls back to email
+ok 42 - invalid channel falls back to email
+  ---
+  duration_ms: 0.172059
+  type: 'test'
+  ...
+# Subtest: main transform injects coach import and panel once
+ok 43 - main transform injects coach import and panel once
+  ---
+  duration_ms: 0.170334
+  type: 'test'
+  ...
+# Subtest: main transform is idempotent
+ok 44 - main transform is idempotent
+  ---
+  duration_ms: 0.068218
+  type: 'test'
+  ...
+# Subtest: main transform refuses partial injection when anchors drift
+ok 45 - main transform refuses partial injection when anchors drift
+  ---
+  duration_ms: 0.058355
+  type: 'test'
+  ...
+# Subtest: capture-phase submit guard stops an unsafe credential request before native submit handling
+ok 46 - capture-phase submit guard stops an unsafe credential request before native submit handling
+  ---
+  duration_ms: 0.610613
+  type: 'test'
+  ...
+# Subtest: capture-phase submit guard leaves non-blocking coaching gaps sendable
+ok 47 - capture-phase submit guard leaves non-blocking coaching gaps sendable
+  ---
+  duration_ms: 0.170289
+  type: 'test'
+  ...
+# Subtest: SLA breaches rank ahead of at-risk and on-track work
+ok 48 - SLA breaches rank ahead of at-risk and on-track work
+  ---
+  duration_ms: 2.315102
+  type: 'test'
+  ...
+# Subtest: ageing boost is bounded and reduces starvation within the same SLA band
+ok 49 - ageing boost is bounded and reduces starvation within the same SLA band
+  ---
+  duration_ms: 0.211497
+  type: 'test'
+  ...
+# Subtest: SLA urgency still outranks an ageing boost
+ok 50 - SLA urgency still outranks an ageing boost
+  ---
+  duration_ms: 0.16696
+  type: 'test'
+  ...
+# Subtest: queue sorter respects the selected channel filter
+ok 51 - queue sorter respects the selected channel filter
+  ---
+  duration_ms: 0.174205
+  type: 'test'
+  ...
+# Subtest: sorter never mutates original queue or contact objects
+ok 52 - sorter never mutates original queue or contact objects
+  ---
+  duration_ms: 0.323942
+  type: 'test'
+  ...
+# Subtest: snapshot counts waiting, SLA risk and aged work by channel
+ok 53 - snapshot counts waiting, SLA risk and aged work by channel
+  ---
+  duration_ms: 0.309607
+  type: 'test'
+  ...
+# Subtest: same urgency uses stable oldest-first ordering after score ties
+ok 54 - same urgency uses stable oldest-first ordering after score ties
+  ---
+  duration_ms: 0.176875
+  type: 'test'
+  ...
+# Subtest: explanation is safe for missing records and contains triage rationale
+ok 55 - explanation is safe for missing records and contains triage rationale
+  ---
+  duration_ms: 0.355338
+  type: 'test'
+  ...
+# Subtest: only supported queued channel contacts are triage candidates
+ok 56 - only supported queued channel contacts are triage candidates
+  ---
+  duration_ms: 0.353105
+  type: 'test'
+  ...
+# Subtest: Vite transform installs SLA-aware ordering and queue explanations
+ok 57 - Vite transform installs SLA-aware ordering and queue explanations
+  ---
+  duration_ms: 0.69912
+  type: 'test'
+  ...
+# Subtest: Vite transform skips already patched sources idempotently
+ok 58 - Vite transform skips already patched sources idempotently
+  ---
+  duration_ms: 1.068128
+  type: 'test'
+  ...
+# Subtest: Vite transform skips changed anchors without partial output
+ok 59 - Vite transform skips changed anchors without partial output
+  ---
+  duration_ms: 0.174056
+  type: 'test'
+  ...
+# Subtest: Vite transform ignores non-main modules
+ok 60 - Vite transform ignores non-main modules
+  ---
+  duration_ms: 0.059756
+  type: 'test'
+  ...
+# Subtest: transformed queue fixture remains valid JavaScript
+ok 61 - transformed queue fixture remains valid JavaScript
+  ---
+  duration_ms: 37.014006
+  type: 'test'
+  ...
+# Subtest: department whitelist is fixed and contains operational specialist teams
+ok 62 - department whitelist is fixed and contains operational specialist teams
+  ---
+  duration_ms: 1.527301
+  type: 'test'
+  ...
+# Subtest: valid specialist destination and clear reason are accepted
+ok 63 - valid specialist destination and clear reason are accepted
+  ---
+  duration_ms: 0.411272
+  type: 'test'
+  ...
+# Subtest: unknown department is rejected
+ok 64 - unknown department is rejected
+  ---
+  duration_ms: 0.433554
+  type: 'test'
+  ...
+# Subtest: short escalation reason is rejected
+ok 65 - short escalation reason is rejected
+  ---
+  duration_ms: 0.191246
+  type: 'test'
+  ...
+# Subtest: overlong escalation reason is rejected rather than silently truncated
+ok 66 - overlong escalation reason is rejected rather than silently truncated
+  ---
+  duration_ms: 0.2509
+  type: 'test'
+  ...
+# Subtest: handoff request is linked to contact and CRM case without triggering legacy case-review action
+ok 67 - handoff request is linked to contact and CRM case without triggering legacy case-review action
+  ---
+  duration_ms: 1.165069
+  type: 'test'
+  ...
+# Subtest: invalid contact or reference is rejected before a request can be created
+ok 68 - invalid contact or reference is rejected before a request can be created
+  ---
+  duration_ms: 0.776534
+  type: 'test'
+  ...
+# Subtest: an existing supervisor request is augmented without losing ownership or escalation state
+ok 69 - an existing supervisor request is augmented without losing ownership or escalation state
+  ---
+  duration_ms: 0.353382
+  type: 'test'
+  ...
+# Subtest: main transform injects form, validation, CRM linkage and supervisor destination display
+ok 70 - main transform injects form, validation, CRM linkage and supervisor destination display
+  ---
+  duration_ms: 0.712787
+  type: 'test'
+  ...
+# Subtest: main transform is idempotent
+ok 71 - main transform is idempotent
+  ---
+  duration_ms: 0.527547
+  type: 'test'
+  ...
+# Subtest: source drift refuses partial transformation
+ok 72 - source drift refuses partial transformation
+  ---
+  duration_ms: 0.357564
+  type: 'test'
+  ...
+# Subtest: Vite plugin only transforms js/main.js and reports a source rebase error
+ok 73 - Vite plugin only transforms js/main.js and reports a source rebase error
+  ---
+  duration_ms: 0.377311
+  type: 'test'
+  ...
+# Subtest: transformed fixture remains valid JavaScript syntax
+ok 74 - transformed fixture remains valid JavaScript syntax
+  ---
+  duration_ms: 93.508135
+  type: 'test'
+  ...
+# Subtest: transform imports the dedicated responsive stylesheet
+ok 75 - transform imports the dedicated responsive stylesheet
+  ---
+  duration_ms: 0.271314
+  type: 'test'
+  ...
+# Subtest: handoff transform does not perform an automatic ownership transfer
+ok 76 - handoff transform does not perform an automatic ownership transfer
+  ---
+  duration_ms: 0.215035
+  type: 'test'
+  ...
+# Subtest: stylesheet includes narrow-screen support and hidden-state handling
+ok 77 - stylesheet includes narrow-screen support and hidden-state handling
+  ---
+  duration_ms: 2.320741
+  type: 'test'
+  ...
+# Subtest: active threads awaiting a customer are counted separately from CRM pending-customer cases
+ok 78 - active threads awaiting a customer are counted separately from CRM pending-customer cases
+  ---
+  duration_ms: 2.40873
+  type: 'test'
+  ...
+# Subtest: helper handles missing or invalid inputs without throwing
+ok 79 - helper handles missing or invalid inputs without throwing
+  ---
+  duration_ms: 0.138871
+  type: 'test'
+  ...
+# Subtest: helper does not mutate the queue or its records
+ok 80 - helper does not mutate the queue or its records
+  ---
+  duration_ms: 0.166995
+  type: 'test'
+  ...
+# Subtest: engine transform replaces the ambiguous count with the two explicit counts
+ok 81 - engine transform replaces the ambiguous count with the two explicit counts
+  ---
+  duration_ms: 0.218536
+  type: 'test'
+  ...
+# Subtest: engine transform is idempotent
+ok 82 - engine transform is idempotent
+  ---
+  duration_ms: 0.102707
+  type: 'test'
+  ...
+# Subtest: engine transform refuses missing or duplicate anchors without partial edits
+ok 83 - engine transform refuses missing or duplicate anchors without partial edits
+  ---
+  duration_ms: 0.115998
+  type: 'test'
+  ...
+# Subtest: UI transform adds separate active-thread and CRM-follow-up rows
+ok 84 - UI transform adds separate active-thread and CRM-follow-up rows
+  ---
+  duration_ms: 0.13716
+  type: 'test'
+  ...
+# Subtest: UI transform is idempotent and refuses source drift
+ok 85 - UI transform is idempotent and refuses source drift
+  ---
+  duration_ms: 0.202499
+  type: 'test'
+  ...
+# Subtest: Vite plugin only transforms the two intended modules
+ok 86 - Vite plugin only transforms the two intended modules
+  ---
+  duration_ms: 0.335927
+  type: 'test'
+  ...
+# Subtest: Vite plugin warns and safely skips a module with changed anchors
+ok 87 - Vite plugin warns and safely skips a module with changed anchors
+  ---
+  duration_ms: 0.469822
+  type: 'test'
+  ...
+# Subtest: transformed digital performance UI fixture passes Node syntax validation
+ok 88 - transformed digital performance UI fixture passes Node syntax validation
+  ---
+  duration_ms: 53.20753
+  type: 'test'
+  ...
+# Subtest: transformed engine fixture passes Node syntax validation
+ok 89 - transformed engine fixture passes Node syntax validation
+  ---
+  duration_ms: 68.501893
+  type: 'test'
+  ...
+# Subtest: suite exports the fixed deterministic transform order
+ok 90 - suite exports the fixed deterministic transform order
+  ---
+  duration_ms: 1.225764
+  type: 'test'
+  ...
+# Subtest: complete digital suite transforms main.js through v7.15-v7.20 in one pass
+ok 91 - complete digital suite transforms main.js through v7.15-v7.20 in one pass
+  ---
+  duration_ms: 1.960541
+  type: 'test'
+  ...
+# Subtest: fully transformed main.js fixture passes Node syntax validation
+ok 92 - fully transformed main.js fixture passes Node syntax validation
+  ---
+  duration_ms: 37.763307
+  type: 'test'
+  ...
+# Subtest: suite separates active awaiting-customer threads from pending-customer CRM cases
+ok 93 - suite separates active awaiting-customer threads from pending-customer CRM cases
+  ---
+  duration_ms: 0.279137
+  type: 'test'
+  ...
+# Subtest: suite is idempotent after all digital transforms have been applied
+ok 94 - suite is idempotent after all digital transforms have been applied
+  ---
+  duration_ms: 0.398476
+  type: 'test'
+  ...
+# Subtest: suite leaves unrelated source files untouched
+ok 95 - suite leaves unrelated source files untouched
+  ---
+  duration_ms: 1.036864
+  type: 'test'
+  ...
+# Subtest: new specialist handoff draft qualifies as a linked referral during the same completion transaction
+ok 96 - new specialist handoff draft qualifies as a linked referral during the same completion transaction
+  ---
+  duration_ms: 0.407607
+  type: 'test'
+  ...
+# Subtest: helper rejects customer-confirmed resolution without a customer reply after an agent response
+ok 97 - helper rejects customer-confirmed resolution without a customer reply after an agent response
+  ---
+  duration_ms: 0.989843
+  type: 'test'
+  ...
+# Subtest: helper permits customer-confirmed resolution after a subsequent customer message
+ok 98 - helper permits customer-confirmed resolution after a subsequent customer message
+  ---
+  duration_ms: 0.380296
+  type: 'test'
+  ...
+# Subtest: helper blocks one-touch resolution when a customer response is still pending
+ok 99 - helper blocks one-touch resolution when a customer response is still pending
+  ---
+  duration_ms: 0.379905
+  type: 'test'
+  ...
+# Subtest: helper requires explicit evidence for pending-customer and escalation outcomes
+ok 100 - helper requires explicit evidence for pending-customer and escalation outcomes
+  ---
+  duration_ms: 0.163043
+  type: 'test'
+  ...
+# Subtest: fixture includes the expected digital source baselines
+ok 101 - fixture includes the expected digital source baselines
+  ---
+  duration_ms: 0.121622
+  type: 'test'
+  ...
+1..101
+# tests 101
+# suites 0
+# pass 101
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1160.703074
