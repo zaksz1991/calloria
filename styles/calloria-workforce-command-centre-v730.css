@@ -1,0 +1,41 @@
+.workforce-command-centre-panel{margin-top:16px;min-width:0;overflow:hidden}
+.wcc-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:14px 0}
+.wcc-kpis>div{min-width:0;padding:12px;border:1px solid var(--line,#e2e8f0);border-radius:11px;background:var(--soft,#f6f8fb)}
+.wcc-kpis span,.wcc-assumptions label{display:block;color:var(--muted,#718096);font-size:10px;font-weight:750;letter-spacing:.035em;text-transform:uppercase;line-height:1.4}
+.wcc-kpis strong{display:block;margin-top:5px;color:var(--ink,#142033);font-size:24px;line-height:1.15}
+.wcc-kpis small{display:block;margin-top:4px;color:var(--muted,#718096);font-size:10px;line-height:1.4}
+.wcc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.wcc-card{min-width:0;margin-top:12px;padding:13px;border:1px solid var(--line,#e2e8f0);border-radius:12px;background:var(--surface,#fff)}
+.wcc-grid>.wcc-card{margin-top:0}
+.wcc-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+.wcc-card-head h4{margin:0;color:var(--ink,#142033);font-size:13px}
+.wcc-card-head p{margin:4px 0 0;color:var(--muted,#718096);font-size:10px;line-height:1.45}
+.wcc-badge{display:inline-flex;align-items:center;flex:0 0 auto;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:800;line-height:1.25;white-space:nowrap;background:#edf2f7;color:#475569}
+.wcc-badge.good{background:#e8f7ef;color:#08754f}.wcc-badge.warn{background:#fff4dc;color:#946200}.wcc-badge.high{background:#feecec;color:#a12b2b}.wcc-badge.medium{background:#fff4dc;color:#946200}.wcc-badge.low{background:#e8f7ef;color:#08754f}.wcc-badge.blue{background:#eaf1ff;color:#2454a6}
+.wcc-table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.wcc-table{width:100%;min-width:490px;border-collapse:collapse;font-size:10px}
+.wcc-table th,.wcc-table td{padding:8px 9px;border-bottom:1px solid var(--line,#e2e8f0);text-align:left;vertical-align:top;white-space:nowrap}
+.wcc-table th{color:var(--muted,#718096);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.wcc-table td{color:var(--ink,#142033)}
+.wcc-table td strong,.wcc-table td small{display:block}
+.wcc-table td small{max-width:210px;margin-top:3px;color:var(--muted,#718096);font-size:9px;line-height:1.35;white-space:normal}
+.wcc-risk-table{min-width:790px}
+.wcc-risk-table td:last-child{min-width:220px;max-width:300px;white-space:normal;line-height:1.4}
+.wcc-empty{display:grid;gap:5px;padding:14px;border:1px dashed var(--line,#cbd5e1);border-radius:9px;background:var(--soft,#f6f8fb)}
+.wcc-empty strong{color:var(--ink,#142033);font-size:11px}.wcc-empty span{color:var(--muted,#718096);font-size:10px;line-height:1.5}
+.wcc-footnote{display:block;margin-top:9px;color:var(--muted,#718096);font-size:9px;line-height:1.55}
+.wcc-assumptions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) auto;gap:9px;align-items:end;margin:10px 0 12px;padding:10px;border:1px solid var(--line,#e2e8f0);border-radius:9px;background:var(--soft,#f6f8fb)}
+.wcc-assumptions label{min-width:0;text-transform:none;letter-spacing:0;font-size:10px}
+.wcc-assumptions input{display:block;width:100%;min-width:0;margin-top:5px;padding:9px 10px;border:1px solid var(--line,#cbd5e1);border-radius:7px;background:var(--surface,#fff);color:var(--ink,#142033);font:inherit;font-size:12px}
+.wcc-assumptions button{min-height:36px;white-space:nowrap}
+.wcc-capacity-card .wcc-table{min-width:540px}
+.wcc-career-strip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;border:1px solid var(--line,#e2e8f0);border-radius:9px;background:var(--soft,#f6f8fb)}
+.wcc-career-strip span{margin-right:auto;color:var(--muted,#718096);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.wcc-career-strip strong{padding:5px 7px;border-radius:6px;background:var(--surface,#fff);color:var(--ink,#142033);font-size:9px}
+.wcc-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px}
+.wcc-footer>span{color:var(--muted,#718096);font-size:9px}
+.wcc-footer .btn{min-height:34px;font-size:10px}
+.wcc-boundaries{display:grid;gap:4px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line,#e2e8f0)}
+.wcc-boundaries span{color:var(--muted,#718096);font-size:9px;line-height:1.5}
+@media(max-width:980px){.wcc-grid{grid-template-columns:1fr}.wcc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.workforce-command-centre-panel{padding:11px}.wcc-kpis{gap:7px}.wcc-kpis>div{padding:9px}.wcc-kpis strong{font-size:21px}.wcc-card{padding:10px}.wcc-card-head{flex-direction:column;align-items:flex-start}.wcc-assumptions{grid-template-columns:1fr}.wcc-assumptions button{width:100%}.wcc-career-strip{align-items:flex-start;flex-direction:column}.wcc-career-strip span{margin-right:0}.wcc-footer{align-items:stretch;flex-direction:column}.wcc-footer .btn{width:100%}}

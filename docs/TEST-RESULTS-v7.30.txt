@@ -1,0 +1,47 @@
+CALLORIA v7.30 — TEST RESULTS
+
+Automated suite:
+- Command: node --experimental-default-type=module --test tests/*.test.mjs
+- Total tests: 107
+- Passed: 107
+- Failed: 0
+- Skipped: 0
+
+JavaScript/MJS syntax validation:
+- Command: node --experimental-default-type=module --check (all .js/.mjs files)
+- Files checked: 34
+- Syntax failures: 0
+
+Generated integration validation:
+- v7.23 → v7.24 → v7.25 → v7.26 → v7.27 → v7.28 → v7.29 → v7.30 plugin transform chain: passed.
+- Generated transformed main.js syntax: passed.
+- v7.30 transform idempotency: passed.
+- Wrong module path guard: passed.
+- Missing/changed v7.29 integration contract safely skips without partial edits: passed.
+- Vite v7.30 plugin import and registration order after v7.29: passed.
+
+v7.30 coverage:
+- Voice profile and separate Email, Live Chat and Social workstream comparisons.
+- Explicit department names and exact employee-ID roster mapping.
+- Current local employee department mapping through its exact EMP-initials ID.
+- No inferred department membership for unmapped agents.
+- Capacity stress scenarios at 80%, 100% and 130% of current digital backlog.
+- Planned-seat gap calculation and editable per-seat workload assumptions.
+- Missing channel breakdown retained in a separate Channel not recorded row.
+- Exclusion of unassigned and aggregate agent records.
+- Supervisor attention ordering for overdue, at-risk and low response-target signals.
+- Safe empty/malformed state behaviour and bounded scenario assumptions.
+- CSV export quoting and formula-leading cell neutralisation.
+- Read-only UI transform, session-only scenario form handling and CSV action.
+- Responsive command-centre styles and Vite plugin chain order.
+
+NOT RUN:
+- Full Vite production build (complete repository and installed dependencies unavailable).
+- Production browser rendering against the full live source tree.
+- GitHub push or live Vercel deployment.
+- Remote Supabase state (no database change included).
+- Physical Android/iOS device verification.
+
+RELEASE STATUS:
+- Source overlay prepared and focused automated verification passed.
+- Not deployed. Do not treat as production until GitHub main is updated and the existing Vercel production deployment succeeds.

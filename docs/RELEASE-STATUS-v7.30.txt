@@ -1,0 +1,15 @@
+CALLORIA v7.30 RELEASE STATUS
+
+Source package: prepared
+Automated tests: 107 passed / 0 failed
+JavaScript/MJS syntax: 34 files passed
+Generated plugin transform syntax: passed
+ZIP integrity: pending final archive validation
+Full Vite production build: not run
+GitHub main update: not performed
+Vercel production deployment: not performed
+Physical mobile verification: not performed
+
+Classification: additive cumulative source overlay; not a complete repository replacement.
+
+Important baseline: the public main Vite config checked during preparation registers the v7.23–v7.27 workforce chain. The v7.28 and v7.29 steps must also be merged and registered before v7.30 can activate. See INSTALL-GITHUB-v7.30.md.

@@ -32,6 +32,7 @@ import { calloriaDigitalFollowUpCoachingOutcomesPluginV726 } from './build/callo
 import { calloriaDigitalFollowUpCoachingCheckpointsPluginV727 } from './build/calloria-digital-followup-coaching-checkpoints-v727.mjs';
 import { calloriaDigitalCareerEvidencePluginV728 } from './build/calloria-digital-career-evidence-v728.mjs';
 import { calloriaWorkforceIntelligencePluginV729 } from './build/calloria-workforce-intelligence-v729.mjs';
+import { calloriaWorkforceCommandCentrePluginV730 } from './build/calloria-workforce-command-centre-v730.mjs';
 
 export default defineConfig({
   base: '/',
@@ -79,7 +80,9 @@ export default defineConfig({
     // v7.28 combines digital performance, coaching and sustainment into a human career-review dossier.
     calloriaDigitalCareerEvidencePluginV728(),
     // v7.29 adds a source-labelled, read-only cross-channel workforce evidence view.
-    calloriaWorkforceIntelligencePluginV729()
+    calloriaWorkforceIntelligencePluginV729(),
+    // v7.30 adds read-only supervisor command-centre analytics and backlog scenarios.
+    calloriaWorkforceCommandCentrePluginV730()
   ],
   build: {
     outDir: 'dist',

@@ -1,35 +1,57 @@
-# CALLORIA v7.29 — Workforce Performance Intelligence
+# CALLORIA v7.30 — Workforce Intelligence Command Centre
 
-This cumulative source overlay extends the v7.23–v7.28 Supervisor chain with a source-labelled, read-only workforce intelligence panel.
+A cumulative v7.23–v7.30 source overlay for the existing CALLORIA Supervisor workspace. It extends the v7.29 Workforce Performance Intelligence panel with operational workstream comparisons, explicit department scorecards, a risk-prioritised supervisor queue, capacity stress scenarios and CSV export.
 
-## What is integrated
+## Included features
 
-For the current local employee profile, the board shows inbound and outbound voice volume, resolution rate, average handle time, QA score and sample count, customer satisfaction and sample count, shift adherence, incident-register indicators, and the exact-match digital follow-up scorecard where the employee ID matches.
+### Operational workstreams
 
-For the wider digital queue, it keeps the attributed digital-agent scorecards separate and shows completed replies, target achievement, overdue and at-risk work. It links to v7.28 career readiness only when that agent has the matching career dossier.
+Voice is scoped to the current local employee profile. Email, Live Chat and Social use the retained attributed per-agent response-cycle data. Agent-level totals with missing channel metadata are shown in a separate `Channel not recorded` row, preventing unexplained loss from the backlog calculation.
 
-The Service Evidence Index weights available QA (30%), CSAT (25%), digital response-target rate (25%) and shift adherence (20%). At least two dimensions are required. Its coverage percentage shows which weights contributed. Missing evidence is unscored.
+### Department comparisons
+
+Department performance is grouped only when a digital agent has an explicit `departmentName`, `department`, `teamName`, `team` or department ID, or when an exact agent ID matches a row in `state.workforceRoster`, `state.staff` or `state.employees`. `state.departments` can map department IDs to display names. The current local employee can also map through the existing exact `EMP-<nameInitials>` identifier and `state.department` value.
+
+Where that data does not exist, the dashboard displays a clear unavailable state instead of inventing department membership.
+
+### Supervisor attention queue
+
+Flags attributed agents with overdue work, at-risk work or response-target rates below 80%. The queue gives a suggested supervisor focus based on the recorded signal. It does not perform reassignment or disciplinary actions.
+
+### Capacity scenario planner
+
+The planner stress-tests current open digital backlog at 80%, 100% and 130% of current load. Enter:
+- planned available seats;
+- maximum open items per seat, an editable planning assumption.
+
+The dashboard calculates modelled seats required and the gap to the entered staffing plan. This is not a time-series forecast because the retained source does not provide a validated organisation-wide arrival rate, active-seat feed or occupancy history.
+
+### Reporting
+
+The CSV export contains operational workstream summaries, mapped department summaries and flagged digital-agent rows. CSV cells are quoted and formula-leading values are neutralised.
 
 ## Important boundaries
 
-This is not a verified organisation-wide workforce dashboard. Voice, QA, CSAT, shift and incident values come from the current local employee profile. Other digital agents remain digital-only unless each channel records the same employee identifier. Shift adherence is not biometric attendance. The index is not a promotion score or HR decision. The panel does not connect to an external ACD, payroll, biometric attendance platform or HRIS.
+This is a read-only local-simulation command centre, not verified organisation-wide workforce reporting. Voice remains scoped to the current employee profile. Digital metrics are based on retained simulated response cycles. Department comparisons require explicit mapping. Missing source evidence remains unavailable. No staffing, rota, case assignment, employee, compensation or career data is changed.
 
-No data is written by this panel. It does not change employee status, pay, role, promotion eligibility, promotion attempts, coaching plans or career review decisions.
+No Supabase migration, Edge Function deployment, secret, environment variable or npm dependency is required.
 
-## New files
+## Package contents
 
-- `js/workforce-intelligence-engine-v729.js`
-- `build/calloria-workforce-intelligence-v729.mjs`
-- `styles/calloria-workforce-intelligence-v729.css`
-- `tests/workforce-intelligence-v729.test.mjs`
-- `tests/vite-config-v729.test.mjs`
+- `js/workforce-command-centre-engine-v730.js`
+- `build/calloria-workforce-command-centre-v730.mjs`
+- `styles/calloria-workforce-command-centre-v730.css`
+- `tests/workforce-command-centre-v730.test.mjs`
+- `tests/vite-config-v730.test.mjs`
+- Updated `vite.config.js`
+- v7.23–v7.29 overlay source, tests and release documentation carried forward from the previous cumulative package.
 
-`vite.config.js` is updated to register v7.29 after v7.28. The archive retains the v7.23–v7.28 overlay files and their tests/docs. It is not the complete CALLORIA application repository and does not contain the private `.git` directory or `public/assets/` GLB binaries.
+The ZIP is not the full CALLORIA repository. It does not include the private `.git` directory, all original application source, local environment files, or `public/assets/` GLB binaries. Preserve those from the existing checkout.
 
 ## Validation
 
-See `docs/TEST-RESULTS-v7.29.txt`. Full Vite production build, GitHub push, Vercel deployment and physical-device browser verification have not been performed in this workspace.
+See `docs/TEST-RESULTS-v7.30.txt` and `docs/TEST-EXECUTION-v7.30.txt`. Tests and syntax checks passed in the preparation workspace. A complete Vite production build and live deployment were not performed.
 
 ## Installation
 
-Follow `INSTALL-GITHUB-v7.29.md`. Preserve the current repository, `.git`, `public/assets/`, GLB models, local environment files, credentials and unrelated application files.
+Follow `INSTALL-GITHUB-v7.30.md`. The public repository's latest readable Vite configuration during this release check contains registrations through v7.27 but not v7.28/v7.29. Do not install only the v7.30 plugin over that older state. Merge the complete cumulative overlay and verify the ordered v7.23–v7.30 plugin chain before pushing.

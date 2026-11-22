@@ -1,0 +1,28 @@
+CALLORIA v7.30 — NEW / CHANGED FILE MANIFEST
+
+New runtime engine:
+- js/workforce-command-centre-engine-v730.js
+
+New Vite transform:
+- build/calloria-workforce-command-centre-v730.mjs
+
+New presentation layer:
+- styles/calloria-workforce-command-centre-v730.css
+
+New automated tests:
+- tests/workforce-command-centre-v730.test.mjs
+- tests/vite-config-v730.test.mjs
+
+Updated integration file:
+- vite.config.js (imports and registers v7.30 after v7.29; carries the v7.28/v7.29 plugin chain)
+
+New release documentation:
+- CHANGELOG-v7.30.md
+- README.md
+- INSTALL-GITHUB-v7.30.md
+- docs/TEST-RESULTS-v7.30.txt
+- docs/TEST-EXECUTION-v7.30.txt
+- docs/RELEASE-STATUS-v7.30.txt
+- docs/FILE-MANIFEST-v7.30.txt
+
+The archive carries forward v7.23–v7.29 overlay code, tests and supporting docs. It does not contain the complete CALLORIA application repository, private .git metadata, local environment files or existing public/assets GLB binaries. Preserve those from the user's actual checkout.
