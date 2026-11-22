@@ -25,7 +25,7 @@ import { calloriaRuffNeckDiscoveryGuidePlugin } from './build/calloria-ruffneck-
 import { calloriaSeamlessProductHandoffPlugin } from './build/calloria-seamless-product-handoff-v6-57.mjs';
 import { calloriaTryItStudioPlugin } from './build/calloria-try-it-studio-v6-58.mjs';
 import { calloriaDigitalExperienceSuitePluginV722 } from './build/calloria-digital-experience-suite-v722.mjs';
-import { calloriaDigitalCompletionSuitePluginV724 } from './build/calloria-digital-completion-suite-v724.mjs';
+import { calloriaDigitalFollowUpSupervisorPluginV723 } from './build/calloria-digital-followup-supervisor-v723.mjs';
 
 export default defineConfig({
   base: '/',
@@ -58,10 +58,10 @@ export default defineConfig({
     calloriaRuffNeckDiscoveryGuidePlugin(),
     calloriaSeamlessProductHandoffPlugin(),
     calloriaTryItStudioPlugin(),
-    // Unified digital overlays run last in deterministic v7.20 -> v7.21 order.
+    // v7.22 must finish the v7.20 workflow and v7.21 response-cycle transforms first.
     calloriaDigitalExperienceSuitePluginV722(),
-    // v7.24: activate Customer 360 recovery and use general Customer Experience for fresh applicants.
-    calloriaDigitalCompletionSuitePluginV724()
+    // v7.23 adds supervisor monitoring and controlled intervention after v7.22.
+    calloriaDigitalFollowUpSupervisorPluginV723()
   ],
   build: {
     outDir: 'dist',

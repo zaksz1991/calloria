@@ -13,7 +13,6 @@ export const DIGITAL_RESPONSE_CYCLE_TARGETS_MINUTES = Object.freeze({
 });
 
 const RISK_THRESHOLD = 0.75;
-
 function finite(value, fallback = 0) {
   const number = Number(value);
   return Number.isFinite(number) ? number : fallback;
@@ -23,13 +22,11 @@ function parseTimestamp(value) {
   const parsed = Date.parse(value || '');
   return Number.isFinite(parsed) ? parsed : null;
 }
-
 function targetFor(contact) {
   const explicit = Number(contact?.slaMinutes);
   const fallback = DIGITAL_RESPONSE_CYCLE_TARGETS_MINUTES[contact?.channel] ?? 20;
   return Math.min(10080, Math.max(1, Number.isFinite(explicit) && explicit > 0 ? explicit : fallback));
 }
-
 /**
  * Builds one response cycle per customer-message burst after the first agent
  * reply. A burst ends at the next agent response. Multiple customer messages
@@ -40,7 +37,6 @@ function collectFollowUpBursts(contact) {
   const messages = Array.isArray(contact?.messages) ? contact.messages : [];
   const firstAgentIndex = messages.findIndex(message => message?.type === 'agent');
   if (firstAgentIndex < 0) return [];
-
   const bursts = [];
   let cursor = firstAgentIndex + 1;
   while (cursor < messages.length) {
@@ -52,7 +48,6 @@ function collectFollowUpBursts(contact) {
       customerMessages.push(messages[cursor]);
       cursor += 1;
     }
-
     let response = null;
     if (cursor < messages.length && messages[cursor]?.type === 'agent') {
       response = messages[cursor];
@@ -70,7 +65,6 @@ function collectFollowUpBursts(contact) {
   }
   return bursts;
 }
-
 function assessBurst(burst, index, targetMinutes, nowMs, channel) {
   const receivedAtMs = parseTimestamp(burst.customerMessage?.at);
   if (receivedAtMs === null) return null;
@@ -84,13 +78,11 @@ function assessBurst(burst, index, targetMinutes, nowMs, channel) {
   const overdueMs = responded
     ? Math.max(0, responseAtMs - dueAtMs)
     : Math.max(0, nowMs - dueAtMs);
-
   let status;
   if (responded) status = responseAtMs <= dueAtMs ? 'met' : 'breached';
   else if (nowMs >= dueAtMs) status = 'breached';
   else if (elapsedMs >= targetMs * RISK_THRESHOLD) status = 'at_risk';
   else status = 'on_track';
-
   return {
     id: String(burst.customerMessage?.id || `follow-up-${index + 1}`),
     sequence: index + 1,
@@ -111,7 +103,6 @@ function assessBurst(burst, index, targetMinutes, nowMs, channel) {
     responded
   };
 }
-
 /** Pure assessment; it never mutates the contact or its message history. */
 export function assessDigitalResponseCycles(contact, now = Date.now()) {
   if (!contact || typeof contact !== 'object' || Array.isArray(contact)) {
@@ -141,7 +132,6 @@ export function assessDigitalResponseCycles(contact, now = Date.now()) {
       : null
   };
 }
-
 /** Queue-level aggregate for supervisor/performance reporting. */
 export function digitalResponseCycleMetrics(queue, now = Date.now()) {
   const contacts = Array.isArray(queue) ? queue : [];
@@ -180,7 +170,6 @@ export function digitalResponseCycleMetrics(queue, now = Date.now()) {
     }))
   };
 }
-
 export function digitalResponseCycleDisplay(cycle) {
   if (!cycle) return 'FOLLOW-UP SLA N/A';
   if (cycle.status === 'met') return `MET · ${cycle.responseMinutes}m`;

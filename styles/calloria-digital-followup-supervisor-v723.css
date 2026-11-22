@@ -1,0 +1,27 @@
+.digital-followup-supervisor-panel { margin-top: 14px; min-width: 0; }
+.digital-followup-supervisor-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin: 14px 0; }
+.digital-followup-supervisor-metrics > div { min-width: 0; padding: 12px; border: 1px solid var(--line, #26384f); border-radius: 12px; background: var(--surface-soft, rgba(255,255,255,.025)); }
+.digital-followup-supervisor-metrics span { display: block; color: var(--muted, #94a3b8); font-size: .74rem; line-height: 1.35; }
+.digital-followup-supervisor-metrics strong { display: block; margin-top: 5px; font-size: 1.25rem; }
+.digital-followup-alert-list { display: grid; gap: 9px; }
+.digital-followup-alert-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 14px; align-items: center; padding: 12px; border: 1px solid var(--line, #26384f); border-radius: 12px; min-width: 0; }
+.digital-followup-alert-row.overdue { border-left: 4px solid var(--danger, #d94848); }
+.digital-followup-alert-row.at-risk { border-left: 4px solid var(--warning, #d49a32); }
+.digital-followup-alert-copy { min-width: 0; }
+.digital-followup-alert-copy strong, .digital-followup-alert-copy small { display: block; overflow-wrap: anywhere; }
+.digital-followup-alert-copy strong { font-size: .92rem; }
+.digital-followup-alert-copy small { margin-top: 4px; color: var(--muted, #94a3b8); font-size: .76rem; line-height: 1.4; }
+.digital-followup-alert-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
+.digital-followup-alert-actions .btn { min-height: 38px; }
+@media (max-width: 760px) {
+  .digital-followup-supervisor-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .digital-followup-alert-row { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+}
+@media (max-width: 420px) {
+  .digital-followup-supervisor-metrics { gap: 7px; }
+  .digital-followup-supervisor-metrics > div { padding: 9px; }
+  .digital-followup-alert-row { grid-template-columns: minmax(0, 1fr); }
+  .digital-followup-alert-row > .pill { justify-self: start; }
+  .digital-followup-alert-actions { display: grid; grid-template-columns: 1fr; }
+  .digital-followup-alert-actions .btn { width: 100%; min-height: 42px; }
+}
