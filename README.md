@@ -1,25 +1,22 @@
-# CALLORIA v7.13 — Callback Attempt Outcome Integrity
+# CALLORIA v7.14 — Simulated Callback Clock Integrity
 
-Cumulative source overlay based on the public `main` source audit performed on 22 November 2026.
+## Why this upgrade exists
 
-## What it repairs
+The current public `main` source evaluates customer callback promises using CALLORIA's simulated shift clock, but the outbound campaign worklist also applies a wall-clock timestamp check. The current resume handler works around that mismatch by rewriting `callbackDueAt` to `Date.now() - 1000`. The worklist can therefore display a fabricated due time instead of the time the customer was promised.
 
-- A cancelled outbound callback was being labelled `completed` even when no verified after-contact result existed.
-- Outbound callbacks that ended as no-answer, busy or voicemail were also being labelled `completed` before the commitment retry path ran.
-- An inbound callback returned to the queue could remain stuck in `in_progress`.
-- The outbound campaign retry path used an arbitrary `now + 60 seconds` value for its worklist due time instead of the linked commitment callback's due time.
+The current source also stores `Date.now() + 60 seconds` in the campaign worklist while the linked commitment has its own simulated due time. A callback can consequently have different times in the promise portfolio and outbound campaign list.
 
-## Behaviour after v7.13
+## What v7.14 changes
 
-- Only a reached customer interaction becomes callback status `completed`.
-- no-answer, busy, voicemail and interrupted attempts become `attempt_failed` and keep a bounded attempt history.
-- Returning an inbound callback to the queue returns its callback task to `queued`; the commitment remains open.
-- An interrupted outbound callback keeps its commitment open and creates a supervisor review request rather than falsely fulfilling the promise.
-- When a promise retry is scheduled, the campaign worklist uses exactly the same due timestamp as the callback record and formal commitment.
-- The v7.12 integrity audit treats `attempt_failed` as terminal attempt evidence, so an open promise without a replacement task is reported as missing an active task.
-
-No real calls are placed. Records remain synthetic local simulation data. The helper never stores call transcripts, authentication secrets or customer notes.
+- The commitment's calculated `dueAt` becomes the single due-time source for the callback record and outbound campaign work item.
+- Scheduling no longer substitutes an arbitrary wall-clock `now + 60 seconds` timestamp.
+- Resuming a callback no longer backdates `callbackDueAt` to make the dialler accept it.
+- The resume handler first validates the callback against CALLORIA's simulated shift clock, then passes an explicit `callbackPrevalidated` flag to the campaign engine.
+- That flag bypasses only the campaign engine's wall-clock due check for a callback already verified by `callbackIsDue`; suppression, shift availability, agent availability, attempt limits and contact-state checks remain enforced.
+- Callback completion, no-answer, busy, voicemail, cancellation and return-to-queue outcomes remain distinct. Only confirmed customer contact marks a callback completed.
+- A cancelled linked outbound callback keeps its commitment open and creates one supervisor review request if one is not already open.
+- The campaign engine permits a valid simulated promise due time in `finishCampaignContact` when the main workflow has already validated the commitment. Invalid timestamps are still rejected.
 
 ## Package scope
 
-This ZIP carries forward the v7.12 callback-integrity audit (plugin, engine, stylesheet and test) and adds the v7.13 callback-attempt engine, Vite transform and regression tests. It is an overlay, not a full application repository.
+This is a targeted cumulative source overlay, not a complete repository replacement. It supplies a Vite transform plugin, a callback attempt evidence helper, regression tests and GUI installation documentation. No Supabase migration, new dependency, environment variable or GLB asset is required.

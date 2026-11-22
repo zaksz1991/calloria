@@ -1,0 +1,8 @@
+IMPORT (add beside existing imports):
+import { calloriaSimulatedCallbackClockV714Plugin } from './build/calloria-simulated-callback-clock-v714-plugin.mjs';
+
+PLUGIN (add once as the final item in the existing plugins array):
+calloriaSimulatedCallbackClockV714Plugin()
+
+Register after every transform that edits js/main.js or js/campaign-operations-engine.js.
+If calloriaCallbackAttemptOutcomesPluginV713() is registered, remove that import and registration; v7.14 replaces it. Keep any separately installed v7.12 read-only Promise Control panel.
