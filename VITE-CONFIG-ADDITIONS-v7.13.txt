@@ -1,0 +1,11 @@
+CALLORIA v7.13 — add these imports beside the other Vite plugin imports:
+
+import { calloriaCallbackIntegrityPluginV712 } from './build/calloria-callback-integrity-v712-plugin.mjs';
+import { calloriaCallbackAttemptOutcomesPluginV713 } from './build/calloria-callback-attempt-outcomes-v713-plugin.mjs';
+
+Then add both calls at the end of the existing plugins array, in this exact order:
+
+calloriaCallbackIntegrityPluginV712(),
+calloriaCallbackAttemptOutcomesPluginV713()
+
+Do not register either plugin twice. Keep v7.12 before v7.13 because v7.13 runs after the Promise Control panel transform.

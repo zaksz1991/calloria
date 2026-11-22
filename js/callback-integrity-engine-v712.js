@@ -1,6 +1,6 @@
 /** CALLORIA v7.12 — read-only callback promise/task integrity audit. */
 const ACTIVE_CALLBACK_STATUSES = new Set(['scheduled', 'queued', 'in_progress']);
-const TERMINAL_CALLBACK_STATUSES = new Set(['completed', 'cancelled', 'canceled', 'failed', 'abandoned']);
+const TERMINAL_CALLBACK_STATUSES = new Set(['completed', 'attempt_failed', 'cancelled', 'canceled', 'failed', 'abandoned']);
 const OPEN_COMMITMENT_STATUSES = new Set(['Open']);
 const REVIEW_COMMITMENT_STATUSES = new Set(['Needs review']);
 
