@@ -29,7 +29,10 @@ const REQUIRED_CLOUD_HISTORY_FILES = Object.freeze([
   'supabase/migrations/202611220001_calloria_workforce_trend_cloud_history.sql',
   'tests/workforce-trend-cloud-sync-v801.test.mjs',
   'tests/workforce-trend-cloud-sync-v801-ui.test.mjs',
-  'tests/workforce-trend-cloud-sync-v801-contract.test.mjs'
+  'tests/workforce-trend-cloud-sync-v801-contract.test.mjs',
+  'js/workforce-trend-cloud-sync-engine-v802.js',
+  'supabase/migrations/202611220002_calloria_workforce_trend_conflict_guard.sql',
+  'tests/workforce-trend-cloud-sync-v802.test.mjs'
 ]);
 const REQUIRED_HTML_INPUTS = Object.freeze([
   'main', 'customerCare', 'caseDesk', 'customer360', 'agentDesk', 'workforce',
@@ -217,6 +220,7 @@ export function auditCalloriaV8Integration({ root = process.cwd() } = {}) {
   const viteConfig = readText(projectRoot, 'vite.config.js', failures);
   const suite = readText(projectRoot, 'build/calloria-workforce-development-suite-v8.mjs', failures);
   const gate = readText(projectRoot, 'build/calloria-production-integration-gate-v8.mjs', failures);
+  const cloudPlugin = readText(projectRoot, 'build/calloria-workforce-trend-cloud-sync-v801.mjs', failures);
 
   if (pkg) {
     if (pkg.private !== true || pkg.type !== 'module') failures.push('package.json must remain private and use ES modules.');
@@ -224,7 +228,7 @@ export function auditCalloriaV8Integration({ root = process.cwd() } = {}) {
     if (pkg.scripts?.prebuild !== EXPECTED_PREBUILD) failures.push('package.json prebuild must run preflight, navigation audit and v8 integration audit in that order.');
     if (pkg.scripts?.check !== EXPECTED_CHECK) failures.push('package.json check must run the manifest, navigation and v8 integration audits.');
     if (pkg.scripts?.['verify:integration'] !== 'node tools/calloria-v8-integration-audit.mjs') failures.push('package.json must expose verify:integration.');
-    if (pkg.scripts?.['verify:workforce-cloud-history'] !== 'node --test tests/workforce-trend-cloud-sync-v801.test.mjs tests/workforce-trend-cloud-sync-v801-ui.test.mjs tests/workforce-trend-cloud-sync-v801-contract.test.mjs') failures.push('package.json must expose the focused workforce cloud-history regression check.');
+    if (pkg.scripts?.['verify:workforce-cloud-history'] !== 'node --test tests/workforce-trend-cloud-sync-v801.test.mjs tests/workforce-trend-cloud-sync-v801-ui.test.mjs tests/workforce-trend-cloud-sync-v801-contract.test.mjs tests/workforce-trend-cloud-sync-v802.test.mjs') failures.push('package.json must expose the v8.3 conflict-safe workforce cloud-history regression check.');
     if (!/tests\/\*\.test\.mjs/.test(pkg.scripts?.test || '')) failures.push('package.json test script must include the complete .test.mjs regression suite.');
     if (pkg.scripts?.build !== 'vite build' || pkg.scripts?.postbuild !== 'node tools/calloria-build-artifact-audit.mjs') {
       failures.push('The Vite build and post-build artifact audit hooks must remain unchanged.');
@@ -268,6 +272,9 @@ export function auditCalloriaV8Integration({ root = process.cwd() } = {}) {
     if (!moduleText.includes(`name: '${item.plugin}'`)) failures.push(`${item.file} does not expose the expected plugin name ${item.plugin}.`);
     if (!suite.includes(`${item.exported}()`)) failures.push(`v8 suite does not register ${item.exported}().`);
   }
+  if (!cloudPlugin.includes("from '../js/workforce-trend-cloud-sync-engine-v802.js'")) failures.push('The organisation cloud-sync plugin must load the v8.3 conflict-inspection engine.');
+  if (!cloudPlugin.includes('calloria_sync_workforce_trend_snapshots_v802')) failures.push('The organisation cloud-sync plugin must use the non-destructive v8.3 sync RPC.');
+  if (!cloudPlugin.includes('inspectWorkforceTrendCloudConflictsV802')) failures.push('The organisation cloud-sync plugin must report same-capture-time conflicts before merging.');
   const expectedOrder = REQUIRED_MODULES.map((item) => item.plugin);
   for (let i = 1; i < expectedOrder.length; i += 1) {
     if (suite.indexOf(`${REQUIRED_MODULES[i].exported}()`) <= suite.indexOf(`${REQUIRED_MODULES[i - 1].exported}()`)) {

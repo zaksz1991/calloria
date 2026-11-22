@@ -22,20 +22,23 @@ const fixture = [
   '}'
 ].join('\n');
 
-test('v8.1 plugin adds explicit organisation sync controls after v7.31', () => {
+test('v8.3 plugin adds conflict-safe organisation sync controls after v7.31', () => {
   const plugin = calloriaWorkforceTrendCloudSyncPluginV801();
   const result = plugin.transform.call({ warn: message => { throw new Error(message); } }, fixture, '/repo/js/main.js');
   assert.ok(result?.code);
   assert.match(result.code, /data-workforce-trend-cloud-sync/);
   assert.match(result.code, /data-workforce-trend-cloud-load/);
-  assert.match(result.code, /calloria_save_workforce_trend_snapshots/);
+  assert.match(result.code, /calloria_sync_workforce_trend_snapshots_v802/);
+  assert.match(result.code, /inspectWorkforceTrendCloudConflictsV802/);
+  assert.match(result.code, /capture-time conflict/);
+  assert.doesNotMatch(result.code, /rpc\(\"calloria_save_workforce_trend_snapshots\"/);
   assert.match(result.code, /calloria_workforce_trend_snapshots/);
   assert.match(result.code, /getCloudPlatformState/);
   assert.match(result.code, /canCloudRole\(context\.membership\?\.role, "reports:read"\)/);
   assert.match(result.code, /workforce-trend-cloud-sync-v801\.css/);
 });
 
-test('v8.1 plugin ignores non-main modules and is idempotent', () => {
+test('v8.3 plugin ignores non-main modules and is idempotent', () => {
   const plugin = calloriaWorkforceTrendCloudSyncPluginV801();
   assert.equal(plugin.transform(fixture, '/repo/js/other.js'), null);
   const first = plugin.transform.call({ warn() {} }, fixture, '/repo/js/main.js');
@@ -43,7 +46,7 @@ test('v8.1 plugin ignores non-main modules and is idempotent', () => {
   assert.equal(plugin.transform(first.code, '/repo/js/main.js'), null);
 });
 
-test('v8.1 plugin fails closed when v7.31 transform anchors are absent', () => {
+test('v8.3 plugin fails closed when v7.31 transform anchors are absent', () => {
   const plugin = calloriaWorkforceTrendCloudSyncPluginV801();
   const warnings = [];
   const result = plugin.transform.call({ warn: value => warnings.push(value) }, 'export const main = true;', '/repo/js/main.js');

@@ -15,7 +15,10 @@
 .wth-cloud-sync-buttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .wth-cloud-sync-buttons button { min-height: 40px; white-space: normal; }
 .wth-cloud-sync-buttons button:disabled { opacity: .55; cursor: wait; }
-.wth-cloud-status { grid-column: 1 / -1; margin: 0; color: var(--muted, #94a3b8); font-size: .82rem; line-height: 1.45; }
+.wth-cloud-status { grid-column: 1 / -1; margin: 0; color: var(--muted, #94a3b8); font-size: .82rem; line-height: 1.45; overflow-wrap: anywhere; }
+.wth-cloud-status[data-state="success"] { color: var(--success, #34d399); }
+.wth-cloud-status[data-state="warning"] { color: var(--warning, #fbbf24); }
+.wth-cloud-status[data-state="error"] { color: var(--danger, #fb7185); }
 @media (max-width: 720px) {
   .wth-cloud-sync { grid-template-columns: minmax(0, 1fr); }
   .wth-cloud-sync-buttons { justify-content: stretch; display: grid; grid-template-columns: 1fr; }

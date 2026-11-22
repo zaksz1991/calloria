@@ -1,0 +1,24 @@
+CALLORIA v8.3 — TEST RESULTS
+
+Focused automated tests:
+- v8.1 cloud-history engine tests: included
+- v8.1 transformed UI/plugin tests: included and updated for v8.3 RPC
+- v8.1 database/integration contract tests: included and extended for migration 002
+- v8.3 conflict-inspection, RPC result, merge, SQL contract and build-audit tests: included
+- v8 central plugin/order/build-gate regression tests: included
+
+Execution in preparation workspace:
+- 30 tests passed
+- 0 tests failed
+- Transformed main-module JavaScript syntax check: passed
+- Updated plugin, engine, tools and test-file Node syntax checks: passed
+- ZIP integrity: checked after packaging
+
+Not run / not claimed:
+- Complete CALLORIA npm test suite against the full production repository
+- Full Vite production build
+- PostgreSQL execution of migration 002
+- Live Supabase authentication, RLS and cross-user synchronisation
+- Live Vercel deployment and browser gameplay
+
+This is a focused source overlay. The existing v8.2 repository supplies the unchanged files required by the complete project and the remaining tests.

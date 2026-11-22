@@ -29,6 +29,7 @@ test('package scripts preserve v8 production audits and expose a focused cloud-h
   assert.equal(pkg.scripts.postbuild, 'node tools/calloria-build-artifact-audit.mjs');
   assert.match(pkg.scripts.test, /tests\/\*\.test\.mjs/);
   assert.match(pkg.scripts['verify:workforce-cloud-history'], /workforce-trend-cloud-sync-v801/);
+  assert.match(pkg.scripts['verify:workforce-cloud-history'], /workforce-trend-cloud-sync-v802\.test\.mjs/);
   assert.equal(pkg.engines.node, '22.x');
 });
 
@@ -62,4 +63,19 @@ test('cloud history stylesheet defines accessible responsive controls', () => {
   assert.match(css, /\.wth-cloud-sync-buttons/);
   assert.match(css, /\.wth-cloud-status/);
   assert.match(css, /@media/);
+});
+
+
+test('v8.3 migration prevents last-writer-wins updates and reports timestamp conflicts', () => {
+  const sql = read('supabase/migrations/202611220002_calloria_workforce_trend_conflict_guard.sql');
+  assert.match(sql, /create or replace function public\.calloria_sync_workforce_trend_snapshots_v802\(/);
+  assert.match(sql, /create or replace function public\.calloria_save_workforce_trend_snapshots\(/);
+  assert.equal((sql.match(/on conflict \(organization_id, captured_at\) do nothing/gi) || []).length, 2);
+  assert.doesNotMatch(sql, /on conflict \(organization_id, captured_at\) do update/i);
+  assert.match(sql, /v_existing is distinct from v_snapshot/);
+  assert.match(sql, /v_existing is not distinct from v_snapshot/);
+  assert.match(sql, /'conflictCapturedAt', v_conflict_times/);
+  assert.match(sql, /has_calloria_org_permission\(p_org_id, 'reports:read'\)/);
+  assert.match(sql, /grant execute on function public\.calloria_sync_workforce_trend_snapshots_v802\(uuid, jsonb\) to authenticated/);
+  assert.doesNotMatch(sql, /create table|alter table|drop table/i);
 });
