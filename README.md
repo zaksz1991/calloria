@@ -1,5 +1,5 @@
-# CALLORIA v6.98 — QA Consistency & Coaching Intelligence
+# CALLORIA v6.99 — Operations Capacity Outlook
 
-Adds a read-only quality intelligence layer to the existing Human QA & calibration workspace. It surfaces recurring low-rated criteria, calibration spread exceptions, dispute outcomes and sample-size limitations.
+Additive Vite overlay for Operations Intelligence. See `INSTALL-GITHUB-v6.99.md` before copying the files and registering the plugin.
 
-Start with `INSTALL-GITHUB-v6.98.md`. This package is an additive overlay, not a complete repository replacement.
+The forecast is directional and uses aggregate work-item counts only. It does not change the simulator or live operations.

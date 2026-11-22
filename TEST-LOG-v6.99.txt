@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: computes demand, throughput, net backlog drift and seven-day target
+ok 1 - computes demand, throughput, net backlog drift and seven-day target
+  ---
+  duration_ms: 13.992862
+  type: 'test'
+  ...
+# Subtest: keeps zero-volume days in the baseline
+ok 2 - keeps zero-volume days in the baseline
+  ---
+  duration_ms: 0.467135
+  type: 'test'
+  ...
+# Subtest: requires at least three valid daily observations
+ok 3 - requires at least three valid daily observations
+  ---
+  duration_ms: 0.250939
+  type: 'test'
+  ...
+# Subtest: ignores invalid dates and de-duplicates days deterministically
+ok 4 - ignores invalid dates and de-duplicates days deterministically
+  ---
+  duration_ms: 0.278861
+  type: 'test'
+  ...
+# Subtest: calculates demand trend only when a prior seven-day comparison exists
+ok 5 - calculates demand trend only when a prior seven-day comparison exists
+  ---
+  duration_ms: 0.409779
+  type: 'test'
+  ...
+# Subtest: reports recovery and estimates clearance only when net movement is negative
+ok 6 - reports recovery and estimates clearance only when net movement is negative
+  ---
+  duration_ms: 0.231439
+  type: 'test'
+  ...
+# Subtest: bounds the horizon and prevents negative or non-finite counts
+ok 7 - bounds the horizon and prevents negative or non-finite counts
+  ---
+  duration_ms: 0.34464
+  type: 'test'
+  ...
+# Subtest: uses seven most recent observations from longer reporting ranges
+ok 8 - uses seven most recent observations from longer reporting ranges
+  ---
+  duration_ms: 0.45052
+  type: 'test'
+  ...
+# Subtest: HTML transform inserts panel and stylesheet once
+ok 9 - HTML transform inserts panel and stylesheet once
+  ---
+  duration_ms: 0.592614
+  type: 'test'
+  ...
+# Subtest: JS transform patches exactly the intended workbench anchors and is idempotent
+ok 10 - JS transform patches exactly the intended workbench anchors and is idempotent
+  ---
+  duration_ms: 0.757002
+  type: 'test'
+  ...
+# Subtest: JS transform skips safely when source has drifted
+ok 11 - JS transform skips safely when source has drifted
+  ---
+  duration_ms: 0.302727
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 115.923004

@@ -1,0 +1,11 @@
+CALLORIA v6.99 — Vite additions
+
+1. Add this import with the other build-plugin imports near the top of vite.config.js:
+
+import { calloriaOperationsCapacityOutlookPluginV699 } from './build/calloria-operations-capacity-outlook-v6-99.mjs';
+
+2. Add this single entry at the end of the existing plugins array, after the existing visitor-facing plugins:
+
+calloriaOperationsCapacityOutlookPluginV699()
+
+Keep the existing plugin registrations and their order. Do not replace vite.config.js with an older copy. Do not register v6.99 twice.

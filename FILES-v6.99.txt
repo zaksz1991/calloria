@@ -1,0 +1,13 @@
+build/calloria-operations-capacity-outlook-v6-99.mjs
+js/operations-capacity-outlook-v6-99.js
+styles/operations-capacity-outlook-v6-99.css
+tests/operations-capacity-outlook-v6-99.test.mjs
+package.json
+INSTALL-GITHUB-v6.99.md
+VITE-CONFIG-ADDITIONS-v6.99.txt
+SOURCE-BASELINE-v6.99.md
+CHANGELOG-v6.99.md
+VERIFICATION-v6.99.md
+TEST-LOG-v6.99.txt
+README.md
+FILES-v6.99.txt
