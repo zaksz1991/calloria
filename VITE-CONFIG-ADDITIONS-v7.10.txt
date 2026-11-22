@@ -1,0 +1,8 @@
+// Add alongside the existing local Vite plugin imports:
+import { calloriaLiveCallCoachV710Plugin } from './build/calloria-live-call-coach-v710-plugin.mjs';
+
+// Add exactly once as the last entry in the existing plugins array:
+calloriaLiveCallCoachV710Plugin()
+
+// If calloriaFirstShiftMentorV709Plugin() is already installed, keep it and put
+// calloriaLiveCallCoachV710Plugin() after it. Preserve every other plugin and order.

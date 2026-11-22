@@ -1,12 +1,11 @@
-# First-shift evidence rules
+# Live Call Coach rules
 
-1. Only non-grandfathered hired profiles with an active shift receive a mentor record.
-2. Connected-call events are counted once per contact ID.
-3. Saved cases are counted once per case reference.
-4. A qualifying case must be resolved, have QA >= 70, and have no recorded breach.
-5. Low QA, missing / invalid QA or a recorded breach pauses the clean-case requirement and requires a written coaching reflection.
-6. Coaching acknowledgement resets the qualifying count but never deletes prior case, QA or breach evidence.
-7. Two qualifying resolved cases after the most recent coaching event permit a simulated mentor review request.
-8. Sign-off requires all four attestations; the record is marked `simulated: true`.
-9. A new case saved after a review request reopens supervision; evidence is preserved.
-10. Completion does not modify real QA, case outcomes, shift eligibility, salary, promotion or employment state.
+1. Security and fraud context is classified before all other categories.
+2. A pending customer interruption or negotiation is the highest workflow gate; the coach reminds the agent to resolve it first.
+3. A native supervisor-risk signal overrides normal category guidance.
+4. Low sentiment, low patience or an angry/frustrated/distressed emotion selects de-escalation guidance.
+5. The ordinary playbooks cover payments/transactions, technical support, complaints and general service.
+6. Any suggested phrase is optional and editable. It is never sent automatically.
+7. The card never claims that a refund, reversal, account action, eligibility, product capability or completion time has been verified.
+8. Self-checks are training prompts only and do not alter QA, compliance, performance or promotion calculations.
+9. No customer transcript, microphone sample or playbook self-check is transmitted or persisted by this feature.

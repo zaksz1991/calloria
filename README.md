@@ -1,7 +1,9 @@
-# CALLORIA v7.09 — First Shift Mentor
+# CALLORIA v7.10 — Live Call Coach & Contextual Playbook
 
-Additive overlay for the existing public `main` source.
+Additive source overlay targeting the current public `main` source. It adds a deterministic, local playbook to the existing inbound live-call view.
 
-Primary feature: an evidence-based mentor record for the first independent operating shift, connected to existing shift/call/case events and existing onboarding save state.
+The coach classifies the current synthetic issue into security, payment/transaction, technical support, complaint or general service guidance. It prioritises a pending customer decision, supervisor risk and de-escalation signals before the ordinary playbook.
 
-Start with `INSTALL-GITHUB-v7.09.md`. The exact Vite addition is in `VITE-CONFIG-ADDITIONS-v7.09.txt`.
+Agents can mark temporary self-check steps and insert optional wording into the existing response editor. It never sends a message, changes a response, changes a QA score, writes a CRM record or stores the checklist in the application save.
+
+Start with `INSTALL-GITHUB-v7.10.md`. This is not a complete repository replacement.
