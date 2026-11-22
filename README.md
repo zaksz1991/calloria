@@ -1,13 +1,5 @@
-# CALLORIA v7.01 — Build Guard & Runtime Pin
+# CALLORIA v7.02 — Build Artifact Integrity Audit
 
-This is a targeted overlay to restore the Vite production build manifest and keep CALLORIA on Node 22.x while preventing a repeat of the test-only `package.json` regression.
+Cumulative build-system overlay extending v7.01. Adds an automatic post-build check so Vercel does not deploy a partial `dist/` folder when a configured page, referenced local asset, chat widget or generated GLB diagnostics artifact is missing.
 
-Apply the ZIP at the CALLORIA repository root. See `INSTALL-GITHUB-v7.01.md` for GitHub Desktop steps.
-
-Main files:
-- `package.json`
-- `.nvmrc`
-- `tools/calloria-build-preflight.mjs`
-- `tests/build-preflight-v701.test.mjs`
-
-This is not a complete repository archive. Do not delete or replace existing application files, public assets, `.git`, Vite plugins, Supabase configuration or environment files.
+See `INSTALL-GITHUB-v7.02.md` for GitHub Desktop installation and `VERIFICATION-v7.02.md` for the exact test scope.

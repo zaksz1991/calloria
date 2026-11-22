@@ -10,10 +10,12 @@
   "scripts": {
     "preinstall": "node tools/calloria-build-preflight.mjs --install",
     "prebuild": "node tools/calloria-build-preflight.mjs --build",
-    "dev": "vite --host 0.0.0.0",
     "build": "vite build",
+    "postbuild": "node tools/calloria-build-artifact-audit.mjs",
+    "dev": "vite --host 0.0.0.0",
     "preview": "vite preview --host 0.0.0.0",
     "verify:build-manifest": "node tools/calloria-build-preflight.mjs --manifest",
+    "verify:build-artifacts": "node tools/calloria-build-artifact-audit.mjs",
     "check": "node tools/calloria-build-preflight.mjs --manifest",
     "test": "node --test tests/*.test.mjs"
   },

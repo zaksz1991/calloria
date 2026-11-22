@@ -1,0 +1,17 @@
+CALLORIA v7.02 focused test run
+Node.js: v22.16.0
+Command: node --test tests/*.test.mjs
+
+Tests: 13
+Passed: 13
+Failed: 0
+Skipped: 0
+
+Breakdown:
+- v7.01 build preflight: 6 passed
+- v7.02 post-build artifact audit: 7 passed
+
+JavaScript syntax checks: 4 passed
+ZIP integrity: passed
+Full Vite production build: not run
+Vercel deployment: not verified
