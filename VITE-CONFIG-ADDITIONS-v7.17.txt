@@ -1,0 +1,8 @@
+// 1. Add alongside the existing local Vite plugin imports:
+import { calloriaDigitalSpecialistHandoffPluginV717 } from './build/calloria-digital-specialist-handoff-v717.mjs';
+
+// 2. Add once at the END of the existing plugins array, after calloriaTryItStudioPlugin():
+calloriaDigitalSpecialistHandoffPluginV717()
+
+// If calloriaDigitalStateIntegrityPluginV716() is present, keep it before this v7.17 plugin.
+// Do not replace vite.config.js or register this plugin more than once.
