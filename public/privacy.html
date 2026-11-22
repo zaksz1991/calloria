@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07131f">
+  <meta name="description" content="How CALLORIA handles gameplay data, customer support requests, AI-assisted features and account information.">
+  <title>CALLORIA · Privacy Information</title>
+  <style>
+    :root{color-scheme:dark;--bg:#07131f;--panel:#0d1e2c;--line:#20394a;--text:#e8f1f6;--muted:#a7bbc8;--accent:#80e0ca;--soft:#132b3a}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:radial-gradient(ellipse at 15% 0%,#123245 0,transparent 42%),var(--bg);color:var(--text);font:16px/1.68 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    a{color:var(--accent);text-underline-offset:3px}
+    .topbar{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:15px max(20px,calc((100vw - 1080px)/2));background:#07131feF;border-bottom:1px solid var(--line);backdrop-filter:blur(14px)}
+    .brand{display:flex;align-items:center;gap:11px;color:var(--text);text-decoration:none;font-weight:850;letter-spacing:.12em}
+    .mark{display:grid;place-items:center;width:36px;height:36px;border:1px solid #4b8d85;border-radius:11px;color:var(--accent);font-size:18px}
+    .nav{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;font-weight:650}
+    .wrap{width:min(920px,calc(100% - 32px));margin:0 auto;padding:54px 0 80px}
+    .eyebrow{color:var(--accent);font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+    h1{margin:8px 0 14px;font-size:clamp(34px,6vw,58px);line-height:1.06;letter-spacing:-.045em}
+    .intro{max-width:760px;color:#c2d2dc;font-size:18px}
+    .meta{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:22px 0 30px;color:var(--muted);font-size:13px}
+    .pill{padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:#0b1a27}
+    .notice{margin:24px 0;padding:17px 19px;border:1px solid #42665f;border-radius:14px;background:#0d292b;color:#d7eee8}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:28px 0}
+    .card,section{border:1px solid var(--line);border-radius:16px;background:linear-gradient(145deg,#102536,#0a1925)}
+    .card{padding:18px}
+    .card strong{display:block;margin-bottom:5px;color:var(--accent)}
+    section{padding:23px 25px;margin:14px 0}
+    h2{margin:0 0 12px;font-size:22px;letter-spacing:-.02em}
+    h3{margin:18px 0 6px;font-size:16px}
+    p{margin:8px 0;color:#c7d5de}
+    ul{margin:9px 0 0;padding-left:22px;color:#c7d5de}
+    li{padding:3px 0}
+    .small{font-size:13px;color:var(--muted)}
+    .footer{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-top:24px;padding-top:20px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+    @media(max-width:640px){.topbar{align-items:flex-start;flex-direction:column;padding:12px 16px}.nav{gap:12px}.wrap{padding-top:34px}.grid{grid-template-columns:1fr}section{padding:19px}.intro{font-size:16px}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="CALLORIA home"><span class="mark">C</span><span>CALLORIA</span></a>
+    <nav class="nav" aria-label="Main navigation"><a href="/support-router.html">Support requests</a><a href="/customer-care.html">Customer Care</a><a href="/">Return to simulator</a></nav>
+  </header>
+  <main class="wrap">
+    <div class="eyebrow">Trust · Data use · User choices</div>
+    <h1>Privacy information</h1>
+    <p class="intro">This page explains the main data flows in CALLORIA, including guest gameplay, optional accounts, customer support requests and AI-assisted features. Different features use different systems; the distinctions below matter.</p>
+    <div class="meta"><span class="pill">Last updated: 22 November 2026</span><span class="pill">Applies to CALLORIA web experiences</span></div>
+
+    <div class="notice"><strong>Do not submit secrets or highly sensitive information.</strong> Never enter passwords, one-time codes, PINs, payment-card details, full account numbers, access tokens or private medical information into a customer message, training transcript or support request. Redaction controls reduce risk but cannot guarantee that every sensitive detail will be detected.</div>
+
+    <div class="grid" aria-label="Privacy principles">
+      <div class="card"><strong>Guest-first access</strong><span>Public visitor and guest features can be used without creating an account.</span></div>
+      <div class="card"><strong>Separate support pathways</strong><span>AI Customer Care and formal human support requests do not use the same data flow.</span></div>
+      <div class="card"><strong>Explicit request consent</strong><span>The formal support router asks for consent before storing a submitted request.</span></div>
+      <div class="card"><strong>Limited AI scope</strong><span>AI-assisted QA is restricted to designated synthetic training interactions and requires human review.</span></div>
+    </div>
+
+    <section>
+      <h2>1. Who operates CALLORIA</h2>
+      <p>CALLORIA is a RuffNeck Entertainment product. It provides a contact-centre career and operations simulator, customer-care information, and formal support-request routing. This notice describes the current application pathways visible in the published CALLORIA implementation. Separate RuffNeck products linked from CALLORIA and third-party providers operate under their own privacy notices.</p>
+    </section>
+
+    <section>
+      <h2>2. Information that may be processed</h2>
+      <ul>
+        <li><strong>Gameplay and preferences:</strong> a browser may retain guest progress, preferences or session state so gameplay can continue. Clearing browser site data may remove locally stored progress.</li>
+        <li><strong>Optional account features:</strong> when sign-in or organisation features are enabled, authentication identifiers, profile and membership information, role permissions, training progress and operational records may be processed to provide those features.</li>
+        <li><strong>Formal support requests:</strong> the support router collects the selected product (if any), request category, preferred language, subject and request summary. The form requires explicit consent to store and route the request. It does not ask for contact details.</li>
+        <li><strong>Technical and abuse-prevention data:</strong> support routing uses a keyed fingerprint derived from the network address and browser user-agent for rate limiting. Hosting and service providers may also process technical request data needed to operate and protect their services.</li>
+        <li><strong>Workforce and simulator records:</strong> where staff or organisation workflows are enabled, the system may process assigned roles, skills, shifts, training, case activity, quality reviews and performance information.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>3. AI Customer Care</h2>
+      <p>The Customer Care experience is separate from the formal human support-request form. Its current interface states that enquiries are not stored in CALLORIA's own database or browser storage, and that a redacted message is sent to Groq for inference. The interface also states that Groq may retain inputs or outputs for up to 30 days for reliability or abuse monitoring unless Zero Data Retention is enabled.</p>
+      <p>CALLORIA's public client code does not establish whether Zero Data Retention is enabled for every deployment. Do not assume it is enabled. Avoid submitting personal, financial, authentication or health information to AI Customer Care.</p>
+      <p>The organisation AI-assistance endpoint is a separate staff feature. Its current implementation accepts designated synthetic Customer Lab practice interactions, requires mandatory transcript redaction and organisation-level enablement, and returns advisory suggestions that require human approval. It is not intended to make employment decisions.</p>
+    </section>
+
+    <section>
+      <h2>4. Formal support requests</h2>
+      <p>When you submit the formal support form, the request is sent to CALLORIA's Supabase-hosted contact-routing service after you tick the storage-consent box. The request summary is redacted and encrypted with AES-GCM before it is stored. The subject and routing information are stored to direct the request to the appropriate queue.</p>
+      <p>A request reference and one-time access code are returned when a request is created. The service stores a hash of the access code, not the plain code, and the code is displayed once. Keep both values private; they are needed to check request status.</p>
+      <p>The routing service performs rate limiting and calls a maintenance routine for closed requests. The public implementation does not state a fixed retention period for all support records. Do not use the form for emergencies or assume it creates a live call or guaranteed response time.</p>
+    </section>
+
+    <section>
+      <h2>5. Why information is used</h2>
+      <p>Information is used to save gameplay where supported, authenticate users, administer organisation access, deliver simulator and workforce features, route and track support requests, respond to enquiries, protect services against abuse, and maintain reliability. AI-assisted analysis is limited to the feature and data scope described above.</p>
+      <p>CALLORIA should be used with fictional or synthetic customer information for training. Do not enter real customer records unless the relevant organisation has separately approved that processing and put the required safeguards in place.</p>
+    </section>
+
+    <section>
+      <h2>6. Service providers and external destinations</h2>
+      <ul>
+        <li><strong>Supabase:</strong> provides the authentication, database and server-function infrastructure used by enabled CALLORIA features.</li>
+        <li><strong>Groq:</strong> receives redacted prompts or synthetic training transcripts when the applicable AI feature is used.</li>
+        <li><strong>Hosting and delivery providers:</strong> may process technical information to deliver the website and protect service availability.</li>
+        <li><strong>Linked RuffNeck platforms:</strong> opening an external product takes you to that product's own service and privacy terms.</li>
+      </ul>
+      <p>CALLORIA does not need your payment-card details to use the public support router. This notice does not describe or replace the privacy terms of a separately operated product or provider.</p>
+    </section>
+
+    <section>
+      <h2>7. Retention and your choices</h2>
+      <p>Guest data stored only in the browser can generally be removed by clearing site data in that browser, which may also erase saved guest progress. Server-side account, organisation, workforce and support records are subject to the retention and cleanup settings configured for those services. The public application source does not publish one fixed retention period for every record type.</p>
+      <p>You may request access to, correction of or deletion of information, or ask a question about a support request, using the formal support channel. Provide only the details needed to identify the request. Where a request was created using the support router, keep its reference and one-time access code available for status checks.</p>
+      <p>For optional account features, sign out when using a shared device. You can also withdraw from a new support submission by not submitting it; the form requires consent before it stores a new request.</p>
+      <p><a href="/support-router.html">Open the formal support-request channel</a>.</p>
+    </section>
+
+    <section>
+      <h2>8. Security and responsible use</h2>
+      <p>CALLORIA applies technical controls in specific pathways, including request redaction, encryption of formal support summaries, hashed one-time access codes, origin checks and request rate limits. No internet service can guarantee absolute security. Use strong, unique passwords for any account and never share one-time access codes.</p>
+      <p>For training, use synthetic customer data. Do not record or upload real customer calls, personal identifiers or confidential organisation information without the organisation's documented authorisation and appropriate notice to the affected people.</p>
+    </section>
+
+    <section>
+      <h2>9. Changes to this notice</h2>
+      <p>This notice may be updated when CALLORIA's features, service providers or data practices change. The date at the top indicates the latest published revision. Material changes should be reviewed before continuing to use the affected feature.</p>
+      <p class="small">This page is an operational privacy notice based on the current published application implementation. It is not a substitute for organisation-specific notices, provider terms or legal advice. Deployment configuration and retention settings should be reviewed periodically by the service operator.</p>
+    </section>
+
+    <footer class="footer"><span>CALLORIA · Every Call. Every Customer. Every Career.</span><span><a href="/">Home</a> · <a href="/customer-care.html">Customer Care</a> · <a href="/support-router.html">Support</a></span></footer>
+  </main>
+</body>
+</html>

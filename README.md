@@ -1,7 +1,15 @@
-# CALLORIA v7.05 — Navigation & Application View Integrity
+# CALLORIA v7.06 — Privacy Route Repair
 
-Cumulative production-recovery overlay. Carries forward the v7.04 build manifest repair and adds an automated audit of multi-page local routes and the simulator's dynamic view navigation.
+Targeted additive overlay for the v7.05 navigation-integrity build failure at commit `312a171`.
 
-See `INSTALL-GITHUB-v7.05.md` for GitHub Desktop installation and `VERIFICATION-v7.05.md` for test boundaries.
+## Contents
 
-This is not a full repository archive. Preserve all existing application pages, 3D assets, Supabase configuration, `.git` and Vercel settings.
+- `public/privacy.html` — the missing privacy page served at `/privacy.html`.
+- `tests/privacy-route-v706.test.mjs` — four regression tests for the route and notice.
+- `INSTALL-GITHUB-v7.06.md` — GUI installation instructions.
+- `BUILD-FAILURE-DIAGNOSIS-v7.06.md` — why the Vercel prebuild audit failed.
+- `SOURCE-BASELINE-v7.06.md` — source facts used for the repair.
+- `CHANGELOG-v7.06.md` — release changes.
+- `VERIFICATION-v7.06.md` — tested and untested scope.
+
+This is not a complete repository replacement. No existing project configuration should be overwritten.
