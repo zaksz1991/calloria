@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: strong digital reply satisfies all five coaching dimensions
+ok 1 - strong digital reply satisfies all five coaching dimensions
+  ---
+  duration_ms: 3.130174
+  type: 'test'
+  ...
+# Subtest: reply missing acknowledgement and ownership receives coaching warnings, not a hard block
+ok 2 - reply missing acknowledgement and ownership receives coaching warnings, not a hard block
+  ---
+  duration_ms: 0.535003
+  type: 'test'
+  ...
+# Subtest: explicitly warning customers not to share secrets is not misclassified as a request
+ok 3 - explicitly warning customers not to share secrets is not misclassified as a request
+  ---
+  duration_ms: 0.267954
+  type: 'test'
+  ...
+# Subtest: requesting OTP or password is blocked
+ok 4 - requesting OTP or password is blocked
+  ---
+  duration_ms: 0.185473
+  type: 'test'
+  ...
+# Subtest: public social reply requesting account or personal details is blocked
+ok 5 - public social reply requesting account or personal details is blocked
+  ---
+  duration_ms: 1.135637
+  type: 'test'
+  ...
+# Subtest: social support request explicitly routed to a verified private channel is allowed
+ok 6 - social support request explicitly routed to a verified private channel is allowed
+  ---
+  duration_ms: 0.320109
+  type: 'test'
+  ...
+# Subtest: public social reply without a private-channel route remains allowed but gets a warning
+ok 7 - public social reply without a private-channel route remains allowed but gets a warning
+  ---
+  duration_ms: 0.411104
+  type: 'test'
+  ...
+# Subtest: unverified guarantees are flagged for factual review but not automatically blocked
+ok 8 - unverified guarantees are flagged for factual review but not automatically blocked
+  ---
+  duration_ms: 0.357
+  type: 'test'
+  ...
+# Subtest: unmasked card-number content is blocked
+ok 9 - unmasked card-number content is blocked
+  ---
+  duration_ms: 0.335064
+  type: 'test'
+  ...
+# Subtest: rendered coach only emits controlled channel data
+ok 10 - rendered coach only emits controlled channel data
+  ---
+  duration_ms: 0.505929
+  type: 'test'
+  ...
+# Subtest: invalid channel falls back to email
+ok 11 - invalid channel falls back to email
+  ---
+  duration_ms: 0.1536
+  type: 'test'
+  ...
+# Subtest: main transform injects coach import and panel once
+ok 12 - main transform injects coach import and panel once
+  ---
+  duration_ms: 0.158823
+  type: 'test'
+  ...
+# Subtest: main transform is idempotent
+ok 13 - main transform is idempotent
+  ---
+  duration_ms: 0.155826
+  type: 'test'
+  ...
+# Subtest: main transform refuses partial injection when anchors drift
+ok 14 - main transform refuses partial injection when anchors drift
+  ---
+  duration_ms: 0.104391
+  type: 'test'
+  ...
+# Subtest: capture-phase submit guard stops an unsafe credential request before native submit handling
+ok 15 - capture-phase submit guard stops an unsafe credential request before native submit handling
+  ---
+  duration_ms: 0.647323
+  type: 'test'
+  ...
+# Subtest: capture-phase submit guard leaves non-blocking coaching gaps sendable
+ok 16 - capture-phase submit guard leaves non-blocking coaching gaps sendable
+  ---
+  duration_ms: 0.171203
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 75.933713

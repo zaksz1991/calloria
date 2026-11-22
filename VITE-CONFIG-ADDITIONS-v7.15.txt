@@ -1,0 +1,11 @@
+Add with the imports at the top of vite.config.js:
+import { calloriaDigitalResponseQualityCoachPluginV715 } from './build/calloria-digital-response-quality-coach-v715.mjs';
+
+Register once at the end of the existing plugins array. For the current public main baseline, change:
+  calloriaTryItStudioPlugin()
+
+To:
+  calloriaTryItStudioPlugin(),
+  calloriaDigitalResponseQualityCoachPluginV715()
+
+Do not replace the full Vite configuration. Keep all existing plugin registrations and their order.
