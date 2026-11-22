@@ -27,6 +27,7 @@ import { calloriaTryItStudioPlugin } from './build/calloria-try-it-studio-v6-58.
 import { calloriaDigitalExperienceSuitePluginV722 } from './build/calloria-digital-experience-suite-v722.mjs';
 import { calloriaDigitalFollowUpSupervisorPluginV723 } from './build/calloria-digital-followup-supervisor-v723.mjs';
 import { calloriaDigitalFollowUpPerformancePluginV724 } from './build/calloria-digital-followup-performance-v724.mjs';
+import { calloriaDigitalFollowUpCoachingPluginV725 } from './build/calloria-digital-followup-coaching-v725.mjs';
 
 export default defineConfig({
   base: '/',
@@ -64,7 +65,9 @@ export default defineConfig({
     // v7.23 adds supervisor monitoring and controlled intervention after v7.22.
     calloriaDigitalFollowUpSupervisorPluginV723(),
     // v7.24 adds agent-level follow-up response performance after supervisor alerts.
-    calloriaDigitalFollowUpPerformancePluginV724()
+    calloriaDigitalFollowUpPerformancePluginV724(),
+    // v7.25 converts follow-up scorecards into supervisor-owned coaching plans.
+    calloriaDigitalFollowUpCoachingPluginV725()
   ],
   build: {
     outDir: 'dist',

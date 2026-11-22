@@ -1,0 +1,15 @@
+CALLORIA v7.25 — DIGITAL FOLLOW-UP COACHING PLANS
+
+Automated tests: 38 passed, 0 failed.
+JavaScript syntax: 15 files checked, 0 failures.
+Generated main.js transform fixture: node --check passed.
+ZIP integrity: to be checked after archive creation.
+
+Not run / not claimed:
+- Complete repository npm/Vite production build.
+- Full project browser end-to-end test.
+- Vercel deployment or production smoke test.
+- Actual Android/iOS device rendering.
+- Remote Supabase/database integration (no database feature is added).
+
+Release type: cumulative v7.23 + v7.24 + v7.25 source overlay. Not a full repository snapshot.

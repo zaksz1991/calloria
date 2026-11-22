@@ -1,0 +1,30 @@
+CALLORIA v7.25 PREPARATION TEST REPORT
+
+Automated test command executed in the preparation workspace:
+node --test tests/*.test.mjs
+
+Result:
+- Tests: 38
+- Passed: 38
+- Failed: 0
+- Skipped: 0
+
+Coverage includes:
+- v7.23 supervisor follow-up board and guarded escalation integration.
+- v7.24 response performance attribution, channel aggregation and Vite transforms.
+- v7.25 overdue/at-risk/response-rate coaching recommendations.
+- Minimum completed-sample requirement for response-rate recommendations.
+- Duplicate-plan suppression and malformed-state handling.
+- Coaching plan validation, due-date generation and immutable lifecycle transitions.
+- Vite plugin order, safe source-drift handling and transform idempotence.
+
+JavaScript syntax:
+- 15 JS/MJS files checked with Node's syntax checker.
+- 0 syntax failures.
+- A generated v7.23→v7.24→v7.25 main.js transform fixture also passed syntax checking.
+
+Not covered:
+- Full repository Vite production build (full repository dependencies and all source files were not supplied with this overlay).
+- Browser rendering or end-to-end app execution.
+- GitHub push, Vercel deployment or live production checks.
+- Physical phone/tablet rendering.

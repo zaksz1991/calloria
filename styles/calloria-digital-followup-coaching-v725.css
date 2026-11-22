@@ -1,0 +1,70 @@
+.digital-followup-coaching-panel { margin-top: 14px; }
+.digital-followup-coaching-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+  margin: 12px 0 16px;
+}
+.digital-followup-coaching-metrics > div {
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--border, rgba(148, 163, 184, .2));
+  border-radius: 12px;
+  background: var(--surface-soft, rgba(148, 163, 184, .055));
+}
+.digital-followup-coaching-metrics span,
+.digital-followup-coaching-metrics strong { display: block; }
+.digital-followup-coaching-metrics span { color: var(--muted, #94a3b8); font-size: .76rem; }
+.digital-followup-coaching-metrics strong { margin-top: 4px; font-size: 1.35rem; line-height: 1.2; }
+.digital-followup-coaching-list,
+.digital-followup-plan-list { display: grid; gap: 9px; }
+.digital-followup-coaching-card,
+.digital-followup-plan-row {
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid var(--border, rgba(148, 163, 184, .2));
+  border-radius: 13px;
+  background: var(--surface-soft, rgba(148, 163, 184, .045));
+}
+.digital-followup-coaching-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.digital-followup-coaching-card-head > div,
+.digital-followup-plan-row > div:first-child { min-width: 0; }
+.digital-followup-coaching-card-head strong,
+.digital-followup-coaching-card-head small,
+.digital-followup-plan-row strong,
+.digital-followup-plan-row small { display: block; overflow-wrap: anywhere; }
+.digital-followup-coaching-card-head small,
+.digital-followup-plan-row small {
+  margin-top: 4px;
+  color: var(--muted, #94a3b8);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+.digital-followup-coaching-card > p { margin: 9px 0; line-height: 1.5; }
+.digital-followup-coaching-card > small { display: block; color: var(--muted, #94a3b8); line-height: 1.45; }
+.digital-followup-coaching-practice { padding-left: 10px; border-left: 2px solid var(--accent, #38bdf8); font-size: .88rem; }
+.digital-followup-coaching-card .btn { margin-top: 10px; }
+.digital-followup-plan-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+}
+.digital-followup-plan-actions { display: flex; justify-content: flex-end; }
+.digital-followup-subheading { margin: 16px 0 9px; }
+@media (max-width: 760px) {
+  .digital-followup-coaching-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .digital-followup-plan-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .digital-followup-plan-actions { grid-column: 1 / -1; justify-content: stretch; }
+  .digital-followup-plan-actions .btn { width: 100%; min-height: 42px; }
+}
+@media (max-width: 380px) {
+  .digital-followup-coaching-metrics > div { padding: 9px; }
+  .digital-followup-coaching-card,
+  .digital-followup-plan-row { padding: 10px; }
+}
