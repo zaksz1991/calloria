@@ -1,0 +1,10 @@
+Add this import with the other Vite plugin imports:
+
+import { calloriaDigitalStateIntegrityPluginV716 } from './build/calloria-digital-state-integrity-v716.mjs';
+
+Register it ONCE at the end of the existing plugins array, after the existing final plugin:
+
+  calloriaTryItStudioPlugin(),
+  calloriaDigitalStateIntegrityPluginV716()
+
+If your branch has the v7.15 digital response coach registered, retain it and place this plugin after it. Do not remove or duplicate existing registrations. Do not replace the full vite.config.js.

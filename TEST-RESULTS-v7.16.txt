@@ -1,0 +1,21 @@
+CALLORIA v7.16 focused tests
+============================
+Node test runner: node --test tests/digital-state-integrity-v716.test.mjs
+Tests: 12
+Passed: 12
+Failed: 0
+Skipped: 0
+
+Coverage:
+- AWAITING_CUSTOMER and PENDING_CUSTOMER counts are distinct
+- invalid/missing inputs
+- no mutation of input records
+- engine transform anchor and helper injection
+- engine transform idempotency
+- engine source drift and duplicate-anchor protection
+- UI state labels and counts
+- UI transform idempotency and drift protection
+- transformed engine and UI fixture syntax checks
+- Vite plugin module targeting
+- safe skip warning
+- transformed engine syntax
