@@ -1,0 +1,9 @@
+1. Add this import beside the other local build-plugin imports in vite.config.js:
+
+import { calloriaDigitalResponseCyclePluginV721 } from './build/calloria-digital-response-cycle-v721.mjs';
+
+2. Add this invocation as the final item in the existing plugins array:
+
+calloriaDigitalResponseCyclePluginV721()
+
+Do not replace vite.config.js. Preserve the existing plugin order. If the v7.20 Digital Workflow Suite is already registered in your working copy, place v7.21 after it. This v7.21 plugin has no dependency on v7.20.
