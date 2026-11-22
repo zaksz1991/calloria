@@ -1,0 +1,9 @@
+1. Add this import with the other local Vite plugin imports:
+
+import { calloriaDigitalSlaTriagePluginV718 } from './build/calloria-digital-sla-triage-v718.mjs';
+
+2. Add this call as the final entry in the existing `plugins: [ ... ]` array:
+
+calloriaDigitalSlaTriagePluginV718()
+
+Keep every existing plugin and preserve their order. If your working branch already has plugins from v7.15, v7.16, v7.17 or other overlays, add v7.18 after those existing registrations rather than replacing or removing them.

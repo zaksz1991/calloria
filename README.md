@@ -1,35 +1,27 @@
-# CALLORIA v7.17 — Digital Specialist Handoff & Supervisor Routing
+# CALLORIA v7.18 — Digital SLA Triage
 
-This is an additive source overlay for the current CALLORIA public `main` source structure.
+Additive source overlay for the existing synthetic email, live-chat and social queues.
 
-## What it adds
+## Included files
 
-When an agent chooses **Escalated to specialist team** in the synthetic digital-contact after-contact form, CALLORIA displays a required specialist destination and a concise reason field. A valid handoff creates or augments an item in the existing local Supervisor Escalations queue and links it to the resulting CRM case.
+- `js/digital-triage-engine-v718.js` — pure SLA-first ranking and ageing fairness logic.
+- `build/calloria-digital-sla-triage-v718.mjs` — source-safe Vite transform for the two digital queue render paths.
+- `tests/digital-sla-triage-v718.test.mjs` — focused engine and transform regression suite.
+- Installation, source-baseline, changelog and verification notes.
 
-Allowed destinations:
+## Runtime behaviour
 
-- Cards & Payments
-- Transfers Support
-- Fraud & Payments
-- Digital Support
-- Customer Experience
-- IT Systems Support
-- RuffNeck Product Support
-- Life & Advice
-- Complaints & Resolution
+Both the active-agent quick queue and the full digital waiting queue are sorted by:
 
-The handoff is a request, not an automatic transfer. A supervisor must claim and review it using the existing Supervisor Escalations workflow. The package does not route or expose actual WhatsApp/SMS provider conversations and does not change their restricted staff inboxes.
+1. SLA state: breached, at risk, on track, then unavailable.
+2. Effective priority: existing business priority plus a bounded ageing boost.
+3. Oldest waiting time.
+4. Stable contact identifier as a deterministic tie-breaker.
 
-## Package contents
+A contact receives one ageing point per 15 simulated minutes, capped at three points. Ageing never moves an on-track contact ahead of an SLA-breached or at-risk contact. Each queue row receives a short explanation badge.
 
-- `js/digital-specialist-handoff-v717.js` — validated handoff data contracts.
-- `build/calloria-digital-specialist-handoff-v717.mjs` — strict, source-aware Vite transform.
-- `styles/calloria-digital-specialist-handoff-v717.css` — desktop and narrow-screen presentation.
-- `tests/digital-specialist-handoff-v717.test.mjs` — regression tests.
-- Installation, source-baseline and verification notes.
+The existing `sortDigitalQueue` and `assessDigitalSla` functions are injected by the transform. There is no second SLA policy, no new queue state and no save-schema change.
 
-## Release boundaries
+## Scope
 
-No Supabase migration, environment variable, live-provider integration, organisation permission change or saved-game schema migration is included. It creates only synthetic supervisor-request and CRM-case fields within the existing local game state.
-
-This ZIP is not a complete repository replacement. Preserve the repository's existing application files, Vite configuration, build manifest, Supabase configuration and public assets.
+This package is an additive overlay, not a complete repository replacement. It does not accept contacts automatically, reassign ownership, mutate deadlines, change customer records, or connect to real digital inboxes.
