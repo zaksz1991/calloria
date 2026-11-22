@@ -1,0 +1,10 @@
+Add one import with the existing local Vite imports:
+
+import { calloriaDigitalWorkflowSuitePluginV720 } from './build/calloria-digital-workflow-suite-v720.mjs';
+
+Register once at the end of the plugins array. On the current public baseline:
+
+  calloriaTryItStudioPlugin(),
+  calloriaDigitalWorkflowSuitePluginV720()
+
+Remove individual registrations for the v7.15, v7.16, v7.17, v7.18 and v7.19 digital plugins if they were added previously. The suite executes those transforms internally in the correct order. Keep all other Vite plugins and configuration unchanged.

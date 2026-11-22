@@ -1,0 +1,430 @@
+TAP version 13
+# Subtest: strong digital reply satisfies all five coaching dimensions
+ok 1 - strong digital reply satisfies all five coaching dimensions
+  ---
+  duration_ms: 3.364724
+  type: 'test'
+  ...
+# Subtest: reply missing acknowledgement and ownership receives coaching warnings, not a hard block
+ok 2 - reply missing acknowledgement and ownership receives coaching warnings, not a hard block
+  ---
+  duration_ms: 0.420614
+  type: 'test'
+  ...
+# Subtest: explicitly warning customers not to share secrets is not misclassified as a request
+ok 3 - explicitly warning customers not to share secrets is not misclassified as a request
+  ---
+  duration_ms: 0.346252
+  type: 'test'
+  ...
+# Subtest: requesting OTP or password is blocked
+ok 4 - requesting OTP or password is blocked
+  ---
+  duration_ms: 0.227494
+  type: 'test'
+  ...
+# Subtest: public social reply requesting account or personal details is blocked
+ok 5 - public social reply requesting account or personal details is blocked
+  ---
+  duration_ms: 1.249449
+  type: 'test'
+  ...
+# Subtest: social support request explicitly routed to a verified private channel is allowed
+ok 6 - social support request explicitly routed to a verified private channel is allowed
+  ---
+  duration_ms: 0.537221
+  type: 'test'
+  ...
+# Subtest: public social reply without a private-channel route remains allowed but gets a warning
+ok 7 - public social reply without a private-channel route remains allowed but gets a warning
+  ---
+  duration_ms: 0.458873
+  type: 'test'
+  ...
+# Subtest: unverified guarantees are flagged for factual review but not automatically blocked
+ok 8 - unverified guarantees are flagged for factual review but not automatically blocked
+  ---
+  duration_ms: 0.473031
+  type: 'test'
+  ...
+# Subtest: unmasked card-number content is blocked
+ok 9 - unmasked card-number content is blocked
+  ---
+  duration_ms: 0.415921
+  type: 'test'
+  ...
+# Subtest: rendered coach only emits controlled channel data
+ok 10 - rendered coach only emits controlled channel data
+  ---
+  duration_ms: 1.444216
+  type: 'test'
+  ...
+# Subtest: invalid channel falls back to email
+ok 11 - invalid channel falls back to email
+  ---
+  duration_ms: 0.18055
+  type: 'test'
+  ...
+# Subtest: main transform injects coach import and panel once
+ok 12 - main transform injects coach import and panel once
+  ---
+  duration_ms: 0.159452
+  type: 'test'
+  ...
+# Subtest: main transform is idempotent
+ok 13 - main transform is idempotent
+  ---
+  duration_ms: 0.066787
+  type: 'test'
+  ...
+# Subtest: main transform refuses partial injection when anchors drift
+ok 14 - main transform refuses partial injection when anchors drift
+  ---
+  duration_ms: 0.058471
+  type: 'test'
+  ...
+# Subtest: capture-phase submit guard stops an unsafe credential request before native submit handling
+ok 15 - capture-phase submit guard stops an unsafe credential request before native submit handling
+  ---
+  duration_ms: 0.625377
+  type: 'test'
+  ...
+# Subtest: capture-phase submit guard leaves non-blocking coaching gaps sendable
+ok 16 - capture-phase submit guard leaves non-blocking coaching gaps sendable
+  ---
+  duration_ms: 0.179518
+  type: 'test'
+  ...
+# Subtest: SLA breaches rank ahead of at-risk and on-track work
+ok 17 - SLA breaches rank ahead of at-risk and on-track work
+  ---
+  duration_ms: 2.104707
+  type: 'test'
+  ...
+# Subtest: ageing boost is bounded and reduces starvation within the same SLA band
+ok 18 - ageing boost is bounded and reduces starvation within the same SLA band
+  ---
+  duration_ms: 0.247214
+  type: 'test'
+  ...
+# Subtest: SLA urgency still outranks an ageing boost
+ok 19 - SLA urgency still outranks an ageing boost
+  ---
+  duration_ms: 0.160651
+  type: 'test'
+  ...
+# Subtest: queue sorter respects the selected channel filter
+ok 20 - queue sorter respects the selected channel filter
+  ---
+  duration_ms: 0.151898
+  type: 'test'
+  ...
+# Subtest: sorter never mutates original queue or contact objects
+ok 21 - sorter never mutates original queue or contact objects
+  ---
+  duration_ms: 0.272814
+  type: 'test'
+  ...
+# Subtest: snapshot counts waiting, SLA risk and aged work by channel
+ok 22 - snapshot counts waiting, SLA risk and aged work by channel
+  ---
+  duration_ms: 0.389233
+  type: 'test'
+  ...
+# Subtest: same urgency uses stable oldest-first ordering after score ties
+ok 23 - same urgency uses stable oldest-first ordering after score ties
+  ---
+  duration_ms: 0.17134
+  type: 'test'
+  ...
+# Subtest: explanation is safe for missing records and contains triage rationale
+ok 24 - explanation is safe for missing records and contains triage rationale
+  ---
+  duration_ms: 0.271607
+  type: 'test'
+  ...
+# Subtest: only supported queued channel contacts are triage candidates
+ok 25 - only supported queued channel contacts are triage candidates
+  ---
+  duration_ms: 0.350065
+  type: 'test'
+  ...
+# Subtest: Vite transform installs SLA-aware ordering and queue explanations
+ok 26 - Vite transform installs SLA-aware ordering and queue explanations
+  ---
+  duration_ms: 0.569654
+  type: 'test'
+  ...
+# Subtest: Vite transform skips already patched sources idempotently
+ok 27 - Vite transform skips already patched sources idempotently
+  ---
+  duration_ms: 1.323443
+  type: 'test'
+  ...
+# Subtest: Vite transform skips changed anchors without partial output
+ok 28 - Vite transform skips changed anchors without partial output
+  ---
+  duration_ms: 0.18374
+  type: 'test'
+  ...
+# Subtest: Vite transform ignores non-main modules
+ok 29 - Vite transform ignores non-main modules
+  ---
+  duration_ms: 0.057436
+  type: 'test'
+  ...
+# Subtest: transformed queue fixture remains valid JavaScript
+ok 30 - transformed queue fixture remains valid JavaScript
+  ---
+  duration_ms: 24.781202
+  type: 'test'
+  ...
+# Subtest: department whitelist is fixed and contains operational specialist teams
+ok 31 - department whitelist is fixed and contains operational specialist teams
+  ---
+  duration_ms: 0.872001
+  type: 'test'
+  ...
+# Subtest: valid specialist destination and clear reason are accepted
+ok 32 - valid specialist destination and clear reason are accepted
+  ---
+  duration_ms: 0.297854
+  type: 'test'
+  ...
+# Subtest: unknown department is rejected
+ok 33 - unknown department is rejected
+  ---
+  duration_ms: 0.255204
+  type: 'test'
+  ...
+# Subtest: short escalation reason is rejected
+ok 34 - short escalation reason is rejected
+  ---
+  duration_ms: 0.116213
+  type: 'test'
+  ...
+# Subtest: overlong escalation reason is rejected rather than silently truncated
+ok 35 - overlong escalation reason is rejected rather than silently truncated
+  ---
+  duration_ms: 0.126055
+  type: 'test'
+  ...
+# Subtest: handoff request is linked to contact and CRM case without triggering legacy case-review action
+ok 36 - handoff request is linked to contact and CRM case without triggering legacy case-review action
+  ---
+  duration_ms: 0.583849
+  type: 'test'
+  ...
+# Subtest: invalid contact or reference is rejected before a request can be created
+ok 37 - invalid contact or reference is rejected before a request can be created
+  ---
+  duration_ms: 0.850637
+  type: 'test'
+  ...
+# Subtest: an existing supervisor request is augmented without losing ownership or escalation state
+ok 38 - an existing supervisor request is augmented without losing ownership or escalation state
+  ---
+  duration_ms: 0.246291
+  type: 'test'
+  ...
+# Subtest: main transform injects form, validation, CRM linkage and supervisor destination display
+ok 39 - main transform injects form, validation, CRM linkage and supervisor destination display
+  ---
+  duration_ms: 0.485951
+  type: 'test'
+  ...
+# Subtest: main transform is idempotent
+ok 40 - main transform is idempotent
+  ---
+  duration_ms: 1.047322
+  type: 'test'
+  ...
+# Subtest: source drift refuses partial transformation
+ok 41 - source drift refuses partial transformation
+  ---
+  duration_ms: 0.238802
+  type: 'test'
+  ...
+# Subtest: Vite plugin only transforms js/main.js and reports a source rebase error
+ok 42 - Vite plugin only transforms js/main.js and reports a source rebase error
+  ---
+  duration_ms: 0.254169
+  type: 'test'
+  ...
+# Subtest: transformed fixture remains valid JavaScript syntax
+ok 43 - transformed fixture remains valid JavaScript syntax
+  ---
+  duration_ms: 28.475651
+  type: 'test'
+  ...
+# Subtest: transform imports the dedicated responsive stylesheet
+ok 44 - transform imports the dedicated responsive stylesheet
+  ---
+  duration_ms: 0.171256
+  type: 'test'
+  ...
+# Subtest: handoff transform does not perform an automatic ownership transfer
+ok 45 - handoff transform does not perform an automatic ownership transfer
+  ---
+  duration_ms: 0.153179
+  type: 'test'
+  ...
+# Subtest: stylesheet includes narrow-screen support and hidden-state handling
+ok 46 - stylesheet includes narrow-screen support and hidden-state handling
+  ---
+  duration_ms: 1.565748
+  type: 'test'
+  ...
+# Subtest: active threads awaiting a customer are counted separately from CRM pending-customer cases
+ok 47 - active threads awaiting a customer are counted separately from CRM pending-customer cases
+  ---
+  duration_ms: 1.39585
+  type: 'test'
+  ...
+# Subtest: helper handles missing or invalid inputs without throwing
+ok 48 - helper handles missing or invalid inputs without throwing
+  ---
+  duration_ms: 0.137126
+  type: 'test'
+  ...
+# Subtest: helper does not mutate the queue or its records
+ok 49 - helper does not mutate the queue or its records
+  ---
+  duration_ms: 0.165432
+  type: 'test'
+  ...
+# Subtest: engine transform replaces the ambiguous count with the two explicit counts
+ok 50 - engine transform replaces the ambiguous count with the two explicit counts
+  ---
+  duration_ms: 0.268088
+  type: 'test'
+  ...
+# Subtest: engine transform is idempotent
+ok 51 - engine transform is idempotent
+  ---
+  duration_ms: 0.106708
+  type: 'test'
+  ...
+# Subtest: engine transform refuses missing or duplicate anchors without partial edits
+ok 52 - engine transform refuses missing or duplicate anchors without partial edits
+  ---
+  duration_ms: 0.103324
+  type: 'test'
+  ...
+# Subtest: UI transform adds separate active-thread and CRM-follow-up rows
+ok 53 - UI transform adds separate active-thread and CRM-follow-up rows
+  ---
+  duration_ms: 0.143163
+  type: 'test'
+  ...
+# Subtest: UI transform is idempotent and refuses source drift
+ok 54 - UI transform is idempotent and refuses source drift
+  ---
+  duration_ms: 0.140607
+  type: 'test'
+  ...
+# Subtest: Vite plugin only transforms the two intended modules
+ok 55 - Vite plugin only transforms the two intended modules
+  ---
+  duration_ms: 0.384377
+  type: 'test'
+  ...
+# Subtest: Vite plugin warns and safely skips a module with changed anchors
+ok 56 - Vite plugin warns and safely skips a module with changed anchors
+  ---
+  duration_ms: 0.329771
+  type: 'test'
+  ...
+# Subtest: transformed digital performance UI fixture passes Node syntax validation
+ok 57 - transformed digital performance UI fixture passes Node syntax validation
+  ---
+  duration_ms: 22.137496
+  type: 'test'
+  ...
+# Subtest: transformed engine fixture passes Node syntax validation
+ok 58 - transformed engine fixture passes Node syntax validation
+  ---
+  duration_ms: 20.905341
+  type: 'test'
+  ...
+# Subtest: suite exports the fixed deterministic transform order
+ok 59 - suite exports the fixed deterministic transform order
+  ---
+  duration_ms: 1.321396
+  type: 'test'
+  ...
+# Subtest: complete digital suite transforms main.js through v7.15-v7.20 in one pass
+ok 60 - complete digital suite transforms main.js through v7.15-v7.20 in one pass
+  ---
+  duration_ms: 1.921417
+  type: 'test'
+  ...
+# Subtest: fully transformed main.js fixture passes Node syntax validation
+ok 61 - fully transformed main.js fixture passes Node syntax validation
+  ---
+  duration_ms: 22.272031
+  type: 'test'
+  ...
+# Subtest: suite separates active awaiting-customer threads from pending-customer CRM cases
+ok 62 - suite separates active awaiting-customer threads from pending-customer CRM cases
+  ---
+  duration_ms: 0.409933
+  type: 'test'
+  ...
+# Subtest: suite is idempotent after all digital transforms have been applied
+ok 63 - suite is idempotent after all digital transforms have been applied
+  ---
+  duration_ms: 0.404929
+  type: 'test'
+  ...
+# Subtest: suite leaves unrelated source files untouched
+ok 64 - suite leaves unrelated source files untouched
+  ---
+  duration_ms: 0.112596
+  type: 'test'
+  ...
+# Subtest: new specialist handoff draft qualifies as a linked referral during the same completion transaction
+ok 65 - new specialist handoff draft qualifies as a linked referral during the same completion transaction
+  ---
+  duration_ms: 0.338865
+  type: 'test'
+  ...
+# Subtest: helper rejects customer-confirmed resolution without a customer reply after an agent response
+ok 66 - helper rejects customer-confirmed resolution without a customer reply after an agent response
+  ---
+  duration_ms: 1.06089
+  type: 'test'
+  ...
+# Subtest: helper permits customer-confirmed resolution after a subsequent customer message
+ok 67 - helper permits customer-confirmed resolution after a subsequent customer message
+  ---
+  duration_ms: 0.342505
+  type: 'test'
+  ...
+# Subtest: helper blocks one-touch resolution when a customer response is still pending
+ok 68 - helper blocks one-touch resolution when a customer response is still pending
+  ---
+  duration_ms: 0.391193
+  type: 'test'
+  ...
+# Subtest: helper requires explicit evidence for pending-customer and escalation outcomes
+ok 69 - helper requires explicit evidence for pending-customer and escalation outcomes
+  ---
+  duration_ms: 0.164321
+  type: 'test'
+  ...
+# Subtest: fixture includes the expected digital source baselines
+ok 70 - fixture includes the expected digital source baselines
+  ---
+  duration_ms: 0.074378
+  type: 'test'
+  ...
+1..70
+# tests 70
+# suites 0
+# pass 70
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 441.219033
