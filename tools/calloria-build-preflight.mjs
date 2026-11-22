@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * CALLORIA build manifest preflight.
- * Uses only Node.js built-ins so it can run during npm's preinstall lifecycle.
+ * CALLORIA production build preflight.
+ * Node built-ins only: safe to run from npm's preinstall lifecycle.
+ * v7.03 additionally verifies the npm 11 install-script approval for esbuild.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,6 +15,7 @@ const mode = process.argv.includes('--install')
     ? 'build'
     : 'manifest';
 const failures = [];
+const warnings = [];
 
 function readJson(relativePath) {
   const absolutePath = path.join(root, relativePath);
@@ -40,7 +42,9 @@ if (pkg) {
     preinstall: 'node tools/calloria-build-preflight.mjs --install',
     prebuild: 'node tools/calloria-build-preflight.mjs --build',
     build: 'vite build',
-    'verify:build-manifest': 'node tools/calloria-build-preflight.mjs --manifest'
+    postbuild: 'node tools/calloria-build-artifact-audit.mjs',
+    'verify:build-manifest': 'node tools/calloria-build-preflight.mjs --manifest',
+    'verify:build-artifacts': 'node tools/calloria-build-artifact-audit.mjs'
   };
   for (const [name, expected] of Object.entries(expectedScripts)) {
     if (pkg.scripts?.[name] !== expected) {
@@ -57,6 +61,7 @@ if (pkg) {
   const requiredDependencies = [
     ['dependencies', '@supabase/supabase-js', '2.119.0'],
     ['dependencies', 'three', '0.170.0'],
+    ['devDependencies', 'esbuild', '0.25.12'],
     ['devDependencies', 'vite', '6.4.5']
   ];
   for (const [section, name, version] of requiredDependencies) {
@@ -66,17 +71,28 @@ if (pkg) {
     }
   }
 
+  // npm 11 blocks unapproved dependency lifecycle scripts. esbuild's postinstall
+  // prepares its platform binary and was explicitly reported as skipped by Vercel.
+  if (pkg.allowScripts?.['esbuild@0.25.12'] !== true) {
+    failures.push('package.json allowScripts must explicitly approve "esbuild@0.25.12": true.');
+  }
+  if (pkg.allowScripts?.esbuild === true) {
+    warnings.push('A broad esbuild script approval is present; retain the version-pinned esbuild@0.25.12 entry.');
+  }
+
   if (pkg.engines?.node !== '22.x') {
-    failures.push('package.json engines.node must be "22.x" to keep Vercel on the validated Node 22 major.');
+    failures.push('package.json engines.node must be "22.x" to keep Vercel on Node 22.');
   }
 
   const nvmrcPath = path.join(root, '.nvmrc');
-  if (fs.existsSync(nvmrcPath)) {
+  if (!fs.existsSync(nvmrcPath)) {
+    failures.push('Missing .nvmrc (expected the repository Node 22 version pin).');
+  } else {
     const nvmrc = fs.readFileSync(nvmrcPath, 'utf8').trim();
     const engineMajor = String(pkg.engines?.node ?? '').match(/^(\d+)/)?.[1];
     const nvmMajor = nvmrc.match(/^(\d+)/)?.[1];
-    if (engineMajor && nvmMajor && engineMajor !== nvmMajor) {
-      failures.push(`.nvmrc selects Node ${nvmrc}, but package.json engines.node selects ${pkg.engines.node}.`);
+    if (!nvmMajor || nvmMajor !== engineMajor) {
+      failures.push(`.nvmrc (${nvmrc || 'empty'}) must match package.json engines.node (${pkg.engines?.node}).`);
     }
   }
 }
@@ -96,7 +112,7 @@ if (fs.existsSync(viteConfigPath)) {
     }
   }
 
-  // The current Vite config declares HTML/JS entries through resolve(process.cwd(), '...').
+  // The current Vite config declares its HTML/JS entries through process.cwd().
   const entryPattern = /resolve\(process\.cwd\(\),\s*['"]([^'"]+)['"]\)/g;
   const entries = [...viteConfig.matchAll(entryPattern)].map((match) => match[1]);
   if (entries.length === 0) {
@@ -105,29 +121,44 @@ if (fs.existsSync(viteConfigPath)) {
   for (const entry of entries) requireFile(entry, 'Vite/Rollup build entry point');
 }
 
+requireFile('tools/calloria-build-artifact-audit.mjs', 'post-build artifact audit');
+requireFile('vercel.json', 'Vercel build/output contract');
+
 if (mode === 'build') {
-  for (const dependencyPath of [
-    'node_modules/vite/package.json',
-    'node_modules/three/package.json',
-    'node_modules/@supabase/supabase-js/package.json'
-  ]) {
-    requireFile(dependencyPath, 'required installed package before production build');
+  const installedPackages = [
+    ['vite', '6.4.5'],
+    ['three', '0.170.0'],
+    ['@supabase/supabase-js', '2.119.0'],
+    ['esbuild', '0.25.12']
+  ];
+  for (const [name, expectedVersion] of installedPackages) {
+    const packagePath = `node_modules/${name}/package.json`;
+    requireFile(packagePath, 'required installed package before production build');
+    if (fs.existsSync(path.join(root, packagePath))) {
+      const installed = readJson(packagePath);
+      if (installed && installed.version !== expectedVersion) {
+        failures.push(`${name} installed version must be ${expectedVersion}; found ${installed.version ?? 'unknown'}.`);
+      }
+    }
   }
 }
 
 if (mode === 'install') {
   const runtimeMajor = Number(process.versions.node.split('.')[0]);
   if (runtimeMajor !== 22) {
-    failures.push(`Install is running on Node ${process.versions.node}; CALLORIA is pinned to Node 22.x. Select Node 22.x in the deployment settings.`);
+    failures.push(`Install is running on Node ${process.versions.node}; CALLORIA is pinned to Node 22.x.`);
+  }
+  if (String(process.env.npm_config_ignore_scripts || '').toLowerCase() === 'true') {
+    failures.push('npm_config_ignore_scripts=true prevents CALLORIA install safeguards and the approved esbuild setup from running.');
   }
 }
 
 if (failures.length) {
   console.error(`CALLORIA ${mode} preflight failed (${failures.length} issue${failures.length === 1 ? '' : 's'}):`);
   for (const failure of failures) console.error(`- ${failure}`);
-  console.error('Restore the complete CALLORIA package.json and the missing source files before retrying the deployment.');
+  console.error('Apply the complete v7.03 package manifest and restore missing repository source files before retrying.');
   process.exitCode = 1;
 } else {
-  console.log(`CALLORIA ${mode} preflight passed: package scripts, runtime pin, direct dependencies, Vite plugin imports and ${mode === 'build' ? 'installed build dependencies' : 'build entry points'} are consistent.`);
+  console.log(`CALLORIA ${mode} preflight passed: manifest, Node 22 pin, Vite plugin imports, Rollup entries${mode === 'build' ? ', and installed package versions' : ''}, and npm esbuild script approval are consistent.`);
+  for (const warning of warnings) console.warn(`CALLORIA ${mode} preflight warning: ${warning}`);
 }
-
