@@ -1,0 +1,30 @@
+CALLORIA v8.0.1 — VERCEL IMPORT-AUDIT REPAIR TEST RESULTS
+
+Regression suite:
+- Command executed in the preparation workspace: node --test tests/*.test.mjs
+- Tests: 128
+- Passed: 128
+- Failed: 0
+- Skipped: 0
+
+v8 import-audit checks:
+- Scanner accepts actual static relative imports.
+- Scanner accepts side-effect imports.
+- Scanner accepts `export ... from` re-exports.
+- Scanner ignores import-like text in string constants.
+- Scanner ignores import-like text in template literals.
+- Scanner ignores comments.
+- Scanner ignores dynamic imports.
+- The V8 source integration audit passes a fixture containing a transform-injected import string whose target file is in `js/`, not `build/`.
+- Existing missing-entry and prebuild-script-drift negative checks still fail as expected.
+
+JavaScript syntax:
+- Files checked under build/, js/, styles/, tests/ and tools/: 42
+- Passed: 42
+- Failed: 0
+
+Not verified:
+- Full repository npm test: not run; this release workspace is an overlay, not the complete repository.
+- Complete Vite production build: not run in this workspace.
+- Vercel deployment after the repair: awaiting a new deployment build.
+- Browser gameplay, phone touch controls, GLB network loading and remote Supabase state: not re-tested by this audit-only repair.

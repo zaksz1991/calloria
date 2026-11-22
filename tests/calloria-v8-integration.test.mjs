@@ -10,7 +10,7 @@ import {
   CALLORIA_V8_REQUIRED_HTML_ENTRIES,
   CALLORIA_V8_REQUIRED_ALL_ENTRIES
 } from '../build/calloria-production-integration-gate-v8.mjs';
-import { auditCalloriaV8Integration } from '../tools/calloria-v8-integration-audit.mjs';
+import { auditCalloriaV8Integration, collectRelativeImports } from '../tools/calloria-v8-integration-audit.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(here, '..');
@@ -114,6 +114,20 @@ function makeAuditFixture() {
   return root;
 }
 
+
+test('source import scanner ignores transform-anchor strings, templates, comments and dynamic imports', () => {
+  const source = [
+    "import { realModule } from './real-module.js';",
+    "import './side-effect.js';",
+    "export { shared } from '../shared.js';",
+    "const injectedAnchor = \"import { injected } from './injected-module.js';\";",
+    "const generatedSource = `import { generated } from './generated-module.js';`;",
+    "// import { commented } from './commented-module.js';",
+    "function later() { return import('./dynamic-module.js'); }"
+  ].join('\n');
+  assert.deepEqual(collectRelativeImports(source), ['./real-module.js', './side-effect.js', '../shared.js']);
+});
+
 test('v8 suite centralises ten plugins and records deterministic order', () => {
   const source = fs.readFileSync(path.join(projectRoot, 'build/calloria-workforce-development-suite-v8.mjs'), 'utf8');
   assert.equal(CALLORIA_V8_REQUIRED_WORKFORCE_PLUGIN_NAMES.length, 10);
@@ -179,9 +193,18 @@ test('v8 gate rejects production bundles that omit a configured page or widget',
   } finally { fs.rmSync(fixture.root, { recursive: true, force: true }); }
 });
 
-test('v8 source integration audit passes a complete isolated fixture', () => {
+test('v8 source integration audit ignores transform import anchors and passes a complete isolated fixture', () => {
   const fixtureRoot = makeAuditFixture();
   try {
+    // This import is intentionally inserted into /js/main.js by the Vite plugin.
+    // It must not be resolved relative to /build/calloria-digital-followup-supervisor-v723.mjs.
+    const pluginFile = path.join(fixtureRoot, 'build/calloria-digital-followup-supervisor-v723.mjs');
+    fs.writeFileSync(pluginFile, [
+      `const importAnchor = "import { engine } from './digital-response-cycle-engine-v721.js';";`,
+      "export function calloriaDigitalFollowUpSupervisorPluginV723() { return { name: 'calloria-digital-followup-supervisor-v7-23' }; }"
+    ].join('\n'));
+    fs.mkdirSync(path.join(fixtureRoot, 'js'), { recursive: true });
+    fs.writeFileSync(path.join(fixtureRoot, 'js/digital-response-cycle-engine-v721.js'), 'export const engine = true;\n');
     const report = auditCalloriaV8Integration({ root: fixtureRoot });
     assert.equal(report.ok, true, report.failures.join('\n'));
     assert.equal(report.workforcePlugins, 10);

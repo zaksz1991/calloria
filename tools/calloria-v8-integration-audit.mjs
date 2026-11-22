@@ -62,10 +62,116 @@ function extractEntries(viteConfig) {
   const pattern = /([A-Za-z_$][\w$]*)\s*:\s*resolve\(process\.cwd\(\),\s*['"]([^'"]+)['"]\)/g;
   return [...viteConfig.matchAll(pattern)].map((match) => ({ name: match[1], file: match[2] }));
 }
-function collectRelativeImports(source) {
+/**
+ * Read actual module-level static import/export declarations only.
+ *
+ * Build plugins in this project intentionally keep future import statements in
+ * string constants (for example `const IMPORTS = "import ... from './x.js'"`)
+ * and inject those statements into another source file during Vite transforms.
+ * Their paths are relative to that transformed file, not to the build-plugin
+ * module. A raw text regex incorrectly treats those strings as imports relative
+ * to `build/` and produces false missing-file failures before Vite can run.
+ *
+ * This small lexer skips comments, quoted strings and template literals, then
+ * follows only real top-level static `import` declarations and `export ... from`
+ * re-exports. Vite/Rollup remains responsible for resolving imports introduced
+ * by transforms against the transformed module's actual path.
+ */
+export function collectRelativeImports(source) {
+  const tokens = [];
+  const text = String(source ?? '');
+  let index = 0;
+  while (index < text.length) {
+    const char = text[index];
+    const next = text[index + 1];
+    if (/\s/.test(char)) { index += 1; continue; }
+    if (char === '/' && next === '/') {
+      index += 2;
+      while (index < text.length && text[index] !== '\n') index += 1;
+      continue;
+    }
+    if (char === '/' && next === '*') {
+      index += 2;
+      while (index < text.length && !(text[index] === '*' && text[index + 1] === '/')) index += 1;
+      index = Math.min(text.length, index + 2);
+      continue;
+    }
+    if (char === "'" || char === '"') {
+      const quote = char;
+      const start = index++;
+      let value = '';
+      while (index < text.length) {
+        const current = text[index++];
+        if (current === '\\' && index < text.length) {
+          value += text[index++];
+          continue;
+        }
+        if (current === quote) break;
+        value += current;
+      }
+      tokens.push({ type: 'string', value, start, end: index });
+      continue;
+    }
+    if (char === '`') {
+      // Template literals are generated-code containers in the build plugins.
+      // Skip the complete template; import declarations in its text are not
+      // module dependencies of the file containing the template.
+      index += 1;
+      while (index < text.length) {
+        const current = text[index++];
+        if (current === '\\' && index < text.length) { index += 1; continue; }
+        if (current === '`') break;
+      }
+      continue;
+    }
+    if (/[A-Za-z_$]/.test(char)) {
+      const start = index++;
+      while (index < text.length && /[A-Za-z0-9_$]/.test(text[index])) index += 1;
+      tokens.push({ type: 'identifier', value: text.slice(start, index), start, end: index });
+      continue;
+    }
+    tokens.push({ type: 'punctuation', value: char, start: index, end: index + 1 });
+    index += 1;
+  }
+
   const values = [];
-  const pattern = /\bfrom\s*['"](\.{1,2}\/[^'"]+)['"]|\bimport\s*\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*\)/g;
-  for (const match of source.matchAll(pattern)) values.push(match[1] || match[2]);
+  let braces = 0;
+  let brackets = 0;
+  let parentheses = 0;
+  for (let cursor = 0; cursor < tokens.length; cursor += 1) {
+    const token = tokens[cursor];
+    if (braces === 0 && brackets === 0 && parentheses === 0
+      && token.type === 'identifier' && (token.value === 'import' || token.value === 'export')) {
+      const isImport = token.value === 'import';
+      const nextToken = tokens[cursor + 1];
+      if (isImport && (nextToken?.value === '(' || nextToken?.value === '.')) continue;
+      if (!isImport && nextToken?.value !== '*' && nextToken?.value !== '{') continue;
+
+      let statementEnd = cursor + 1;
+      while (statementEnd < tokens.length && tokens[statementEnd].value !== ';') statementEnd += 1;
+      let specifier = null;
+      if (isImport && nextToken?.type === 'string') {
+        specifier = nextToken.value; // side-effect import
+      } else {
+        for (let scan = cursor + 1; scan + 1 < statementEnd; scan += 1) {
+          if (tokens[scan].type === 'identifier' && tokens[scan].value === 'from'
+            && tokens[scan + 1].type === 'string') {
+            specifier = tokens[scan + 1].value;
+            break;
+          }
+        }
+      }
+      if (specifier && (specifier.startsWith('./') || specifier.startsWith('../'))) values.push(specifier);
+      cursor = statementEnd;
+      continue;
+    }
+    if (token.value === '{') braces += 1;
+    else if (token.value === '}') braces = Math.max(0, braces - 1);
+    else if (token.value === '[') brackets += 1;
+    else if (token.value === ']') brackets = Math.max(0, brackets - 1);
+    else if (token.value === '(') parentheses += 1;
+    else if (token.value === ')') parentheses = Math.max(0, parentheses - 1);
+  }
   return values;
 }
 function auditLocalImportGraph(root, entryFiles, failures) {
