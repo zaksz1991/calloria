@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: accepts a complete manifest, Vite imports and all build entries
+ok 1 - accepts a complete manifest, Vite imports and all build entries
+  ---
+  duration_ms: 34.095802
+  type: 'test'
+  ...
+# Subtest: rejects a manifest that has lost the Vite build script
+ok 2 - rejects a manifest that has lost the Vite build script
+  ---
+  duration_ms: 32.560244
+  type: 'test'
+  ...
+# Subtest: rejects missing Three.js or Supabase dependency declarations
+ok 3 - rejects missing Three.js or Supabase dependency declarations
+  ---
+  duration_ms: 52.382807
+  type: 'test'
+  ...
+# Subtest: rejects a missing local Vite plugin import
+ok 4 - rejects a missing local Vite plugin import
+  ---
+  duration_ms: 37.689894
+  type: 'test'
+  ...
+# Subtest: rejects a missing multi-page build entry
+ok 5 - rejects a missing multi-page build entry
+  ---
+  duration_ms: 34.59848
+  type: 'test'
+  ...
+# Subtest: build-mode additionally requires the installed production dependencies
+ok 6 - build-mode additionally requires the installed production dependencies
+  ---
+  duration_ms: 35.798872
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 278.289356
