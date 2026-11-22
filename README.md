@@ -1,7 +1,5 @@
-# CALLORIA v7.07 — 3D Runtime Diagnostics
+# CALLORIA v7.08 — Mobile Runtime Repair
 
-A focused additive source overlay that makes the active 3D workplace measurable from the existing GLB asset status panel.
+This additive overlay restores the `calloria-mobile-runtime-v6-80.css` stylesheet already linked from the current public `index.html`. It hardens assessment layouts, mobile form controls, overflow containment, modal sizing, data tables, and the floating Shift Command Centre launcher.
 
-It reports actual scene objects and GLB placement visibility rather than treating a successful download as proof that a model is on-screen. It does not alter world gameplay or model loading.
-
-See `INSTALL-GITHUB-v7.07.md` for the GitHub Desktop installation steps.
+It does not modify gameplay JavaScript, save data, Supabase, 3D models, Vite plugin order, or application state.

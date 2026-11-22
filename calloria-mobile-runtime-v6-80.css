@@ -1,0 +1,372 @@
+/*
+ * CALLORIA v7.08 — mobile runtime and operations-shell repair.
+ * This restores the stylesheet already referenced by index.html. It is loaded
+ * after performance-mobile.css and before the later feature-specific styles.
+ * Deliberately CSS-only: no gameplay state, save data, or navigation is changed.
+ */
+:root {
+  --calloria-mobile-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --calloria-mobile-nav-height: 62px;
+  --calloria-mobile-nav-clearance: calc(var(--calloria-mobile-nav-height) + 24px + var(--calloria-mobile-safe-bottom));
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(70px + env(safe-area-inset-top, 0px));
+}
+
+html,
+body {
+  max-width: 100%;
+  min-width: 320px;
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+.app-shell,
+.main-area,
+.content-wrap,
+.view-root,
+#viewRoot,
+.panel,
+.grid,
+.call-layout,
+.wrapup-layout,
+.assessment-layout {
+  min-width: 0;
+  max-width: 100%;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+input,
+select,
+textarea,
+button {
+  max-width: 100%;
+  font: inherit;
+}
+
+button,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  outline: 3px solid #64ddc9;
+  outline-offset: 2px;
+}
+
+/* Keep wide operational data inside its own scroll region, never the page. */
+.table-wrap,
+.promise-control-table,
+.calloria-command-tasklist {
+  min-width: 0;
+  max-width: 100%;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 760px) {
+  html,
+  body {
+    width: 100%;
+    min-width: 320px;
+    overflow-x: hidden;
+    overflow-x: clip;
+  }
+
+  .app-shell,
+  .main-area,
+  .content-wrap,
+  .view-root,
+  #viewRoot {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .content-wrap {
+    scroll-margin-top: calc(66px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(var(--calloria-mobile-nav-clearance) + 16px) !important;
+  }
+
+  .view-root,
+  #viewRoot {
+    overflow-wrap: anywhere;
+  }
+
+  .page-heading,
+  .panel-head,
+  .assessment-card .panel-head,
+  .assessment-head-actions,
+  .page-actions {
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .page-heading > *,
+  .panel-head > *,
+  .assessment-head-actions > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .grid,
+  .grid.two,
+  .grid.three,
+  .call-layout,
+  .wrapup-layout,
+  .assessment-layout,
+  .kb-grid {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .table-wrap,
+  .promise-control-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(106, 176, 171, .65) rgba(255, 255, 255, .06);
+  }
+
+  .table-wrap > table,
+  .promise-control-table table {
+    width: max-content;
+    min-width: 520px;
+    max-width: none;
+  }
+
+  .form-field,
+  .form-grid,
+  .form-stack,
+  form {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .form-field input:not([type="checkbox"]),
+  .form-field select,
+  .form-field textarea,
+  input:not([type="checkbox"]),
+  select,
+  textarea {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+    font-size: 16px;
+  }
+
+  textarea {
+    min-height: 96px;
+    resize: vertical;
+  }
+
+  .btn,
+  .answer-option,
+  .station-action,
+  .station-close,
+  .calloria-command-close,
+  .calloria-shift-review-close {
+    min-height: 44px;
+  }
+
+  .answer-option {
+    width: 100%;
+    white-space: normal;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+
+  .assessment-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: start;
+  }
+
+  .assessment-card,
+  .assessment-progress-panel {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .assessment-footer {
+    min-width: 0;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .assessment-footer .btn {
+    width: 100%;
+    min-height: 50px;
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  .modal-backdrop {
+    box-sizing: border-box;
+    align-items: start;
+    padding: max(10px, env(safe-area-inset-top, 0px)) 10px max(10px, env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 520px;
+    max-height: calc(100vh - 20px);
+    max-height: calc(100dvh - 20px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    overflow: auto;
+    box-sizing: border-box;
+  }
+
+  /* The existing bottom navigation occupies the lower 86px of the phone. */
+  body:not(.calloria-game-launch):not(.calloria-game-playing) .calloria-command-launcher {
+    right: 12px !important;
+    bottom: calc(var(--calloria-mobile-nav-clearance) + 8px) !important;
+    z-index: 65 !important;
+    min-height: 48px;
+    max-width: calc(100vw - 24px);
+  }
+
+  body:not(.calloria-game-launch):not(.calloria-game-playing) .toast-host {
+    bottom: calc(var(--calloria-mobile-nav-clearance) + 8px) !important;
+  }
+
+  .calloria-command-backdrop {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .calloria-command-backdrop .calloria-command-panel {
+    width: 100%;
+    max-width: none;
+    min-height: 0;
+    height: 100vh;
+    height: 100dvh;
+    box-sizing: border-box;
+    padding-top: max(12px, env(safe-area-inset-top, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+  }
+
+  .calloria-command-panel .calloria-command-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .calloria-command-header {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .calloria-command-header h2,
+  .calloria-command-header p,
+  .calloria-command-task > strong {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 420px) {
+  .calloria-command-panel .calloria-command-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .calloria-command-launcher {
+    gap: 7px;
+    padding: 7px 9px;
+  }
+
+  .calloria-command-launcher-copy small {
+    display: none;
+  }
+
+  .calloria-command-launcher-icon {
+    width: 31px;
+    height: 31px;
+    font-size: 20px;
+  }
+
+  .calloria-command-launcher-copy strong {
+    font-size: 9px;
+  }
+
+  .ops-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .queue-contact-row {
+    grid-template-columns: 7px minmax(0, 1fr) auto;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 360px) {
+  .content-wrap {
+    padding-left: 7px;
+    padding-right: 7px;
+  }
+
+  .view-root {
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+
+  .panel {
+    padding: 10px;
+  }
+
+  .ops-summary-grid,
+  .calloria-command-panel .calloria-command-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .calloria-command-launcher-copy {
+    display: none;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+  body:not(.calloria-game-launch):not(.calloria-game-playing) .sidebar {
+    bottom: max(5px, env(safe-area-inset-bottom, 0px));
+  }
+
+  body:not(.calloria-game-launch):not(.calloria-game-playing) .content-wrap {
+    padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .modal-backdrop {
+    align-items: start;
+  }
+
+  .modal {
+    max-height: calc(100dvh - 12px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

@@ -1,0 +1,1 @@
+This small HTML fixture records the current public `index.html` head stylesheet references for isolated test execution. It is not an application page and must not replace the repository's real `index.html`.
