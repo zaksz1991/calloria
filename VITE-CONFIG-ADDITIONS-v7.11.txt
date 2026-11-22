@@ -1,0 +1,11 @@
+CALLORIA v7.11 Vite registration
+
+1. Add this import alongside the other build plugin imports:
+
+import { calloriaAfterContactEvidenceGatePluginV711 } from './build/calloria-after-contact-evidence-gate-v711.mjs';
+
+2. Add this registration as the final plugin entry in the existing plugins array:
+
+calloriaAfterContactEvidenceGatePluginV711()
+
+Keep the existing plugin registrations and their order. The v7.11 transformer uses enforce: 'post' so it sees the final main.js source produced by the existing transforms.

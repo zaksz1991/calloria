@@ -1,24 +1,100 @@
-CALLORIA v6.58 cumulative verification
-
-Command executed in the extracted cumulative integration package:
-  node --test tests/*.test.mjs
-
-Result:
-  tests: 173
-  passed: 173
-  failed: 0
-  skipped: 0
-
-Additional syntax checks:
-  node --check build/calloria-try-it-studio-v6-58.mjs
-  node --check vite.config.js
-
-Sequential HTML integration fixture:
-  v6.55 public experience hub
-  -> v6.56 RuffNeck discovery guide
-  -> v6.57.1 seamless product handoff
-  -> v6.58 Try-It Studio
-
-All injected inline browser scripts parsed successfully in the sequential fixture.
-
-Not run: full application npm run build, real browser/mobile session, Supabase workflow, or Vercel production deployment.
+TAP version 13
+# Subtest: renders all five required evidence controls
+ok 1 - renders all five required evidence controls
+  ---
+  duration_ms: 0.942214
+  type: 'test'
+  ...
+# Subtest: preselects callback action and customer confirmation
+ok 2 - preselects callback action and customer confirmation
+  ---
+  duration_ms: 0.247231
+  type: 'test'
+  ...
+# Subtest: preselects no-contact evidence for an unanswered outbound attempt
+ok 3 - preselects no-contact evidence for an unanswered outbound attempt
+  ---
+  duration_ms: 0.125468
+  type: 'test'
+  ...
+# Subtest: accepts structured evidence for a resolved case
+ok 4 - accepts structured evidence for a resolved case
+  ---
+  duration_ms: 0.591137
+  type: 'test'
+  ...
+# Subtest: rejects missing evidence and focuses the first missing field
+ok 5 - rejects missing evidence and focuses the first missing field
+  ---
+  duration_ms: 0.114988
+  type: 'test'
+  ...
+# Subtest: rejects unconfirmed understanding on a completed resolution
+ok 6 - rejects unconfirmed understanding on a completed resolution
+  ---
+  duration_ms: 0.08736
+  type: 'test'
+  ...
+# Subtest: requires specialist action for escalations and review cases
+ok 7 - requires specialist action for escalations and review cases
+  ---
+  duration_ms: 0.143187
+  type: 'test'
+  ...
+# Subtest: requires callback agreement and customer confirmation
+ok 8 - requires callback agreement and customer confirmation
+  ---
+  duration_ms: 0.081575
+  type: 'test'
+  ...
+# Subtest: requires opt-out recording for an opt-out disposition
+ok 9 - requires opt-out recording for an opt-out disposition
+  ---
+  duration_ms: 0.243809
+  type: 'test'
+  ...
+# Subtest: requires no-contact evidence for no-answer / busy / voicemail
+ok 10 - requires no-contact evidence for no-answer / busy / voicemail
+  ---
+  duration_ms: 0.34566
+  type: 'test'
+  ...
+# Subtest: requires factual notes acknowledgement
+ok 11 - requires factual notes acknowledgement
+  ---
+  duration_ms: 0.90609
+  type: 'test'
+  ...
+# Subtest: persists stable labels and timestamps in the evidence object
+ok 12 - persists stable labels and timestamps in the evidence object
+  ---
+  duration_ms: 0.153779
+  type: 'test'
+  ...
+# Subtest: Vite plugin injects panel, pre-save gate and persisted evidence for both directions
+ok 13 - Vite plugin injects panel, pre-save gate and persisted evidence for both directions
+  ---
+  duration_ms: 0.349254
+  type: 'test'
+  ...
+# Subtest: Vite plugin does not patch unrelated files
+ok 14 - Vite plugin does not patch unrelated files
+  ---
+  duration_ms: 0.05819
+  type: 'test'
+  ...
+# Subtest: Vite plugin fails closed when source anchors are missing or ambiguous
+ok 15 - Vite plugin fails closed when source anchors are missing or ambiguous
+  ---
+  duration_ms: 0.446287
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 61.644284
