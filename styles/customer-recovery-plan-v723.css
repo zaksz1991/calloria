@@ -1,0 +1,45 @@
+.customer-recovery-plan-v723 {
+  margin: 14px 0;
+  border: 1px solid var(--border, rgba(120, 130, 150, .22));
+  border-left: 4px solid var(--muted, #7b8494);
+  border-radius: 12px;
+  background: var(--panel-soft, rgba(120, 130, 150, .06));
+  color: var(--text, inherit);
+  overflow: hidden;
+}
+.customer-recovery-plan-v723.urgent { border-left-color: #d64b4b; }
+.customer-recovery-plan-v723.priority { border-left-color: #d69a32; }
+.customer-recovery-plan-v723.watch { border-left-color: #4b8bc7; }
+.customer-recovery-plan-v723.standard { border-left-color: #5a9b75; }
+.customer-recovery-plan-v723 summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 13px;
+  cursor: pointer;
+  list-style: none;
+}
+.customer-recovery-plan-v723 summary::-webkit-details-marker { display: none; }
+.customer-recovery-plan-v723 summary > span:first-child { min-width: 0; display: grid; gap: 4px; }
+.customer-recovery-plan-v723 summary strong { font-size: .76rem; letter-spacing: .07em; }
+.customer-recovery-plan-v723 summary small { color: var(--muted, #7b8494); font-size: .72rem; line-height: 1.35; }
+.customer-recovery-chevron { flex: 0 0 auto; font-size: 1.2rem; transition: transform .15s ease; }
+.customer-recovery-plan-v723[open] .customer-recovery-chevron { transform: rotate(45deg); }
+.customer-recovery-plan-body { padding: 0 13px 13px; font-size: .82rem; line-height: 1.5; }
+.customer-recovery-metrics { display: flex; flex-wrap: wrap; gap: 7px; margin: 2px 0 12px; }
+.customer-recovery-metrics span { padding: 5px 8px; border-radius: 999px; background: var(--surface, rgba(120,130,150,.10)); font-size: .7rem; }
+.customer-recovery-plan-body h5 { margin: 12px 0 6px; font-size: .68rem; letter-spacing: .08em; color: var(--muted, #7b8494); }
+.customer-recovery-plan-body ul, .customer-recovery-plan-body ol { margin: 0; padding-left: 20px; }
+.customer-recovery-plan-body li { margin: 5px 0; }
+.customer-recovery-plan-body p { margin: 12px 0 0; color: var(--muted, #7b8494); font-size: .7rem; }
+@media (max-width: 640px) {
+  .customer-recovery-plan-v723 { margin: 10px 0; }
+  .customer-recovery-plan-v723 summary { align-items: flex-start; padding: 11px; }
+  .customer-recovery-plan-body { padding: 0 11px 11px; }
+  .customer-recovery-metrics { gap: 5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .customer-recovery-chevron { transition: none; }
+}

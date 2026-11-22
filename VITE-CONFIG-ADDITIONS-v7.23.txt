@@ -1,0 +1,16 @@
+CALLORIA v7.23 — Vite registration
+
+The current public vite.config.js already imports and registers:
+  calloriaDigitalExperienceSuitePluginV722()
+
+Keep that registration. Add this import alongside the other build-plugin imports:
+
+import { calloriaCustomerRecoveryPlanPluginV723 } from './build/calloria-customer-recovery-plan-v723.mjs';
+
+Then add this plugin call immediately after calloriaDigitalExperienceSuitePluginV722() in the plugins array:
+
+calloriaDigitalExperienceSuitePluginV722(),
+calloriaCustomerRecoveryPlanPluginV723()
+
+Do not register v7.15–v7.22 sub-plugins individually. Do not register v7.23 twice.
+Do not replace the rest of vite.config.js.
