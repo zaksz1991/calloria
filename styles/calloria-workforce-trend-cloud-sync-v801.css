@@ -25,3 +25,24 @@
   .wth-cloud-sync-buttons button { width: 100%; min-height: 44px; }
   .wth-cloud-status { grid-column: 1; overflow-wrap: anywhere; }
 }
+
+/* v8.4 durable conflict review and explicit resolution */
+.wth-conflict-list { grid-column: 1 / -1; display: grid; gap: 10px; min-width: 0; }
+.wth-conflict-empty, .wth-conflict-loading { margin: 0; color: var(--muted, #94a3b8); font-size: .84rem; }
+.wth-conflict-card { min-width: 0; padding: 12px; border: 1px solid var(--line, rgba(148, 163, 184, .22)); border-radius: 12px; background: var(--surface, rgba(2, 6, 23, .2)); }
+.wth-conflict-title { margin: 0 0 4px; font-size: .9rem; }
+.wth-conflict-state, .wth-conflict-help { margin: 4px 0 10px; color: var(--muted, #94a3b8); font-size: .8rem; line-height: 1.45; }
+.wth-conflict-metrics { display: grid; gap: 6px; }
+.wth-conflict-metric { display: grid; grid-template-columns: minmax(140px, 1.1fr) repeat(3, minmax(100px, 1fr)); gap: 8px; padding: 7px 0; border-top: 1px solid var(--line, rgba(148, 163, 184, .14)); font-size: .78rem; }
+.wth-conflict-metric-name { font-weight: 700; }
+.wth-conflict-local, .wth-conflict-cloud, .wth-conflict-delta { overflow-wrap: anywhere; color: var(--muted, #94a3b8); }
+.wth-conflict-delta { font-variant-numeric: tabular-nums; }
+.wth-conflict-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.wth-conflict-actions button { min-height: 42px; }
+.wth-conflict-card button:disabled { opacity: .55; cursor: wait; }
+@media (max-width: 760px) {
+  .wth-conflict-metric { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+  .wth-conflict-metric-name { margin-bottom: 2px; }
+  .wth-conflict-actions { display: grid; grid-template-columns: 1fr; }
+  .wth-conflict-actions button { width: 100%; }
+}

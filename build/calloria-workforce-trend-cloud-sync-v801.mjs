@@ -1,8 +1,9 @@
-import { WORKFORCE_TREND_CLOUD_SYNC_VERSION_V802 } from '../js/workforce-trend-cloud-sync-engine-v802.js';
+import { WORKFORCE_TREND_CLOUD_CONFLICT_VERSION_V803 } from '../js/workforce-trend-cloud-sync-engine-v803.js';
 
-/** CALLORIA v8.3 — organisation-scoped workforce history with non-destructive conflict reporting. */
+/** CALLORIA v8.4 — durable conflict archive with explicit canonical-copy decisions. */
 const V731_MARKER = '/* CALLORIA_V731_WORKFORCE_TREND_HISTORY */';
 const V801_MARKER = '/* CALLORIA_V801_WORKFORCE_TREND_CLOUD_SYNC */';
+const V803_MARKER = '/* CALLORIA_V803_WORKFORCE_TREND_CONFLICT_REVIEW */';
 const V731_ENGINE_IMPORT = "import { createWorkforceTrendSnapshot, normaliseWorkforceTrendHistory, appendWorkforceTrendSnapshot, compareWorkforceTrendSnapshots, workforceTrendHistoryCsv, WORKFORCE_TREND_HISTORY_LIMIT } from './workforce-trend-history-engine-v731.js';";
 const STATUS_ANCHOR = '    <p class="wth-status" role="status" aria-live="polite">${escapeHTML(statusText)}</p>';
 const MAIN_SUFFIX = '/js/main.js';
@@ -16,16 +17,17 @@ function count(source, value) {
 function cloudControlsMarkup() {
   return [
     '    <section class="wth-cloud-sync" aria-label="Organisation trend history">',
-    '      <div><strong>Organisation history</strong><small>Synchronise aggregate snapshots across authorised organisation members and devices. Conflicting capture times are reported and never overwritten.</small></div>',
-    '      <div class="wth-cloud-sync-buttons"><button type="button" class="btn secondary" data-workforce-trend-cloud-sync>Save local history to organisation</button><button type="button" class="btn secondary" data-workforce-trend-cloud-load>Load and compare organisation history</button></div>',
+    '      <div><strong>Organisation history</strong><small>Synchronise aggregate snapshots across authorised organisation members and devices. Conflicts are archived with both versions before an explicit resolution.</small></div>',
+    '      <div class="wth-cloud-sync-buttons"><button type="button" class="btn secondary" data-workforce-trend-cloud-sync>Save local history to organisation</button><button type="button" class="btn secondary" data-workforce-trend-cloud-load>Load and compare organisation history</button><button type="button" class="btn secondary" data-workforce-cloud-conflict-review>Review archived conflicts</button></div>',
     '      <p class="wth-cloud-status" data-state="${escapeHTML(window.__CALLORIA_V801_CLOUD_STATE__ || "info")}" role="status" aria-live="polite">${escapeHTML(window.__CALLORIA_V801_CLOUD_STATUS__ || "Cloud history requires a signed-in organisation workspace with report access.")}</p>',
+    '      <div class="wth-conflict-list" data-workforce-cloud-conflict-list aria-live="polite"></div>',
     '    </section>'
   ].join('\n');
 }
 function handlerSource() {
   return [
     '',
-    V801_MARKER,
+    V803_MARKER,
     'function calloriaWorkforceCloudContextV801() {',
     '  const context = typeof getCloudPlatformState === "function" ? getCloudPlatformState() : null;',
     '  if (!context?.ready || !context?.activeOrganization?.id) throw new Error("Sign in and enter a CALLORIA organisation workspace before synchronising history.");',
@@ -36,6 +38,67 @@ function handlerSource() {
     '  window.__CALLORIA_V801_CLOUD_STATUS__ = String(message || "").replace(/[\\u0000-\\u001f\\u007f]/g, " ").slice(0, 420);',
     '  window.__CALLORIA_V801_CLOUD_STATE__ = ["info", "success", "warning", "error"].includes(state) ? state : "info";',
     '  if (typeof renderSupervisor === "function") renderSupervisor();',
+    '  if (Array.isArray(window.__CALLORIA_V803_CONFLICT_ROWS__)) renderWorkforceTrendConflictArchiveV803(window.__CALLORIA_V803_CONFLICT_ROWS__);',
+    '}',
+    'function calloriaAppendTextElementV803(parent, tag, className, text) {',
+    '  const node = document.createElement(tag);',
+    '  if (className) node.className = className;',
+    '  node.textContent = String(text ?? "");',
+    '  parent.append(node);',
+    '  return node;',
+    '}',
+    'function renderWorkforceTrendConflictArchiveV803(rawRows) {',
+    '  const host = document.querySelector("[data-workforce-cloud-conflict-list]");',
+    '  if (!host) return;',
+    '  host.replaceChildren();',
+    '  const rows = (Array.isArray(rawRows) ? rawRows : []).map(normaliseWorkforceTrendConflictArchiveRowV803).filter(Boolean);',
+    '  window.__CALLORIA_V803_CONFLICT_ROWS__ = rows;',
+    '  if (!rows.length) { calloriaAppendTextElementV803(host, "p", "wth-conflict-empty", "No archived workforce history conflicts were found for this organisation."); return; }',
+    '  for (const row of rows) {',
+    '    const card = calloriaAppendTextElementV803(host, "article", "wth-conflict-card", "");',
+    '    card.dataset.conflictId = row.id;',
+    '    calloriaAppendTextElementV803(card, "h4", "wth-conflict-title", `Capture conflict · ${new Date(row.capturedAt).toLocaleString()}`);',
+    '    calloriaAppendTextElementV803(card, "p", "wth-conflict-state", row.status === "resolved" ? `${workforceTrendConflictResolutionLabelV803(row.resolution)} · ${new Date(row.resolvedAt).toLocaleString()}` : `Open · detected ${new Date(row.detectedAt).toLocaleString()}`);',
+    '    const metrics = compareWorkforceTrendConflictSnapshotsV803(row.localSnapshot, row.cloudSnapshot);',
+    '    const table = document.createElement("div"); table.className = "wth-conflict-metrics"; table.setAttribute("role", "table"); table.setAttribute("aria-label", "Local and organisation metric comparison");',
+    '    for (const metric of metrics) {',
+    '      const line = calloriaAppendTextElementV803(table, "div", "wth-conflict-metric", ""); line.setAttribute("role", "row");',
+    '      calloriaAppendTextElementV803(line, "span", "wth-conflict-metric-name", metric.label);',
+    '      const format = value => value === null || value === undefined ? "Not available" : `${value}${metric.kind === "percent" ? "%" : ""}`;',
+    '      calloriaAppendTextElementV803(line, "span", "wth-conflict-local", `Local: ${format(metric.localValue)}`);',
+    '      calloriaAppendTextElementV803(line, "span", "wth-conflict-cloud", `Organisation: ${format(metric.cloudValue)}`);',
+    '      calloriaAppendTextElementV803(line, "span", "wth-conflict-delta", metric.delta === null ? "Difference: unavailable" : `Local − organisation: ${metric.delta > 0 ? "+" : ""}${metric.delta}${metric.kind === "percent" ? " pp" : ""}`);',
+    '    }',
+    '    card.append(table);',
+    '    if (row.status === "open") {',
+    '      calloriaAppendTextElementV803(card, "p", "wth-conflict-help", "Both original versions remain archived. Choose which version should become the organisation-wide canonical snapshot. This decision cannot be undone from this panel.");',
+    '      const actions = calloriaAppendTextElementV803(card, "div", "wth-conflict-actions", "");',
+    '      const keepLocal = calloriaAppendTextElementV803(actions, "button", "btn secondary", "Use local version"); keepLocal.type = "button"; keepLocal.dataset.workforceCloudConflictResolve = "true"; keepLocal.dataset.conflictId = row.id; keepLocal.dataset.resolution = "keep_local";',
+    '      const keepCloud = calloriaAppendTextElementV803(actions, "button", "btn secondary", "Keep organisation version"); keepCloud.type = "button"; keepCloud.dataset.workforceCloudConflictResolve = "true"; keepCloud.dataset.conflictId = row.id; keepCloud.dataset.resolution = "keep_cloud";',
+    '    } else {',
+    '      calloriaAppendTextElementV803(card, "p", "wth-conflict-help", "Both original variants remain in the conflict archive for audit and comparison.");',
+    '    }',
+    '  }',
+    '}',
+    'async function loadWorkforceTrendConflictArchiveV803() {',
+    '  const host = document.querySelector("[data-workforce-cloud-conflict-list]");',
+    '  if (host) calloriaAppendTextElementV803(host, "p", "wth-conflict-loading", "Loading archived conflicts…");',
+    '  const { client, organizationId } = await calloriaWorkforceCloudContextV801();',
+    '  const { data, error } = await client.from("calloria_workforce_trend_conflicts").select("id,captured_at,local_snapshot,cloud_snapshot,status,resolution,created_at,resolved_at").eq("organization_id", organizationId).order("created_at", { ascending: false }).limit(50);',
+    '  if (error) throw error;',
+    '  renderWorkforceTrendConflictArchiveV803(data || []);',
+    '  return (data || []).length;',
+    '}',
+    'async function archiveWorkforceTrendConflictsV803(client, organizationId, localSnapshots, capturedAtValues) {',
+    '  const times = (Array.isArray(capturedAtValues) ? capturedAtValues : []).slice(0, 90);',
+    '  if (!times.length) return { recorded: 0, unchanged: 0 };',
+    '  const { data: cloudRows, error: readError } = await client.from("calloria_workforce_trend_snapshots").select("snapshot,captured_at").eq("organization_id", organizationId).in("captured_at", times);',
+    '  if (readError) throw readError;',
+    '  const conflicts = buildWorkforceTrendConflictArchivePayloadV803(localSnapshots, cloudRows || []).filter(pair => times.includes(pair.capturedAt));',
+    '  if (!conflicts.length) return { recorded: 0, unchanged: 0 };',
+    '  const { data, error } = await client.rpc("calloria_record_workforce_trend_conflicts_v803", { p_org_id: organizationId, p_conflicts: conflicts });',
+    '  if (error) throw error;',
+    '  return parseWorkforceTrendConflictArchiveResultV803(data);',
     '}',
     'if (typeof window !== "undefined" && !window.__CALLORIA_V801_CLOUD_HANDLERS__) {',
     '  document.addEventListener("click", async event => {',
@@ -51,13 +114,18 @@ function handlerSource() {
     '        const { data, error } = await client.rpc("calloria_sync_workforce_trend_snapshots_v802", { p_org_id: organizationId, p_snapshots: snapshots });',
     '        if (error) throw error;',
     '        const result = parseWorkforceTrendCloudSyncResultV802(data);',
+    '        let archiveMessage = "";',
     '        if (result.conflicts > 0) {',
-    '          setWorkforceCloudStatusV801(`${result.inserted} new and ${result.unchanged} unchanged snapshot(s) saved. ${result.conflicts} capture-time conflict(s) were not overwritten. The organisation copy remains unchanged; keep/export this browser copy before clearing local storage.`, "warning");',
+    '          try { const archived = await archiveWorkforceTrendConflictsV803(client, organizationId, snapshots, result.conflictCapturedAt); archiveMessage = ` ${archived.recorded} conflict pair(s) newly archived; ${archived.unchanged} already archived.`; }',
+    '          catch (archiveError) { archiveMessage = ` The original copies were not overwritten, but conflict archiving failed: ${String(archiveError?.message || archiveError).slice(0, 120)}. Export the local CSV and apply migration 202611220003.`; }',
+    '        }',
+    '        if (result.conflicts > 0) {',
+    '          setWorkforceCloudStatusV801(`${result.inserted} new and ${result.unchanged} unchanged snapshot(s) saved. ${result.conflicts} capture-time conflict(s) were not overwritten.${archiveMessage}`, "warning");',
     '        } else {',
     '          setWorkforceCloudStatusV801(`${result.inserted} new and ${result.unchanged} unchanged aggregate snapshot(s) are synchronised with ${organizationName}.`, "success");',
     '        }',
     '      } catch (error) {',
-    '        setWorkforceCloudStatusV801(`Cloud sync failed: ${String(error?.message || error).slice(0, 180)}. Confirm migration 202611220002 is applied.`, "error");',
+    '        setWorkforceCloudStatusV801(`Cloud sync failed: ${String(error?.message || error).slice(0, 180)}. Confirm migrations 202611220001–003 are applied.`, "error");',
     '      } finally { syncButton.disabled = false; }',
     '      return;',
     '    }',
@@ -71,17 +139,50 @@ function handlerSource() {
     '        const local = readWorkforceTrendHistoryV731();',
     '        if (!local.available) throw new Error("Browser-local storage is unavailable; cloud history cannot be merged safely.");',
     '        const comparison = inspectWorkforceTrendCloudConflictsV802(local.snapshots, data || []);',
+    '        let archiveMessage = "";',
+    '        if (comparison.conflictCount > 0) {',
+    '          try { const archived = await archiveWorkforceTrendConflictsV803(client, organizationId, local.snapshots, comparison.conflictCapturedAt); archiveMessage = ` ${archived.recorded} conflict pair(s) newly archived; ${archived.unchanged} already archived.`; }',
+    '          catch (archiveError) { archiveMessage = ` Conflict archive failed: ${String(archiveError?.message || archiveError).slice(0, 120)}. Both source copies remain unmodified; export the local CSV.`; }',
+    '        }',
     '        const merged = mergeWorkforceTrendCloudHistoryV802(local.snapshots, data || []);',
     '        if (!saveWorkforceTrendHistoryV731(merged)) throw new Error("Merged history could not be saved to this browser.");',
     '        window.__CALLORIA_V731_STORAGE_STATUS__ = `Local history merged with ${comparison.cloudCount} organisation snapshot(s).`;',
     '        if (comparison.conflictCount > 0) {',
-    '          setWorkforceCloudStatusV801(`${merged.length} snapshots are available on this device for ${organizationName}. ${comparison.conflictCount} timestamp conflict(s): the local version remains on this device and the organisation version remains in cloud history. Export the local CSV before clearing browser storage.`, "warning");',
+    '          setWorkforceCloudStatusV801(`${merged.length} snapshots are available on this device for ${organizationName}. ${comparison.conflictCount} conflict(s) detected; local values remain on this device and cloud values remain in the organisation until reviewed.${archiveMessage}`, "warning");',
     '        } else {',
     '          setWorkforceCloudStatusV801(`${merged.length} merged snapshot(s) available on this device for ${organizationName}; ${comparison.identicalCount} were identical.`, "success");',
     '        }',
     '      } catch (error) {',
     '        setWorkforceCloudStatusV801(`Cloud history could not be loaded: ${String(error?.message || error).slice(0, 180)}. Confirm migration 202611220001 is applied.`, "error");',
     '      } finally { loadButton.disabled = false; }',
+    '      return;',
+    '    }',
+    '    const reviewButton = event.target?.closest?.("[data-workforce-cloud-conflict-review]");',
+    '    if (reviewButton) {',
+    '      reviewButton.disabled = true;',
+    '      try { const count = await loadWorkforceTrendConflictArchiveV803(); setWorkforceCloudStatusV801(`${count} archived conflict record(s) loaded. Both original versions are retained.`, "success"); }',
+    '      catch (error) { setWorkforceCloudStatusV801(`Conflict archive could not be loaded: ${String(error?.message || error).slice(0, 180)}. Confirm migration 202611220003 is applied.`, "error"); }',
+    '      finally { reviewButton.disabled = false; }',
+    '      return;',
+    '    }',
+    '    const resolveButton = event.target?.closest?.("[data-workforce-cloud-conflict-resolve]");',
+    '    if (resolveButton) {',
+    '      const conflictId = resolveButton.dataset.conflictId;',
+    '      const resolution = normaliseWorkforceTrendConflictResolutionV803(resolveButton.dataset.resolution);',
+    '      if (!conflictId || !resolution || !window.confirm(resolution === "keep_local" ? "Archive both copies and make the local snapshot the organisation-wide canonical version?" : "Archive both copies and keep the existing organisation snapshot as canonical?")) return;',
+    '      const card = resolveButton.closest(".wth-conflict-card");',
+    '      card?.querySelectorAll("button").forEach(button => { button.disabled = true; });',
+    '      try {',
+    '        const { client } = await calloriaWorkforceCloudContextV801();',
+    '        const { data, error } = await client.rpc("calloria_resolve_workforce_trend_conflict_v803", { p_conflict_id: conflictId, p_resolution: resolution });',
+    '        if (error) throw error;',
+    '        if (!data || data.status !== "resolved" || data.resolution !== resolution) throw new Error("The conflict resolution was not confirmed by the server.");',
+    '        setWorkforceCloudStatusV801(resolution === "keep_local" ? "Conflict resolved. Both variants remain archived; the local variant is now canonical for the organisation." : "Conflict resolved. Both variants remain archived; the existing organisation variant remains canonical.", "success");',
+    '        await loadWorkforceTrendConflictArchiveV803();',
+    '      } catch (error) {',
+    '        setWorkforceCloudStatusV801(`Conflict resolution failed: ${String(error?.message || error).slice(0, 180)}. The archived copies were preserved.`, "error");',
+    '        if (card) card.querySelectorAll("button").forEach(button => { button.disabled = false; });',
+    '      }',
     '      return;',
     '    }',
     '  });',
@@ -94,31 +195,31 @@ function handlerSource() {
 export function calloriaWorkforceTrendCloudSyncPluginV801() {
   return {
     name: 'calloria-workforce-trend-cloud-sync-v8-1',
-    version: WORKFORCE_TREND_CLOUD_SYNC_VERSION_V802,
+    version: WORKFORCE_TREND_CLOUD_CONFLICT_VERSION_V803,
     enforce: 'post',
     transform(source, id) {
       const file = normaliseId(id);
-      if (!file.endsWith(MAIN_SUFFIX) || source.includes(V801_MARKER)) return null;
+      if (!file.endsWith(MAIN_SUFFIX) || source.includes(V801_MARKER) || source.includes(V803_MARKER)) return null;
       const missing = [];
       if (count(source, V731_MARKER) !== 1) missing.push('v7.31 workforce trend history marker');
       if (count(source, V731_ENGINE_IMPORT) !== 1) missing.push('v7.31 trend history engine import');
       if (count(source, STATUS_ANCHOR) !== 1) missing.push('v7.31 accessible status anchor');
       if (missing.length) {
-        this.warn(`CALLORIA v8.3 skipped safely: ${missing.join(', ')} did not match exactly once. No partial transform was applied.`);
+        this.warn(`CALLORIA v8.4 skipped safely: ${missing.join(', ')} did not match exactly once. No partial transform was applied.`);
         return null;
       }
       let code = source.replace(
         V731_ENGINE_IMPORT,
-        `${V731_ENGINE_IMPORT}\nimport { inspectWorkforceTrendCloudConflictsV802, mergeWorkforceTrendCloudHistoryV802, parseWorkforceTrendCloudSyncResultV802 } from './workforce-trend-cloud-sync-engine-v802.js';\nimport { prepareWorkforceTrendCloudPayloadV801 } from './workforce-trend-cloud-sync-engine-v801.js';\nimport '../styles/calloria-workforce-trend-cloud-sync-v801.css';`
+        `${V731_ENGINE_IMPORT}\nimport { inspectWorkforceTrendCloudConflictsV802, mergeWorkforceTrendCloudHistoryV802, parseWorkforceTrendCloudSyncResultV802 } from './workforce-trend-cloud-sync-engine-v802.js';\nimport { prepareWorkforceTrendCloudPayloadV801 } from './workforce-trend-cloud-sync-engine-v801.js';\nimport { buildWorkforceTrendConflictArchivePayloadV803, normaliseWorkforceTrendConflictArchiveRowV803, compareWorkforceTrendConflictSnapshotsV803, parseWorkforceTrendConflictArchiveResultV803, normaliseWorkforceTrendConflictResolutionV803, workforceTrendConflictResolutionLabelV803 } from './workforce-trend-cloud-sync-engine-v803.js';\nimport '../styles/calloria-workforce-trend-cloud-sync-v801.css';`
       );
       code = code.replace(STATUS_ANCHOR, `${STATUS_ANCHOR}\n${cloudControlsMarkup()}`);
       code = code.replace(
         'Compare current aggregate workforce indicators with a manually captured browser-local baseline.',
-        'Compare aggregate indicators with a browser-local baseline or explicitly synchronised organisation history; conflicting capture times are reported without overwriting either copy.'
+        'Compare aggregate indicators with a browser-local baseline or synchronised organisation history; conflicts are archived with both original variants and require an explicit canonical-copy decision.'
       );
       code = code.replace(
         'History is stored in this browser localStorage on this device. It is not a Supabase write, organisation-wide shared record, or cloud backup.',
-        'Local history remains in this browser until synchronised. Organisation history is stored in Supabase; differing snapshots with the same capture time are preserved as a reported conflict, not overwritten.'
+        'Local history remains available on this browser. Organisation history is stored in Supabase; conflicting variants are archived before an authorised report user can select the canonical organisation copy.'
       );
       code += handlerSource();
       return { code, map: null };

@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "CALLORIA \u2014 multi-industry contact-centre career and operations simulator.",
+  "description": "CALLORIA — multi-industry contact-centre career and operations simulator.",
   "engines": {
     "node": "22.x"
   },
@@ -20,7 +20,7 @@
     "test": "node --test tests/*.test.mjs tests/commitment-engine-v69.test.cjs",
     "verify:navigation": "node tools/calloria-navigation-integrity-audit.mjs",
     "verify:integration": "node tools/calloria-v8-integration-audit.mjs",
-    "verify:workforce-cloud-history": "node --test tests/workforce-trend-cloud-sync-v801.test.mjs tests/workforce-trend-cloud-sync-v801-ui.test.mjs tests/workforce-trend-cloud-sync-v801-contract.test.mjs tests/workforce-trend-cloud-sync-v802.test.mjs"
+    "verify:workforce-cloud-history": "node --test tests/workforce-trend-cloud-sync-v801.test.mjs tests/workforce-trend-cloud-sync-v801-ui.test.mjs tests/workforce-trend-cloud-sync-v801-contract.test.mjs tests/workforce-trend-cloud-sync-v802.test.mjs tests/workforce-trend-cloud-sync-v803.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.119.0",

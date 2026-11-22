@@ -116,8 +116,11 @@ for (const file of [
   'supabase/migrations/202611220001_calloria_workforce_trend_cloud_history.sql',
   'js/workforce-trend-cloud-sync-engine-v802.js',
   'supabase/migrations/202611220002_calloria_workforce_trend_conflict_guard.sql',
-  'tests/workforce-trend-cloud-sync-v802.test.mjs'
-]) requireFile(file, 'CALLORIA v8.3 conflict-safe workforce cloud-history requirement');
+  'tests/workforce-trend-cloud-sync-v802.test.mjs',
+  'js/workforce-trend-cloud-sync-engine-v803.js',
+  'supabase/migrations/202611220003_calloria_workforce_trend_conflict_archive.sql',
+  'tests/workforce-trend-cloud-sync-v803.test.mjs'
+]) requireFile(file, 'CALLORIA v8.4 durable workforce conflict archive requirement');
 if (mode === 'build') {
   for (const [name, expectedVersion] of [
     ['vite', '6.4.5'], ['three', '0.170.0'],

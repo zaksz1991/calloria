@@ -73,7 +73,7 @@ function makeAuditFixture() {
   ];
   for (const [file, exported, name] of moduleDefinitions) {
     const cloudStub = file === 'calloria-workforce-trend-cloud-sync-v801.mjs'
-      ? `import { WORKFORCE_TREND_CLOUD_SYNC_VERSION_V802 } from '../js/workforce-trend-cloud-sync-engine-v802.js';\nexport function ${exported}() { const rpc = 'calloria_sync_workforce_trend_snapshots_v802'; const inspect = 'inspectWorkforceTrendCloudConflictsV802'; return { name: '${name}', version: WORKFORCE_TREND_CLOUD_SYNC_VERSION_V802, rpc, inspect }; }\n`
+      ? `import { WORKFORCE_TREND_CLOUD_SYNC_VERSION_V802 } from '../js/workforce-trend-cloud-sync-engine-v802.js';\nimport { WORKFORCE_TREND_CLOUD_CONFLICT_VERSION_V803 } from '../js/workforce-trend-cloud-sync-engine-v803.js';\nexport function ${exported}() { const rpc = 'calloria_sync_workforce_trend_snapshots_v802'; const inspect = 'inspectWorkforceTrendCloudConflictsV802'; const archive = 'calloria_record_workforce_trend_conflicts_v803'; const resolve = 'calloria_resolve_workforce_trend_conflict_v803'; const ui = 'data-workforce-cloud-conflict-review data-workforce-cloud-conflict-resolve'; return { name: '${name}', version: WORKFORCE_TREND_CLOUD_CONFLICT_VERSION_V803, legacy: WORKFORCE_TREND_CLOUD_SYNC_VERSION_V802, rpc, inspect, archive, resolve, ui }; }\n`
       : `export function ${exported}() { return { name: '${name}' }; }\n`;
     fs.writeFileSync(path.join(root, 'build', file), cloudStub);
   }
@@ -92,7 +92,7 @@ function makeAuditFixture() {
     'verify:build-manifest': 'node tools/calloria-build-preflight.mjs --manifest',
     'verify:build-artifacts': 'node tools/calloria-build-artifact-audit.mjs',
     'verify:integration': 'node tools/calloria-v8-integration-audit.mjs',
-    'verify:workforce-cloud-history': 'node --test tests/workforce-trend-cloud-sync-v801.test.mjs tests/workforce-trend-cloud-sync-v801-ui.test.mjs tests/workforce-trend-cloud-sync-v801-contract.test.mjs tests/workforce-trend-cloud-sync-v802.test.mjs',
+    'verify:workforce-cloud-history': 'node --test tests/workforce-trend-cloud-sync-v801.test.mjs tests/workforce-trend-cloud-sync-v801-ui.test.mjs tests/workforce-trend-cloud-sync-v801-contract.test.mjs tests/workforce-trend-cloud-sync-v802.test.mjs tests/workforce-trend-cloud-sync-v803.test.mjs',
     check: 'node tools/calloria-build-preflight.mjs --manifest && node tools/calloria-navigation-integrity-audit.mjs && node tools/calloria-v8-integration-audit.mjs',
     dev: 'vite --host 0.0.0.0', preview: 'vite preview --host 0.0.0.0', test: 'node --test tests/*.test.mjs',
     'verify:navigation': 'node tools/calloria-navigation-integrity-audit.mjs'
@@ -114,6 +114,7 @@ function makeAuditFixture() {
   fs.mkdirSync(path.join(root, 'js'), { recursive: true });
   fs.writeFileSync(path.join(root, 'js/workforce-trend-cloud-sync-engine-v801.js'), 'export const WORKFORCE_TREND_CLOUD_SYNC_VERSION = \"8.1.0\";\n');
   fs.writeFileSync(path.join(root, 'js/workforce-trend-cloud-sync-engine-v802.js'), 'export const WORKFORCE_TREND_CLOUD_SYNC_VERSION_V802 = \"8.3.0\";\n');
+  fs.writeFileSync(path.join(root, 'js/workforce-trend-cloud-sync-engine-v803.js'), 'export const WORKFORCE_TREND_CLOUD_CONFLICT_VERSION_V803 = \"8.4.0\";\n');
   for (const relative of [
     'styles/calloria-workforce-trend-cloud-sync-v801.css',
     'supabase/migrations/202611220001_calloria_workforce_trend_cloud_history.sql',
@@ -121,7 +122,9 @@ function makeAuditFixture() {
     'tests/workforce-trend-cloud-sync-v801-ui.test.mjs',
     'tests/workforce-trend-cloud-sync-v801-contract.test.mjs',
     'supabase/migrations/202611220002_calloria_workforce_trend_conflict_guard.sql',
-    'tests/workforce-trend-cloud-sync-v802.test.mjs'
+    'tests/workforce-trend-cloud-sync-v802.test.mjs',
+    'supabase/migrations/202611220003_calloria_workforce_trend_conflict_archive.sql',
+    'tests/workforce-trend-cloud-sync-v803.test.mjs'
   ]) { const file = path.join(root, relative); fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, '/* fixture */\n'); }
   for (const [name, file] of Object.entries(expectedFiles)) {
     const absolute = path.join(root, file);
