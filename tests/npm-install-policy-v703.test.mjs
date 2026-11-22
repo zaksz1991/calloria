@@ -12,7 +12,7 @@ const node = process.execPath;
 
 function fixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calloria-npm-script-policy-'));
-  for (const dir of ['tools', 'build', 'widgets', 'node_modules/vite', 'node_modules/three', 'node_modules/@supabase/supabase-js', 'node_modules/esbuild']) fs.mkdirSync(path.join(root, dir), { recursive: true });
+  for (const dir of ['tools', 'build', '.github/workflows', 'widgets', 'node_modules/vite', 'node_modules/three', 'node_modules/@supabase/supabase-js', 'node_modules/esbuild']) fs.mkdirSync(path.join(root, dir), { recursive: true });
   const pkg = {
     private: true,
     type: 'module',
@@ -37,6 +37,9 @@ function fixture() {
   fs.writeFileSync(path.join(root, '.nvmrc'), '22.16.0\n');
   fs.writeFileSync(path.join(root, 'tools/calloria-build-preflight.mjs'), fs.readFileSync(guardSource));
   fs.writeFileSync(path.join(root, 'tools/calloria-build-artifact-audit.mjs'), 'export {};\n');
+  fs.writeFileSync(path.join(root, '.npmrc'), 'strict-allow-scripts=true\n');
+  fs.writeFileSync(path.join(root, '.github/workflows/calloria-production-build.yml'), 'name: CALLORIA production build\n');
+  fs.writeFileSync(path.join(root, 'build/calloria-third-person-player-plugin.mjs'), "const marker = '__CALLORIA_THIRD_PERSON_PLAYER_V26__';\nconst plugin = { enforce: 'post' };\nconst warn = context.warn?.('safe skip');\nexport { marker, plugin, warn };\n");
   fs.writeFileSync(path.join(root, 'build/plugin.js'), 'export default {};\n');
   fs.writeFileSync(path.join(root, 'widgets/calloria-chat.js'), 'export {};\n');
   fs.writeFileSync(path.join(root, 'index.html'), '<!doctype html>');
@@ -62,7 +65,7 @@ test('accepts the version-pinned esbuild lifecycle approval', () => {
   try {
     const result = run(root);
     assert.equal(result.status, 0, result.stderr || result.stdout);
-    assert.match(result.stdout, /npm esbuild script approval are consistent/);
+    assert.match(result.stdout, /npm esbuild approval, strict install-script policy and resilient world transform are consistent/);
   } finally { cleanup(root); }
 });
 

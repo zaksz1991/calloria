@@ -12,7 +12,7 @@ const node = process.execPath;
 
 function fixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calloria-preflight-'));
-  const dirs = ['tools', 'build', 'widgets', 'node_modules/vite', 'node_modules/three', 'node_modules/@supabase/supabase-js', 'node_modules/esbuild'];
+  const dirs = ['tools', 'build', '.github/workflows', 'widgets', 'node_modules/vite', 'node_modules/three', 'node_modules/@supabase/supabase-js', 'node_modules/esbuild'];
   for (const dir of dirs) fs.mkdirSync(path.join(root, dir), { recursive: true });
   const pkg = {
     private: true,
@@ -38,6 +38,9 @@ function fixture() {
   fs.writeFileSync(path.join(root, '.nvmrc'), '22\n');
   fs.writeFileSync(path.join(root, 'tools/calloria-build-preflight.mjs'), fs.readFileSync(guardSource));
   fs.writeFileSync(path.join(root, 'tools/calloria-build-artifact-audit.mjs'), 'export {};\n');
+  fs.writeFileSync(path.join(root, '.npmrc'), 'strict-allow-scripts=true\n');
+  fs.writeFileSync(path.join(root, '.github/workflows/calloria-production-build.yml'), 'name: CALLORIA production build\n');
+  fs.writeFileSync(path.join(root, 'build/calloria-third-person-player-plugin.mjs'), "const marker = '__CALLORIA_THIRD_PERSON_PLAYER_V26__';\nconst plugin = { enforce: 'post' };\nconst warn = context.warn?.('safe skip');\nexport { marker, plugin, warn };\n");
   fs.writeFileSync(path.join(root, 'vercel.json'), JSON.stringify({ installCommand: 'npm install', buildCommand: 'npm run build', outputDirectory: 'dist' }));
   fs.writeFileSync(path.join(root, 'build/plugin.js'), 'export default {};\n');
   fs.writeFileSync(path.join(root, 'widgets/chat.js'), 'export {};\n');
@@ -69,6 +72,17 @@ test('accepts a complete manifest, Vite imports and all build entries', () => {
     const result = run(root);
     assert.equal(result.status, 0, result.stderr || result.stdout);
     assert.match(result.stdout, /preflight passed/);
+  } finally { cleanup(root); }
+});
+
+
+test('rejects removal of strict npm lifecycle-script protection', () => {
+  const { root } = fixture();
+  try {
+    fs.rmSync(path.join(root, '.npmrc'));
+    const result = run(root);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Missing \.npmrc|strict-allow-scripts=true/);
   } finally { cleanup(root); }
 });
 
@@ -111,6 +125,18 @@ test('rejects a missing multi-page build entry', () => {
     const result = run(root);
     assert.equal(result.status, 1);
     assert.match(result.stderr, /Missing missing\.html/);
+  } finally { cleanup(root); }
+});
+
+
+test('rejects a Vercel build command or output directory that diverges from the restored manifest', () => {
+  const { root } = fixture();
+  try {
+    fs.writeFileSync(path.join(root, 'vercel.json'), JSON.stringify({ installCommand: 'npm install', buildCommand: 'vite build', outputDirectory: 'build' }));
+    const result = run(root);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /vercel.json buildCommand must be/);
+    assert.match(result.stderr, /vercel.json outputDirectory must be/);
   } finally { cleanup(root); }
 });
 

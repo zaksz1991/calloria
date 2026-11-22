@@ -1,10 +1,10 @@
 /**
- * CALLORIA v2.6 — third-person player integration compatible with the current
- * locally-generated production world and the v6.84 GLB-world post-transform.
+ * CALLORIA v7.04 — fail-open hardening for the existing v2.6 player integration.
  *
- * The player GLB is optional and starts after the initial world render. Touch
- * devices deliberately retain the first-person camera and do not download a
- * separate player avatar.
+ * Preserves the current desktop third-person camera, workstation activity,
+ * player animation and immersive-state behaviour. The optional avatar layer
+ * is applied only when every expected source anchor is present. A future
+ * source revision therefore cannot make this optional feature fatal to Vite.
  */
 const TARGET = '/js/production-world.js';
 const IMPORT = "import { createCalloriaPlayerAvatar } from './world-player-avatar.js';";
@@ -18,47 +18,51 @@ const IMMERSIVE_CALLBACK = '    callbacks.onImmersiveChange?.(immersive);';
 const IMMERSIVE_EVENT = "    window.dispatchEvent(new CustomEvent('calloria:world-immersive', { detail: { active: immersive } }));";
 
 function count(source, needle) {
-  return source.split(needle).length - 1;
-}
-
-function requireExactlyOnce(context, source, anchor, label) {
-  const occurrences = count(source, anchor);
-  if (occurrences !== 1) {
-    context.error(`CALLORIA third-person v2.6 expected exactly one ${label} anchor (${occurrences} found). Refusing a partial transform.`);
-  }
+  return String(source).split(needle).length - 1;
 }
 
 function transformWorld(context, source) {
-  if (source.includes(MARKER) || source.includes(LEGACY_MARKER)) return null;
-  let code = String(source).replace(/\r\n?/g, '\n');
+  const original = String(source);
+  if (original.includes(MARKER) || original.includes(LEGACY_MARKER)) return null;
+  let code = original.replace(/\r\n?/g, '\n');
 
-  // Both supported source shapes retain the same first-render and player-update
-  // anchors. v6.84 changes the disposal and immersive callback blocks, so those
-  // are selected independently below instead of assuming one old implementation.
-  requireExactlyOnce(context, code, RENDER_READY, 'initial render-ready');
-  requireExactlyOnce(context, code, UPDATE, 'player update loop');
+  // Validate the full transform contract before changing any source text.
+  const checks = [
+    [RENDER_READY, 'initial render-ready callback'],
+    [UPDATE, 'player update loop']
+  ];
+  const missing = checks
+    .map(([anchor, label]) => ({ label, found: count(code, anchor) }))
+    .filter((item) => item.found !== 1);
 
   const hasV684Dispose = count(code, V684_DISPOSE) === 1;
   const hasCurrentDispose = count(code, CURRENT_DISPOSE) === 1;
   if (Number(hasV684Dispose) + Number(hasCurrentDispose) !== 1) {
-    context.error(`CALLORIA third-person v2.6 expected one supported world-disposal anchor (v6.84=${count(code, V684_DISPOSE)}, current=${count(code, CURRENT_DISPOSE)}). Refusing a partial transform.`);
+    missing.push({
+      label: 'supported world-disposal callback',
+      found: count(code, V684_DISPOSE) + count(code, CURRENT_DISPOSE)
+    });
   }
 
   const hasImmersiveEvent = count(code, IMMERSIVE_EVENT) === 1;
   const hasImmersiveCallback = count(code, IMMERSIVE_CALLBACK) === 1;
-  // v6.84 preserves callbacks.onImmersiveChange and adds the public event after it.
-  // Prefer the event when it exists; the untransformed current world needs the
-  // callback branch to publish that event itself.
   if (!hasImmersiveEvent && !hasImmersiveCallback) {
-    context.error(`CALLORIA third-person v2.6 expected an immersive-state anchor (event=${count(code, IMMERSIVE_EVENT)}, callback=${count(code, IMMERSIVE_CALLBACK)}). Refusing a partial transform.`);
+    missing.push({
+      label: 'immersive-state callback/event',
+      found: count(code, IMMERSIVE_EVENT) + count(code, IMMERSIVE_CALLBACK)
+    });
+  }
+
+  if (missing.length) {
+    context.warn?.(`CALLORIA v7.04 optional player-avatar transform skipped safely: ${missing.map((item) => `${item.label} (${item.found} matches)`).join(', ')}. Existing workplace rendering and first-person controls are preserved.`);
+    return null;
   }
 
   code = `${IMPORT}\nconst ${MARKER} = true;\n${code}`;
 
   const runtime = `
-  // Player-avatar loading is deliberately detached from world initialisation.
-  // On touch devices the first-person controller is retained and no extra GLB
-  // download or decode is started.
+  // Optional desktop player avatar. This loads after the initial static render.
+  // Touch devices retain the first-person camera and do not request another GLB.
   let playerAvatarLayer = null;
   let calloriaPlayerAvatarIdleHandle = null;
   let calloriaPlayerAvatarTimer = null;
@@ -109,6 +113,7 @@ function transformWorld(context, source) {
     calloriaPlayerAvatarIdleHandle = null;
     calloriaPlayerAvatarTimer = null;
   };
+
   const calloriaStartPlayerAvatar = () => {
     calloriaPlayerAvatarIdleHandle = null;
     calloriaPlayerAvatarTimer = null;
@@ -136,6 +141,7 @@ function transformWorld(context, source) {
       if (node) node.textContent = String(node.textContent || '') + '  ·  PLAYER GLB: unavailable';
     });
   };
+
   if (mobile) {
     const node = document.getElementById('assetStatus');
     if (node) node.textContent = String(node.textContent || '') + '  ·  PLAYER VIEW: FIRST-PERSON TOUCH';
@@ -145,9 +151,9 @@ function transformWorld(context, source) {
     calloriaPlayerAvatarTimer = window.setTimeout(calloriaStartPlayerAvatar, 240);
   }
 `;
-
   code = code.replace(RENDER_READY, `${RENDER_READY}\n${runtime}`);
 
+  // Preserve the existing third-person follow camera and activity animations.
   code = code.replace(UPDATE, `    const operationMode = calloriaWorkstationBusy || document.body.classList.contains('calloria-game-operation');
     if (operationMode) calloriaClearMovement();
     else updatePlayer(delta);
@@ -169,25 +175,16 @@ function transformWorld(context, source) {
       camera.rotation.set(player.pitch - 0.12, player.yaw, 0);
     }`);
 
-  if (hasV684Dispose) {
-    code = code.replace(V684_DISPOSE, `${V684_DISPOSE}
+  const disposeAnchor = hasV684Dispose ? V684_DISPOSE : CURRENT_DISPOSE;
+  code = code.replace(disposeAnchor, `${disposeAnchor}
       calloriaCancelPlayerAvatarStart();
       window.removeEventListener('calloria:game-operation-selected', calloriaOnOperationSelected);
       window.removeEventListener('calloria:game-call-connected', calloriaOnCallConnected);
       window.removeEventListener('calloria:game-case-saved', calloriaOnCaseSaved);
       window.removeEventListener('calloria:workstation-resumed', calloriaOnWorkstationResumed);
       window.removeEventListener('calloria:world-immersive', calloriaOnImmersiveState);
-      playerAvatarLayer?.dispose?.();`);
-  } else {
-    code = code.replace(CURRENT_DISPOSE, `${CURRENT_DISPOSE}
-      calloriaCancelPlayerAvatarStart();
-      window.removeEventListener('calloria:game-operation-selected', calloriaOnOperationSelected);
-      window.removeEventListener('calloria:game-call-connected', calloriaOnCallConnected);
-      window.removeEventListener('calloria:game-case-saved', calloriaOnCaseSaved);
-      window.removeEventListener('calloria:workstation-resumed', calloriaOnWorkstationResumed);
-      window.removeEventListener('calloria:world-immersive', calloriaOnImmersiveState);
-      playerAvatarLayer?.dispose?.();`);
-  }
+      playerAvatarLayer?.dispose?.();
+      playerAvatarLayer = null;`);
 
   if (hasImmersiveEvent) {
     code = code.replace(IMMERSIVE_EVENT, `${IMMERSIVE_EVENT}
@@ -203,7 +200,7 @@ function transformWorld(context, source) {
 
 export function calloriaThirdPersonPlayerPlugin() {
   return {
-    name: 'calloria-third-person-player-v2-6-current-world-compatible',
+    name: 'calloria-third-person-player-v2-6-resilient',
     enforce: 'post',
     transform(source, id) {
       const normalizedId = String(id || '').split('?')[0].replaceAll('\\', '/');
@@ -213,9 +210,11 @@ export function calloriaThirdPersonPlayerPlugin() {
   };
 }
 
-export const __thirdPersonPlayerPluginTest = Object.freeze({
+export const __calloriaThirdPersonV704Test = Object.freeze({
   TARGET,
+  IMPORT,
   MARKER,
+  LEGACY_MARKER,
   RENDER_READY,
   UPDATE,
   CURRENT_DISPOSE,

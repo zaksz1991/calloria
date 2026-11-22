@@ -2,7 +2,8 @@
 /**
  * CALLORIA production build preflight.
  * Node built-ins only: safe to run from npm's preinstall lifecycle.
- * v7.03 additionally verifies the npm 11 install-script approval for esbuild.
+ * v7.04 also requires strict npm lifecycle-script policy and the resilient
+ * third-person world transform used by the current Vite configuration.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -122,7 +123,42 @@ if (fs.existsSync(viteConfigPath)) {
 }
 
 requireFile('tools/calloria-build-artifact-audit.mjs', 'post-build artifact audit');
+requireFile('build/calloria-third-person-player-plugin.mjs', 'resilient optional player-avatar transform');
+requireFile('.github/workflows/calloria-production-build.yml', 'GitHub Actions production build gate');
+requireFile('.npmrc', 'strict dependency install-script policy');
 requireFile('vercel.json', 'Vercel build/output contract');
+const vercelConfig = readJson('vercel.json');
+if (vercelConfig) {
+  const expectedVercel = {
+    installCommand: 'npm install',
+    buildCommand: 'npm run build',
+    outputDirectory: 'dist'
+  };
+  for (const [key, expected] of Object.entries(expectedVercel)) {
+    if (vercelConfig[key] !== expected) {
+      failures.push(`vercel.json ${key} must be "${expected}"; found ${vercelConfig[key] ?? 'missing'}.`);
+    }
+  }
+}
+
+const npmrcPath = path.join(root, '.npmrc');
+if (fs.existsSync(npmrcPath)) {
+  const npmrc = fs.readFileSync(npmrcPath, 'utf8');
+  if (!/^\s*strict-allow-scripts\s*=\s*true\s*$/m.test(npmrc)) {
+    failures.push('.npmrc must set strict-allow-scripts=true so unreviewed dependency lifecycle scripts cannot run silently.');
+  }
+}
+
+const thirdPersonPluginPath = path.join(root, 'build/calloria-third-person-player-plugin.mjs');
+if (fs.existsSync(thirdPersonPluginPath)) {
+  const thirdPersonPlugin = fs.readFileSync(thirdPersonPluginPath, 'utf8');
+  if (!thirdPersonPlugin.includes('__CALLORIA_THIRD_PERSON_PLAYER_V26__')
+      || !thirdPersonPlugin.includes('context.warn?.(')
+      || !thirdPersonPlugin.includes("enforce: 'post'")
+      || thirdPersonPlugin.includes('context.error(')) {
+    failures.push('Third-person player plugin must preserve its post-transform ordering and use the v7.04 safe-skip contract; source drift must not abort the Vite build.');
+  }
+}
 
 if (mode === 'build') {
   const installedPackages = [
@@ -156,9 +192,9 @@ if (mode === 'install') {
 if (failures.length) {
   console.error(`CALLORIA ${mode} preflight failed (${failures.length} issue${failures.length === 1 ? '' : 's'}):`);
   for (const failure of failures) console.error(`- ${failure}`);
-  console.error('Apply the complete v7.03 package manifest and restore missing repository source files before retrying.');
+  console.error('Apply the complete v7.04 package/build repair and restore missing repository source files before retrying.');
   process.exitCode = 1;
 } else {
-  console.log(`CALLORIA ${mode} preflight passed: manifest, Node 22 pin, Vite plugin imports, Rollup entries${mode === 'build' ? ', and installed package versions' : ''}, and npm esbuild script approval are consistent.`);
+  console.log(`CALLORIA ${mode} preflight passed: manifest, Node 22 pin, Vite plugin imports, Rollup entries${mode === 'build' ? ', and installed package versions' : ''}, npm esbuild approval, strict install-script policy and resilient world transform are consistent.`);
   for (const warning of warnings) console.warn(`CALLORIA ${mode} preflight warning: ${warning}`);
 }

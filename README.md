@@ -1,11 +1,24 @@
-# CALLORIA v7.03 — npm install-script and build restoration
+# CALLORIA v7.04 — Production build recovery
 
-This release repairs the current public `main` package manifest and carries forward the v7.01 preflight plus v7.02 post-build artifact audit.
+Cumulative overlay for the existing `zaksz1991/calloria` repository.
 
-The observed Vercel install log reported that npm audited one package after removing 23 packages, then failed because `npm run build` did not exist. A subsequent install log also reported that the `esbuild@0.25.12` postinstall script was blocked by npm's dependency-script approval policy.
+## Immediate production repair
 
-v7.03 restores the app's pinned runtime dependencies and scripts, adds `esbuild@0.25.12` as an explicit dev dependency, and approves only that exact package version through npm's `allowScripts` package.json field. The preflight now rejects the same missing dependency or approval before Vite starts.
+The current public `main` manifest contained only a test script while the Vercel project continued to invoke `npm run build`. This package restores the application manifest and direct dependency declarations required by the existing Vite configuration.
 
-The release retains the existing Vite plugin registration order and multi-page entry list. It does not replace `vite.config.js`, HTML entry pages, application modules, Supabase settings, Vercel config, GLB assets or gameplay data.
+## Included changes
 
-This is a root-level build-system overlay, not a complete repository archive.
+- `package.json`: restores `build`, `dev`, `preview`, `check`, `test`, prebuild and postbuild scripts; restores Vite, Three.js, Supabase and esbuild versions.
+- `.nvmrc`: retains Node 22.16.0; `engines.node` is 22.x.
+- `.npmrc`: strict npm dependency lifecycle-script policy.
+- `allowScripts`: approves only `esbuild@0.25.12`.
+- `tools/calloria-build-preflight.mjs`: checks the manifest, local Vite imports, all configured input files, Vercel build contract and safe optional-avatar plugin contract.
+- `build/calloria-third-person-player-plugin.mjs`: preserves the existing v2.6 player/camera/workstation behaviour while making optional player integration fail open on source drift.
+- `.github/workflows/calloria-production-build.yml`: CI build gate for main pushes, pull requests and manual runs.
+- Tests and documentation for the build repair.
+
+## Installation type
+
+This is an additive/cumulative overlay, not a complete source repository. Merge it into the existing repo. Keep all application pages, `js/`, `styles/`, `public/`, GLB assets, Supabase files, `vite.config.js` and `vercel.json`.
+
+Read `INSTALL-GITHUB-v7.04.md` before copying files. Do not upload secrets or environment files.
