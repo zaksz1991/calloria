@@ -1,0 +1,13 @@
+CALLORIA v7.09 — add one import and one plugin registration.
+
+1. In the root vite.config.js, add this import with the other local build-plugin imports:
+
+import { calloriaFirstShiftMentorV709Plugin } from './build/calloria-first-shift-mentor-v709-plugin.mjs';
+
+2. Add the plugin call as the final item in the existing plugins array, immediately after calloriaTryItStudioPlugin():
+
+    calloriaTryItStudioPlugin(),
+    // Post-transform: records first independent-shift case evidence and simulated mentor review.
+    calloriaFirstShiftMentorV709Plugin()
+
+Do not replace vite.config.js. Keep all existing plugin registrations and their current order. The new plugin uses enforce: 'post' and expects the existing First Shift Gameplay and OJT transforms to have run first.

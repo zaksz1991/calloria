@@ -1,5 +1,7 @@
-# CALLORIA v7.08 — Mobile Runtime Repair
+# CALLORIA v7.09 — First Shift Mentor
 
-This additive overlay restores the `calloria-mobile-runtime-v6-80.css` stylesheet already linked from the current public `index.html`. It hardens assessment layouts, mobile form controls, overflow containment, modal sizing, data tables, and the floating Shift Command Centre launcher.
+Additive overlay for the existing public `main` source.
 
-It does not modify gameplay JavaScript, save data, Supabase, 3D models, Vite plugin order, or application state.
+Primary feature: an evidence-based mentor record for the first independent operating shift, connected to existing shift/call/case events and existing onboarding save state.
+
+Start with `INSTALL-GITHUB-v7.09.md`. The exact Vite addition is in `VITE-CONFIG-ADDITIONS-v7.09.txt`.
