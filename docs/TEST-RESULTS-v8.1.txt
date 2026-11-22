@@ -1,0 +1,21 @@
+CALLORIA v8.1 — focused verification report
+
+Scope: organisation-scoped cloud sync for v7.31 aggregate workforce trend snapshots.
+
+Verified locally against the release overlay:
+- Focused Node tests: 12 passed, 0 failed.
+- JavaScript/MJS syntax: 6 source/test files passed `node --check`.
+- V7.31 main-module transform: injected output passed a separate Node syntax check.
+- Package JSON: parsed and package-script contract passed.
+- SQL static contract: table/RLS/role/RPC/allow-list/retention assertions passed.
+- Vite integration order: v8 suite, production gate and v8.1 plugin order assertion passed.
+- ZIP integrity: checked after packaging.
+
+Not verified here:
+- Full repository `npm test` (the full current repository was not present in the package-preparation workspace).
+- Full Vite production build against all current application assets and build plugins.
+- Execution of migration 202611220001 against the shared Supabase project.
+- Live RLS/permission checks, actual organisation sync, multi-user or cross-device browser testing.
+- Production Vercel deployment and actual Android/iOS testing.
+
+A focused test pass is not a production deployment claim. Use the acceptance checks in INSTALL-GITHUB-v8.1.md.

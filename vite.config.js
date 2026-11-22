@@ -26,6 +26,7 @@ import { calloriaSeamlessProductHandoffPlugin } from './build/calloria-seamless-
 import { calloriaTryItStudioPlugin } from './build/calloria-try-it-studio-v6-58.mjs';
 import { calloriaWorkforceDevelopmentSuitePluginsV8 } from './build/calloria-workforce-development-suite-v8.mjs';
 import { calloriaProductionIntegrationGatePluginV8 } from './build/calloria-production-integration-gate-v8.mjs';
+import { calloriaWorkforceTrendCloudSyncPluginV801 } from './build/calloria-workforce-trend-cloud-sync-v801.mjs';
 
 export default defineConfig({
   base: '/',
@@ -61,7 +62,9 @@ export default defineConfig({
     // v8.0 owns the digital/workforce chain in one deterministic registration group.
     ...calloriaWorkforceDevelopmentSuitePluginsV8(),
     // Fail configuration/build when a required suite plugin or application entry is missing.
-    calloriaProductionIntegrationGatePluginV8()
+    calloriaProductionIntegrationGatePluginV8(),
+    // v8.1 adds organisation-scoped cloud sync after the complete v7.31 local history transform.
+    calloriaWorkforceTrendCloudSyncPluginV801()
   ],
   build: {
     outDir: 'dist',

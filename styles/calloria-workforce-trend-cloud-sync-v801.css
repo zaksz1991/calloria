@@ -1,0 +1,24 @@
+.wth-cloud-sync {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(260px, auto);
+  gap: 12px 18px;
+  align-items: center;
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid var(--line, rgba(148, 163, 184, .22));
+  border-radius: 14px;
+  background: var(--surface-2, rgba(15, 23, 42, .34));
+}
+.wth-cloud-sync > div:first-child { display: grid; gap: 4px; }
+.wth-cloud-sync strong { font-size: .9rem; }
+.wth-cloud-sync small { color: var(--muted, #94a3b8); line-height: 1.45; }
+.wth-cloud-sync-buttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.wth-cloud-sync-buttons button { min-height: 40px; white-space: normal; }
+.wth-cloud-sync-buttons button:disabled { opacity: .55; cursor: wait; }
+.wth-cloud-status { grid-column: 1 / -1; margin: 0; color: var(--muted, #94a3b8); font-size: .82rem; line-height: 1.45; }
+@media (max-width: 720px) {
+  .wth-cloud-sync { grid-template-columns: minmax(0, 1fr); }
+  .wth-cloud-sync-buttons { justify-content: stretch; display: grid; grid-template-columns: 1fr; }
+  .wth-cloud-sync-buttons button { width: 100%; min-height: 44px; }
+  .wth-cloud-status { grid-column: 1; overflow-wrap: anywhere; }
+}

@@ -19,7 +19,8 @@
     "check": "node tools/calloria-build-preflight.mjs --manifest && node tools/calloria-navigation-integrity-audit.mjs && node tools/calloria-v8-integration-audit.mjs",
     "test": "node --test tests/*.test.mjs tests/commitment-engine-v69.test.cjs",
     "verify:navigation": "node tools/calloria-navigation-integrity-audit.mjs",
-    "verify:integration": "node tools/calloria-v8-integration-audit.mjs"
+    "verify:integration": "node tools/calloria-v8-integration-audit.mjs",
+    "verify:workforce-cloud-history": "node --test tests/workforce-trend-cloud-sync-v801.test.mjs tests/workforce-trend-cloud-sync-v801-ui.test.mjs tests/workforce-trend-cloud-sync-v801-contract.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.119.0",
