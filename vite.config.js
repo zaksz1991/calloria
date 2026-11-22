@@ -28,6 +28,7 @@ import { calloriaDigitalExperienceSuitePluginV722 } from './build/calloria-digit
 import { calloriaDigitalFollowUpSupervisorPluginV723 } from './build/calloria-digital-followup-supervisor-v723.mjs';
 import { calloriaDigitalFollowUpPerformancePluginV724 } from './build/calloria-digital-followup-performance-v724.mjs';
 import { calloriaDigitalFollowUpCoachingPluginV725 } from './build/calloria-digital-followup-coaching-v725.mjs';
+import { calloriaDigitalFollowUpCoachingOutcomesPluginV726 } from './build/calloria-digital-followup-coaching-outcomes-v726.mjs';
 
 export default defineConfig({
   base: '/',
@@ -67,7 +68,9 @@ export default defineConfig({
     // v7.24 adds agent-level follow-up response performance after supervisor alerts.
     calloriaDigitalFollowUpPerformancePluginV724(),
     // v7.25 converts follow-up scorecards into supervisor-owned coaching plans.
-    calloriaDigitalFollowUpCoachingPluginV725()
+    calloriaDigitalFollowUpCoachingPluginV725(),
+    // v7.26 compares completed coaching plans with fresh agent response evidence.
+    calloriaDigitalFollowUpCoachingOutcomesPluginV726()
   ],
   build: {
     outDir: 'dist',

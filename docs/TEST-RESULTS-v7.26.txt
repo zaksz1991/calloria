@@ -1,0 +1,36 @@
+CALLORIA v7.26 — PREPARATION TEST REPORT
+
+Automated test command:
+node --test tests/*.test.mjs
+
+Result:
+- Tests: 50
+- Passed: 50
+- Failed: 0
+- Skipped: 0
+
+Coverage:
+- v7.23 digital follow-up supervisor alerts and guarded escalation.
+- v7.24 response performance attribution, channel aggregation and Vite transform.
+- v7.25 coaching recommendations, plan validation, lifecycle and duplicate suppression.
+- v7.26 overdue recovery outcome assessment.
+- v7.26 at-risk prevention outcome assessment.
+- v7.26 response-target outcome assessment and minimum comparable sample.
+- v7.26 achieved, improving, not-improved and insufficient-data outcomes.
+- v7.26 missing metric fields are never silently interpreted as zero.
+- v7.26 immutable one-time recording and duplicate-review protection.
+- v7.26 completed-plan ordering and summary counts.
+- v7.23 → v7.24 → v7.25 → v7.26 plugin order, source-drift safety and transform idempotence.
+
+JavaScript syntax:
+- 17 JS/MJS files checked: passed.
+- vite.config.js: passed.
+- Generated synthetic js/main.js after all four transforms: passed.
+
+Not verified:
+- Complete repository Vite production build; the complete repository and its package manifest/dependency tree were not supplied in this release workspace.
+- Browser end-to-end interaction against the complete app.
+- Production GitHub source, Vercel deployment or live runtime.
+- Physical Android/iOS responsive rendering.
+
+The 50 passing tests validate this cumulative overlay and a representative transform fixture. They do not prove that the user's current full repository is identical to the supplied v7.25 baseline.

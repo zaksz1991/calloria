@@ -1,0 +1,46 @@
+.digital-followup-outcome-panel { margin-top: 14px; }
+.digital-followup-outcome-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+  margin: 12px 0 14px;
+}
+.digital-followup-outcome-metrics > div {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border, rgba(148, 163, 184, .2));
+  border-radius: 12px;
+  background: var(--surface-soft, rgba(148, 163, 184, .05));
+}
+.digital-followup-outcome-metrics span,
+.digital-followup-outcome-metrics strong { display: block; }
+.digital-followup-outcome-metrics span { color: var(--muted, #94a3b8); font-size: .76rem; }
+.digital-followup-outcome-metrics strong { margin-top: 4px; font-size: 1.3rem; }
+.digital-followup-outcome-list { display: grid; gap: 8px; }
+.digital-followup-outcome-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border, rgba(148, 163, 184, .2));
+  border-radius: 12px;
+  background: var(--surface-soft, rgba(148, 163, 184, .04));
+}
+.digital-followup-outcome-main { min-width: 0; }
+.digital-followup-outcome-main strong,
+.digital-followup-outcome-main small { display: block; overflow-wrap: anywhere; }
+.digital-followup-outcome-main small { margin-top: 4px; color: var(--muted, #94a3b8); font-size: .78rem; line-height: 1.4; }
+.digital-followup-outcome-actions { display: flex; justify-content: flex-end; }
+.digital-followup-outcome-actions .btn { min-height: 38px; }
+@media (max-width: 760px) {
+  .digital-followup-outcome-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .digital-followup-outcome-row { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .digital-followup-outcome-actions { grid-column: 1 / -1; justify-content: stretch; }
+  .digital-followup-outcome-actions .btn { width: 100%; min-height: 42px; }
+}
+@media (max-width: 380px) {
+  .digital-followup-outcome-row { padding: 10px; }
+  .digital-followup-outcome-metrics > div { padding: 9px; }
+}

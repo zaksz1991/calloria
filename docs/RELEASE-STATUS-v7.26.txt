@@ -1,0 +1,13 @@
+CALLORIA v7.26 RELEASE STATUS
+
+Release: Digital Follow-up Coaching Outcome Reviews
+Release type: cumulative v7.23–v7.26 source overlay
+Test suite: 50 passed, 0 failed
+Syntax checks: 17 JS/MJS files + Vite config + generated transform fixture passed
+ZIP integrity: checked after archive creation
+Production Vite build: not run
+Vercel production deployment: not run
+Supabase changes: none
+
+Important baseline limitation:
+The preparation workspace contains the prior v7.23–v7.25 release overlay, not the complete current CALLORIA repository. This archive is not represented as a complete repository replacement. It contains all source files for the v7.23–v7.26 digital follow-up supervisor, performance, coaching and coaching-outcome modules plus the Vite config snapshot from v7.25. Preserve the live repository's other files, GLB assets, .git directory and configuration. Merge the Vite additions carefully if the live project's Vite config has changed since v7.25.
