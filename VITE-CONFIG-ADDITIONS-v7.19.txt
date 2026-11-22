@@ -1,0 +1,9 @@
+ADD THIS IMPORT near the other local Vite plugin imports:
+
+import { calloriaDigitalDispositionIntegrityPluginV719 } from './build/calloria-digital-disposition-integrity-v719.mjs';
+
+ADD THIS REGISTRATION as the final entry in the existing plugins array:
+
+calloriaDigitalDispositionIntegrityPluginV719()
+
+Do not replace vite.config.js. Do not register the plugin more than once. Keep the existing plugin registrations and their order. If v7.18 is installed, keep the v7.18 registration before v7.19.

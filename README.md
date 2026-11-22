@@ -1,27 +1,29 @@
-# CALLORIA v7.18 — Digital SLA Triage
+# CALLORIA v7.19 — Digital Resolution Evidence Integrity
 
-Additive source overlay for the existing synthetic email, live-chat and social queues.
+Additive overlay for the existing synthetic email, live-chat and social support workflow.
 
-## Included files
+## Why this exists
 
-- `js/digital-triage-engine-v718.js` — pure SLA-first ranking and ageing fairness logic.
-- `build/calloria-digital-sla-triage-v718.mjs` — source-safe Vite transform for the two digital queue render paths.
-- `tests/digital-sla-triage-v718.test.mjs` — focused engine and transform regression suite.
-- Installation, source-baseline, changelog and verification notes.
+The current digital after-contact form asks for a disposition and factual case notes. The current `completeDigitalContact()` engine requires at least one agent reply and notes, then accepts `resolved`, `pending_customer` or `escalated`. It does not require evidence that the selected outcome is supported by the conversation. This overlay adds that check before the existing completion function runs.
 
-## Runtime behaviour
+## Behaviour
 
-Both the active-agent quick queue and the full digital waiting queue are sorted by:
+- `resolved` requires either a customer reply after an agent response, or a one-touch resolution with no pending scripted customer response.
+- A conversation flagged as needing supervisor intervention cannot be resolved until the linked supervisor request has a recorded reviewed/closed/completed state.
+- `pending_customer` requires the explicit customer-information-pending evidence code.
+- `escalated` requires the specialist-referral evidence code and a linked open or reviewed supervisor request.
+- Factual notes must contain at least 20 characters.
+- The saved synthetic CRM case receives a `dispositionEvidence` object with evidence type, label, simulated timestamp, note length and whether a customer reply was observed.
 
-1. SLA state: breached, at risk, on track, then unavailable.
-2. Effective priority: existing business priority plus a bounded ageing boost.
-3. Oldest waiting time.
-4. Stable contact identifier as a deterministic tie-breaker.
+The evidence gate is deterministic and read-only until the existing completion call succeeds. It does not award QA points, change salary or promotion, call external inbox providers, or require a Supabase migration.
 
-A contact receives one ageing point per 15 simulated minutes, capped at three points. Ageing never moves an on-track contact ahead of an SLA-breached or at-risk contact. Each queue row receives a short explanation badge.
+## Files
 
-The existing `sortDigitalQueue` and `assessDigitalSla` functions are injected by the transform. There is no second SLA policy, no new queue state and no save-schema change.
+- `js/digital-disposition-integrity-v719.js` — pure disposition validation.
+- `build/calloria-digital-disposition-integrity-v719.mjs` — source-safe Vite transform for `js/main.js`.
+- `tests/digital-disposition-integrity-v719.test.mjs` — focused validation and transform regression tests.
+- Installation, baseline, verification and changelog documentation.
 
-## Scope
+## Install scope
 
-This package is an additive overlay, not a complete repository replacement. It does not accept contacts automatically, reassign ownership, mutate deadlines, change customer records, or connect to real digital inboxes.
+Register the supplied plugin once at the end of the existing Vite plugin array. Keep all other plugins and their order. This is an overlay, not a full repository replacement.
