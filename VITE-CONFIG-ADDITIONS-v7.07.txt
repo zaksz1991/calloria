@@ -1,0 +1,13 @@
+CALLORIA v7.07 — add one Vite import and one plugin registration
+
+1. Add this import with the other build-plugin imports near the top of vite.config.js:
+
+import { calloriaWorldRuntimeDiagnosticsPluginV707 } from './build/calloria-world-runtime-diagnostics-v707.mjs';
+
+2. Add this as the FINAL item in the existing plugins array, immediately after calloriaTryItStudioPlugin():
+
+calloriaTryItStudioPlugin(),
+calloriaWorldRuntimeDiagnosticsPluginV707()
+
+Do not add a second plugins array or replace the rest of vite.config.js.
+The plugin uses enforce: 'post' and must be registered exactly once.

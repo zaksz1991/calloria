@@ -1,15 +1,7 @@
-# CALLORIA v7.06 — Privacy Route Repair
+# CALLORIA v7.07 — 3D Runtime Diagnostics
 
-Targeted additive overlay for the v7.05 navigation-integrity build failure at commit `312a171`.
+A focused additive source overlay that makes the active 3D workplace measurable from the existing GLB asset status panel.
 
-## Contents
+It reports actual scene objects and GLB placement visibility rather than treating a successful download as proof that a model is on-screen. It does not alter world gameplay or model loading.
 
-- `public/privacy.html` — the missing privacy page served at `/privacy.html`.
-- `tests/privacy-route-v706.test.mjs` — four regression tests for the route and notice.
-- `INSTALL-GITHUB-v7.06.md` — GUI installation instructions.
-- `BUILD-FAILURE-DIAGNOSIS-v7.06.md` — why the Vercel prebuild audit failed.
-- `SOURCE-BASELINE-v7.06.md` — source facts used for the repair.
-- `CHANGELOG-v7.06.md` — release changes.
-- `VERIFICATION-v7.06.md` — tested and untested scope.
-
-This is not a complete repository replacement. No existing project configuration should be overwritten.
+See `INSTALL-GITHUB-v7.07.md` for the GitHub Desktop installation steps.
