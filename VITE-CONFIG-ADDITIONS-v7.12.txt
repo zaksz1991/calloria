@@ -1,0 +1,10 @@
+1. Add this import with the other Vite plugin imports near the top of vite.config.js:
+
+import { calloriaCallbackIntegrityPluginV712 } from './build/calloria-callback-integrity-v712-plugin.mjs';
+
+2. Add this one registration as the final item in the existing plugins array, immediately after calloriaTryItStudioPlugin():
+
+calloriaTryItStudioPlugin(),
+calloriaCallbackIntegrityPluginV712()
+
+Do not add a second Vite config or register the plugin more than once. Keep all existing plugin registrations and their current order.

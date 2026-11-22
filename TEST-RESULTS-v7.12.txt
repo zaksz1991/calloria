@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: clean one-to-one promise/task pair has no issues
+ok 1 - clean one-to-one promise/task pair has no issues
+  ---
+  duration_ms: 1.315904
+  type: 'test'
+  ...
+# Subtest: open promise without active callback task is flagged
+ok 2 - open promise without active callback task is flagged
+  ---
+  duration_ms: 0.218496
+  type: 'test'
+  ...
+# Subtest: terminal callback does not satisfy an open promise
+ok 3 - terminal callback does not satisfy an open promise
+  ---
+  duration_ms: 0.43008
+  type: 'test'
+  ...
+# Subtest: duplicate active callback tasks are detected
+ok 4 - duplicate active callback tasks are detected
+  ---
+  duration_ms: 0.197007
+  type: 'test'
+  ...
+# Subtest: active callback whose promise is absent is orphaned
+ok 5 - active callback whose promise is absent is orphaned
+  ---
+  duration_ms: 0.140171
+  type: 'test'
+  ...
+# Subtest: active task attached to completed promise is flagged
+ok 6 - active task attached to completed promise is flagged
+  ---
+  duration_ms: 0.316128
+  type: 'test'
+  ...
+# Subtest: task due time drift is flagged
+ok 7 - task due time drift is flagged
+  ---
+  duration_ms: 0.241525
+  type: 'test'
+  ...
+# Subtest: one-minute due timestamp tolerance is accepted
+ok 8 - one-minute due timestamp tolerance is accepted
+  ---
+  duration_ms: 0.126308
+  type: 'test'
+  ...
+# Subtest: review-hold promise does not require an active callback task
+ok 9 - review-hold promise does not require an active callback task
+  ---
+  duration_ms: 0.244478
+  type: 'test'
+  ...
+# Subtest: review-hold promise with an active task is warned, not treated as a new attempt
+ok 10 - review-hold promise with an active task is warned, not treated as a new attempt
+  ---
+  duration_ms: 0.476734
+  type: 'test'
+  ...
+# Subtest: legacy callbacks without a commitment link are counted but not treated as errors
+ok 11 - legacy callbacks without a commitment link are counted but not treated as errors
+  ---
+  duration_ms: 0.148016
+  type: 'test'
+  ...
+# Subtest: duplicate promise IDs are detected
+ok 12 - duplicate promise IDs are detected
+  ---
+  duration_ms: 0.133596
+  type: 'test'
+  ...
+# Subtest: malformed input is handled without throwing
+ok 13 - malformed input is handled without throwing
+  ---
+  duration_ms: 0.050366
+  type: 'test'
+  ...
+# Subtest: audit does not mutate commitment or callback input
+ok 14 - audit does not mutate commitment or callback input
+  ---
+  duration_ms: 0.097803
+  type: 'test'
+  ...
+# Subtest: rendered panel escapes customer-controlled values
+ok 15 - rendered panel escapes customer-controlled values
+  ---
+  duration_ms: 0.271811
+  type: 'test'
+  ...
+# Subtest: Vite plugin injects imports and integrity panel into current Promise Control source
+ok 16 - Vite plugin injects imports and integrity panel into current Promise Control source
+  ---
+  duration_ms: 0.275791
+  type: 'test'
+  ...
+# Subtest: Vite plugin safely skips when source anchors drift
+ok 17 - Vite plugin safely skips when source anchors drift
+  ---
+  duration_ms: 0.110339
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 67.693721
