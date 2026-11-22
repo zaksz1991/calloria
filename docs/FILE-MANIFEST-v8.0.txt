@@ -1,0 +1,40 @@
+CALLORIA v8.0 FILE MANIFEST
+
+New build integration:
+- build/calloria-workforce-development-suite-v8.mjs
+- build/calloria-production-integration-gate-v8.mjs
+
+New audit:
+- tools/calloria-v8-integration-audit.mjs
+
+Complete replacements:
+- vite.config.js
+- package.json
+- tools/calloria-build-preflight.mjs
+- README.md
+- CHANGELOG-v8.0.md
+
+New tests:
+- tests/calloria-v8-integration.test.mjs
+
+Updated compatibility tests:
+- tests/vite-config-v723.test.mjs
+- tests/vite-config-v724.test.mjs
+- tests/vite-config-v725.test.mjs
+- tests/vite-config-v726.test.mjs
+- tests/vite-config-v727.test.mjs
+- tests/vite-config-v728.test.mjs
+- tests/vite-config-v729.test.mjs
+- tests/vite-config-v730.test.mjs
+- tests/vite-config-v731.test.mjs
+
+Cumulative feature-chain files retained from v7.23-v7.31:
+- build/, js/, styles/, tests/ files for releases v7.23 through v7.31
+- supporting release documentation and manifests
+
+Retain from the existing repository:
+- .git, .env*, .nvmrc, package-lock.json, vercel.json
+- complete index and other HTML pages, app source, widgets, tools
+- public/, public/assets/, GLB models and other original assets
+- supabase/, existing database migrations, Edge Functions and configuration
+- existing navigation-integrity and build-artifact audit tools

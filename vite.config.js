@@ -24,16 +24,8 @@ import { calloriaPublicExperienceHubPlugin } from './build/calloria-public-exper
 import { calloriaRuffNeckDiscoveryGuidePlugin } from './build/calloria-ruffneck-discovery-guide-v6-56.mjs';
 import { calloriaSeamlessProductHandoffPlugin } from './build/calloria-seamless-product-handoff-v6-57.mjs';
 import { calloriaTryItStudioPlugin } from './build/calloria-try-it-studio-v6-58.mjs';
-import { calloriaDigitalExperienceSuitePluginV722 } from './build/calloria-digital-experience-suite-v722.mjs';
-import { calloriaDigitalFollowUpSupervisorPluginV723 } from './build/calloria-digital-followup-supervisor-v723.mjs';
-import { calloriaDigitalFollowUpPerformancePluginV724 } from './build/calloria-digital-followup-performance-v724.mjs';
-import { calloriaDigitalFollowUpCoachingPluginV725 } from './build/calloria-digital-followup-coaching-v725.mjs';
-import { calloriaDigitalFollowUpCoachingOutcomesPluginV726 } from './build/calloria-digital-followup-coaching-outcomes-v726.mjs';
-import { calloriaDigitalFollowUpCoachingCheckpointsPluginV727 } from './build/calloria-digital-followup-coaching-checkpoints-v727.mjs';
-import { calloriaDigitalCareerEvidencePluginV728 } from './build/calloria-digital-career-evidence-v728.mjs';
-import { calloriaWorkforceIntelligencePluginV729 } from './build/calloria-workforce-intelligence-v729.mjs';
-import { calloriaWorkforceCommandCentrePluginV730 } from './build/calloria-workforce-command-centre-v730.mjs';
-import { calloriaWorkforceTrendHistoryPluginV731 } from './build/calloria-workforce-trend-history-v731.mjs';
+import { calloriaWorkforceDevelopmentSuitePluginsV8 } from './build/calloria-workforce-development-suite-v8.mjs';
+import { calloriaProductionIntegrationGatePluginV8 } from './build/calloria-production-integration-gate-v8.mjs';
 
 export default defineConfig({
   base: '/',
@@ -66,26 +58,10 @@ export default defineConfig({
     calloriaRuffNeckDiscoveryGuidePlugin(),
     calloriaSeamlessProductHandoffPlugin(),
     calloriaTryItStudioPlugin(),
-    // v7.22 must finish the v7.20 workflow and v7.21 response-cycle transforms first.
-    calloriaDigitalExperienceSuitePluginV722(),
-    // v7.23 adds supervisor monitoring and controlled intervention after v7.22.
-    calloriaDigitalFollowUpSupervisorPluginV723(),
-    // v7.24 adds agent-level follow-up response performance after supervisor alerts.
-    calloriaDigitalFollowUpPerformancePluginV724(),
-    // v7.25 converts follow-up scorecards into supervisor-owned coaching plans.
-    calloriaDigitalFollowUpCoachingPluginV725(),
-    // v7.26 compares completed coaching plans with fresh agent response evidence.
-    calloriaDigitalFollowUpCoachingOutcomesPluginV726(),
-    // v7.27 adds dated 7-day and 30-day sustainment checks after outcome reviews.
-    calloriaDigitalFollowUpCoachingCheckpointsPluginV727(),
-    // v7.28 combines digital performance, coaching and sustainment into a human career-review dossier.
-    calloriaDigitalCareerEvidencePluginV728(),
-    // v7.29 adds a source-labelled, read-only cross-channel workforce evidence view.
-    calloriaWorkforceIntelligencePluginV729(),
-    // v7.30 adds read-only supervisor command-centre analytics and backlog scenarios.
-    calloriaWorkforceCommandCentrePluginV730(),
-    // v7.31 adds manually captured, browser-local aggregate workforce trend history after v7.30.
-    calloriaWorkforceTrendHistoryPluginV731()
+    // v8.0 owns the digital/workforce chain in one deterministic registration group.
+    ...calloriaWorkforceDevelopmentSuitePluginsV8(),
+    // Fail configuration/build when a required suite plugin or application entry is missing.
+    calloriaProductionIntegrationGatePluginV8()
   ],
   build: {
     outDir: 'dist',

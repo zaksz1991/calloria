@@ -1,0 +1,772 @@
+TAP version 13
+# Subtest: v8 suite centralises ten plugins and records deterministic order
+ok 1 - v8 suite centralises ten plugins and records deterministic order
+  ---
+  duration_ms: 0.954147
+  type: 'test'
+  ...
+# Subtest: v8 gate accepts all expected plugins and every application entry
+ok 2 - v8 gate accepts all expected plugins and every application entry
+  ---
+  duration_ms: 3.979311
+  type: 'test'
+  ...
+# Subtest: v8 gate rejects a missing or duplicated workforce plugin
+ok 3 - v8 gate rejects a missing or duplicated workforce plugin
+  ---
+  duration_ms: 1.62089
+  type: 'test'
+  ...
+# Subtest: v8 gate rejects an out-of-order plugin chain
+ok 4 - v8 gate rejects an out-of-order plugin chain
+  ---
+  duration_ms: 1.526428
+  type: 'test'
+  ...
+# Subtest: v8 gate rejects missing HTML/widget input entries
+ok 5 - v8 gate rejects missing HTML/widget input entries
+  ---
+  duration_ms: 1.456092
+  type: 'test'
+  ...
+# Subtest: v8 gate rejects production bundles that omit a configured page or widget
+ok 6 - v8 gate rejects production bundles that omit a configured page or widget
+  ---
+  duration_ms: 1.607229
+  type: 'test'
+  ...
+# Subtest: v8 source integration audit passes a complete isolated fixture
+ok 7 - v8 source integration audit passes a complete isolated fixture
+  ---
+  duration_ms: 4.599765
+  type: 'test'
+  ...
+# Subtest: v8 source integration audit identifies missing entries and script drift
+ok 8 - v8 source integration audit identifies missing entries and script drift
+  ---
+  duration_ms: 3.878188
+  type: 'test'
+  ...
+# Subtest: eligible scorecards produce a clear human-review readiness dossier
+ok 9 - eligible scorecards produce a clear human-review readiness dossier
+  ---
+  duration_ms: 2.67026
+  type: 'test'
+  ...
+# Subtest: minimum completed response sample is enforced without treating missing rates as zero
+ok 10 - minimum completed response sample is enforced without treating missing rates as zero
+  ---
+  duration_ms: 0.386051
+  type: 'test'
+  ...
+# Subtest: low SLA, overdue work, at-risk work and active coaching require development
+ok 11 - low SLA, overdue work, at-risk work and active coaching require development
+  ---
+  duration_ms: 0.41843
+  type: 'test'
+  ...
+# Subtest: completed coaching requires an outcome review and positive 30-day sustainment
+ok 12 - completed coaching requires an outcome review and positive 30-day sustainment
+  ---
+  duration_ms: 0.863189
+  type: 'test'
+  ...
+# Subtest: coaching regression and negative outcome review block career review readiness
+ok 13 - coaching regression and negative outcome review block career review readiness
+  ---
+  duration_ms: 0.21281
+  type: 'test'
+  ...
+# Subtest: unassigned and aggregate rows are excluded and the board preserves separate counts
+ok 14 - unassigned and aggregate rows are excluded and the board preserves separate counts
+  ---
+  duration_ms: 0.380213
+  type: 'test'
+  ...
+# Subtest: career review packet creation is gated, immutable and duplicate-safe
+ok 15 - career review packet creation is gated, immutable and duplicate-safe
+  ---
+  duration_ms: 0.346682
+  type: 'test'
+  ...
+# Subtest: supervisor decision requires a valid choice, named reviewer and evidence note
+ok 16 - supervisor decision requires a valid choice, named reviewer and evidence note
+  ---
+  duration_ms: 0.489477
+  type: 'test'
+  ...
+# Subtest: formal exam referral is only a referral and cannot be repeated
+ok 17 - formal exam referral is only a referral and cannot be repeated
+  ---
+  duration_ms: 0.368375
+  type: 'test'
+  ...
+# Subtest: defer and not-recommended decisions are recorded as review outcomes, not employment actions
+ok 18 - defer and not-recommended decisions are recorded as review outcomes, not employment actions
+  ---
+  duration_ms: 0.476016
+  type: 'test'
+  ...
+# Subtest: plugin adds the v7.28 workforce panel, safe action and supervisor review form
+ok 19 - plugin adds the v7.28 workforce panel, safe action and supervisor review form
+  ---
+  duration_ms: 31.998489
+  type: 'test'
+  ...
+# Subtest: plugin skips safely when an integration contract has drifted
+ok 20 - plugin skips safely when an integration contract has drifted
+  ---
+  duration_ms: 0.347694
+  type: 'test'
+  ...
+# Subtest: schedules 7-day and 30-day checks from the outcome review timestamp
+ok 21 - schedules 7-day and 30-day checks from the outcome review timestamp
+  ---
+  duration_ms: 1.516503
+  type: 'test'
+  ...
+# Subtest: checkpoint scheduling is immutable, idempotent and rejects ineligible plans
+ok 22 - checkpoint scheduling is immutable, idempotent and rejects ineligible plans
+  ---
+  duration_ms: 0.298379
+  type: 'test'
+  ...
+# Subtest: checkpoint assessment refuses early attempts and mismatched agent scorecards
+ok 23 - checkpoint assessment refuses early attempts and mismatched agent scorecards
+  ---
+  duration_ms: 0.313142
+  type: 'test'
+  ...
+# Subtest: maintained target, further improvement and regression are differentiated
+ok 24 - maintained target, further improvement and regression are differentiated
+  ---
+  duration_ms: 0.601906
+  type: 'test'
+  ...
+# Subtest: insufficient new workload is recorded as insufficient evidence, not zero
+ok 25 - insufficient new workload is recorded as insufficient evidence, not zero
+  ---
+  duration_ms: 0.220863
+  type: 'test'
+  ...
+# Subtest: response-rate checkpoint requires three new completed follow-ups
+ok 26 - response-rate checkpoint requires three new completed follow-ups
+  ---
+  duration_ms: 0.259581
+  type: 'test'
+  ...
+# Subtest: records a due checkpoint once and preserves the source plan
+ok 27 - records a due checkpoint once and preserves the source plan
+  ---
+  duration_ms: 0.895688
+  type: 'test'
+  ...
+# Subtest: checkpoint board reports due, overdue, recorded and legacy unscheduled plans
+ok 28 - checkpoint board reports due, overdue, recorded and legacy unscheduled plans
+  ---
+  duration_ms: 0.468676
+  type: 'test'
+  ...
+# Subtest: plugin adds checkpoint panel and actions after v7.26, safely and idempotently
+ok 29 - plugin adds checkpoint panel and actions after v7.26, safely and idempotently
+  ---
+  duration_ms: 36.381468
+  type: 'test'
+  ...
+# Subtest: plugin skips safely if any required v7.26 integration anchor has drifted
+ok 30 - plugin skips safely if any required v7.26 integration anchor has drifted
+  ---
+  duration_ms: 0.562917
+  type: 'test'
+  ...
+# Subtest: overdue recovery records achieved when current overdue workload reaches zero
+ok 31 - overdue recovery records achieved when current overdue workload reaches zero
+  ---
+  duration_ms: 1.273387
+  type: 'test'
+  ...
+# Subtest: overdue and at-risk reviews distinguish improvement from no improvement
+ok 32 - overdue and at-risk reviews distinguish improvement from no improvement
+  ---
+  duration_ms: 0.280703
+  type: 'test'
+  ...
+# Subtest: response target review requires a comparable completed sample and checks target attainment
+ok 33 - response target review requires a comparable completed sample and checks target attainment
+  ---
+  duration_ms: 0.231359
+  type: 'test'
+  ...
+# Subtest: assessments reject active plans, mismatched agents, invalid plans and previously reviewed plans
+ok 34 - assessments reject active plans, mismatched agents, invalid plans and previously reviewed plans
+  ---
+  duration_ms: 0.406592
+  type: 'test'
+  ...
+# Subtest: recording an outcome immutably updates exactly one completed plan and prevents duplicates
+ok 35 - recording an outcome immutably updates exactly one completed plan and prevents duplicates
+  ---
+  duration_ms: 0.381003
+  type: 'test'
+  ...
+# Subtest: outcome board counts reviewed states and keeps newest completed plans first
+ok 36 - outcome board counts reviewed states and keeps newest completed plans first
+  ---
+  duration_ms: 0.316487
+  type: 'test'
+  ...
+# Subtest: v7.26 adds outcome panel and review action after v7.25, and transform is idempotent
+ok 37 - v7.26 adds outcome panel and review action after v7.25, and transform is idempotent
+  ---
+  duration_ms: 1.551305
+  type: 'test'
+  ...
+# Subtest: v7.26 safely skips when upstream v7.25 anchors drift
+ok 38 - v7.26 safely skips when upstream v7.25 anchors drift
+  ---
+  duration_ms: 0.155925
+  type: 'test'
+  ...
+# Subtest: plans without comparable evidence are shown as waiting, not counted as ready for review
+ok 39 - plans without comparable evidence are shown as waiting, not counted as ready for review
+  ---
+  duration_ms: 0.306111
+  type: 'test'
+  ...
+# Subtest: missing metric fields are treated as insufficient evidence instead of zero
+ok 40 - missing metric fields are treated as insufficient evidence instead of zero
+  ---
+  duration_ms: 0.360813
+  type: 'test'
+  ...
+# Subtest: overdue follow-up work creates a high-priority recovery recommendation with evidence
+ok 41 - overdue follow-up work creates a high-priority recovery recommendation with evidence
+  ---
+  duration_ms: 1.455751
+  type: 'test'
+  ...
+# Subtest: at-risk work is prioritised before response-rate coaching when no overdue work remains
+ok 42 - at-risk work is prioritised before response-rate coaching when no overdue work remains
+  ---
+  duration_ms: 0.192519
+  type: 'test'
+  ...
+# Subtest: response-rate coaching requires a minimum completed sample and proposes a measurable target
+ok 43 - response-rate coaching requires a minimum completed sample and proposes a measurable target
+  ---
+  duration_ms: 0.2125
+  type: 'test'
+  ...
+# Subtest: one strongest recommendation is produced per agent and unassigned rows are excluded
+ok 44 - one strongest recommendation is produced per agent and unassigned rows are excluded
+  ---
+  duration_ms: 0.761266
+  type: 'test'
+  ...
+# Subtest: an agent with an open or in-progress plan is suppressed from duplicate recommendations
+ok 45 - an agent with an open or in-progress plan is suppressed from duplicate recommendations
+  ---
+  duration_ms: 0.258088
+  type: 'test'
+  ...
+# Subtest: malformed legacy plan statuses do not suppress fresh coaching recommendations
+ok 46 - malformed legacy plan statuses do not suppress fresh coaching recommendations
+  ---
+  duration_ms: 0.141143
+  type: 'test'
+  ...
+# Subtest: completed coaching plans do not suppress a later evidence-based recommendation
+ok 47 - completed coaching plans do not suppress a later evidence-based recommendation
+  ---
+  duration_ms: 0.169525
+  type: 'test'
+  ...
+# Subtest: invalid agents, malformed boards and malformed plan collections are handled safely
+ok 48 - invalid agents, malformed boards and malformed plan collections are handled safely
+  ---
+  duration_ms: 0.324669
+  type: 'test'
+  ...
+# Subtest: plan creation validates agent/focus and sets a seven-day due date by default
+ok 49 - plan creation validates agent/focus and sets a seven-day due date by default
+  ---
+  duration_ms: 0.855057
+  type: 'test'
+  ...
+# Subtest: plan creation rejects due dates that are not later than creation
+ok 50 - plan creation rejects due dates that are not later than creation
+  ---
+  duration_ms: 0.430648
+  type: 'test'
+  ...
+# Subtest: plan transitions are immutable and enforce open → in progress → completed
+ok 51 - plan transitions are immutable and enforce open → in progress → completed
+  ---
+  duration_ms: 0.462626
+  type: 'test'
+  ...
+# Subtest: unknown plan IDs and invalid transitions do not alter records
+ok 52 - unknown plan IDs and invalid transitions do not alter records
+  ---
+  duration_ms: 0.121392
+  type: 'test'
+  ...
+# Subtest: v7.25 transforms only a v7.24 performance panel and is idempotent
+ok 53 - v7.25 transforms only a v7.24 performance panel and is idempotent
+  ---
+  duration_ms: 0.859113
+  type: 'test'
+  ...
+# Subtest: v7.25 skips safely when the upstream v7.24 anchor set has drifted
+ok 54 - v7.25 skips safely when the upstream v7.24 anchor set has drifted
+  ---
+  duration_ms: 0.263386
+  type: 'test'
+  ...
+# Subtest: completed follow-up cycles are attributed to the responding agent, not a later contact owner
+ok 55 - completed follow-up cycles are attributed to the responding agent, not a later contact owner
+  ---
+  duration_ms: 1.684556
+  type: 'test'
+  ...
+# Subtest: open follow-up cycles use the currently assigned agent and separate overdue from completed-late
+ok 56 - open follow-up cycles use the currently assigned agent and separate overdue from completed-late
+  ---
+  duration_ms: 0.354503
+  type: 'test'
+  ...
+# Subtest: multiple agents and channels are aggregated without combining first-response SLA
+ok 57 - multiple agents and channels are aggregated without combining first-response SLA
+  ---
+  duration_ms: 7.11453
+  type: 'test'
+  ...
+# Subtest: unassigned and invalid records are handled safely and calculations do not mutate source history
+ok 58 - unassigned and invalid records are handled safely and calculations do not mutate source history
+  ---
+  duration_ms: 0.404759
+  type: 'test'
+  ...
+# Subtest: agent scorecard response rate is based only on completed follow-up cycles
+ok 59 - agent scorecard response rate is based only on completed follow-up cycles
+  ---
+  duration_ms: 0.353482
+  type: 'test'
+  ...
+# Subtest: v7.24 transforms only a v7.23 supervisor source and is idempotent
+ok 60 - v7.24 transforms only a v7.23 supervisor source and is idempotent
+  ---
+  duration_ms: 0.374234
+  type: 'test'
+  ...
+# Subtest: v7.24 skips safely when v7.23 anchors have drifted
+ok 61 - v7.24 skips safely when v7.23 anchors have drifted
+  ---
+  duration_ms: 0.25884
+  type: 'test'
+  ...
+# Subtest: v7.23 supervisor transform feeds the v7.24 analytics transform in sequence
+ok 62 - v7.23 supervisor transform feeds the v7.24 analytics transform in sequence
+  ---
+  duration_ms: 0.477849
+  type: 'test'
+  ...
+# Subtest: supervisor board identifies overdue and at-risk follow-up cycles only
+ok 63 - supervisor board identifies overdue and at-risk follow-up cycles only
+  ---
+  duration_ms: 2.10554
+  type: 'test'
+  ...
+# Subtest: customer follow-up bursts group repeated customer messages until an agent replies
+ok 64 - customer follow-up bursts group repeated customer messages until an agent replies
+  ---
+  duration_ms: 0.287563
+  type: 'test'
+  ...
+# Subtest: open supervisor requests are detected and do not create duplicate intervention prompts
+ok 65 - open supervisor requests are detected and do not create duplicate intervention prompts
+  ---
+  duration_ms: 0.393021
+  type: 'test'
+  ...
+# Subtest: alert revalidation rejects stale, responded, closed and mismatched cycles
+ok 66 - alert revalidation rejects stale, responded, closed and mismatched cycles
+  ---
+  duration_ms: 0.484089
+  type: 'test'
+  ...
+# Subtest: non-main modules are not transformed
+ok 67 - non-main modules are not transformed
+  ---
+  duration_ms: 0.268103
+  type: 'test'
+  ...
+# Subtest: main transform adds the supervisor panel, navigation and guarded escalation action once
+ok 68 - main transform adds the supervisor panel, navigation and guarded escalation action once
+  ---
+  duration_ms: 0.257658
+  type: 'test'
+  ...
+# Subtest: source drift causes a safe skip with no partial edits
+ok 69 - source drift causes a safe skip with no partial edits
+  ---
+  duration_ms: 0.346311
+  type: 'test'
+  ...
+# Subtest: v723 module is included once in the central v8 suite at the expected stage
+ok 70 - v723 module is included once in the central v8 suite at the expected stage
+  ---
+  duration_ms: 0.689097
+  type: 'test'
+  ...
+# Subtest: Vite registers the v8 suite once after the original gameplay plugins and keeps the build entries
+ok 71 - Vite registers the v8 suite once after the original gameplay plugins and keeps the build entries
+  ---
+  duration_ms: 0.170907
+  type: 'test'
+  ...
+# Subtest: v724 module is included once in the central v8 suite at the expected stage
+ok 72 - v724 module is included once in the central v8 suite at the expected stage
+  ---
+  duration_ms: 0.593664
+  type: 'test'
+  ...
+# Subtest: Vite registers the v8 suite once after the original gameplay plugins and keeps the build entries
+ok 73 - Vite registers the v8 suite once after the original gameplay plugins and keeps the build entries
+  ---
+  duration_ms: 0.171668
+  type: 'test'
+  ...
+# Subtest: v725 module is included once in the central v8 suite at the expected stage
+ok 74 - v725 module is included once in the central v8 suite at the expected stage
+  ---
+  duration_ms: 0.715747
+  type: 'test'
+  ...
+# Subtest: Vite registers the v8 suite once after the original gameplay plugins and keeps the build entries
+ok 75 - Vite registers the v8 suite once after the original gameplay plugins and keeps the build entries
+  ---
+  duration_ms: 0.169436
+  type: 'test'
+  ...
+# Subtest: v726 module is included once in the central v8 suite at the expected stage
+ok 76 - v726 module is included once in the central v8 suite at the expected stage
+  ---
+  duration_ms: 0.695667
+  type: 'test'
+  ...
+# Subtest: Vite registers the v8 suite once after the original gameplay plugins and keeps the build entries
+ok 77 - Vite registers the v8 suite once after the original gameplay plugins and keeps the build entries
+  ---
+  duration_ms: 0.187522
+  type: 'test'
+  ...
+# Subtest: v727 module is included once in the central v8 suite at the expected stage
+ok 78 - v727 module is included once in the central v8 suite at the expected stage
+  ---
+  duration_ms: 0.767926
+  type: 'test'
+  ...
+# Subtest: Vite registers the v8 suite once after the original gameplay plugins and keeps the build entries
+ok 79 - Vite registers the v8 suite once after the original gameplay plugins and keeps the build entries
+  ---
+  duration_ms: 0.168423
+  type: 'test'
+  ...
+# Subtest: v728 module is included once in the central v8 suite at the expected stage
+ok 80 - v728 module is included once in the central v8 suite at the expected stage
+  ---
+  duration_ms: 0.619382
+  type: 'test'
+  ...
+# Subtest: Vite registers the v8 suite once after the original gameplay plugins and keeps the build entries
+ok 81 - Vite registers the v8 suite once after the original gameplay plugins and keeps the build entries
+  ---
+  duration_ms: 0.19921
+  type: 'test'
+  ...
+# Subtest: v729 module is included once in the central v8 suite at the expected stage
+ok 82 - v729 module is included once in the central v8 suite at the expected stage
+  ---
+  duration_ms: 0.646733
+  type: 'test'
+  ...
+# Subtest: Vite registers the v8 suite once after the original gameplay plugins and keeps the build entries
+ok 83 - Vite registers the v8 suite once after the original gameplay plugins and keeps the build entries
+  ---
+  duration_ms: 0.171278
+  type: 'test'
+  ...
+# Subtest: v730 module is included once in the central v8 suite at the expected stage
+ok 84 - v730 module is included once in the central v8 suite at the expected stage
+  ---
+  duration_ms: 0.614305
+  type: 'test'
+  ...
+# Subtest: v8 keeps all original multipage inputs and output settings while registering the consolidated suite
+ok 85 - v8 keeps all original multipage inputs and output settings while registering the consolidated suite
+  ---
+  duration_ms: 0.235425
+  type: 'test'
+  ...
+# Subtest: v731 module is included once in the central v8 suite at the expected stage
+ok 86 - v731 module is included once in the central v8 suite at the expected stage
+  ---
+  duration_ms: 0.633694
+  type: 'test'
+  ...
+# Subtest: v8 configuration registers one consolidated suite followed by its production gate
+ok 87 - v8 configuration registers one consolidated suite followed by its production gate
+  ---
+  duration_ms: 0.141302
+  type: 'test'
+  ...
+# Subtest: workstreams compare voice profile and separately attributed email, chat and social cycles
+ok 88 - workstreams compare voice profile and separately attributed email, chat and social cycles
+  ---
+  duration_ms: 2.951684
+  type: 'test'
+  ...
+# Subtest: department comparisons use explicit department values and exact employee roster matches only
+ok 89 - department comparisons use explicit department values and exact employee roster matches only
+  ---
+  duration_ms: 6.933387
+  type: 'test'
+  ...
+# Subtest: current employee department is mapped only to the exact EMP-initials identifier
+ok 90 - current employee department is mapped only to the exact EMP-initials identifier
+  ---
+  duration_ms: 0.462295
+  type: 'test'
+  ...
+# Subtest: agent-level explicit department names work without a separate roster
+ok 91 - agent-level explicit department names work without a separate roster
+  ---
+  duration_ms: 0.969209
+  type: 'test'
+  ...
+# Subtest: unknown departments remain unassigned rather than being inferred from agent names
+ok 92 - unknown departments remain unassigned rather than being inferred from agent names
+  ---
+  duration_ms: 0.645452
+  type: 'test'
+  ...
+# Subtest: capacity scenarios calculate a visible gap from editable planning assumptions
+ok 93 - capacity scenarios calculate a visible gap from editable planning assumptions
+  ---
+  duration_ms: 0.407002
+  type: 'test'
+  ...
+# Subtest: capacity planner does not invent a staffing gap when planned seats are omitted
+ok 94 - capacity planner does not invent a staffing gap when planned seats are omitted
+  ---
+  duration_ms: 0.382035
+  type: 'test'
+  ...
+# Subtest: missing channel breakdown is retained as unattributed backlog instead of disappearing
+ok 95 - missing channel breakdown is retained as unattributed backlog instead of disappearing
+  ---
+  duration_ms: 0.250477
+  type: 'test'
+  ...
+# Subtest: unassigned and aggregate rows do not inflate digital command-centre totals
+ok 96 - unassigned and aggregate rows do not inflate digital command-centre totals
+  ---
+  duration_ms: 0.859183
+  type: 'test'
+  ...
+# Subtest: supervisor queue ranks overdue and at-risk agents and gives evidence-linked next steps
+ok 97 - supervisor queue ranks overdue and at-risk agents and gives evidence-linked next steps
+  ---
+  duration_ms: 1.366267
+  type: 'test'
+  ...
+# Subtest: capacity assumptions are clamped and malformed state produces an unscored empty board
+ok 98 - capacity assumptions are clamped and malformed state produces an unscored empty board
+  ---
+  duration_ms: 0.348765
+  type: 'test'
+  ...
+# Subtest: command-centre CSV exports workstreams, explicit departments and risk rows with safe quoting
+ok 99 - command-centre CSV exports workstreams, explicit departments and risk rows with safe quoting
+  ---
+  duration_ms: 0.407954
+  type: 'test'
+  ...
+# Subtest: v7.30 transform appends command centre after v7.29 and registers session-only form/export handlers
+ok 100 - v7.30 transform appends command centre after v7.29 and registers session-only form/export handlers
+  ---
+  duration_ms: 32.80298
+  type: 'test'
+  ...
+# Subtest: v7.30 skips safely when the v7.29 source contract has changed
+ok 101 - v7.30 skips safely when the v7.29 source contract has changed
+  ---
+  duration_ms: 0.216776
+  type: 'test'
+  ...
+# Subtest: joins voice, QA, CSAT, shift and digital evidence only on the exact employee key
+ok 102 - joins voice, QA, CSAT, shift and digital evidence only on the exact employee key
+  ---
+  duration_ms: 2.75069
+  type: 'test'
+  ...
+# Subtest: does not merge another agent digital data into the current employee profile
+ok 103 - does not merge another agent digital data into the current employee profile
+  ---
+  duration_ms: 0.29185
+  type: 'test'
+  ...
+# Subtest: missing dimensions remain unscored instead of being treated as zero
+ok 104 - missing dimensions remain unscored instead of being treated as zero
+  ---
+  duration_ms: 0.171459
+  type: 'test'
+  ...
+# Subtest: one available index dimension is insufficient; two allow a coverage-labelled index
+ok 105 - one available index dimension is insufficient; two allow a coverage-labelled index
+  ---
+  duration_ms: 0.375945
+  type: 'test'
+  ...
+# Subtest: shift adherence is computed only from retained numeric shift records
+ok 106 - shift adherence is computed only from retained numeric shift records
+  ---
+  duration_ms: 0.178018
+  type: 'test'
+  ...
+# Subtest: compliance risk reflects recorded incidents and critical voice flags
+ok 107 - compliance risk reflects recorded incidents and critical voice flags
+  ---
+  duration_ms: 0.241864
+  type: 'test'
+  ...
+# Subtest: digital operations totals remain separate from the current employee profile
+ok 108 - digital operations totals remain separate from the current employee profile
+  ---
+  duration_ms: 0.503898
+  type: 'test'
+  ...
+# Subtest: unassigned and aggregate agent rows are excluded and ranking prioritises risk
+ok 109 - unassigned and aggregate agent rows are excluded and ranking prioritises risk
+  ---
+  duration_ms: 0.314804
+  type: 'test'
+  ...
+# Subtest: digital operation totals exclude unassigned and aggregate records
+ok 110 - digital operation totals exclude unassigned and aggregate records
+  ---
+  duration_ms: 0.489748
+  type: 'test'
+  ...
+# Subtest: source coverage identifies available and missing evidence areas
+ok 111 - source coverage identifies available and missing evidence areas
+  ---
+  duration_ms: 0.446062
+  type: 'test'
+  ...
+# Subtest: invalid and partial input is handled as an empty unscored board
+ok 112 - invalid and partial input is handled as an empty unscored board
+  ---
+  duration_ms: 0.665291
+  type: 'test'
+  ...
+# Subtest: plugin appends a read-only workforce panel after the v7.28 career evidence panel
+ok 113 - plugin appends a read-only workforce panel after the v7.28 career evidence panel
+  ---
+  duration_ms: 31.438907
+  type: 'test'
+  ...
+# Subtest: plugin skips safely when the v7.28 contract has drifted
+ok 114 - plugin skips safely when the v7.28 contract has drifted
+  ---
+  duration_ms: 0.399311
+  type: 'test'
+  ...
+# Subtest: snapshot retains aggregate operational metrics and excludes employee/customer identifiers
+ok 115 - snapshot retains aggregate operational metrics and excludes employee/customer identifiers
+  ---
+  duration_ms: 2.470139
+  type: 'test'
+  ...
+# Subtest: snapshot clamps counts and rates and ignores unapproved workstream identifiers
+ok 116 - snapshot clamps counts and rates and ignores unapproved workstream identifiers
+  ---
+  duration_ms: 0.287222
+  type: 'test'
+  ...
+# Subtest: invalid dates and malformed snapshots are rejected without throwing
+ok 117 - invalid dates and malformed snapshots are rejected without throwing
+  ---
+  duration_ms: 0.704821
+  type: 'test'
+  ...
+# Subtest: normalisation reconstructs only the documented snapshot schema
+ok 118 - normalisation reconstructs only the documented snapshot schema
+  ---
+  duration_ms: 0.361094
+  type: 'test'
+  ...
+# Subtest: overall comparison classifies completed increase and open/overdue reductions as improvements
+ok 119 - overall comparison classifies completed increase and open/overdue reductions as improvements
+  ---
+  duration_ms: 0.817361
+  type: 'test'
+  ...
+# Subtest: comparison does not score missing values and identical values remain unchanged
+ok 120 - comparison does not score missing values and identical values remain unchanged
+  ---
+  duration_ms: 0.425751
+  type: 'test'
+  ...
+# Subtest: workstream comparisons match IDs and mark newly observed channels without invented deltas
+ok 121 - workstream comparisons match IDs and mark newly observed channels without invented deltas
+  ---
+  duration_ms: 0.346141
+  type: 'test'
+  ...
+# Subtest: department trends match exact department labels and identify new and removed groups
+ok 122 - department trends match exact department labels and identify new and removed groups
+  ---
+  duration_ms: 0.344338
+  type: 'test'
+  ...
+# Subtest: history is chronological, deduplicated and capped at 90 snapshots
+ok 123 - history is chronological, deduplicated and capped at 90 snapshots
+  ---
+  duration_ms: 7.494642
+  type: 'test'
+  ...
+# Subtest: history retention limit is bounded and invalid additions do not corrupt history
+ok 124 - history retention limit is bounded and invalid additions do not corrupt history
+  ---
+  duration_ms: 0.651531
+  type: 'test'
+  ...
+# Subtest: CSV contains aggregate sections and neutralises formula-leading data
+ok 125 - CSV contains aggregate sections and neutralises formula-leading data
+  ---
+  duration_ms: 0.687415
+  type: 'test'
+  ...
+# Subtest: v7.31 plugin applies after v7.30, adds the trend panel and browser-local controls, and is idempotent
+ok 126 - v7.31 plugin applies after v7.30, adds the trend panel and browser-local controls, and is idempotent
+  ---
+  duration_ms: 40.947551
+  type: 'test'
+  ...
+# Subtest: v7.31 skips safely when the v7.30 integration contract is missing or duplicated
+ok 127 - v7.31 skips safely when the v7.30 integration contract is missing or duplicated
+  ---
+  duration_ms: 0.262375
+  type: 'test'
+  ...
+1..127
+# tests 127
+# suites 0
+# pass 127
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1177.251071

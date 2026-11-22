@@ -1,26 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 
-const config = await readFile(new URL('../vite.config.js', import.meta.url), 'utf8');
+const root = resolve(import.meta.dirname, '..');
+const config = await readFile(resolve(root, 'vite.config.js'), 'utf8');
+const suite = await readFile(resolve(root, 'build/calloria-workforce-development-suite-v8.mjs'), 'utf8');
 
-test('Vite configuration imports v7.23 supervisor plugin', () => {
-  assert.ok(config.includes("import { calloriaDigitalFollowUpSupervisorPluginV723 } from './build/calloria-digital-followup-supervisor-v723.mjs';"));
+test('v723 module is included once in the central v8 suite at the expected stage', () => {
+  assert.ok(suite.includes("import { calloriaDigitalFollowUpSupervisorPluginV723 } from './calloria-digital-followup-supervisor-v723.mjs';"));
+  assert.equal((suite.match(new RegExp('calloriaDigitalFollowUpSupervisorPluginV723\\(\\)', 'g')) || []).length, 1);
+  const current = suite.indexOf('calloriaDigitalFollowUpSupervisorPluginV723()');
+  const previous = suite.indexOf('calloriaDigitalExperienceSuitePluginV722()');
+  assert.ok(previous >= 0 && current > previous, 'release must follow its predecessor');
+  const next = suite.indexOf('calloriaDigitalFollowUpPerformancePluginV724()');
+  assert.ok(next > current, 'release must precede its successor');
+  assert.ok(suite.includes("'calloria-digital-followup-supervisor-v7-23'"));
 });
 
-test('v7.23 executes after the v7.22 digital experience suite', () => {
-  const v722 = config.indexOf('calloriaDigitalExperienceSuitePluginV722(),');
-  const v723 = config.indexOf('calloriaDigitalFollowUpSupervisorPluginV723()');
-  assert.ok(v722 >= 0);
-  assert.ok(v723 > v722);
-});
-
-test('existing Vite multi-page inputs and core plugins are retained', () => {
-  for (const expected of [
-    'calloriaGLBWorldPlugin()', 'calloriaMeshoptRuntimePlugin()',
-    'calloriaOJTGLBActivationPlugin()', 'calloriaMobileResponsiveRepairPlugin()',
-    "main: resolve(process.cwd(), 'index.html')",
-    "assetInspector: resolve(process.cwd(), 'asset-inspector.html')",
-    "calloriaChatWidget: resolve(process.cwd(), 'widgets/calloria-chat.js')"
-  ]) assert.ok(config.includes(expected), `missing existing Vite configuration entry: ${expected}`);
+test('Vite registers the v8 suite once after the original gameplay plugins and keeps the build entries', () => {
+  const suite = config.indexOf('...calloriaWorkforceDevelopmentSuitePluginsV8()');
+  const gate = config.indexOf('calloriaProductionIntegrationGatePluginV8()');
+  assert.equal((config.match(/\.\.\.calloriaWorkforceDevelopmentSuitePluginsV8\(\)/g) || []).length, 1);
+  assert.equal((config.match(/calloriaProductionIntegrationGatePluginV8\(\)/g) || []).length, 1);
+  assert.ok(suite > config.indexOf('calloriaTryItStudioPlugin()') && gate > suite);
+  for (const expected of ['calloriaGLBWorldPlugin()', 'calloriaOJTGLBActivationPlugin()', 'calloriaMobileResponsiveRepairPlugin()', "main: resolve(process.cwd(), 'index.html')", "assetInspector: resolve(process.cwd(), 'asset-inspector.html')"]) assert.ok(config.includes(expected), `missing preserved integration: ${{expected}}`);
 });

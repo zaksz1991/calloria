@@ -1,0 +1,28 @@
+CALLORIA v8.0 RELEASE STATUS
+
+Feature baseline: v7.23-v7.31
+Central suite: v7.22-v7.31 in one Vite registration group
+Vite plugin gate: implemented
+20 HTML entry checks: implemented
+Chat-widget source/output checks: implemented
+Prebuild integration audit: registered
+Post-build artifact audit: preserved
+Node 22/dependency/Vercel contract: preserved
+
+Verification completed in the supplied workspace:
+- Focused v7.23-v7.31 + v8.0 tests: 127 passed / 0 failed
+- JavaScript syntax checks: 43 passed / 43 checked
+- Integration audit fixture: passed
+- ZIP integrity: pending archive creation
+
+Not verified:
+- Full repository npm test
+- Complete Vite production build
+- Browser end-to-end test against the full application
+- Production GLB loading on desktop/Android/iOS
+- Supabase remote state
+- GitHub push
+- Vercel production deployment
+
+Classification: cumulative source overlay; not a complete CALLORIA repository replacement.
+No database migration, secret, environment variable or dependency change.

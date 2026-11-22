@@ -1,0 +1,34 @@
+CALLORIA v8.0 — TEST RESULTS
+
+Command:
+node --experimental-default-type=module --test tests/*.test.mjs
+
+Result:
+- Total tests: 127
+- Passed: 127
+- Failed: 0
+- Skipped: 0
+
+The suite includes the previous v7.23-v7.31 functional regression tests, updated Vite-registration tests for the central v8 suite, and eight v8 integration-gate/source-audit tests.
+
+JavaScript syntax:
+- Files checked: 43
+- Passed: 43
+- Failed: 0
+
+v8-specific checks:
+- Central suite contains ten plugins in deterministic order.
+- The production gate accepts the expected plugin chain and all configured entries.
+- The gate rejects a missing or duplicated plugin.
+- The gate rejects a misordered plugin chain.
+- The gate rejects missing HTML/widget source entries.
+- The gate rejects a generated bundle that omits one or more HTML pages or the chat widget.
+- The source audit passes a complete isolated repository fixture.
+- The source audit detects missing entries and prebuild-script drift.
+
+Not run:
+- Full repository npm test (the source workspace is an overlay and does not contain every core repository test file).
+- Full Vite production build (the complete base application and node_modules were not present in the preparation workspace).
+- Live browser end-to-end tests, physical phone tests, remote Supabase verification or Vercel production deployment.
+
+A passed overlay test suite is not evidence of successful deployment.

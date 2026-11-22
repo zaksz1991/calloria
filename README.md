@@ -1,59 +1,35 @@
-# CALLORIA v7.31 — Workforce Trend & Evidence History
+# CALLORIA v8.0 — Full Integration and Production Stabilisation
 
-A cumulative v7.23–v7.31 source overlay for the existing CALLORIA Supervisor workspace. It extends the v7.30 Workforce Intelligence Command Centre with manually captured aggregate snapshots, trend comparisons and local history export.
+**Product:** CALLORIA — Every Call. Every Customer. Every Career.  
+**Repository:** `zaksz1991/calloria`  
+**Production site:** `https://calloria.vercel.app`  
+**Baseline:** Current public `main` containing the v7.23–v7.31 digital/workforce feature chain.
 
-## What's new in v7.31
+## What v8.0 changes
 
-### Aggregate workforce snapshots
+CALLORIA v8.0 consolidates the v7.22–v7.31 digital-support and workforce feature chain into one ordered Vite registration group. The individual feature modules remain separate and testable; their order is now declared in one place.
 
-A supervisor can capture the current v7.30 command-centre board as a dated baseline. Snapshots contain aggregate operational counts and rates, available workstream values, and department groups that already have explicit mappings.
+A production integration gate now stops configuration/build when:
 
-### Change comparisons
+- a required v7.22–v7.31 plugin is missing, duplicated or out of order;
+- one of the 20 existing HTML pages is missing from Vite's multi-page input map or the source tree;
+- the public chat-widget entry is missing;
+- the production bundle omits a configured HTML page or the chat-widget output.
 
-When a saved snapshot exists, the panel compares the current board with the most recent saved snapshot:
+The new source-level release audit also checks the package scripts, Node 22 pin, pinned dependencies, Vercel output contract and local Vite import graph before Vite starts.
 
-- completed digital replies;
-- open digital work;
-- overdue digital work;
-- at-risk digital work;
-- response-target rate;
-- channel-specific completion, open, overdue and response-target changes;
-- mapped-department completion, open, overdue, at-risk and response-target changes.
+## Preserved
 
-The trend direction is calculated according to the measure: an increase in completed replies or response-target rate is positive, while a decrease in open, overdue or at-risk work is positive. Missing comparison values are not scored. New channels and departments do not receive fabricated baseline values.
+- Existing 3D, workplace, OJT, recruitment, voice and multichannel plugins.
+- The customer-care, CRM, voice, email, live-chat, social, SMS, workforce and asset-inspector pages.
+- Existing Supabase project, database, Edge Functions, secrets and authentication settings.
+- Existing GLB models, public assets, guest progress and customer/employee data.
+- Existing dependency versions: Vite 6.4.5, Three.js 0.170.0, Supabase JS 2.119.0 and esbuild 0.25.12.
 
-### Local history and export
+No database migration, new dependency, secret, environment variable, provider account or external integration is introduced.
 
-- Up to 90 snapshots are retained in browser localStorage.
-- Snapshots are ordered by capture timestamp; duplicate timestamps replace the matching snapshot.
-- A CSV export includes aggregate summary, workstream and department rows.
-- The supervisor can clear this browser's history after a confirmation step.
+## Verification boundary
 
-## Data privacy and operating limits
+The supplied v7.23–v7.31 and v8.0 focused regression suites pass **127/127 tests**. JavaScript syntax checks pass for **43/43 files** in this release workspace. A full production Vite build, full repository test suite, deployed browser session, real mobile-device test and Vercel deployment were not run from this workspace. The deployment must report a successful Vercel build before v8.0 is considered production-stable.
 
-The snapshot schema excludes individual employee IDs, customer details, case references and transcripts. It does include aggregate department labels and counts where those department mappings exist. Browser-local history is not a cloud backup, not shared with the organisation, and not synchronised between devices or browsers. Capture is manual, not scheduled or automatic. Trend comparisons do not prove cause or constitute HR decisions.
-
-## Package contents
-
-- `js/workforce-trend-history-engine-v731.js`
-- `build/calloria-workforce-trend-history-v731.mjs`
-- `styles/calloria-workforce-trend-history-v731.css`
-- `tests/workforce-trend-history-v731.test.mjs`
-- `tests/vite-config-v731.test.mjs`
-- Updated `vite.config.js`
-- v7.23–v7.30 source overlays, tests and release documents carried forward from the provided v7.30 package.
-
-This is not the complete CALLORIA repository. It does not contain the private `.git` metadata, all original application source, local environment files or the existing `public/assets/` GLB binaries. Preserve those from the actual repository checkout.
-
-## Validation
-
-- 121 automated tests passed; 0 failed.
-- 38 JavaScript/MJS files passed Node syntax checks.
-- Generated v7.23–v7.31 transform-chain syntax passed.
-- A complete Vite production build, live deployment and physical mobile checks remain unverified.
-
-See `docs/TEST-RESULTS-v7.31.txt` and `docs/RELEASE-STATUS-v7.31.txt`.
-
-## Installation
-
-Use `INSTALL-GITHUB-v7.31.md`. Merge the v7.31 files into the existing repository and register the plugin immediately after v7.30. Keep the `.git` directory, original application files, `public/assets/`, GLB models and existing environment configuration untouched.
+This ZIP is a cumulative feature-chain and integration overlay, not a copy of the entire application repository. Merge it into the existing repository; do not replace the repository with this folder.
