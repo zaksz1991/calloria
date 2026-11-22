@@ -1,0 +1,28 @@
+/* CALLORIA v7.28 — career evidence bridge. */
+.digital-career-evidence-panel{margin-top:18px}
+.digital-career-evidence-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0 18px}
+.digital-career-evidence-summary>div{min-width:0;padding:12px;border:1px solid var(--line,#e5ebf1);border-radius:12px;background:var(--soft,#eef4f7)}
+.digital-career-evidence-summary span,.digital-career-evidence-metrics span{display:block;color:var(--muted,#718096);font-size:11px;line-height:1.35}
+.digital-career-evidence-summary strong{display:block;margin-top:5px;font-size:23px;color:var(--ink,#101c2b)}
+.digital-career-evidence-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.digital-career-evidence-card{min-width:0;padding:14px;border:1px solid var(--line,#e5ebf1);border-radius:14px;background:var(--white,#fff)}
+.digital-career-evidence-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.digital-career-evidence-top>div{min-width:0}
+.digital-career-evidence-top strong{display:block;overflow-wrap:anywhere;font-size:14px}
+.digital-career-evidence-top small,.digital-career-evidence-sustainment{display:block;margin-top:4px;color:var(--muted,#718096);font-size:11px;line-height:1.45}
+.digital-career-evidence-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:13px 0 8px}
+.digital-career-evidence-metrics>div{min-width:0;padding:8px;border-radius:9px;background:var(--soft,#eef4f7)}
+.digital-career-evidence-metrics b{display:block;margin-top:3px;font-size:16px;overflow-wrap:anywhere}
+.digital-career-evidence-blockers{margin:10px 0 0;padding-left:18px;color:var(--muted,#718096);font-size:12px;line-height:1.5}
+.digital-career-evidence-blockers li+li{margin-top:3px}
+.digital-career-evidence-ready-note{margin:10px 0 0;color:#087f68;font-size:12px;line-height:1.5}
+.digital-career-evidence-actions{margin-top:12px}
+.digital-career-review-form{display:grid;gap:9px;padding:12px;border-radius:11px;background:var(--soft,#eef4f7)}
+.digital-career-review-form label{display:grid;gap:5px;font-size:11px;font-weight:700;color:var(--ink,#101c2b)}
+.digital-career-review-form input,.digital-career-review-form select,.digital-career-review-form textarea{width:100%;min-width:0;padding:9px 10px;border:1px solid var(--line,#d9e2ea);border-radius:8px;background:#fff;color:var(--ink,#101c2b);font:inherit;font-size:13px}
+.digital-career-review-form textarea{resize:vertical;min-height:62px}
+.digital-career-evidence-decision{margin-top:10px;padding:11px;border:1px solid var(--line,#e5ebf1);border-radius:10px;background:var(--soft,#eef4f7)}
+.digital-career-evidence-decision strong,.digital-career-evidence-decision small{display:block}
+.digital-career-evidence-decision small{margin-top:3px;color:var(--muted,#718096);font-size:11px}
+.digital-career-evidence-decision p{margin:8px 0 0;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+@media(max-width:760px){.digital-career-evidence-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.digital-career-evidence-list{grid-template-columns:1fr}.digital-career-evidence-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.digital-career-evidence-panel{overflow:hidden}.digital-career-review-form .btn{width:100%;min-height:42px}}

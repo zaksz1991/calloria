@@ -1,0 +1,15 @@
+CALLORIA v7.28 RELEASE STATUS
+
+Source preparation: complete
+Automated tests: 76 passed / 0 failed
+JavaScript/MJS syntax checks: 25 files passed
+Vite config syntax check: passed
+Generated transformed main.js syntax: passed
+ZIP archive integrity: passed
+Full production Vite build: not run
+GitHub push: not performed
+Vercel deployment: not verified
+Live browser/device test: not performed
+
+Release type: cumulative source overlay for v7.23-v7.28; not a complete CALLORIA repository snapshot.
+Required baseline: v7.23, v7.24, v7.25, v7.26 and v7.27 overlays must be present in the repository before v7.28.

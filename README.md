@@ -1,22 +1,33 @@
-# CALLORIA v7.27 — Coaching Sustainment Checkpoints
+# CALLORIA v7.28 — Workforce Career Evidence Bridge
 
-This additive release extends the digital follow-up supervisor workflow through v7.27.
+This release links the v7.23–v7.27 digital follow-up supervision, agent scorecards, coaching, outcome reviews and sustainment checks to a supervisor career-review dossier.
 
-After a supervisor records a completed coaching plan's outcome review, CALLORIA schedules a 7-day and a 30-day follow-through check. The Supervisor workspace shows upcoming, due, overdue and recorded checks. Supervisors can record each due checkpoint once, with a scorecard comparison and timeline event.
+## What it does
 
-Checkpoint outcomes distinguish a a previously achieved target maintained, a target newly reached, further improvement, regression, stable performance below target and insufficient evidence. Response-rate checks require at least three new completed follow-ups; count-based workload checks require at least one. Missing or inadequate evidence is not converted into a zero.
+For each agent in the retained synthetic Email, Live Chat and Social follow-up scorecard, the Supervisor workspace displays a readiness status, evidence score, completed response count, response-target rate, overdue and at-risk work, coaching status and 30-day sustainment status.
 
-## Release contents
+A career review packet can only be prepared when the configured evidence gates are met. The supervisor must record a named decision and supporting notes. Decisions are to refer to the existing formal promotion-exam eligibility review, defer for continued development, or not recommend at this review.
 
-- `js/` — v7.23–v7.27 digital follow-up engines.
-- `build/` — ordered Vite transforms for v7.23–v7.27.
-- `styles/` — responsive supervisor, performance, coaching, outcome and checkpoint panels.
-- `tests/` — unit, integration-transform and Vite registration tests.
-- `docs/` — release notes and verification records.
-- `vite.config.js` — configuration snapshot with v7.27 registered after v7.26.
+The new workflow does not promote anyone, award compensation, change job title, modify employment status, or consume a promotion exam attempt. Formal progression remains subject to CALLORIA's existing performance eligibility rules, annual examination process and three-attempt limit.
 
-## Deployment boundary
+## New files
 
-This is a cumulative v7.23–v7.27 overlay for the digital follow-up workflow, not a complete CALLORIA repository. It does not contain the full application source, the repository's `public/assets/` GLB models, `.git`, deployment credentials or environment files. Merge it into the existing `zaksz1991/calloria` checkout and preserve unrelated source and assets. Review the supplied Vite configuration against the actual repository before replacing it.
+- `js/digital-career-evidence-engine-v728.js`
+- `build/calloria-digital-career-evidence-v728.mjs`
+- `styles/calloria-digital-career-evidence-v728.css`
+- `tests/digital-career-evidence-v728.test.mjs`
+- `tests/vite-config-v728.test.mjs`
 
-No production deployment is claimed by this ZIP. The automated release tests validate the supplied modules and source transforms only; the complete Vite build and live Vercel runtime must be checked in the real repository/deployment.
+## Installation
+
+Follow `INSTALL-GITHUB-v7.28.md`. This ZIP is an overlay, not the complete repository. It expects v7.23–v7.27 to be merged first. Keep `.git`, `public/assets/`, GLB models, environment files, credentials and unrelated source files.
+
+## Validation
+
+- Automated tests: 76 passed, 0 failed.
+- JavaScript/MJS syntax: 25 files passed.
+- Generated Vite-transformed `main.js` syntax: passed.
+- Full Vite production build: not run; the complete repository and installed dependencies were not available in this preparation workspace.
+- Live Vercel deployment and production browser/device behaviour: not verified.
+
+No SQL migration, Edge Function, secret, environment variable, provider integration or dependency is added.

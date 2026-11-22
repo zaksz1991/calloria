@@ -1,0 +1,34 @@
+CALLORIA v7.28 — TEST RESULTS
+
+Automated suite: node --test tests/*.test.mjs
+Total tests: 76
+Passed: 76
+Failed: 0
+Skipped: 0
+
+JavaScript/MJS syntax validation:
+Files checked: 25
+Syntax failures: 0
+
+Generated Vite transformation:
+- v7.23 → v7.24 → v7.25 → v7.26 → v7.27 → v7.28 transform sequence: passed.
+- Generated transformed main.js syntax check: passed.
+- Transform idempotency and safe source-drift skip: passed.
+
+v7.28 coverage:
+- Minimum completed-response sample and missing-rate handling.
+- SLA, overdue, at-risk and active-coaching readiness gates.
+- Completed coaching outcome and positive 30-day sustainment gate.
+- Negative coaching outcomes and regression blocking.
+- Exclusion of unassigned and aggregate scorecards.
+- Immutable, duplicate-safe career review packet creation.
+- Required supervisor decision, reviewer name and evidence note.
+- Formal promotion-exam referral boundary.
+- Defer and not-recommended review outcomes.
+- Ordered Vite registration and preservation of 3D/workforce/channel plugins.
+
+NOT RUN:
+- Full Vite production build (no complete repository dependencies/node_modules in preparation workspace).
+- Production deployment or live Vercel browser checks.
+- Supabase production state (no schema change included).
+- Physical Android/iOS verification.

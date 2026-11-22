@@ -1,0 +1,28 @@
+CALLORIA v7.28 — NEW / CHANGED FILE MANIFEST
+
+New runtime engine:
+- js/digital-career-evidence-engine-v728.js
+
+New Vite transform:
+- build/calloria-digital-career-evidence-v728.mjs
+
+New presentation layer:
+- styles/calloria-digital-career-evidence-v728.css
+
+New automated tests:
+- tests/digital-career-evidence-v728.test.mjs
+- tests/vite-config-v728.test.mjs
+
+Updated integration file:
+- vite.config.js (adds v7.28 import and registration after v7.27)
+
+New release documentation:
+- CHANGELOG-v7.28.md
+- INSTALL-GITHUB-v7.28.md
+- README.md
+- docs/TEST-RESULTS-v7.28.txt
+- docs/TEST-EXECUTION-v7.28.txt
+- docs/RELEASE-STATUS-v7.28.txt
+- docs/FILE-MANIFEST-v7.28.txt
+
+The archive also carries forward the v7.23–v7.27 overlay files and supporting documentation. It does not contain the complete CALLORIA repository or the existing public/assets GLB binaries.
