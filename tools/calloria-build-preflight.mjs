@@ -41,11 +41,13 @@ if (pkg) {
 
   const expectedScripts = {
     preinstall: 'node tools/calloria-build-preflight.mjs --install',
-    prebuild: 'node tools/calloria-build-preflight.mjs --build',
     build: 'vite build',
     postbuild: 'node tools/calloria-build-artifact-audit.mjs',
     'verify:build-manifest': 'node tools/calloria-build-preflight.mjs --manifest',
-    'verify:build-artifacts': 'node tools/calloria-build-artifact-audit.mjs'
+    'verify:build-artifacts': 'node tools/calloria-build-artifact-audit.mjs',
+    'verify:navigation': 'node tools/calloria-navigation-integrity-audit.mjs',
+    check: 'node tools/calloria-build-preflight.mjs --manifest && node tools/calloria-navigation-integrity-audit.mjs',
+    prebuild: 'node tools/calloria-build-preflight.mjs --build && node tools/calloria-navigation-integrity-audit.mjs'
   };
   for (const [name, expected] of Object.entries(expectedScripts)) {
     if (pkg.scripts?.[name] !== expected) {
@@ -123,6 +125,7 @@ if (fs.existsSync(viteConfigPath)) {
 }
 
 requireFile('tools/calloria-build-artifact-audit.mjs', 'post-build artifact audit');
+requireFile('tools/calloria-navigation-integrity-audit.mjs', 'pre-build route and application-view audit');
 requireFile('build/calloria-third-person-player-plugin.mjs', 'resilient optional player-avatar transform');
 requireFile('.github/workflows/calloria-production-build.yml', 'GitHub Actions production build gate');
 requireFile('.npmrc', 'strict dependency install-script policy');

@@ -20,15 +20,16 @@ function fixture() {
     engines: { node: '22.x' },
     scripts: {
       preinstall: 'node tools/calloria-build-preflight.mjs --install',
-      prebuild: 'node tools/calloria-build-preflight.mjs --build',
+      prebuild: 'node tools/calloria-build-preflight.mjs --build && node tools/calloria-navigation-integrity-audit.mjs',
       build: 'vite build',
       postbuild: 'node tools/calloria-build-artifact-audit.mjs',
       dev: 'vite --host 0.0.0.0',
       preview: 'vite preview --host 0.0.0.0',
-      check: 'node tools/calloria-build-preflight.mjs --manifest',
+      check: 'node tools/calloria-build-preflight.mjs --manifest && node tools/calloria-navigation-integrity-audit.mjs',
       test: 'node --test tests/*.test.mjs tests/commitment-engine-v69.test.cjs',
       'verify:build-manifest': 'node tools/calloria-build-preflight.mjs --manifest',
-      'verify:build-artifacts': 'node tools/calloria-build-artifact-audit.mjs'
+      'verify:build-artifacts': 'node tools/calloria-build-artifact-audit.mjs',
+      'verify:navigation': 'node tools/calloria-navigation-integrity-audit.mjs'
     },
     dependencies: { '@supabase/supabase-js': '2.119.0', three: '0.170.0' },
     devDependencies: { esbuild: '0.25.12', vite: '6.4.5' },
@@ -38,6 +39,7 @@ function fixture() {
   fs.writeFileSync(path.join(root, '.nvmrc'), '22\n');
   fs.writeFileSync(path.join(root, 'tools/calloria-build-preflight.mjs'), fs.readFileSync(guardSource));
   fs.writeFileSync(path.join(root, 'tools/calloria-build-artifact-audit.mjs'), 'export {};\n');
+  fs.writeFileSync(path.join(root, 'tools/calloria-navigation-integrity-audit.mjs'), 'export {};\n');
   fs.writeFileSync(path.join(root, '.npmrc'), 'strict-allow-scripts=true\n');
   fs.writeFileSync(path.join(root, '.github/workflows/calloria-production-build.yml'), 'name: CALLORIA production build\n');
   fs.writeFileSync(path.join(root, 'build/calloria-third-person-player-plugin.mjs'), "const marker = '__CALLORIA_THIRD_PERSON_PLAYER_V26__';\nconst plugin = { enforce: 'post' };\nconst warn = context.warn?.('safe skip');\nexport { marker, plugin, warn };\n");
