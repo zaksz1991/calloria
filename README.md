@@ -1,5 +1,11 @@
-# CALLORIA v7.23 — Digital Follow-up SLA Supervision
+# CALLORIA v7.24 — Digital Follow-up Performance
 
-This additive source release extends the current v7.22 digital experience suite with operational supervision for unanswered customer follow-ups.
+Cumulative source overlay containing v7.23 Digital Follow-up SLA Supervision and v7.24 agent-level response performance scorecards.
 
-See `INSTALL-GITHUB-v7.23.md` for the GUI install and deployment checks. See `docs/CHANGELOG-v7.23.md` for the scope and safety boundaries. Verification limits are recorded in `docs/RELEASE-STATUS.txt`.
+Target: `zaksz1991/calloria`, branch `main`, existing Vercel project `calloria`.
+
+This is not a full repository replacement. It supplies the previous v7.23 cumulative overlay and the v7.24 additions, including the complete Vite configuration replacement. Preserve every other repository file and the actual `public/assets/` GLB assets.
+
+Focused verification: 21 automated tests passed and 10 JavaScript/MJS syntax checks passed. The complete Vite production build and Vercel deployment were not run.
+
+See `INSTALL-GITHUB-v7.24.md` for GUI installation instructions and verification boundaries.

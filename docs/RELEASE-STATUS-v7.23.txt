@@ -1,0 +1,9 @@
+CALLORIA v7.23 RELEASE STATUS
+
+Scope: digital follow-up SLA supervision
+Baseline: current public main with v7.22 digital experience suite
+Verified: 10/10 focused node:test checks passed; syntax checks passed for all included JavaScript modules and vite.config.js; ZIP integrity checked before delivery
+Not run / not claimed: full application Vite build, full repository test suite, Vercel deployment, physical phone verification
+Assets: no public/assets or GLB files changed
+Database: no SQL migration
+Secrets/environment: no additions

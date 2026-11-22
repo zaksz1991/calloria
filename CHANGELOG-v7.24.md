@@ -1,25 +1,25 @@
-# CALLORIA v7.24 — Changelog
+# CALLORIA v7.24 — Digital Follow-up Performance Scorecards
 
-## Integration repairs
+## Added
 
-1. Adds the v7.23 Customer 360 Recovery Plan to the live Vite plugin chain. The public `vite.config.js` baseline registered v7.22 but omitted v7.23; the public v7.23 engine file existed while its build plugin was not available at the expected raw path. This package supplies the complete module/plugin/style/test set and registers it through v7.24.
-2. Preserves the v7.22 unified digital suite and runs v7.23 recovery after it.
-3. Replaces separate manual v7.23 registration with one v7.24 completion-suite registration to avoid duplicate transforms.
+- Supervisor performance panel groups follow-up response cycles by agent.
+- Completed follow-ups are attributed to the `agentId` stored on the responding agent message.
+- Open follow-ups are attributed to the contact's current `assignedTo` owner.
+- Scorecards show completed cycles, target-met rate, late replies, open follow-ups, at-risk/overdue work and average response time.
+- Overall and per-channel email, live-chat and social metrics are shown independently.
+- Mobile layout collapses the scorecards into one column without a forced wide table.
 
-## Product default correction
+## Measurement rules
 
-4. New applicants now start on `service` / `Customer Experience` with the matching ₦170,000 starting salary, not the banking track defaults.
-5. The explicit Banking, Technical Support and Sales career options remain available.
-6. Existing saved selections, departments and salaries remain unchanged when populated. For legacy saves missing department or salary, v7.24 fills only the missing fields using the stored career track.
+- Measures second-and-later customer response cycles only; first-response SLA remains separate.
+- Target-met rate is calculated only from completed follow-up cycles. Open cycles do not inflate the denominator.
+- A late completed response is separate from an unanswered overdue follow-up.
+- Completed cycles use the actual responding message's agent ID. Open work uses the current assigned owner; the feature does not invent past assignment history.
+- The scorecard uses retained local synthetic game history. It is not a live provider report or a real-world staff-performance record.
 
-## Preserved
+## Compatibility and controls
 
-- v7.22 digital features and order.
-- Customer 360 continuity data shape.
-- Existing role and salary mapping for all four career tracks.
-- Supabase configuration, storage keys, saved applicant records and game progression.
-- Existing 3D, OJT, workforce, mobile and other Vite plugins.
-
-## Verification limits
-
-128 regression tests and JavaScript syntax checks passed. No full Vite production build, live browser test, physical-device test or Vercel deployment was performed in this workspace.
+- Runs after v7.23 Digital Follow-up SLA Supervision and the preceding v7.22 suite.
+- Preserves first-response SLA, digital queue lifecycle, message history, supervisor escalation requests and current GLB/runtime plugins.
+- No Supabase migration, Edge Function, secret, environment variable, npm dependency or GLB asset is added.
+- V7.24 is a read-only analytics panel; it does not reassign work, change scorecards or issue staff warnings.

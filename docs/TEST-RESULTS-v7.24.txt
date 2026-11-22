@@ -1,0 +1,139 @@
+CALLORIA v7.23 + v7.24 FOCUSED AUTOMATED TEST RUN
+Command: node --test tests/*.test.mjs
+
+TAP version 13
+# Subtest: completed follow-up cycles are attributed to the responding agent, not a later contact owner
+ok 1 - completed follow-up cycles are attributed to the responding agent, not a later contact owner
+  ---
+  duration_ms: 1.889155
+  type: 'test'
+  ...
+# Subtest: open follow-up cycles use the currently assigned agent and separate overdue from completed-late
+ok 2 - open follow-up cycles use the currently assigned agent and separate overdue from completed-late
+  ---
+  duration_ms: 0.275363
+  type: 'test'
+  ...
+# Subtest: multiple agents and channels are aggregated without combining first-response SLA
+ok 3 - multiple agents and channels are aggregated without combining first-response SLA
+  ---
+  duration_ms: 7.345462
+  type: 'test'
+  ...
+# Subtest: unassigned and invalid records are handled safely and calculations do not mutate source history
+ok 4 - unassigned and invalid records are handled safely and calculations do not mutate source history
+  ---
+  duration_ms: 0.415304
+  type: 'test'
+  ...
+# Subtest: agent scorecard response rate is based only on completed follow-up cycles
+ok 5 - agent scorecard response rate is based only on completed follow-up cycles
+  ---
+  duration_ms: 0.317807
+  type: 'test'
+  ...
+# Subtest: v7.24 transforms only a v7.23 supervisor source and is idempotent
+ok 6 - v7.24 transforms only a v7.23 supervisor source and is idempotent
+  ---
+  duration_ms: 0.917216
+  type: 'test'
+  ...
+# Subtest: v7.24 skips safely when v7.23 anchors have drifted
+ok 7 - v7.24 skips safely when v7.23 anchors have drifted
+  ---
+  duration_ms: 0.280591
+  type: 'test'
+  ...
+# Subtest: v7.23 supervisor transform feeds the v7.24 analytics transform in sequence
+ok 8 - v7.23 supervisor transform feeds the v7.24 analytics transform in sequence
+  ---
+  duration_ms: 0.53336
+  type: 'test'
+  ...
+# Subtest: supervisor board identifies overdue and at-risk follow-up cycles only
+ok 9 - supervisor board identifies overdue and at-risk follow-up cycles only
+  ---
+  duration_ms: 2.483026
+  type: 'test'
+  ...
+# Subtest: customer follow-up bursts group repeated customer messages until an agent replies
+ok 10 - customer follow-up bursts group repeated customer messages until an agent replies
+  ---
+  duration_ms: 0.244367
+  type: 'test'
+  ...
+# Subtest: open supervisor requests are detected and do not create duplicate intervention prompts
+ok 11 - open supervisor requests are detected and do not create duplicate intervention prompts
+  ---
+  duration_ms: 0.312579
+  type: 'test'
+  ...
+# Subtest: alert revalidation rejects stale, responded, closed and mismatched cycles
+ok 12 - alert revalidation rejects stale, responded, closed and mismatched cycles
+  ---
+  duration_ms: 0.506059
+  type: 'test'
+  ...
+# Subtest: non-main modules are not transformed
+ok 13 - non-main modules are not transformed
+  ---
+  duration_ms: 0.204117
+  type: 'test'
+  ...
+# Subtest: main transform adds the supervisor panel, navigation and guarded escalation action once
+ok 14 - main transform adds the supervisor panel, navigation and guarded escalation action once
+  ---
+  duration_ms: 0.261933
+  type: 'test'
+  ...
+# Subtest: source drift causes a safe skip with no partial edits
+ok 15 - source drift causes a safe skip with no partial edits
+  ---
+  duration_ms: 0.336074
+  type: 'test'
+  ...
+# Subtest: Vite configuration imports v7.23 supervisor plugin
+ok 16 - Vite configuration imports v7.23 supervisor plugin
+  ---
+  duration_ms: 0.580772
+  type: 'test'
+  ...
+# Subtest: v7.23 executes after the v7.22 digital experience suite
+ok 17 - v7.23 executes after the v7.22 digital experience suite
+  ---
+  duration_ms: 0.208773
+  type: 'test'
+  ...
+# Subtest: existing Vite multi-page inputs and core plugins are retained
+ok 18 - existing Vite multi-page inputs and core plugins are retained
+  ---
+  duration_ms: 0.11982
+  type: 'test'
+  ...
+# Subtest: Vite config imports the v7.24 digital follow-up performance plugin
+ok 19 - Vite config imports the v7.24 digital follow-up performance plugin
+  ---
+  duration_ms: 0.616906
+  type: 'test'
+  ...
+# Subtest: v7.24 executes after the v7.23 supervisor integration
+ok 20 - v7.24 executes after the v7.23 supervisor integration
+  ---
+  duration_ms: 0.150806
+  type: 'test'
+  ...
+# Subtest: existing application entries and earlier visual/runtime plugins remain registered
+ok 21 - existing application entries and earlier visual/runtime plugins remain registered
+  ---
+  duration_ms: 0.120822
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 213.588194

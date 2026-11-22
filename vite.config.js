@@ -26,6 +26,7 @@ import { calloriaSeamlessProductHandoffPlugin } from './build/calloria-seamless-
 import { calloriaTryItStudioPlugin } from './build/calloria-try-it-studio-v6-58.mjs';
 import { calloriaDigitalExperienceSuitePluginV722 } from './build/calloria-digital-experience-suite-v722.mjs';
 import { calloriaDigitalFollowUpSupervisorPluginV723 } from './build/calloria-digital-followup-supervisor-v723.mjs';
+import { calloriaDigitalFollowUpPerformancePluginV724 } from './build/calloria-digital-followup-performance-v724.mjs';
 
 export default defineConfig({
   base: '/',
@@ -61,7 +62,9 @@ export default defineConfig({
     // v7.22 must finish the v7.20 workflow and v7.21 response-cycle transforms first.
     calloriaDigitalExperienceSuitePluginV722(),
     // v7.23 adds supervisor monitoring and controlled intervention after v7.22.
-    calloriaDigitalFollowUpSupervisorPluginV723()
+    calloriaDigitalFollowUpSupervisorPluginV723(),
+    // v7.24 adds agent-level follow-up response performance after supervisor alerts.
+    calloriaDigitalFollowUpPerformancePluginV724()
   ],
   build: {
     outDir: 'dist',

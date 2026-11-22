@@ -1,0 +1,25 @@
+CALLORIA v7.24 RELEASE STATUS
+
+Scope: Digital Follow-up Performance Scorecards
+Baseline: v7.23 supervisor follow-up SLA watch, following the v7.22 digital suite
+
+VERIFIED
+- Focused automated tests: 21 passed, 0 failed across v7.23 and v7.24 test files.
+- JavaScript/MJS syntax checks: 10 passed.
+- Combined v7.23 then v7.24 transformed-main syntax smoke check: passed.
+- Vite config test confirms v7.24 follows v7.23.
+- v7.24 transform test verifies v7.23 then v7.24 sequential application.
+- Pure engine tests cover responding-agent attribution, open-work owner attribution, channel breakdown, completed-only response target rate, invalid data handling and non-mutation.
+
+NOT VERIFIED / NOT CLAIMED
+- Full Vite production build.
+- Full repository test suite.
+- GitHub push or production deployment.
+- Vercel live build result.
+- Actual desktop/phone browser rendering.
+- Physical Android/iPhone testing.
+
+BOUNDARIES
+- No production deployment was performed by creating this ZIP.
+- No Supabase schema, Edge Function, secret, environment variable, dependency or public asset is changed.
+- The archive is a cumulative v7.23 + v7.24 source overlay, not a full repository snapshot.
