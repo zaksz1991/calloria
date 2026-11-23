@@ -1,13 +1,18 @@
-CALLORIA v8.9.2 — Vercel v8.6 Cloud-Health Package Contract Repair
+CALLORIA v8.10 — UPDATED FILES
 
 REPLACE
-- package.json
+build/calloria-workforce-cloud-recovery-portability-v809.mjs
+styles/calloria-workforce-cloud-recovery-portability-v809.css
+package.json (carries forward v8.9.2 build contract repair)
 
 ADD
-- tests/calloria-v892-cloud-health-package-contract.test.mjs
-- docs/TEST-RESULTS-v8.9.2.txt
-- README-v8.9.2.md
-- CHANGELOG-v8.9.2.md
-- INSTALL-GITHUB-v8.9.2.md
+js/workforce-trend-cloud-recovery-handover-engine-v810.js
+tests/workforce-trend-cloud-recovery-handover-v810.test.mjs
+tests/calloria-v810-recovery-handover-integration.test.mjs
+CHANGELOG-v8.10.md
+README-v8.10.md
+INSTALL-GITHUB-v8.10.md
+docs/TEST-RESULTS-v8.10.txt
+UPDATED-FILES.txt
 
-No other repository files are changed by this repair.
+Preserve all other repository files and public/assets/ GLB models.

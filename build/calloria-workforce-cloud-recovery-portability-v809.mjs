@@ -2,9 +2,11 @@
 const MAIN_SUFFIX = '/js/main.js';
 const V808_MARKER = 'CALLORIA_V808_WORKFORCE_CLOUD_RECOVERY_PROGRESS';
 const V809_MARKER = 'CALLORIA_V809_WORKFORCE_CLOUD_RECOVERY_PORTABILITY';
+const V810_MARKER = 'CALLORIA_V810_WORKFORCE_CLOUD_RECOVERY_HANDOVER';
 
 const IMPORTS = [
   "import { createWorkforceTrendRecoveryProgressBackupV809, verifyWorkforceTrendRecoveryProgressBackupV809, mergeWorkforceTrendRecoveryProgressV809, WORKFORCE_TREND_CLOUD_RECOVERY_PORTABILITY_VERSION_V809, WORKFORCE_TREND_CLOUD_RECOVERY_PORTABILITY_MAX_BYTES_V809 } from './workforce-trend-cloud-recovery-portability-engine-v809.js';",
+  "import { createWorkforceTrendCloudRecoveryHandoverV810 } from './workforce-trend-cloud-recovery-handover-engine-v810.js';",
   "import '../styles/calloria-workforce-cloud-recovery-portability-v809.css';"
 ].join('\n');
 
@@ -15,6 +17,7 @@ function normaliseId(id) {
 function handlerSource() {
   return String.raw`
 /* ${V809_MARKER} */
+/* ${V810_MARKER} */
 ;(() => {
   if (typeof window === 'undefined' || typeof document === 'undefined' || window.__CALLORIA_V809_RECOVERY_PORTABILITY_READY__) return;
 
@@ -60,13 +63,18 @@ function handlerSource() {
     file.hidden = true;
     file.dataset.workforceCloudProgressFile = 'true';
     file.setAttribute('aria-label', 'Select a CALLORIA recovery checklist backup');
-    actions.append(exportButton, importButton, file);
+    const handoverButton = document.createElement('button');
+    handoverButton.type = 'button';
+    handoverButton.className = 'btn secondary';
+    handoverButton.textContent = 'Export recovery handover';
+    handoverButton.dataset.workforceCloudRecoveryHandover = 'true';
+    actions.append(exportButton, importButton, handoverButton, file);
     toolbar.append(title, note, actions);
     host.prepend(toolbar);
   }
 
-  function downloadJson(fileName, json) {
-    const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+  function downloadFile(fileName, content, type) {
+    const blob = new Blob([content], { type });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -79,6 +87,27 @@ function handlerSource() {
   }
 
   document.addEventListener('click', async event => {
+    const handoverButton = event.target?.closest?.('[data-workforce-cloud-recovery-handover]');
+    if (handoverButton) {
+      if (handoverButton.disabled) return;
+      handoverButton.disabled = true;
+      try {
+        const handover = await createWorkforceTrendCloudRecoveryHandoverV810({
+          organisationScopeKey: getScope(),
+          plan: getPlan(),
+          progress: window.__CALLORIA_V808_CLOUD_RECOVERY_PROGRESS__ || {},
+          cryptoObject: window.crypto
+        });
+        downloadFile(handover.jsonFileName, handover.json, 'application/json;charset=utf-8');
+        downloadFile(handover.textFileName, handover.text, 'text/plain;charset=utf-8');
+        setStatus('Recovery handover exported: ' + handover.completedSteps + ' of ' + handover.totalSteps + ' checklist steps marked complete. This is progress evidence only, not proof that repairs succeeded.', 'success');
+      } catch (error) {
+        setStatus('Recovery handover export failed: ' + safeStatusError(error), 'error');
+      } finally {
+        handoverButton.disabled = false;
+      }
+      return;
+    }
     const exportButton = event.target?.closest?.('[data-workforce-cloud-progress-export]');
     if (exportButton) {
       if (exportButton.disabled) return;
@@ -93,7 +122,7 @@ function handlerSource() {
           progress: window.__CALLORIA_V808_CLOUD_RECOVERY_PROGRESS__ || {},
           cryptoObject: window.crypto
         });
-        downloadJson(backup.fileName, backup.json);
+        downloadFile(backup.fileName, backup.json, 'application/json;charset=utf-8');
         setStatus('Verified checklist backup exported: ' + backup.completedSteps + ' of ' + backup.totalSteps + ' steps marked complete. Keep the JSON file somewhere secure.', 'success');
       } catch (error) {
         setStatus('Checklist export failed: ' + safeStatusError(error), 'error');
@@ -172,12 +201,12 @@ function handlerSource() {
 
 export function calloriaWorkforceCloudRecoveryPortabilityPluginV809() {
   return {
-    name: 'calloria-workforce-cloud-recovery-portability-v8-9',
+    name: 'calloria-workforce-cloud-recovery-portability-v8-10',
     enforce: 'post',
     transform(code, id) {
       if (!normaliseId(id).endsWith(MAIN_SUFFIX)) return null;
       if (!String(code).includes(V808_MARKER)) return null;
-      if (String(code).includes(V809_MARKER)) return null;
+      if (String(code).includes(V809_MARKER) || String(code).includes(V810_MARKER)) return null;
       return `${IMPORTS}\n${code}\n${handlerSource()}`;
     }
   };

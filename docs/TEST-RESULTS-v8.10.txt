@@ -1,0 +1,24 @@
+CALLORIA v8.10 verification
+===========================
+
+Focused automated tests: 10 passed, 0 failed.
+- Recovery handover payload shape and version
+- Checklist progress counts and statuses
+- Exclusion of organisation scope and untrusted progress values
+- SHA-256 checksum reproducibility
+- Invalid scope and unsupported plan rejection
+- Empty checklist progress state
+- Missing WebCrypto rejection
+- Vite plugin transform and preserved v8.9 controls
+- Plugin path scope and idempotence
+- v8.9.2 protected Vercel hooks, health script and dependency pins
+
+JavaScript syntax checks: passed for the new engine, plugin and tests.
+Package JSON parse: passed.
+Archive integrity: passed.
+
+Not run:
+- Full repository test suite (full current CALLORIA source tree was not provided in this run).
+- Full Vite production build / Vercel deployment.
+- Live Supabase session, permissions, RLS or data-recovery checks.
+- Physical phone browser acceptance.

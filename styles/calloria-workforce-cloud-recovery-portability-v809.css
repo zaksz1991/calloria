@@ -1,41 +1,5 @@
-/* CALLORIA v8.9 — compact, responsive recovery-checklist portability controls. */
-.wth-cloud-progress-portability {
-  display: grid;
-  gap: 8px;
-  margin: 12px 0 4px;
-  padding: 12px;
-  border: 1px solid var(--line, rgba(148, 163, 184, .22));
-  border-radius: 12px;
-  background: var(--surface-2, rgba(15, 23, 42, .28));
-  min-width: 0;
-}
-.wth-cloud-progress-portability > strong { font-size: .88rem; }
-.wth-cloud-progress-portability > p {
-  margin: 0;
-  color: var(--muted, #94a3b8);
-  font-size: .78rem;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-}
-.wth-cloud-progress-portability-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.wth-cloud-progress-portability-actions button {
-  min-height: 40px;
-  white-space: normal;
-}
-.wth-cloud-progress-portability-actions button:focus-visible {
-  outline: 3px solid var(--accent, #60a5fa);
-  outline-offset: 2px;
-}
-.wth-cloud-progress-portability-actions button:disabled {
-  opacity: .55;
-  cursor: wait;
-}
-@media (max-width: 720px) {
-  .wth-cloud-progress-portability { padding: 10px; }
-  .wth-cloud-progress-portability-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
-  .wth-cloud-progress-portability-actions button { width: 100%; min-height: 44px; }
+
+/* v8.10 recovery handover export remains in the compact, responsive toolbar. */
+.wth-cloud-progress-portability-actions button[data-workforce-cloud-recovery-handover] {
+  border-color: var(--accent, #60a5fa);
 }

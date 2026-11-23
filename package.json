@@ -25,7 +25,8 @@
     "verify:workforce-cloud-remediation": "node --test tests/workforce-trend-cloud-remediation-v807.test.mjs",
     "verify:workforce-cloud-recovery-progress": "node --test tests/workforce-trend-cloud-recovery-progress-v808.test.mjs",
     "verify:workforce-cloud-recovery-portability": "node --test tests/workforce-trend-cloud-recovery-portability-v809.test.mjs tests/calloria-v89-recovery-portability-integration.test.mjs && node tools/calloria-v89-recovery-portability-audit.mjs",
-    "verify:workforce-cloud-health": "node --test tests/workforce-trend-cloud-health-v806.test.mjs"
+    "verify:workforce-cloud-health": "node --test tests/workforce-trend-cloud-health-v806.test.mjs",
+    "verify:workforce-cloud-handover": "node --test tests/workforce-trend-cloud-recovery-handover-v810.test.mjs tests/calloria-v810-recovery-handover-integration.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.119.0",
