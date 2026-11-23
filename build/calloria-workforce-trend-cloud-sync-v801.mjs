@@ -1,13 +1,15 @@
 import { WORKFORCE_TREND_CLOUD_CONFLICT_VERSION_V803 } from '../js/workforce-trend-cloud-sync-engine-v803.js';
 import { WORKFORCE_TREND_BACKUP_VERSION_V805 } from '../js/workforce-trend-backup-engine-v805.js';
 import { WORKFORCE_TREND_CLOUD_HEALTH_VERSION_V806 } from '../js/workforce-trend-cloud-health-engine-v806.js';
+import { WORKFORCE_TREND_CLOUD_REMEDIATION_VERSION_V807 } from '../js/workforce-trend-cloud-remediation-engine-v807.js';
 
-/** CALLORIA v8.6 — read-only cloud history diagnostics, extending v8.3 conflict review and v8.5 recovery. */
+/** CALLORIA v8.7 — guided remediation for v8.6 workforce cloud-history diagnostics. */
 const V731_MARKER = '/* CALLORIA_V731_WORKFORCE_TREND_HISTORY */';
 const V801_MARKER = '/* CALLORIA_V801_WORKFORCE_TREND_CLOUD_SYNC */';
 const V803_MARKER = '/* CALLORIA_V803_WORKFORCE_TREND_CONFLICT_REVIEW */';
 const V805_MARKER = '/* CALLORIA_V805_WORKFORCE_RECOVERY_BACKUP */';
 const V806_MARKER = '/* CALLORIA_V806_WORKFORCE_CLOUD_HEALTH */';
+const V807_MARKER = '/* CALLORIA_V807_WORKFORCE_CLOUD_REMEDIATION */';
 const V731_ENGINE_IMPORT = "import { createWorkforceTrendSnapshot, normaliseWorkforceTrendHistory, appendWorkforceTrendSnapshot, compareWorkforceTrendSnapshots, workforceTrendHistoryCsv, WORKFORCE_TREND_HISTORY_LIMIT } from './workforce-trend-history-engine-v731.js';";
 const STATUS_ANCHOR = '    <p class="wth-status" role="status" aria-live="polite">${escapeHTML(statusText)}</p>';
 const MAIN_SUFFIX = '/js/main.js';
@@ -25,6 +27,7 @@ function cloudControlsMarkup() {
     '      <div class="wth-cloud-sync-buttons"><button type="button" class="btn secondary" data-workforce-cloud-health-check>Run read-only health check</button><button type="button" class="btn secondary" data-workforce-trend-cloud-sync>Save local history to organisation</button><button type="button" class="btn secondary" data-workforce-trend-cloud-load>Load and compare organisation history</button><button type="button" class="btn secondary" data-workforce-cloud-conflict-review>Review archived conflicts</button><button type="button" class="btn secondary" data-workforce-trend-backup-export>Export recovery backup</button><button type="button" class="btn secondary" data-workforce-trend-backup-import>Verify / restore backup</button><input type="file" accept="application/json,.json" hidden data-workforce-trend-backup-file aria-label="Select a CALLORIA workforce recovery backup"></div>',
     '      <p class="wth-cloud-status" data-state="${escapeHTML(window.__CALLORIA_V801_CLOUD_STATE__ || "info")}" role="status" aria-live="polite">${escapeHTML(window.__CALLORIA_V801_CLOUD_STATUS__ || "Cloud history requires a signed-in organisation workspace with report access.")}</p>',
     '      <div class="wth-cloud-health" data-workforce-cloud-health aria-live="polite"><p class="wth-cloud-health-empty">Cloud diagnostics have not been run on this device.</p></div>',
+    '      <section class="wth-cloud-remediation" data-workforce-cloud-remediation aria-label="Guided cloud history recovery steps"><p class="wth-cloud-remediation-empty">Run the health check to receive targeted recovery steps. CALLORIA will not make repair changes automatically.</p></section>',
     '      <div class="wth-conflict-list" data-workforce-cloud-conflict-list aria-live="polite"></div>',
     '    </section>'
   ].join('\n');
@@ -123,7 +126,53 @@ function handlerSource() {
     '    calloriaAppendTextElementV803(row, "span", "wth-cloud-health-detail", item.detail);',
     '    if (item.count !== null) calloriaAppendTextElementV803(row, "span", "wth-cloud-health-count", `${item.count} record(s), maximum 90 checked`);',
     '  }',
-    '  calloriaAppendTextElementV803(host, "p", "wth-cloud-health-note", "Read-only check: this diagnostic does not insert, update, delete, synchronise, resolve conflicts or restore history.");',
+    '  calloriaAppendTextElementV803(host, "p", "wth-cloud-health-note", "Read-only diagnostic: suggested recovery steps are provided below, but no repair, database write, synchronisation or restore is performed automatically.");',
+    '  renderWorkforceTrendCloudRemediationV807(report);',
+    '}',
+    '/* CALLORIA_V807_WORKFORCE_CLOUD_REMEDIATION */',
+    'function renderWorkforceTrendCloudRemediationV807(report) {',
+    '  const host = document.querySelector("[data-workforce-cloud-remediation]");',
+    '  if (!host) return;',
+    '  host.replaceChildren();',
+    '  const plan = buildWorkforceTrendCloudRemediationPlanV807(report);',
+    '  window.__CALLORIA_V807_CLOUD_REMEDIATIONS__ = plan;',
+    '  calloriaAppendTextElementV803(host, "h3", "wth-cloud-remediation-heading", plan.length ? "Recommended recovery steps" : "No recovery action required");',
+    '  if (!plan.length) { calloriaAppendTextElementV803(host, "p", "wth-cloud-remediation-empty", "All reported checks passed. No repair steps are recommended."); return; }',
+    '  calloriaAppendTextElementV803(host, "p", "wth-cloud-remediation-note", "Guidance only. These steps do not change database records or employee/customer data. Administrator-only database actions must be completed by your Supabase project administrator.");',
+    '  for (const item of plan) {',
+    '    const card = calloriaAppendTextElementV803(host, "article", `wth-cloud-remediation-card is-${item.priority}`, "");',
+    '    card.dataset.remediationId = item.id;',
+    '    calloriaAppendTextElementV803(card, "span", "wth-cloud-remediation-priority", item.priority === "blocked" ? "BLOCKED" : "ATTENTION");',
+    '    calloriaAppendTextElementV803(card, "h4", "wth-cloud-remediation-title", item.title);',
+    '    calloriaAppendTextElementV803(card, "p", "wth-cloud-remediation-summary", item.summary);',
+    '    const steps = document.createElement("ol"); steps.className = "wth-cloud-remediation-steps";',
+    '    for (const step of item.steps) calloriaAppendTextElementV803(steps, "li", "", step);',
+    '    card.append(steps);',
+    '    const actions = calloriaAppendTextElementV803(card, "div", "wth-cloud-remediation-actions", "");',
+    '    const copy = calloriaAppendTextElementV803(actions, "button", "btn secondary", "Copy recovery steps"); copy.type = "button"; copy.dataset.workforceCloudRemediationCopy = item.id;',
+    '    if (item.action === "refresh_session") { const refresh = calloriaAppendTextElementV803(actions, "button", "btn secondary", "Refresh sign-in session"); refresh.type = "button"; refresh.dataset.workforceCloudRefreshSession = "true"; }',
+    '  }',
+    '}',
+    'async function copyWorkforceCloudRemediationV807(id) {',
+    '  const item = (window.__CALLORIA_V807_CLOUD_REMEDIATIONS__ || []).find(entry => entry.id === id);',
+    '  if (!item) { setWorkforceCloudStatusV801("Recovery instructions are no longer available. Run diagnostics again.", "warning"); return; }',
+    '  const text = [item.title, item.summary, ...item.steps.map((step, index) => `${index + 1}. ${step}`)].join("\\n");',
+    '  try {',
+    '    if (navigator.clipboard?.writeText && window.isSecureContext) await navigator.clipboard.writeText(text);',
+    '    else { const field = document.createElement("textarea"); field.value = text; field.setAttribute("readonly", ""); field.style.position = "fixed"; field.style.opacity = "0"; document.body.append(field); field.select(); const copied = document.execCommand("copy"); field.remove(); if (!copied) throw new Error("Clipboard permission is unavailable."); }',
+    '    setWorkforceCloudStatusV801("Recovery instructions copied. No account, database or workforce history data was changed.", "success");',
+    '  } catch { setWorkforceCloudStatusV801("The browser blocked clipboard access. Select the recovery steps on screen and copy them manually.", "warning"); }',
+    '}',
+    'async function refreshWorkforceCloudSessionV807(button) {',
+    '  if (button) button.disabled = true;',
+    '  try {',
+    '    const { client } = await calloriaWorkforceCloudContextV801();',
+    '    const result = await client.auth.refreshSession();',
+    '    if (result.error || !result.data?.session?.user?.id) throw new Error("The sign-in session could not be refreshed. Sign out and sign in again.");',
+    '    setWorkforceCloudStatusV801("Sign-in session refreshed. Rechecking cloud history access.", "success");',
+    '    await runWorkforceTrendCloudHealthV806();',
+    '  } catch (error) { setWorkforceCloudStatusV801(String(error?.message || error).replace(/[\u0000-\u001f\u007f]/g, " ").slice(0, 200), "error"); }',
+    '  finally { if (button) button.disabled = false; }',
     '}',
     'async function runWorkforceTrendCloudHealthV806() {',
     '  const button = document.querySelector("[data-workforce-cloud-health-check]");',
@@ -151,7 +200,11 @@ function handlerSource() {
     '    const engineOkay = typeof createWorkforceTrendBackupV805 === "function" && typeof verifyWorkforceTrendBackupV805 === "function" && typeof mergeWorkforceTrendBackupForLocalRestoreV805 === "function" && WORKFORCE_TREND_CLOUD_HEALTH_VERSION_V806 === "8.6.0";',
     '    add("backup_integrity", "Recovery and integrity tools", cryptoOkay && engineOkay ? "passed" : "failed", cryptoOkay && engineOkay ? "Recovery engine is available and Web Crypto SHA-256 is operational." : "Recovery engine or Web Crypto SHA-256 is unavailable in this browser.");',
     '  } catch (error) {',
-    '    if (!checks.some(item => item.id === "workspace")) add("workspace", "Organisation workspace", "failed", String(error?.message || error).replace(/[\u0000-\u001f\u007f]/g, " ").slice(0, 160));',
+    '    const diagnosticError = String(error?.message || error).replace(/[\u0000-\u001f\u007f]/g, " ").slice(0, 160);',
+    '    if (/does not have workforce report access|reports:read/i.test(diagnosticError)) {',
+    '      if (!checks.some(item => item.id === "workspace")) add("workspace", "Organisation workspace", "passed", "An organisation is selected; its reporting permission check was denied.");',
+    '      if (!checks.some(item => item.id === "permissions")) add("permissions", "Workforce report permission", "failed", "The current organisation membership does not pass reports:read. Ask an organisation owner or administrator to review the minimum reporting permission.");',
+    '    } else if (!checks.some(item => item.id === "workspace")) add("workspace", "Organisation workspace", "failed", diagnosticError);',
     '  }',
     '  const report = buildWorkforceTrendCloudHealthReportV806({ checks, checkedAt: new Date().toISOString() });',
     '  window.__CALLORIA_V806_CLOUD_HEALTH_REPORT__ = report;',
@@ -163,6 +216,10 @@ function handlerSource() {
     '}',
     'if (typeof window !== "undefined" && !window.__CALLORIA_V801_CLOUD_HANDLERS__) {',
     '  document.addEventListener("click", async event => {',
+    '    const copyButton = event.target?.closest?.("[data-workforce-cloud-remediation-copy]");',
+    '    if (copyButton) { await copyWorkforceCloudRemediationV807(copyButton.dataset.workforceCloudRemediationCopy); return; }',
+    '    const refreshButton = event.target?.closest?.("[data-workforce-cloud-refresh-session]");',
+    '    if (refreshButton) { await refreshWorkforceCloudSessionV807(refreshButton); return; }',
     '    const healthButton = event.target?.closest?.("[data-workforce-cloud-health-check]");',
     '    if (healthButton) { await runWorkforceTrendCloudHealthV806(); return; }',
     '    const syncButton = event.target?.closest?.("[data-workforce-trend-cloud-sync]");',
@@ -314,16 +371,16 @@ export function calloriaWorkforceTrendCloudSyncPluginV801() {
   if (WORKFORCE_TREND_CLOUD_CONFLICT_VERSION_V803 !== '8.4.0') {
     throw new Error('CALLORIA v8.6 cloud sync requires the v8.4 durable conflict-review engine (8.4.0).');
   }
-  if (WORKFORCE_TREND_BACKUP_VERSION_V805 !== '8.5.0' || WORKFORCE_TREND_CLOUD_HEALTH_VERSION_V806 !== '8.6.0') {
-    throw new Error('CALLORIA v8.6 cloud diagnostics requires the v8.5 recovery engine and v8.6 health engine.');
+  if (WORKFORCE_TREND_BACKUP_VERSION_V805 !== '8.5.0' || WORKFORCE_TREND_CLOUD_HEALTH_VERSION_V806 !== '8.6.0' || WORKFORCE_TREND_CLOUD_REMEDIATION_VERSION_V807 !== '8.7.0') {
+    throw new Error('CALLORIA v8.7 guided cloud recovery requires the v8.5 backup, v8.6 health and v8.7 remediation engines.');
   }
   return {
     name: 'calloria-workforce-trend-cloud-sync-v8-1',
-    version: WORKFORCE_TREND_CLOUD_HEALTH_VERSION_V806,
+    version: WORKFORCE_TREND_CLOUD_REMEDIATION_VERSION_V807,
     enforce: 'post',
     transform(source, id) {
       const file = normaliseId(id);
-      if (!file.endsWith(MAIN_SUFFIX) || source.includes(V801_MARKER) || source.includes(V803_MARKER) || source.includes(V805_MARKER) || source.includes(V806_MARKER)) return null;
+      if (!file.endsWith(MAIN_SUFFIX) || source.includes(V801_MARKER) || source.includes(V803_MARKER) || source.includes(V805_MARKER) || source.includes(V806_MARKER) || source.includes(V807_MARKER)) return null;
       const missing = [];
       if (count(source, V731_MARKER) !== 1) missing.push('v7.31 workforce trend history marker');
       if (count(source, V731_ENGINE_IMPORT) !== 1) missing.push('v7.31 trend history engine import');
@@ -334,7 +391,7 @@ export function calloriaWorkforceTrendCloudSyncPluginV801() {
       }
       let code = source.replace(
         V731_ENGINE_IMPORT,
-        `${V731_ENGINE_IMPORT}\nimport { buildWorkforceTrendCloudHealthReportV806, workforceTrendCloudHealthOverallLabelV806 } from './workforce-trend-cloud-health-engine-v806.js';\nimport { inspectWorkforceTrendCloudConflictsV802, mergeWorkforceTrendCloudHistoryV802, parseWorkforceTrendCloudSyncResultV802 } from './workforce-trend-cloud-sync-engine-v802.js';\nimport { prepareWorkforceTrendCloudPayloadV801 } from './workforce-trend-cloud-sync-engine-v801.js';\nimport { buildWorkforceTrendConflictArchivePayloadV803, normaliseWorkforceTrendConflictArchiveRowV803, compareWorkforceTrendConflictSnapshotsV803, parseWorkforceTrendConflictArchiveResultV803, normaliseWorkforceTrendConflictResolutionV803, workforceTrendConflictResolutionLabelV803 } from './workforce-trend-cloud-sync-engine-v803.js';\nimport { createWorkforceTrendBackupV805, verifyWorkforceTrendBackupV805, mergeWorkforceTrendBackupForLocalRestoreV805, workforceTrendBackupOrgFingerprintV805, WORKFORCE_TREND_BACKUP_MAX_BYTES_V805 } from './workforce-trend-backup-engine-v805.js';\nimport '../styles/calloria-workforce-trend-cloud-sync-v801.css';`
+        `${V731_ENGINE_IMPORT}\nimport { buildWorkforceTrendCloudHealthReportV806, workforceTrendCloudHealthOverallLabelV806 } from './workforce-trend-cloud-health-engine-v806.js';\nimport { buildWorkforceTrendCloudRemediationPlanV807, WORKFORCE_TREND_CLOUD_REMEDIATION_VERSION_V807 } from './workforce-trend-cloud-remediation-engine-v807.js';\nimport { inspectWorkforceTrendCloudConflictsV802, mergeWorkforceTrendCloudHistoryV802, parseWorkforceTrendCloudSyncResultV802 } from './workforce-trend-cloud-sync-engine-v802.js';\nimport { prepareWorkforceTrendCloudPayloadV801 } from './workforce-trend-cloud-sync-engine-v801.js';\nimport { buildWorkforceTrendConflictArchivePayloadV803, normaliseWorkforceTrendConflictArchiveRowV803, compareWorkforceTrendConflictSnapshotsV803, parseWorkforceTrendConflictArchiveResultV803, normaliseWorkforceTrendConflictResolutionV803, workforceTrendConflictResolutionLabelV803 } from './workforce-trend-cloud-sync-engine-v803.js';\nimport { createWorkforceTrendBackupV805, verifyWorkforceTrendBackupV805, mergeWorkforceTrendBackupForLocalRestoreV805, workforceTrendBackupOrgFingerprintV805, WORKFORCE_TREND_BACKUP_MAX_BYTES_V805 } from './workforce-trend-backup-engine-v805.js';\nimport '../styles/calloria-workforce-trend-cloud-sync-v801.css';`
       );
       code = code.replace(STATUS_ANCHOR, `${STATUS_ANCHOR}\n${cloudControlsMarkup()}`);
       code = code.replace(

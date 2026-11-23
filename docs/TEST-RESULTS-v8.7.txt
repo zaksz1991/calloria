@@ -1,0 +1,31 @@
+CALLORIA v8.7 — TEST RESULTS
+
+Focused Node regression tests:
+- tests/workforce-trend-cloud-remediation-v807.test.mjs
+- tests/calloria-v87-cloud-remediation-integration.test.mjs
+Result: 11 passed, 0 failed.
+
+Syntax checks:
+- build/calloria-workforce-trend-cloud-sync-v801.mjs: passed
+- tools/calloria-build-preflight.mjs: passed
+- tools/calloria-v8-integration-audit.mjs: passed
+- js/workforce-trend-cloud-remediation-engine-v807.js: passed
+- package.json JSON parse: passed
+
+Vite plugin transform smoke test:
+- The v8.7 cloud plugin loaded using stubbed predecessor version exports.
+- Transform accepted a matching v7.31 main-module fixture.
+- Generated markup included the copy and refresh controls.
+- Generated transformed module passed Node syntax validation.
+Result: passed.
+
+Archive integrity:
+- ZIP test performed after packaging.
+
+NOT RUN / NOT VERIFIED:
+- Full repository test suite.
+- Full Vite production build.
+- Live Supabase sign-in refresh.
+- Live Supabase organisation membership / RLS checks.
+- Actual browser DOM interaction or phone testing.
+- Vercel production deployment.

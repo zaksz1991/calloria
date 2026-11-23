@@ -117,3 +117,38 @@
   .wth-cloud-health-row { grid-template-columns: minmax(0, 1fr); gap: 3px; }
   .wth-cloud-health-count { white-space: normal; }
 }
+
+
+/* v8.7 guided cloud-sync recovery runbook */
+.wth-cloud-remediation {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  padding-top: 4px;
+}
+.wth-cloud-remediation-heading { margin: 0; font-size: .92rem; }
+.wth-cloud-remediation-empty,
+.wth-cloud-remediation-note { margin: 0; color: var(--muted, #94a3b8); font-size: .8rem; line-height: 1.5; }
+.wth-cloud-remediation-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line, rgba(148, 163, 184, .2));
+  border-radius: 11px;
+  background: var(--surface, rgba(2, 6, 23, .18));
+}
+.wth-cloud-remediation-card.is-blocked { border-left: 3px solid var(--danger, #fb7185); }
+.wth-cloud-remediation-card.is-attention { border-left: 3px solid var(--warning, #fbbf24); }
+.wth-cloud-remediation-priority { display: inline-block; margin-bottom: 5px; font-size: .66rem; font-weight: 800; letter-spacing: .08em; color: var(--muted, #94a3b8); }
+.wth-cloud-remediation-title { margin: 0 0 5px; font-size: .86rem; }
+.wth-cloud-remediation-summary { margin: 0 0 8px; color: var(--muted, #94a3b8); font-size: .79rem; line-height: 1.45; }
+.wth-cloud-remediation-steps { margin: 0 0 10px; padding-left: 1.35rem; display: grid; gap: 5px; font-size: .78rem; line-height: 1.5; overflow-wrap: anywhere; }
+.wth-cloud-remediation-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.wth-cloud-remediation-actions button { min-height: 40px; }
+.wth-cloud-remediation-actions button:disabled { opacity: .55; cursor: wait; }
+@media (max-width: 720px) {
+  .wth-cloud-remediation-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .wth-cloud-remediation-actions button { width: 100%; min-height: 46px; }
+}
+
+.wth-cloud-remediation-actions button:focus-visible { outline: 3px solid var(--focus, #60a5fa); outline-offset: 2px; }
