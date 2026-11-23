@@ -1,0 +1,11 @@
+CALLORIA v8.9.2 verification record
+
+PASS — exact v8.6 cloud-health regression script restored.
+PASS — protected Vercel prebuild script unchanged.
+PASS — protected package check script unchanged.
+PASS — Node 22.x pin unchanged.
+PASS — Vite, Three.js, Supabase and esbuild versions unchanged.
+PASS — esbuild lifecycle allow-list unchanged.
+PASS — package JSON parses successfully.
+
+A complete repository npm test run and Vercel production build were not run because the complete current checkout was not supplied in this repair session. The regression test is included for execution in the user's repository.

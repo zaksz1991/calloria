@@ -1,18 +1,13 @@
-CALLORIA v8.9.1 — UPDATED FILES ONLY
+CALLORIA v8.9.2 — Vercel v8.6 Cloud-Health Package Contract Repair
 
 REPLACE
 - package.json
-- tools/calloria-v89-recovery-portability-audit.mjs
-- tests/calloria-v89-recovery-portability-integration.test.mjs
 
 ADD
-- CHANGELOG-v8.9.1.md
-- README-v8.9.1.md
-- INSTALL-GITHUB-v8.9.1.md
-- docs/TEST-RESULTS-v8.9.1.txt
+- tests/calloria-v892-cloud-health-package-contract.test.mjs
+- docs/TEST-RESULTS-v8.9.2.txt
+- README-v8.9.2.md
+- CHANGELOG-v8.9.2.md
+- INSTALL-GITHUB-v8.9.2.md
 
-PRESERVE
-- .git/
-- public/assets/ and all GLB models
-- all other application source and prior release engines
-- local environment files and existing Vercel/Supabase configuration
+No other repository files are changed by this repair.
