@@ -46,3 +46,21 @@
   .wth-conflict-actions { display: grid; grid-template-columns: 1fr; }
   .wth-conflict-actions button { width: 100%; }
 }
+
+/* v8.5 portable recovery backup controls */
+.wth-cloud-sync-buttons [data-workforce-trend-backup-export],
+.wth-cloud-sync-buttons [data-workforce-trend-backup-import] {
+  border-style: dashed;
+}
+.wth-cloud-sync-buttons [data-workforce-trend-backup-export]::before { content: "↧ "; }
+.wth-cloud-sync-buttons [data-workforce-trend-backup-import]::before { content: "↥ "; }
+.wth-cloud-sync-buttons input[type="file"] { display: none !important; }
+.wth-cloud-sync-buttons button:focus-visible,
+.wth-conflict-actions button:focus-visible {
+  outline: 3px solid var(--focus, #60a5fa);
+  outline-offset: 2px;
+}
+@media (max-width: 720px) {
+  .wth-cloud-sync-buttons { grid-template-columns: minmax(0, 1fr); }
+  .wth-cloud-sync-buttons button { min-height: 46px; }
+}

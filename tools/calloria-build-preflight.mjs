@@ -43,6 +43,7 @@ if (pkg) {
     'verify:build-manifest': 'node tools/calloria-build-preflight.mjs --manifest',
     'verify:build-artifacts': 'node tools/calloria-build-artifact-audit.mjs',
     'verify:integration': 'node tools/calloria-v8-integration-audit.mjs',
+    'verify:workforce-backup': 'node --test tests/workforce-trend-backup-v805.test.mjs',
     check: 'node tools/calloria-build-preflight.mjs --manifest && node tools/calloria-navigation-integrity-audit.mjs && node tools/calloria-v8-integration-audit.mjs'
   };
   for (const [name, expected] of Object.entries(expectedScripts)) {
@@ -119,8 +120,10 @@ for (const file of [
   'tests/workforce-trend-cloud-sync-v802.test.mjs',
   'js/workforce-trend-cloud-sync-engine-v803.js',
   'supabase/migrations/202611220003_calloria_workforce_trend_conflict_archive.sql',
-  'tests/workforce-trend-cloud-sync-v803.test.mjs'
-]) requireFile(file, 'CALLORIA v8.4 durable workforce conflict archive requirement');
+  'tests/workforce-trend-cloud-sync-v803.test.mjs',
+  'js/workforce-trend-backup-engine-v805.js',
+  'tests/workforce-trend-backup-v805.test.mjs'
+]) requireFile(file, 'CALLORIA v8.5 verified workforce recovery backup requirement');
 if (mode === 'build') {
   for (const [name, expectedVersion] of [
     ['vite', '6.4.5'], ['three', '0.170.0'],

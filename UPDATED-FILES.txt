@@ -1,0 +1,16 @@
+CALLORIA v8.5 — UPDATED FILES ONLY
+
+REPLACE
+build/calloria-workforce-trend-cloud-sync-v801.mjs
+styles/calloria-workforce-trend-cloud-sync-v801.css
+package.json
+tools/calloria-build-preflight.mjs
+tools/calloria-v8-integration-audit.mjs
+tests/calloria-v8-integration.test.mjs
+
+ADD
+js/workforce-trend-backup-engine-v805.js
+tests/workforce-trend-backup-v805.test.mjs
+docs/CHANGELOG-v8.5.md
+docs/INSTALL-v8.5.md
+docs/TEST-RESULTS-v8.5.txt

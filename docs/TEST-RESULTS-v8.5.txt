@@ -1,0 +1,35 @@
+CALLORIA v8.5 — TEST RESULTS
+
+Regression suite on isolated v8.4 workforce integration validation fixture:
+- node --test tests/*.test.mjs
+- 177 passed
+- 0 failed
+
+Focused cloud-history and recovery suite:
+- npm run verify:workforce-cloud-history
+- 46 passed
+- 0 failed
+
+JavaScript syntax:
+- node --check across 54 JavaScript/MJS files in the validation fixture: passed
+- Explicit checks of all v8.5 changed JavaScript/MJS files: passed
+
+Coverage added or extended:
+- JSON schema and strict top-level envelope validation
+- canonical SHA-256 integrity verification
+- tampering/corruption rejection
+- organisation fingerprint mismatch detection
+- 90 snapshot and 90 conflict-record limits
+- refusal to silently truncate oversized conflict archives
+- strict aggregate snapshot and conflict-row normalisation
+- current-local-value precedence during restore
+- no Supabase writes during restore
+- rejection of forged/unverified recovery objects
+- plugin UI, transform idempotence and generated module syntax
+- preflight and integration-audit requirements
+
+Limitations:
+- The available validation fixture is an isolated integration slice, not the complete CALLORIA repository.
+- The full Vite production build was not run against the complete repository in this workspace.
+- Live Vercel deployment, Supabase authentication/RLS behaviour, organisation cloud queries and real browser restore have not been independently verified here.
+- This package was not committed to GitHub or deployed by creating the ZIP.

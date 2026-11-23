@@ -1,9 +1,10 @@
-import { WORKFORCE_TREND_CLOUD_CONFLICT_VERSION_V803 } from '../js/workforce-trend-cloud-sync-engine-v803.js';
+import { WORKFORCE_TREND_BACKUP_VERSION_V805 } from '../js/workforce-trend-backup-engine-v805.js';
 
-/** CALLORIA v8.4 — durable conflict archive with explicit canonical-copy decisions. */
+/** CALLORIA v8.5 — verified organisation-scoped backup and local recovery for workforce trend history. */
 const V731_MARKER = '/* CALLORIA_V731_WORKFORCE_TREND_HISTORY */';
 const V801_MARKER = '/* CALLORIA_V801_WORKFORCE_TREND_CLOUD_SYNC */';
 const V803_MARKER = '/* CALLORIA_V803_WORKFORCE_TREND_CONFLICT_REVIEW */';
+const V805_MARKER = '/* CALLORIA_V805_WORKFORCE_RECOVERY_BACKUP */';
 const V731_ENGINE_IMPORT = "import { createWorkforceTrendSnapshot, normaliseWorkforceTrendHistory, appendWorkforceTrendSnapshot, compareWorkforceTrendSnapshots, workforceTrendHistoryCsv, WORKFORCE_TREND_HISTORY_LIMIT } from './workforce-trend-history-engine-v731.js';";
 const STATUS_ANCHOR = '    <p class="wth-status" role="status" aria-live="polite">${escapeHTML(statusText)}</p>';
 const MAIN_SUFFIX = '/js/main.js';
@@ -17,8 +18,8 @@ function count(source, value) {
 function cloudControlsMarkup() {
   return [
     '    <section class="wth-cloud-sync" aria-label="Organisation trend history">',
-    '      <div><strong>Organisation history</strong><small>Synchronise aggregate snapshots across authorised organisation members and devices. Conflicts are archived with both versions before an explicit resolution.</small></div>',
-    '      <div class="wth-cloud-sync-buttons"><button type="button" class="btn secondary" data-workforce-trend-cloud-sync>Save local history to organisation</button><button type="button" class="btn secondary" data-workforce-trend-cloud-load>Load and compare organisation history</button><button type="button" class="btn secondary" data-workforce-cloud-conflict-review>Review archived conflicts</button></div>',
+    '      <div><strong>Organisation history</strong><small>Synchronise aggregate snapshots across authorised organisation members and devices. Backups are organisation-bound, checksum-verified and restore to this browser only; cloud records are never changed by restore.</small></div>',
+    '      <div class="wth-cloud-sync-buttons"><button type="button" class="btn secondary" data-workforce-trend-cloud-sync>Save local history to organisation</button><button type="button" class="btn secondary" data-workforce-trend-cloud-load>Load and compare organisation history</button><button type="button" class="btn secondary" data-workforce-cloud-conflict-review>Review archived conflicts</button><button type="button" class="btn secondary" data-workforce-trend-backup-export>Export recovery backup</button><button type="button" class="btn secondary" data-workforce-trend-backup-import>Verify / restore backup</button><input type="file" accept="application/json,.json" hidden data-workforce-trend-backup-file aria-label="Select a CALLORIA workforce recovery backup"></div>',
     '      <p class="wth-cloud-status" data-state="${escapeHTML(window.__CALLORIA_V801_CLOUD_STATE__ || "info")}" role="status" aria-live="polite">${escapeHTML(window.__CALLORIA_V801_CLOUD_STATUS__ || "Cloud history requires a signed-in organisation workspace with report access.")}</p>',
     '      <div class="wth-conflict-list" data-workforce-cloud-conflict-list aria-live="polite"></div>',
     '    </section>'
@@ -28,6 +29,7 @@ function handlerSource() {
   return [
     '',
     V803_MARKER,
+    V805_MARKER,
     'function calloriaWorkforceCloudContextV801() {',
     '  const context = typeof getCloudPlatformState === "function" ? getCloudPlatformState() : null;',
     '  if (!context?.ready || !context?.activeOrganization?.id) throw new Error("Sign in and enter a CALLORIA organisation workspace before synchronising history.");',
@@ -157,6 +159,39 @@ function handlerSource() {
     '      } finally { loadButton.disabled = false; }',
     '      return;',
     '    }',
+    '    const backupExportButton = event.target?.closest?.("[data-workforce-trend-backup-export]");',
+    '    if (backupExportButton) {',
+    '      backupExportButton.disabled = true;',
+    '      try {',
+    '        const { client, organizationId, organizationName } = await calloriaWorkforceCloudContextV801();',
+    '        const local = readWorkforceTrendHistoryV731();',
+    '        if (!local.available) throw new Error("Browser-local trend history is unavailable.");',
+    '        const [cloudResult, conflictResult] = await Promise.all([',
+    '          client.from("calloria_workforce_trend_snapshots").select("snapshot,captured_at").eq("organization_id", organizationId).order("captured_at", { ascending: false }).limit(90),',
+    '          client.from("calloria_workforce_trend_conflicts").select("id,captured_at,local_snapshot,cloud_snapshot,status,resolution,created_at,resolved_at").eq("organization_id", organizationId).order("created_at", { ascending: false }).limit(91)',
+    '        ]);',
+    '        if (cloudResult.error) throw cloudResult.error;',
+    '        if (conflictResult.error) throw conflictResult.error;',
+    '        const backup = await createWorkforceTrendBackupV805({ organizationId, organizationLabel: organizationName, localHistory: local.snapshots, cloudRows: cloudResult.data || [], conflictRows: conflictResult.data || [] });',
+    '        const blob = new Blob([backup.json], { type: "application/json;charset=utf-8" });',
+    '        const url = URL.createObjectURL(blob);',
+    '        const link = document.createElement("a");',
+    '        link.href = url;',
+    '        link.download = `CALLORIA-workforce-recovery-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;',
+    '        link.hidden = true;',
+    '        document.body.append(link); link.click(); link.remove();',
+    '        window.setTimeout(() => URL.revokeObjectURL(url), 30000);',
+    '        setWorkforceCloudStatusV801(`Verified recovery backup exported: ${backup.document.localHistory.length} local, ${backup.document.organisationHistory.length} organisation snapshot(s), and ${backup.document.conflictArchive.length} conflict record(s). Keep the JSON file somewhere secure.`, "success");',
+    '      } catch (error) { setWorkforceCloudStatusV801(`Recovery backup export failed: ${String(error?.message || error).slice(0, 180)}.`, "error"); }',
+    '      finally { backupExportButton.disabled = false; }',
+    '      return;',
+    '    }',
+    '    const backupImportButton = event.target?.closest?.("[data-workforce-trend-backup-import]");',
+    '    if (backupImportButton) {',
+    '      const fileInput = document.querySelector("[data-workforce-trend-backup-file]");',
+    '      if (fileInput) fileInput.click();',
+    '      return;',
+    '    }',
     '    const reviewButton = event.target?.closest?.("[data-workforce-cloud-conflict-review]");',
     '    if (reviewButton) {',
     '      reviewButton.disabled = true;',
@@ -186,6 +221,28 @@ function handlerSource() {
     '      return;',
     '    }',
     '  });',
+    '  document.addEventListener("change", async event => {',
+    '    const fileInput = event.target?.closest?.("[data-workforce-trend-backup-file]");',
+    '    const file = fileInput?.files?.[0];',
+    '    if (!file) return;',
+    '    fileInput.disabled = true;',
+    '    try {',
+    '      if (file.size > WORKFORCE_TREND_BACKUP_MAX_BYTES_V805) throw new Error("The selected backup exceeds the 12 MiB file limit.");',
+    '      const backup = await verifyWorkforceTrendBackupV805(await file.text());',
+    '      const { organizationId, organizationName } = await calloriaWorkforceCloudContextV801();',
+    '      const activeFingerprint = await workforceTrendBackupOrgFingerprintV805(organizationId);',
+    '      if (backup.organizationFingerprint !== activeFingerprint) throw new Error("This backup belongs to a different organisation. No history was restored.");',
+    '      const local = readWorkforceTrendHistoryV731();',
+    '      if (!local.available) throw new Error("Browser-local storage is unavailable; backup restore cannot proceed safely.");',
+    '      const restored = mergeWorkforceTrendBackupForLocalRestoreV805(local.snapshots, backup);',
+    '      const approved = window.confirm(`Verified CALLORIA backup for ${backup.organizationLabel}.\nExported: ${new Date(backup.exportedAt).toLocaleString()}.\nLocal snapshots: ${backup.localHistory.length}. Organisation snapshots: ${backup.organisationHistory.length}. Archived conflicts: ${backup.conflictArchive.length}.\n\nRestore up to ${restored.snapshots.length} aggregate snapshots to this browser for ${organizationName}? Existing browser-local values take priority. This does not write to Supabase.`);',
+    '      if (!approved) { setWorkforceCloudStatusV801("Backup verified. Restore cancelled; no history was changed.", "info"); return; }',
+    '      if (!saveWorkforceTrendHistoryV731(restored.snapshots)) throw new Error("The verified backup could not be saved to this browser. The organisation copy was not changed.");',
+    '      window.__CALLORIA_V731_STORAGE_STATUS__ = `Recovered ${restored.snapshots.length} aggregate trend snapshots from a verified backup.`;',
+    '      setWorkforceCloudStatusV801(`Backup restored to this browser: ${restored.added} new and ${restored.retainedExisting} existing snapshot(s) retained; ${restored.conflictCount} conflict evidence item(s) remain represented in the backup. No Supabase records were changed. Use Save local history to organisation only after reviewing the restored history.`, "success");',
+    '    } catch (error) { setWorkforceCloudStatusV801(`Backup verification / restore failed: ${String(error?.message || error).slice(0, 200)} No history was changed.`, "error"); }',
+    '    finally { fileInput.value = ""; fileInput.disabled = false; }',
+    '  });',
     '  window.__CALLORIA_V801_CLOUD_HANDLERS__ = true;',
     '}',
     ''
@@ -195,22 +252,22 @@ function handlerSource() {
 export function calloriaWorkforceTrendCloudSyncPluginV801() {
   return {
     name: 'calloria-workforce-trend-cloud-sync-v8-1',
-    version: WORKFORCE_TREND_CLOUD_CONFLICT_VERSION_V803,
+    version: WORKFORCE_TREND_BACKUP_VERSION_V805,
     enforce: 'post',
     transform(source, id) {
       const file = normaliseId(id);
-      if (!file.endsWith(MAIN_SUFFIX) || source.includes(V801_MARKER) || source.includes(V803_MARKER)) return null;
+      if (!file.endsWith(MAIN_SUFFIX) || source.includes(V801_MARKER) || source.includes(V803_MARKER) || source.includes(V805_MARKER)) return null;
       const missing = [];
       if (count(source, V731_MARKER) !== 1) missing.push('v7.31 workforce trend history marker');
       if (count(source, V731_ENGINE_IMPORT) !== 1) missing.push('v7.31 trend history engine import');
       if (count(source, STATUS_ANCHOR) !== 1) missing.push('v7.31 accessible status anchor');
       if (missing.length) {
-        this.warn(`CALLORIA v8.4 skipped safely: ${missing.join(', ')} did not match exactly once. No partial transform was applied.`);
+        this.warn(`CALLORIA v8.5 skipped safely: ${missing.join(', ')} did not match exactly once. No partial transform was applied.`);
         return null;
       }
       let code = source.replace(
         V731_ENGINE_IMPORT,
-        `${V731_ENGINE_IMPORT}\nimport { inspectWorkforceTrendCloudConflictsV802, mergeWorkforceTrendCloudHistoryV802, parseWorkforceTrendCloudSyncResultV802 } from './workforce-trend-cloud-sync-engine-v802.js';\nimport { prepareWorkforceTrendCloudPayloadV801 } from './workforce-trend-cloud-sync-engine-v801.js';\nimport { buildWorkforceTrendConflictArchivePayloadV803, normaliseWorkforceTrendConflictArchiveRowV803, compareWorkforceTrendConflictSnapshotsV803, parseWorkforceTrendConflictArchiveResultV803, normaliseWorkforceTrendConflictResolutionV803, workforceTrendConflictResolutionLabelV803 } from './workforce-trend-cloud-sync-engine-v803.js';\nimport '../styles/calloria-workforce-trend-cloud-sync-v801.css';`
+        `${V731_ENGINE_IMPORT}\nimport { inspectWorkforceTrendCloudConflictsV802, mergeWorkforceTrendCloudHistoryV802, parseWorkforceTrendCloudSyncResultV802 } from './workforce-trend-cloud-sync-engine-v802.js';\nimport { prepareWorkforceTrendCloudPayloadV801 } from './workforce-trend-cloud-sync-engine-v801.js';\nimport { buildWorkforceTrendConflictArchivePayloadV803, normaliseWorkforceTrendConflictArchiveRowV803, compareWorkforceTrendConflictSnapshotsV803, parseWorkforceTrendConflictArchiveResultV803, normaliseWorkforceTrendConflictResolutionV803, workforceTrendConflictResolutionLabelV803 } from './workforce-trend-cloud-sync-engine-v803.js';\nimport { createWorkforceTrendBackupV805, verifyWorkforceTrendBackupV805, mergeWorkforceTrendBackupForLocalRestoreV805, workforceTrendBackupOrgFingerprintV805, WORKFORCE_TREND_BACKUP_MAX_BYTES_V805 } from './workforce-trend-backup-engine-v805.js';\nimport '../styles/calloria-workforce-trend-cloud-sync-v801.css';`
       );
       code = code.replace(STATUS_ANCHOR, `${STATUS_ANCHOR}\n${cloudControlsMarkup()}`);
       code = code.replace(
