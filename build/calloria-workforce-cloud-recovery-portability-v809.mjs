@@ -3,10 +3,12 @@ const MAIN_SUFFIX = '/js/main.js';
 const V808_MARKER = 'CALLORIA_V808_WORKFORCE_CLOUD_RECOVERY_PROGRESS';
 const V809_MARKER = 'CALLORIA_V809_WORKFORCE_CLOUD_RECOVERY_PORTABILITY';
 const V810_MARKER = 'CALLORIA_V810_WORKFORCE_CLOUD_RECOVERY_HANDOVER';
+const V811_MARKER = 'CALLORIA_V811_WORKFORCE_CLOUD_RECOVERY_HANDOVER_VERIFICATION';
 
 const IMPORTS = [
   "import { createWorkforceTrendRecoveryProgressBackupV809, verifyWorkforceTrendRecoveryProgressBackupV809, mergeWorkforceTrendRecoveryProgressV809, WORKFORCE_TREND_CLOUD_RECOVERY_PORTABILITY_VERSION_V809, WORKFORCE_TREND_CLOUD_RECOVERY_PORTABILITY_MAX_BYTES_V809 } from './workforce-trend-cloud-recovery-portability-engine-v809.js';",
   "import { createWorkforceTrendCloudRecoveryHandoverV810 } from './workforce-trend-cloud-recovery-handover-engine-v810.js';",
+  "import { verifyWorkforceTrendCloudRecoveryHandoverV811, WORKFORCE_TREND_CLOUD_HANDOVER_VERIFICATION_MAX_BYTES_V811 } from './workforce-trend-cloud-recovery-handover-verification-engine-v811.js';",
   "import '../styles/calloria-workforce-cloud-recovery-portability-v809.css';"
 ].join('\n');
 
@@ -18,6 +20,7 @@ function handlerSource() {
   return String.raw`
 /* ${V809_MARKER} */
 /* ${V810_MARKER} */
+/* ${V811_MARKER} */
 ;(() => {
   if (typeof window === 'undefined' || typeof document === 'undefined' || window.__CALLORIA_V809_RECOVERY_PORTABILITY_READY__) return;
 
@@ -63,12 +66,23 @@ function handlerSource() {
     file.hidden = true;
     file.dataset.workforceCloudProgressFile = 'true';
     file.setAttribute('aria-label', 'Select a CALLORIA recovery checklist backup');
+    const verifyHandoverButton = document.createElement('button');
+    verifyHandoverButton.type = 'button';
+    verifyHandoverButton.className = 'btn secondary';
+    verifyHandoverButton.textContent = 'Verify handover report';
+    verifyHandoverButton.dataset.workforceCloudRecoveryHandoverVerify = 'true';
+    const verifyHandoverFile = document.createElement('input');
+    verifyHandoverFile.type = 'file';
+    verifyHandoverFile.accept = 'application/json,.json';
+    verifyHandoverFile.hidden = true;
+    verifyHandoverFile.dataset.workforceCloudRecoveryHandoverFile = 'true';
+    verifyHandoverFile.setAttribute('aria-label', 'Select a CALLORIA recovery handover report to verify');
     const handoverButton = document.createElement('button');
     handoverButton.type = 'button';
     handoverButton.className = 'btn secondary';
     handoverButton.textContent = 'Export recovery handover';
     handoverButton.dataset.workforceCloudRecoveryHandover = 'true';
-    actions.append(exportButton, importButton, handoverButton, file);
+    actions.append(exportButton, importButton, handoverButton, verifyHandoverButton, file, verifyHandoverFile);
     toolbar.append(title, note, actions);
     host.prepend(toolbar);
   }
@@ -108,6 +122,12 @@ function handlerSource() {
       }
       return;
     }
+    const verifyHandoverButton = event.target?.closest?.('[data-workforce-cloud-recovery-handover-verify]');
+    if (verifyHandoverButton) {
+      const host = document.querySelector(hostSelector);
+      host?.querySelector('[data-workforce-cloud-recovery-handover-file]')?.click();
+      return;
+    }
     const exportButton = event.target?.closest?.('[data-workforce-cloud-progress-export]');
     if (exportButton) {
       if (exportButton.disabled) return;
@@ -140,6 +160,29 @@ function handlerSource() {
   });
 
   document.addEventListener('change', async event => {
+    const handoverFileInput = event.target?.closest?.('[data-workforce-cloud-recovery-handover-file]');
+    const handoverFile = handoverFileInput?.files?.[0];
+    if (handoverFile) {
+      handoverFileInput.disabled = true;
+      try {
+        if (handoverFile.size > WORKFORCE_TREND_CLOUD_HANDOVER_VERIFICATION_MAX_BYTES_V811) {
+          throw new Error('The selected handover report exceeds the 256 KiB verification limit.');
+        }
+        const verified = await verifyWorkforceTrendCloudRecoveryHandoverV811(await handoverFile.text(), { cryptoObject: window.crypto });
+        setStatus(
+          'Handover report integrity verified: ' + verified.completedSteps + ' of ' + verified.totalSteps +
+          ' checklist steps (' + verified.completionPercent + '%) were marked complete when exported. ' +
+          'This does not prove authorship or successful repairs. No data was imported, uploaded or changed.',
+          'success'
+        );
+      } catch (error) {
+        setStatus('Handover report verification failed: ' + safeStatusError(error) + ' No data was imported or changed.', 'error');
+      } finally {
+        handoverFileInput.value = '';
+        handoverFileInput.disabled = false;
+      }
+      return;
+    }
     const fileInput = event.target?.closest?.('[data-workforce-cloud-progress-file]');
     const file = fileInput?.files?.[0];
     if (!file) return;
@@ -206,7 +249,7 @@ export function calloriaWorkforceCloudRecoveryPortabilityPluginV809() {
     transform(code, id) {
       if (!normaliseId(id).endsWith(MAIN_SUFFIX)) return null;
       if (!String(code).includes(V808_MARKER)) return null;
-      if (String(code).includes(V809_MARKER) || String(code).includes(V810_MARKER)) return null;
+      if (String(code).includes(V809_MARKER) || String(code).includes(V810_MARKER) || String(code).includes(V811_MARKER)) return null;
       return `${IMPORTS}\n${code}\n${handlerSource()}`;
     }
   };

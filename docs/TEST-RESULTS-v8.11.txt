@@ -1,0 +1,28 @@
+CALLORIA v8.11 verification
+===========================
+
+Focused automated tests: 13 passed, 0 failed.
+- v8.11 verifier version, format and size contract
+- Valid v8.10 handover checksum and summary verification
+- Tampered payload detection
+- Rejection of unsupported outer and payload fields
+- Rejection of unsupported engine version and altered limitation notice
+- Rejection of duplicate IDs, inconsistent item status and aggregate totals
+- Invalid JSON, wrong input type and oversized-file handling
+- Secure WebCrypto requirement
+- No organisation identifier or import side effect in verification output
+- Vite plugin adds verifier and retains earlier v8.9/v8.10 controls
+- Transformed module syntax, plugin path scoping and idempotence
+- Exact Vercel prebuild/check hooks and v8.6 health-check command preserved
+- Node 22 and existing dependency pins preserved
+
+JavaScript syntax checks: passed for the verifier engine, build plugin and tests.
+Package JSON parse: passed.
+Focused npm verification script: passed.
+Archive integrity: passed.
+
+Not run:
+- Full repository test suite against the user's complete current CALLORIA checkout.
+- Full Vite production build or live Vercel deployment.
+- Live Supabase authentication, permissions, RLS or cloud recovery checks.
+- Browser acceptance on a physical phone.

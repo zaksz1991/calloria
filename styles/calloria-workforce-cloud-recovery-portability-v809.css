@@ -3,3 +3,9 @@
 .wth-cloud-progress-portability-actions button[data-workforce-cloud-recovery-handover] {
   border-color: var(--accent, #60a5fa);
 }
+
+/* v8.11 keeps local handover verification visually distinct from export/import. */
+.wth-cloud-progress-portability-actions button[data-workforce-cloud-recovery-handover-verify] {
+  border-color: var(--accent, #60a5fa);
+  border-style: dashed;
+}
