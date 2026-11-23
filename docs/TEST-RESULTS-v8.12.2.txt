@@ -1,0 +1,26 @@
+CALLORIA v8.12.2 TEST RESULTS
+============================
+
+Reported production failure:
+- Vercel commit: 6887618
+- Integration suite: 49 tests total
+- Failed test: verifier is local-only, bounded and does not add migrations or secrets
+- Failing assertion: expected fs.existsSync('../supabase/migrations') to equal false
+- Cause: real production repository retains pre-existing migration files; the test incorrectly required the directory not to exist.
+
+Repair:
+- Removed the invalid repository-directory absence assertion.
+- Added static assertions against network, browser persistence, Supabase config, SQL migration and server-secret dependencies in the v8.11 verifier source.
+- Kept the plugin's no-fetch assertion.
+
+Verification performed:
+- Cumulative v8.9–v8.12 suite: 49 passed, 0 failed.
+- Repeated the cumulative integration audit with a pre-existing supabase/migrations directory and a representative SQL migration fixture: passed.
+- Dedicated v8.9 recovery portability audit: passed.
+- Syntax validation of changed test: passed.
+- ZIP archive integrity: checked after packaging.
+
+Not performed:
+- Full original repository Vite production build.
+- Vercel deployment.
+- Browser/mobile acceptance or live Supabase calls.

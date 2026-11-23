@@ -1,19 +1,18 @@
-CALLORIA v8.12.1 — UPDATED FILES ONLY
+CALLORIA v8.12.2 — UPDATED FILES ONLY
 
-REPLACE
-- package.json
-- build/calloria-workforce-cloud-recovery-portability-v809.mjs
-- tests/calloria-v89-recovery-portability-integration.test.mjs
-- tools/calloria-v89-recovery-portability-audit.mjs
+REPLACE:
+- tests/calloria-v811-recovery-handover-verification-integration.test.mjs
 
-ADD
-- tests/calloria-v812-recovery-integration.test.mjs
-- tools/calloria-v812-recovery-integration-audit.mjs
-- docs/TEST-RESULTS-v8.12.1.txt
-- CHANGELOG-v8.12.1.md
-- README-v8.12.1.md
-- INSTALL-GITHUB-v8.12.1.md
+ADD:
+- CHANGELOG-v8.12.2.md
+- README-v8.12.2.md
+- INSTALL-GITHUB-v8.12.2.md
+- docs/TEST-RESULTS-v8.12.2.txt
+- UPDATED-FILES.txt
 
-This is a cumulative integration overlay for repositories where v8.9–v8.12
-feature files are already present. Do not delete .git, public/assets, GLB files,
-local environment files, or unrelated application files.
+DO NOT REPLACE:
+- package.json or package-lock.json
+- vite.config.js or any build plugin
+- Supabase configuration or supabase/migrations/
+- public/assets/ or any GLB files
+- .git, .env files, Vercel project settings, or unrelated application files

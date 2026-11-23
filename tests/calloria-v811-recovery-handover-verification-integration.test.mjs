@@ -41,12 +41,17 @@ test('v8.9.2 Vercel hooks, v8.6 health check, v8.10 handover and dependency pins
   assert.equal(packageJson.devDependencies.esbuild, '0.25.12');
 });
 
-test('verifier is local-only, bounded and does not add migrations or secrets', () => {
+test('verifier is local-only, bounded and independent of new database schema or secrets', () => {
   const engine = fs.readFileSync(new URL('../js/workforce-trend-cloud-recovery-handover-verification-engine-v811.js', import.meta.url), 'utf8');
   const pluginSource = fs.readFileSync(new URL('../build/calloria-workforce-cloud-recovery-portability-v809.mjs', import.meta.url), 'utf8');
   assert.match(engine, /256 \* 1024/);
   assert.match(engine, /subtle\.digest\('SHA-256'/);
   assert.match(pluginSource, /verifyWorkforceTrendCloudRecoveryHandoverV811/);
+  assert.doesNotMatch(engine, /\bfetch\s*\(|XMLHttpRequest|localStorage|sessionStorage|supabase|service_role|VITE_[A-Z0-9_]+/i);
+  assert.doesNotMatch(engine, /supabase\/migrations|\.sql\b|SUPABASE_SERVICE_ROLE_KEY|GROQ_API_KEY/i);
   assert.doesNotMatch(pluginSource, /fetch\s*\(/);
-  assert.equal(fs.existsSync(new URL('../supabase/migrations', import.meta.url)), false);
+  // The production repository legitimately contains earlier CALLORIA and
+  // shared-product migrations. The v8.11 verifier must not require their
+  // absence; it must remain an offline report verifier with no SQL dependency.
+  assert.doesNotMatch(pluginSource, /supabase\/migrations|\.sql\b|SUPABASE_SERVICE_ROLE_KEY|GROQ_API_KEY/i);
 });
