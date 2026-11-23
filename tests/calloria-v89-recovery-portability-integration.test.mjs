@@ -31,12 +31,14 @@ test('Vite preserves the existing suite and registers v8.9 before the production
   assert.ok(portability > -1 && gate > portability);
 });
 
-test('package retains Node 22, pinned dependencies and broad tests while adding a prebuild audit', () => {
+test('package preserves the exact central Vercel build contract and runs the v8.9 audit separately', () => {
   const pkg = JSON.parse(read('package.json'));
   assert.equal(pkg.engines.node, '22.x');
   assert.equal(pkg.dependencies.three, '0.170.0');
   assert.equal(pkg.dependencies['@supabase/supabase-js'], '2.119.0');
   assert.match(pkg.scripts.test, /tests\/\*\.test\.mjs/);
-  assert.match(pkg.scripts.prebuild, /calloria-v89-recovery-portability-audit\.mjs/);
+  assert.equal(pkg.scripts.prebuild, 'node tools/calloria-build-preflight.mjs --build && node tools/calloria-navigation-integrity-audit.mjs && node tools/calloria-v8-integration-audit.mjs');
+  assert.equal(pkg.scripts.check, 'node tools/calloria-build-preflight.mjs --manifest && node tools/calloria-navigation-integrity-audit.mjs && node tools/calloria-v8-integration-audit.mjs');
   assert.match(pkg.scripts['verify:workforce-cloud-recovery-portability'], /workforce-trend-cloud-recovery-portability-v809\.test\.mjs/);
+  assert.match(pkg.scripts['verify:workforce-cloud-recovery-portability'], /calloria-v89-recovery-portability-audit\.mjs/);
 });

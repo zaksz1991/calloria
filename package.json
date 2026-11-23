@@ -3,20 +3,20 @@
   "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "CALLORIA — multi-industry contact-centre career and operations simulator.",
+  "description": "CALLORIA \u2014 multi-industry contact-centre career and operations simulator.",
   "engines": {
     "node": "22.x"
   },
   "scripts": {
     "preinstall": "node tools/calloria-build-preflight.mjs --install",
-    "prebuild": "node tools/calloria-build-preflight.mjs --build && node tools/calloria-navigation-integrity-audit.mjs && node tools/calloria-v8-integration-audit.mjs && node tools/calloria-v89-recovery-portability-audit.mjs",
+    "prebuild": "node tools/calloria-build-preflight.mjs --build && node tools/calloria-navigation-integrity-audit.mjs && node tools/calloria-v8-integration-audit.mjs",
     "build": "vite build",
     "postbuild": "node tools/calloria-build-artifact-audit.mjs",
     "dev": "vite --host 0.0.0.0",
     "preview": "vite preview --host 0.0.0.0",
     "verify:build-manifest": "node tools/calloria-build-preflight.mjs --manifest",
     "verify:build-artifacts": "node tools/calloria-build-artifact-audit.mjs",
-    "check": "node tools/calloria-build-preflight.mjs --manifest && node tools/calloria-navigation-integrity-audit.mjs && node tools/calloria-v8-integration-audit.mjs && node tools/calloria-v89-recovery-portability-audit.mjs",
+    "check": "node tools/calloria-build-preflight.mjs --manifest && node tools/calloria-navigation-integrity-audit.mjs && node tools/calloria-v8-integration-audit.mjs",
     "test": "node --test tests/*.test.mjs tests/commitment-engine-v69.test.cjs",
     "verify:navigation": "node tools/calloria-navigation-integrity-audit.mjs",
     "verify:integration": "node tools/calloria-v8-integration-audit.mjs",
@@ -24,7 +24,7 @@
     "verify:workforce-backup": "node --test tests/workforce-trend-backup-v805.test.mjs",
     "verify:workforce-cloud-remediation": "node --test tests/workforce-trend-cloud-remediation-v807.test.mjs",
     "verify:workforce-cloud-recovery-progress": "node --test tests/workforce-trend-cloud-recovery-progress-v808.test.mjs",
-    "verify:workforce-cloud-recovery-portability": "node --test tests/workforce-trend-cloud-recovery-portability-v809.test.mjs tests/calloria-v89-recovery-portability-integration.test.mjs"
+    "verify:workforce-cloud-recovery-portability": "node --test tests/workforce-trend-cloud-recovery-portability-v809.test.mjs tests/calloria-v89-recovery-portability-integration.test.mjs && node tools/calloria-v89-recovery-portability-audit.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.119.0",

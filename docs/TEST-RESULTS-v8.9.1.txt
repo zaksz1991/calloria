@@ -1,0 +1,12 @@
+CALLORIA v8.9.1 — TEST RESULTS
+
+- Focused v8.9 tests: run with `npm run verify:workforce-cloud-recovery-portability`.
+- The release audit is run after the focused tests by that command.
+- `package.json` JSON parsing: passed.
+- Exact `prebuild` and `check` script contracts: asserted by the integration regression test.
+- Node engine and dependency pins: preserved from v8.9.
+
+Not run in this isolated overlay:
+- The full project npm install, because the complete repository and lockfile were not supplied here.
+- The full Vite production build and Vercel deployment.
+- Browser import/export acceptance or live Supabase checks.
