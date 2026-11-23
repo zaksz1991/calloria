@@ -26,7 +26,7 @@ import { calloriaSeamlessProductHandoffPlugin } from './build/calloria-seamless-
 import { calloriaTryItStudioPlugin } from './build/calloria-try-it-studio-v6-58.mjs';
 import { calloriaWorkforceDevelopmentSuitePluginsV8 } from './build/calloria-workforce-development-suite-v8.mjs';
 import { calloriaProductionIntegrationGatePluginV8 } from './build/calloria-production-integration-gate-v8.mjs';
-
+import { calloriaWorkforceCloudRecoveryPortabilityPluginV809 } from './build/calloria-workforce-cloud-recovery-portability-v809.mjs';
 export default defineConfig({
   base: '/',
   publicDir: 'public',
@@ -60,6 +60,8 @@ export default defineConfig({
     calloriaTryItStudioPlugin(),
     // v8.0 owns the digital/workforce chain in one deterministic registration group.
     ...calloriaWorkforceDevelopmentSuitePluginsV8(),
+    // v8.9 adds portability after the v8.8 recovery checklist transform.
+    calloriaWorkforceCloudRecoveryPortabilityPluginV809(),
     // Fail configuration/build when a required suite plugin or application entry is missing.
     calloriaProductionIntegrationGatePluginV8()
   ],

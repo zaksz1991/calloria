@@ -1,0 +1,30 @@
+CALLORIA v8.9 — TEST RESULTS
+
+Focused tests:
+  12 passed
+  0 failed
+
+Coverage:
+  - Version and format contract
+  - Allow-listed progress export
+  - Organisation-scope matching
+  - Checklist-shape matching
+  - SHA-256 integrity verification
+  - Corrupted file rejection
+  - Oversized and malformed file rejection
+  - Safe merge that retains existing local progress
+  - Secure-crypto requirement
+  - Vite plugin post-transform registration
+  - Integration-gate ordering
+  - Package and prebuild-audit contract
+
+Static checks:
+  - node --check: plugin, engine, audit and test files passed
+  - package.json JSON parse passed
+
+Not run:
+  - Full repository test suite
+  - Full Vite production build
+  - Live Supabase authentication, membership/RLS or organisation scope tests
+  - Real browser/device import/export testing
+  - Vercel production deployment verification

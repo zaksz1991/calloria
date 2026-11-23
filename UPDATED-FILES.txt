@@ -1,20 +1,25 @@
-CALLORIA v8.8 — UPDATED FILES AND FOLDERS ONLY
+CALLORIA v8.9 — UPDATED FILES ONLY
 
-REPLACE these existing repository files:
-- build/calloria-workforce-trend-cloud-sync-v801.mjs
-- styles/calloria-workforce-trend-cloud-sync-v801.css
+REPLACE
+- vite.config.js
 - package.json
-- tools/calloria-build-preflight.mjs
-- tools/calloria-v8-integration-audit.mjs
 
-ADD these new files:
-- js/workforce-trend-cloud-recovery-progress-engine-v808.js
-- tests/workforce-trend-cloud-recovery-progress-v808.test.mjs
-- tests/calloria-v88-cloud-recovery-progress-integration.test.mjs
-- docs/TEST-RESULTS-v8.8.txt
-- CHANGELOG-v8.8.md
-- README-v8.8.md
-- INSTALL-GITHUB-v8.8.md
+ADD
+- build/calloria-workforce-cloud-recovery-portability-v809.mjs
+- js/workforce-trend-cloud-recovery-portability-engine-v809.js
+- styles/calloria-workforce-cloud-recovery-portability-v809.css
+- tools/calloria-v89-recovery-portability-audit.mjs
+- tests/workforce-trend-cloud-recovery-portability-v809.test.mjs
+- tests/calloria-v89-recovery-portability-integration.test.mjs
+- CHANGELOG-v8.9.md
+- README-v8.9.md
+- INSTALL-GITHUB-v8.9.md
+- docs/TEST-RESULTS-v8.9.txt
+- UPDATED-FILES.txt
 
-No other project files are included or replaced.
-No Supabase migration, RPC, Edge Function, secret, Vercel variable or dependency change is required.
+PRESERVE
+- .git/
+- public/assets/ and all GLB models
+- all other existing application files
+- local environment files
+- current Supabase/Vercel settings and secrets
