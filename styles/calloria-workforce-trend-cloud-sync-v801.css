@@ -152,3 +152,54 @@
 }
 
 .wth-cloud-remediation-actions button:focus-visible { outline: 3px solid var(--focus, #60a5fa); outline-offset: 2px; }
+
+
+/* v8.8 local, organisation-scoped recovery checklist */
+.wth-cloud-remediation-step-label {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  min-height: 34px;
+  cursor: pointer;
+}
+.wth-cloud-remediation-step-label input {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--accent, #60a5fa);
+}
+.wth-cloud-remediation-step-label span { min-width: 0; }
+.wth-cloud-remediation-step-label input:checked + span {
+  color: var(--muted, #94a3b8);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+.wth-cloud-remediation-progress {
+  margin: 0 0 8px;
+  color: var(--text, inherit);
+  font-size: .78rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+.wth-cloud-remediation-verification,
+.wth-cloud-remediation-storage-warning {
+  margin: 0 0 9px;
+  color: var(--muted, #94a3b8);
+  font-size: .75rem;
+  line-height: 1.45;
+}
+.wth-cloud-remediation-storage-warning {
+  padding: 8px 10px;
+  border: 1px solid var(--line, rgba(148, 163, 184, .2));
+  border-radius: 8px;
+}
+.wth-cloud-remediation-step-label:focus-within {
+  outline: 2px solid var(--focus, #60a5fa);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+@media (max-width: 720px) {
+  .wth-cloud-remediation-step-label { min-height: 42px; gap: 10px; }
+  .wth-cloud-remediation-step-label input { width: 20px; height: 20px; }
+}

@@ -45,6 +45,7 @@ if (pkg) {
     'verify:integration': 'node tools/calloria-v8-integration-audit.mjs',
     'verify:workforce-backup': 'node --test tests/workforce-trend-backup-v805.test.mjs',
     'verify:workforce-cloud-remediation': 'node --test tests/workforce-trend-cloud-remediation-v807.test.mjs',
+    'verify:workforce-cloud-recovery-progress': 'node --test tests/workforce-trend-cloud-recovery-progress-v808.test.mjs',
     check: 'node tools/calloria-build-preflight.mjs --manifest && node tools/calloria-navigation-integrity-audit.mjs && node tools/calloria-v8-integration-audit.mjs'
   };
   for (const [name, expected] of Object.entries(expectedScripts)) {
@@ -127,8 +128,10 @@ for (const file of [
   'js/workforce-trend-cloud-health-engine-v806.js',
   'tests/workforce-trend-cloud-health-v806.test.mjs',
   'js/workforce-trend-cloud-remediation-engine-v807.js',
-  'tests/workforce-trend-cloud-remediation-v807.test.mjs'
-]) requireFile(file, 'CALLORIA v8.6 read-only workforce cloud diagnostics requirement');
+  'tests/workforce-trend-cloud-remediation-v807.test.mjs',
+  'js/workforce-trend-cloud-recovery-progress-engine-v808.js',
+  'tests/workforce-trend-cloud-recovery-progress-v808.test.mjs'
+]) requireFile(file, 'CALLORIA v8.8 workforce cloud recovery requirement');
 if (mode === 'build') {
   for (const [name, expectedVersion] of [
     ['vite', '6.4.5'], ['three', '0.170.0'],

@@ -1,0 +1,20 @@
+CALLORIA v8.8 verification report
+=================================
+
+Focused regression tests
+- v8.8 recovery progress engine and integration tests: 16 passed, 0 failed.
+- Retained v8.7 remediation engine and integration tests: 11 passed, 0 failed.
+- Combined focused run: 27 passed, 0 failed.
+
+Static checks
+- New recovery-progress engine syntax: passed.
+- Updated cloud-sync Vite plugin syntax: passed.
+- Updated build preflight syntax: passed.
+- Updated central integration audit syntax: passed.
+- package.json JSON parse: passed.
+- Vite plugin transform fixture and transformed-module syntax smoke test: passed.
+
+Scope limits
+- Full repository npm test was not run because the complete source repository is not present in this update workspace.
+- Full Vite production build was not run.
+- Live Supabase, authenticated organisation context, RLS, browser storage privacy, real mobile browser and Vercel deployment were not exercised here.

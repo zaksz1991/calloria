@@ -2,14 +2,16 @@ import { WORKFORCE_TREND_CLOUD_CONFLICT_VERSION_V803 } from '../js/workforce-tre
 import { WORKFORCE_TREND_BACKUP_VERSION_V805 } from '../js/workforce-trend-backup-engine-v805.js';
 import { WORKFORCE_TREND_CLOUD_HEALTH_VERSION_V806 } from '../js/workforce-trend-cloud-health-engine-v806.js';
 import { WORKFORCE_TREND_CLOUD_REMEDIATION_VERSION_V807 } from '../js/workforce-trend-cloud-remediation-engine-v807.js';
+import { WORKFORCE_TREND_CLOUD_RECOVERY_PROGRESS_VERSION_V808, buildWorkforceTrendRecoveryStorageKeyV808, normaliseWorkforceTrendRecoveryProgressV808, updateWorkforceTrendRecoveryProgressV808, summariseWorkforceTrendRecoveryProgressV808, loadWorkforceTrendRecoveryProgressV808, saveWorkforceTrendRecoveryProgressV808 } from '../js/workforce-trend-cloud-recovery-progress-engine-v808.js';
 
-/** CALLORIA v8.7 — guided remediation for v8.6 workforce cloud-history diagnostics. */
+/** CALLORIA v8.8 — organisation-scoped local progress for guided cloud-history recovery. */
 const V731_MARKER = '/* CALLORIA_V731_WORKFORCE_TREND_HISTORY */';
 const V801_MARKER = '/* CALLORIA_V801_WORKFORCE_TREND_CLOUD_SYNC */';
 const V803_MARKER = '/* CALLORIA_V803_WORKFORCE_TREND_CONFLICT_REVIEW */';
 const V805_MARKER = '/* CALLORIA_V805_WORKFORCE_RECOVERY_BACKUP */';
 const V806_MARKER = '/* CALLORIA_V806_WORKFORCE_CLOUD_HEALTH */';
 const V807_MARKER = '/* CALLORIA_V807_WORKFORCE_CLOUD_REMEDIATION */';
+const V808_MARKER = '/* CALLORIA_V808_WORKFORCE_CLOUD_RECOVERY_PROGRESS */';
 const V731_ENGINE_IMPORT = "import { createWorkforceTrendSnapshot, normaliseWorkforceTrendHistory, appendWorkforceTrendSnapshot, compareWorkforceTrendSnapshots, workforceTrendHistoryCsv, WORKFORCE_TREND_HISTORY_LIMIT } from './workforce-trend-history-engine-v731.js';";
 const STATUS_ANCHOR = '    <p class="wth-status" role="status" aria-live="polite">${escapeHTML(statusText)}</p>';
 const MAIN_SUFFIX = '/js/main.js';
@@ -130,28 +132,68 @@ function handlerSource() {
     '  renderWorkforceTrendCloudRemediationV807(report);',
     '}',
     '/* CALLORIA_V807_WORKFORCE_CLOUD_REMEDIATION */',
-    'function renderWorkforceTrendCloudRemediationV807(report) {',
+    '/* CALLORIA_V808_WORKFORCE_CLOUD_RECOVERY_PROGRESS */',
+    'function renderWorkforceTrendCloudRemediationV808(report) {',
     '  const host = document.querySelector("[data-workforce-cloud-remediation]");',
     '  if (!host) return;',
     '  host.replaceChildren();',
     '  const plan = buildWorkforceTrendCloudRemediationPlanV807(report);',
     '  window.__CALLORIA_V807_CLOUD_REMEDIATIONS__ = plan;',
+    '  const storageKey = window.__CALLORIA_V808_CLOUD_RECOVERY_STORAGE_KEY__ || "";',
+    '  let progress = Object.freeze({});',
+    '  if (window.__CALLORIA_V808_CLOUD_RECOVERY_ACTIVE_KEY__ !== storageKey) {',
+    '    try { progress = storageKey ? loadWorkforceTrendRecoveryProgressV808(window.localStorage, storageKey, plan) : Object.freeze({}); } catch { progress = Object.freeze({}); }',
+    '    window.__CALLORIA_V808_CLOUD_RECOVERY_ACTIVE_KEY__ = storageKey;',
+    '  } else { progress = normaliseWorkforceTrendRecoveryProgressV808(window.__CALLORIA_V808_CLOUD_RECOVERY_PROGRESS__ || {}, plan); }',
+    '  window.__CALLORIA_V808_CLOUD_RECOVERY_PROGRESS__ = progress;',
+    '  if (storageKey) { try { saveWorkforceTrendRecoveryProgressV808(window.localStorage, storageKey, progress, plan); } catch { /* Storage may be disabled; checklist remains usable in memory. */ } }',
     '  calloriaAppendTextElementV803(host, "h3", "wth-cloud-remediation-heading", plan.length ? "Recommended recovery steps" : "No recovery action required");',
-    '  if (!plan.length) { calloriaAppendTextElementV803(host, "p", "wth-cloud-remediation-empty", "All reported checks passed. No repair steps are recommended."); return; }',
-    '  calloriaAppendTextElementV803(host, "p", "wth-cloud-remediation-note", "Guidance only. These steps do not change database records or employee/customer data. Administrator-only database actions must be completed by your Supabase project administrator.");',
+    '  if (!plan.length) { calloriaAppendTextElementV803(host, "p", "wth-cloud-remediation-empty", "All reported checks passed. The latest diagnostic confirms that no recovery action is currently required."); return; }',
+    '  calloriaAppendTextElementV803(host, "p", "wth-cloud-remediation-note", "Tick each step as you complete it. Checklist progress is saved only in this browser and is scoped to the active organisation. A tick is a manual record, not proof that the issue is fixed; rerun the read-only health check to verify recovery. No employee/customer details or database records are stored by this checklist.");',
+    '  if (!storageKey) calloriaAppendTextElementV803(host, "p", "wth-cloud-remediation-storage-warning", "Checklist progress cannot be saved until an organisation workspace is available. You can still use the steps during this session.");',
+    '  const summaries = new Map(summariseWorkforceTrendRecoveryProgressV808(plan, progress).map(item => [item.id, item]));',
     '  for (const item of plan) {',
     '    const card = calloriaAppendTextElementV803(host, "article", `wth-cloud-remediation-card is-${item.priority}`, "");',
     '    card.dataset.remediationId = item.id;',
     '    calloriaAppendTextElementV803(card, "span", "wth-cloud-remediation-priority", item.priority === "blocked" ? "BLOCKED" : "ATTENTION");',
     '    calloriaAppendTextElementV803(card, "h4", "wth-cloud-remediation-title", item.title);',
     '    calloriaAppendTextElementV803(card, "p", "wth-cloud-remediation-summary", item.summary);',
+    '    const summary = summaries.get(item.id) || { completed: 0, total: item.steps.length, allCompleted: false, percent: 0 };',
+    '    calloriaAppendTextElementV803(card, "p", "wth-cloud-remediation-progress", `${summary.completed} of ${summary.total} steps marked complete · ${summary.percent}%`);',
     '    const steps = document.createElement("ol"); steps.className = "wth-cloud-remediation-steps";',
-    '    for (const step of item.steps) calloriaAppendTextElementV803(steps, "li", "", step);',
+    '    const completedIndexes = new Set(progress[item.id] || []);',
+    '    item.steps.forEach((step, index) => {',
+    '      const line = document.createElement("li");',
+    '      const label = document.createElement("label"); label.className = "wth-cloud-remediation-step-label";',
+    '      const checkbox = document.createElement("input"); checkbox.type = "checkbox"; checkbox.checked = completedIndexes.has(index); checkbox.dataset.workforceCloudRecoveryStep = "true"; checkbox.dataset.remediationId = item.id; checkbox.dataset.stepIndex = String(index); checkbox.setAttribute("aria-label", `Mark step ${index + 1} complete: ${step}`);',
+    '      const text = document.createElement("span"); text.textContent = step;',
+    '      label.append(checkbox, text); line.append(label); steps.append(line);',
+    '    });',
     '    card.append(steps);',
+    '    const state = calloriaAppendTextElementV803(card, "p", "wth-cloud-remediation-verification", summary.allCompleted ? "All steps marked complete — verification is still pending. Run the read-only health check." : "Progress is self-reported. The health check remains the source of truth.");',
+    '    state.setAttribute("aria-live", "polite");',
     '    const actions = calloriaAppendTextElementV803(card, "div", "wth-cloud-remediation-actions", "");',
     '    const copy = calloriaAppendTextElementV803(actions, "button", "btn secondary", "Copy recovery steps"); copy.type = "button"; copy.dataset.workforceCloudRemediationCopy = item.id;',
+    '    const reset = calloriaAppendTextElementV803(actions, "button", "btn secondary", "Reset checklist"); reset.type = "button"; reset.dataset.workforceCloudRecoveryReset = item.id;',
     '    if (item.action === "refresh_session") { const refresh = calloriaAppendTextElementV803(actions, "button", "btn secondary", "Refresh sign-in session"); refresh.type = "button"; refresh.dataset.workforceCloudRefreshSession = "true"; }',
     '  }',
+    '}',
+    'function renderWorkforceTrendCloudRemediationV807(report) { return renderWorkforceTrendCloudRemediationV808(report); }',
+    'function persistWorkforceTrendRecoveryProgressV808(progress, plan) {',
+    '  const storageKey = window.__CALLORIA_V808_CLOUD_RECOVERY_STORAGE_KEY__ || "";',
+    '  if (!storageKey) return false;',
+    '  try { return saveWorkforceTrendRecoveryProgressV808(window.localStorage, storageKey, progress, plan); } catch { return false; }',
+    '}',
+    'function updateWorkforceTrendRecoveryProgressDisplayV808(remediationId, plan) {',
+    '  const card = document.querySelector(`[data-workforce-cloud-remediation] [data-remediation-id="${remediationId}"]`);',
+    '  if (!card) return;',
+    '  const item = plan.find(entry => entry.id === remediationId);',
+    '  const summary = summariseWorkforceTrendRecoveryProgressV808(item ? [item] : [], window.__CALLORIA_V808_CLOUD_RECOVERY_PROGRESS__ || {})[0];',
+    '  if (!summary) return;',
+    '  const progressNode = card.querySelector(".wth-cloud-remediation-progress");',
+    '  if (progressNode) progressNode.textContent = `${summary.completed} of ${summary.total} steps marked complete · ${summary.percent}%`;',
+    '  const stateNode = card.querySelector(".wth-cloud-remediation-verification");',
+    '  if (stateNode) stateNode.textContent = summary.allCompleted ? "All steps marked complete — verification is still pending. Run the read-only health check." : "Progress is self-reported. The health check remains the source of truth.";',
     '}',
     'async function copyWorkforceCloudRemediationV807(id) {',
     '  const item = (window.__CALLORIA_V807_CLOUD_REMEDIATIONS__ || []).find(entry => entry.id === id);',
@@ -180,7 +222,9 @@ function handlerSource() {
     '  const checks = [];',
     '  const add = (id, label, status, detail, count = null) => checks.push({ id, label, status, detail, count });',
     '  try {',
+    '    window.__CALLORIA_V808_CLOUD_RECOVERY_STORAGE_KEY__ = "";',
     '    const { client, organizationId } = await calloriaWorkforceCloudContextV801();',
+    '    window.__CALLORIA_V808_CLOUD_RECOVERY_STORAGE_KEY__ = buildWorkforceTrendRecoveryStorageKeyV808(organizationId);',
     '    add("workspace", "Organisation workspace", "passed", "A signed-in organisation context is active.");',
     '    add("permissions", "Workforce report permission", "passed", "The current membership passes the reports:read permission check.");',
     '    let sessionOkay = false;',
@@ -216,6 +260,18 @@ function handlerSource() {
     '}',
     'if (typeof window !== "undefined" && !window.__CALLORIA_V801_CLOUD_HANDLERS__) {',
     '  document.addEventListener("click", async event => {',
+    '    const resetRecoveryButton = event.target?.closest?.("[data-workforce-cloud-recovery-reset]");',
+    '    if (resetRecoveryButton) {',
+    '      const remediationId = resetRecoveryButton.dataset.workforceCloudRecoveryReset;',
+    '      const plan = window.__CALLORIA_V807_CLOUD_REMEDIATIONS__ || [];',
+    '      const next = { ...(window.__CALLORIA_V808_CLOUD_RECOVERY_PROGRESS__ || {}) }; delete next[remediationId];',
+    '      window.__CALLORIA_V808_CLOUD_RECOVERY_PROGRESS__ = normaliseWorkforceTrendRecoveryProgressV808(next, plan);',
+    '      const saved = persistWorkforceTrendRecoveryProgressV808(window.__CALLORIA_V808_CLOUD_RECOVERY_PROGRESS__, plan);',
+    '      const card = resetRecoveryButton.closest(".wth-cloud-remediation-card"); card?.querySelectorAll("[data-workforce-cloud-recovery-step]").forEach(input => { input.checked = false; });',
+    '      updateWorkforceTrendRecoveryProgressDisplayV808(remediationId, plan);',
+    '      if (!saved) setWorkforceCloudStatusV801("Checklist reset for this session, but browser storage is unavailable; progress will not survive a reload.", "warning");',
+    '      return;',
+    '    }',
     '    const copyButton = event.target?.closest?.("[data-workforce-cloud-remediation-copy]");',
     '    if (copyButton) { await copyWorkforceCloudRemediationV807(copyButton.dataset.workforceCloudRemediationCopy); return; }',
     '    const refreshButton = event.target?.closest?.("[data-workforce-cloud-refresh-session]");',
@@ -340,6 +396,17 @@ function handlerSource() {
     '    }',
     '  });',
     '  document.addEventListener("change", async event => {',
+    '    const recoveryStep = event.target?.closest?.("[data-workforce-cloud-recovery-step]");',
+    '    if (recoveryStep) {',
+    '      const remediationId = recoveryStep.dataset.remediationId;',
+    '      const stepIndex = Number(recoveryStep.dataset.stepIndex);',
+    '      const plan = window.__CALLORIA_V807_CLOUD_REMEDIATIONS__ || [];',
+    '      window.__CALLORIA_V808_CLOUD_RECOVERY_PROGRESS__ = updateWorkforceTrendRecoveryProgressV808(window.__CALLORIA_V808_CLOUD_RECOVERY_PROGRESS__ || {}, remediationId, stepIndex, recoveryStep.checked, plan);',
+    '      const saved = persistWorkforceTrendRecoveryProgressV808(window.__CALLORIA_V808_CLOUD_RECOVERY_PROGRESS__, plan);',
+    '      updateWorkforceTrendRecoveryProgressDisplayV808(remediationId, plan);',
+    '      if (!saved) setWorkforceCloudStatusV801("Checklist progress is active for this session, but browser storage is unavailable; it may not survive a reload.", "warning");',
+    '      return;',
+    '    }',
     '    const fileInput = event.target?.closest?.("[data-workforce-trend-backup-file]");',
     '    const file = fileInput?.files?.[0];',
     '    if (!file) return;',
@@ -369,29 +436,29 @@ function handlerSource() {
 
 export function calloriaWorkforceTrendCloudSyncPluginV801() {
   if (WORKFORCE_TREND_CLOUD_CONFLICT_VERSION_V803 !== '8.4.0') {
-    throw new Error('CALLORIA v8.6 cloud sync requires the v8.4 durable conflict-review engine (8.4.0).');
+    throw new Error('CALLORIA v8.8 cloud sync requires the v8.4 durable conflict-review engine (8.4.0).');
   }
-  if (WORKFORCE_TREND_BACKUP_VERSION_V805 !== '8.5.0' || WORKFORCE_TREND_CLOUD_HEALTH_VERSION_V806 !== '8.6.0' || WORKFORCE_TREND_CLOUD_REMEDIATION_VERSION_V807 !== '8.7.0') {
-    throw new Error('CALLORIA v8.7 guided cloud recovery requires the v8.5 backup, v8.6 health and v8.7 remediation engines.');
+  if (WORKFORCE_TREND_BACKUP_VERSION_V805 !== '8.5.0' || WORKFORCE_TREND_CLOUD_HEALTH_VERSION_V806 !== '8.6.0' || WORKFORCE_TREND_CLOUD_REMEDIATION_VERSION_V807 !== '8.7.0' || WORKFORCE_TREND_CLOUD_RECOVERY_PROGRESS_VERSION_V808 !== '8.8.0') {
+    throw new Error('CALLORIA v8.8 cloud recovery progress requires the v8.5 backup, v8.6 health, v8.7 remediation and v8.8 progress engines.');
   }
   return {
     name: 'calloria-workforce-trend-cloud-sync-v8-1',
-    version: WORKFORCE_TREND_CLOUD_REMEDIATION_VERSION_V807,
+    version: WORKFORCE_TREND_CLOUD_RECOVERY_PROGRESS_VERSION_V808,
     enforce: 'post',
     transform(source, id) {
       const file = normaliseId(id);
-      if (!file.endsWith(MAIN_SUFFIX) || source.includes(V801_MARKER) || source.includes(V803_MARKER) || source.includes(V805_MARKER) || source.includes(V806_MARKER) || source.includes(V807_MARKER)) return null;
+      if (!file.endsWith(MAIN_SUFFIX) || source.includes(V801_MARKER) || source.includes(V803_MARKER) || source.includes(V805_MARKER) || source.includes(V806_MARKER) || source.includes(V807_MARKER) || source.includes(V808_MARKER)) return null;
       const missing = [];
       if (count(source, V731_MARKER) !== 1) missing.push('v7.31 workforce trend history marker');
       if (count(source, V731_ENGINE_IMPORT) !== 1) missing.push('v7.31 trend history engine import');
       if (count(source, STATUS_ANCHOR) !== 1) missing.push('v7.31 accessible status anchor');
       if (missing.length) {
-        this.warn(`CALLORIA v8.6 skipped safely: ${missing.join(', ')} did not match exactly once. No partial transform was applied.`);
+        this.warn(`CALLORIA v8.8 skipped safely: ${missing.join(', ')} did not match exactly once. No partial transform was applied.`);
         return null;
       }
       let code = source.replace(
         V731_ENGINE_IMPORT,
-        `${V731_ENGINE_IMPORT}\nimport { buildWorkforceTrendCloudHealthReportV806, workforceTrendCloudHealthOverallLabelV806 } from './workforce-trend-cloud-health-engine-v806.js';\nimport { buildWorkforceTrendCloudRemediationPlanV807, WORKFORCE_TREND_CLOUD_REMEDIATION_VERSION_V807 } from './workforce-trend-cloud-remediation-engine-v807.js';\nimport { inspectWorkforceTrendCloudConflictsV802, mergeWorkforceTrendCloudHistoryV802, parseWorkforceTrendCloudSyncResultV802 } from './workforce-trend-cloud-sync-engine-v802.js';\nimport { prepareWorkforceTrendCloudPayloadV801 } from './workforce-trend-cloud-sync-engine-v801.js';\nimport { buildWorkforceTrendConflictArchivePayloadV803, normaliseWorkforceTrendConflictArchiveRowV803, compareWorkforceTrendConflictSnapshotsV803, parseWorkforceTrendConflictArchiveResultV803, normaliseWorkforceTrendConflictResolutionV803, workforceTrendConflictResolutionLabelV803 } from './workforce-trend-cloud-sync-engine-v803.js';\nimport { createWorkforceTrendBackupV805, verifyWorkforceTrendBackupV805, mergeWorkforceTrendBackupForLocalRestoreV805, workforceTrendBackupOrgFingerprintV805, WORKFORCE_TREND_BACKUP_MAX_BYTES_V805 } from './workforce-trend-backup-engine-v805.js';\nimport '../styles/calloria-workforce-trend-cloud-sync-v801.css';`
+        `${V731_ENGINE_IMPORT}\nimport { buildWorkforceTrendCloudHealthReportV806, workforceTrendCloudHealthOverallLabelV806 } from './workforce-trend-cloud-health-engine-v806.js';\nimport { buildWorkforceTrendCloudRemediationPlanV807, WORKFORCE_TREND_CLOUD_REMEDIATION_VERSION_V807 } from './workforce-trend-cloud-remediation-engine-v807.js';\nimport { buildWorkforceTrendRecoveryStorageKeyV808, normaliseWorkforceTrendRecoveryProgressV808, updateWorkforceTrendRecoveryProgressV808, summariseWorkforceTrendRecoveryProgressV808, loadWorkforceTrendRecoveryProgressV808, saveWorkforceTrendRecoveryProgressV808 } from './workforce-trend-cloud-recovery-progress-engine-v808.js';\nimport { inspectWorkforceTrendCloudConflictsV802, mergeWorkforceTrendCloudHistoryV802, parseWorkforceTrendCloudSyncResultV802 } from './workforce-trend-cloud-sync-engine-v802.js';\nimport { prepareWorkforceTrendCloudPayloadV801 } from './workforce-trend-cloud-sync-engine-v801.js';\nimport { buildWorkforceTrendConflictArchivePayloadV803, normaliseWorkforceTrendConflictArchiveRowV803, compareWorkforceTrendConflictSnapshotsV803, parseWorkforceTrendConflictArchiveResultV803, normaliseWorkforceTrendConflictResolutionV803, workforceTrendConflictResolutionLabelV803 } from './workforce-trend-cloud-sync-engine-v803.js';\nimport { createWorkforceTrendBackupV805, verifyWorkforceTrendBackupV805, mergeWorkforceTrendBackupForLocalRestoreV805, workforceTrendBackupOrgFingerprintV805, WORKFORCE_TREND_BACKUP_MAX_BYTES_V805 } from './workforce-trend-backup-engine-v805.js';\nimport '../styles/calloria-workforce-trend-cloud-sync-v801.css';`
       );
       code = code.replace(STATUS_ANCHOR, `${STATUS_ANCHOR}\n${cloudControlsMarkup()}`);
       code = code.replace(

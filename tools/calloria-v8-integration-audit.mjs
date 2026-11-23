@@ -41,7 +41,9 @@ const REQUIRED_CLOUD_HISTORY_FILES = Object.freeze([
   'js/workforce-trend-cloud-health-engine-v806.js',
   'tests/workforce-trend-cloud-health-v806.test.mjs',
   'js/workforce-trend-cloud-remediation-engine-v807.js',
-  'tests/workforce-trend-cloud-remediation-v807.test.mjs'
+  'tests/workforce-trend-cloud-remediation-v807.test.mjs',
+  'js/workforce-trend-cloud-recovery-progress-engine-v808.js',
+  'tests/workforce-trend-cloud-recovery-progress-v808.test.mjs'
 ]);
 const REQUIRED_HTML_INPUTS = Object.freeze([
   'main', 'customerCare', 'caseDesk', 'customer360', 'agentDesk', 'workforce',
@@ -241,6 +243,7 @@ export function auditCalloriaV8Integration({ root = process.cwd() } = {}) {
     if (pkg.scripts?.['verify:workforce-backup'] !== 'node --test tests/workforce-trend-backup-v805.test.mjs') failures.push('package.json must expose a focused v8.5 recovery-backup test command.');
     if (pkg.scripts?.['verify:workforce-cloud-health'] !== 'node --test tests/workforce-trend-cloud-health-v806.test.mjs') failures.push('package.json must expose the v8.6 read-only cloud-health regression check.');
     if (pkg.scripts?.['verify:workforce-cloud-remediation'] !== 'node --test tests/workforce-trend-cloud-remediation-v807.test.mjs') failures.push('package.json must expose the v8.7 guided cloud-remediation regression check.');
+    if (pkg.scripts?.['verify:workforce-cloud-recovery-progress'] !== 'node --test tests/workforce-trend-cloud-recovery-progress-v808.test.mjs') failures.push('package.json must expose the v8.8 local recovery-progress regression check.');
     if (!/tests\/\*\.test\.mjs/.test(pkg.scripts?.test || '')) failures.push('package.json test script must include the complete .test.mjs regression suite.');
     if (pkg.scripts?.build !== 'vite build' || pkg.scripts?.postbuild !== 'node tools/calloria-build-artifact-audit.mjs') {
       failures.push('The Vite build and post-build artifact audit hooks must remain unchanged.');
@@ -293,7 +296,10 @@ export function auditCalloriaV8Integration({ root = process.cwd() } = {}) {
   if (!cloudPlugin.includes("from '../js/workforce-trend-cloud-health-engine-v806.js'")) failures.push('The organisation cloud-sync plugin must load the v8.6 read-only health-report engine.');
   if (!cloudPlugin.includes('data-workforce-cloud-health-check') || !cloudPlugin.includes('runWorkforceTrendCloudHealthV806')) failures.push('The organisation cloud-sync plugin is missing the v8.6 diagnostic action.');
   if (!cloudPlugin.includes("from '../js/workforce-trend-cloud-remediation-engine-v807.js'") || !cloudPlugin.includes("WORKFORCE_TREND_CLOUD_REMEDIATION_VERSION_V807 !== '8.7.0'")) failures.push('The cloud-sync plugin must pin and load the v8.7 guided-remediation engine.');
-  if (!cloudPlugin.includes('data-workforce-cloud-remediation') || !cloudPlugin.includes('data-workforce-cloud-remediation-copy') || !cloudPlugin.includes('data-workforce-cloud-refresh-session') || !cloudPlugin.includes('renderWorkforceTrendCloudRemediationV807')) failures.push('The cloud-sync plugin is missing its v8.7 guided recovery UI/actions.');
+  if (!cloudPlugin.includes('data-workforce-cloud-remediation') || !cloudPlugin.includes('data-workforce-cloud-remediation-copy') || !cloudPlugin.includes('data-workforce-cloud-refresh-session') || !cloudPlugin.includes('buildWorkforceTrendCloudRemediationPlanV807')) failures.push('The cloud-sync plugin is missing its v8.7 guided recovery UI/actions.');
+  if (!cloudPlugin.includes("from '../js/workforce-trend-cloud-recovery-progress-engine-v808.js'") || !cloudPlugin.includes("WORKFORCE_TREND_CLOUD_RECOVERY_PROGRESS_VERSION_V808 !== '8.8.0'")) failures.push('The cloud-sync plugin must pin and load the v8.8 recovery-progress engine.');
+  if (!cloudPlugin.includes('data-workforce-cloud-recovery-step') || !cloudPlugin.includes('data-workforce-cloud-recovery-reset') || !cloudPlugin.includes('renderWorkforceTrendCloudRemediationV808')) failures.push('The cloud-sync plugin is missing its v8.8 progress checklist and reset action.');
+  if (!cloudPlugin.includes('buildWorkforceTrendRecoveryStorageKeyV808') || !cloudPlugin.includes('loadWorkforceTrendRecoveryProgressV808') || !cloudPlugin.includes('saveWorkforceTrendRecoveryProgressV808')) failures.push('The v8.8 checklist must persist only allow-listed progress in organisation-scoped browser storage.');
   if (!cloudPlugin.includes("WORKFORCE_TREND_CLOUD_HEALTH_VERSION_V806 !== '8.6.0'")) failures.push('The organisation cloud-sync plugin must pin the v8.6 diagnostic engine version.');
   if (!cloudPlugin.includes('data-workforce-trend-backup-export') || !cloudPlugin.includes('data-workforce-trend-backup-import') || !cloudPlugin.includes('data-workforce-trend-backup-file')) failures.push('The workforce history UI must expose export and verified local-restore controls.');
   if (!cloudPlugin.includes('verifyWorkforceTrendBackupV805') || !cloudPlugin.includes('workforceTrendBackupOrgFingerprintV805')) failures.push('Recovery restore must verify integrity and the source organisation fingerprint before writing local history.');

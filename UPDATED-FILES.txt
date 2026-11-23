@@ -1,4 +1,4 @@
-CALLORIA v8.7 — UPDATED FILES AND FOLDERS ONLY
+CALLORIA v8.8 — UPDATED FILES AND FOLDERS ONLY
 
 REPLACE these existing repository files:
 - build/calloria-workforce-trend-cloud-sync-v801.mjs
@@ -8,13 +8,13 @@ REPLACE these existing repository files:
 - tools/calloria-v8-integration-audit.mjs
 
 ADD these new files:
-- js/workforce-trend-cloud-remediation-engine-v807.js
-- tests/workforce-trend-cloud-remediation-v807.test.mjs
-- tests/calloria-v87-cloud-remediation-integration.test.mjs
-- docs/TEST-RESULTS-v8.7.txt
-- CHANGELOG-v8.7.md
-- README-v8.7.md
-- INSTALL-GITHUB-v8.7.md
+- js/workforce-trend-cloud-recovery-progress-engine-v808.js
+- tests/workforce-trend-cloud-recovery-progress-v808.test.mjs
+- tests/calloria-v88-cloud-recovery-progress-integration.test.mjs
+- docs/TEST-RESULTS-v8.8.txt
+- CHANGELOG-v8.8.md
+- README-v8.8.md
+- INSTALL-GITHUB-v8.8.md
 
 No other project files are included or replaced.
-No Supabase migration, Edge Function, secret, Vercel variable or dependency change is required.
+No Supabase migration, RPC, Edge Function, secret, Vercel variable or dependency change is required.
