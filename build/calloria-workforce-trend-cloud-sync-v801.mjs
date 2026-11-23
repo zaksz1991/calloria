@@ -1,3 +1,4 @@
+import { WORKFORCE_TREND_CLOUD_CONFLICT_VERSION_V803 } from '../js/workforce-trend-cloud-sync-engine-v803.js';
 import { WORKFORCE_TREND_BACKUP_VERSION_V805 } from '../js/workforce-trend-backup-engine-v805.js';
 
 /** CALLORIA v8.5 — verified organisation-scoped backup and local recovery for workforce trend history. */
@@ -250,6 +251,9 @@ function handlerSource() {
 }
 
 export function calloriaWorkforceTrendCloudSyncPluginV801() {
+  if (WORKFORCE_TREND_CLOUD_CONFLICT_VERSION_V803 !== '8.4.0') {
+    throw new Error('CALLORIA v8.5 cloud sync requires the v8.4 durable conflict-review engine (8.4.0).');
+  }
   return {
     name: 'calloria-workforce-trend-cloud-sync-v8-1',
     version: WORKFORCE_TREND_BACKUP_VERSION_V805,

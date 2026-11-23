@@ -1,0 +1,20 @@
+CALLORIA v8.5.1 — Focused Verification Results
+
+Validated against the v8.5 plugin and its preceding v8.1–v8.4 engine dependencies in an isolated validation workspace.
+
+PASS
+- Plugin source syntax check: 1 file.
+- Regression test syntax check: 1 file.
+- Focused regression tests: 3 passed, 0 failed.
+- Exact v8 integration-audit dependency contract: passed.
+- v8.4 engine version contract (8.4.0): passed.
+- v8.5 backup engine version contract (8.5.0): passed.
+- Transformed main.js retains its v8.3 conflict-review and v8.5 backup imports: passed.
+- ZIP integrity: passed.
+
+NOT RUN
+- Complete repository npm test suite: not run; the full current repository checkout was not present in the preparation workspace.
+- Full Vite production build: not run; Vercel must run this against the complete repository.
+- Live browser, Supabase and production deployment checks: not run.
+
+This patch addresses the exact single prebuild issue reported by Vercel. It does not claim the subsequent Vite build or deployment will pass until Vercel confirms them.

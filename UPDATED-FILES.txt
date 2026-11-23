@@ -1,16 +1,13 @@
-CALLORIA v8.5 — UPDATED FILES ONLY
+CALLORIA v8.5.1 — UPDATED FILES ONLY
 
 REPLACE
 build/calloria-workforce-trend-cloud-sync-v801.mjs
-styles/calloria-workforce-trend-cloud-sync-v801.css
-package.json
-tools/calloria-build-preflight.mjs
-tools/calloria-v8-integration-audit.mjs
-tests/calloria-v8-integration.test.mjs
 
 ADD
-js/workforce-trend-backup-engine-v805.js
-tests/workforce-trend-backup-v805.test.mjs
-docs/CHANGELOG-v8.5.md
-docs/INSTALL-v8.5.md
-docs/TEST-RESULTS-v8.5.txt
+tests/workforce-cloud-plugin-v851-link.test.mjs
+docs/CHANGELOG-v8.5.1.md
+docs/INSTALL-v8.5.1.md
+docs/TEST-RESULTS-v8.5.1.txt
+UPDATED-FILES.txt
+
+Do not replace package.json, vite.config.js, the v8 integration audit, the Vite workforce suite, Supabase migrations, .git, public/assets, or existing GLB files.
