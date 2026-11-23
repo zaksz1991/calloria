@@ -37,7 +37,9 @@ const REQUIRED_CLOUD_HISTORY_FILES = Object.freeze([
   'supabase/migrations/202611220003_calloria_workforce_trend_conflict_archive.sql',
   'tests/workforce-trend-cloud-sync-v803.test.mjs',
   'js/workforce-trend-backup-engine-v805.js',
-  'tests/workforce-trend-backup-v805.test.mjs'
+  'tests/workforce-trend-backup-v805.test.mjs',
+  'js/workforce-trend-cloud-health-engine-v806.js',
+  'tests/workforce-trend-cloud-health-v806.test.mjs'
 ]);
 const REQUIRED_HTML_INPUTS = Object.freeze([
   'main', 'customerCare', 'caseDesk', 'customer360', 'agentDesk', 'workforce',
@@ -235,6 +237,7 @@ export function auditCalloriaV8Integration({ root = process.cwd() } = {}) {
     if (pkg.scripts?.['verify:integration'] !== 'node tools/calloria-v8-integration-audit.mjs') failures.push('package.json must expose verify:integration.');
     if (pkg.scripts?.['verify:workforce-cloud-history'] !== 'node --test tests/workforce-trend-cloud-sync-v801.test.mjs tests/workforce-trend-cloud-sync-v801-ui.test.mjs tests/workforce-trend-cloud-sync-v801-contract.test.mjs tests/workforce-trend-cloud-sync-v802.test.mjs tests/workforce-trend-cloud-sync-v803.test.mjs tests/workforce-trend-backup-v805.test.mjs') failures.push('package.json must expose the v8.5 workforce cloud-history and recovery regression check.');
     if (pkg.scripts?.['verify:workforce-backup'] !== 'node --test tests/workforce-trend-backup-v805.test.mjs') failures.push('package.json must expose a focused v8.5 recovery-backup test command.');
+    if (pkg.scripts?.['verify:workforce-cloud-health'] !== 'node --test tests/workforce-trend-cloud-health-v806.test.mjs') failures.push('package.json must expose the v8.6 read-only cloud-health regression check.');
     if (!/tests\/\*\.test\.mjs/.test(pkg.scripts?.test || '')) failures.push('package.json test script must include the complete .test.mjs regression suite.');
     if (pkg.scripts?.build !== 'vite build' || pkg.scripts?.postbuild !== 'node tools/calloria-build-artifact-audit.mjs') {
       failures.push('The Vite build and post-build artifact audit hooks must remain unchanged.');
@@ -284,6 +287,9 @@ export function auditCalloriaV8Integration({ root = process.cwd() } = {}) {
   if (!cloudPlugin.includes('calloria_record_workforce_trend_conflicts_v803') || !cloudPlugin.includes('calloria_resolve_workforce_trend_conflict_v803')) failures.push('The organisation cloud-sync plugin must archive both conflict variants and support explicit canonical-copy resolution.');
   if (!cloudPlugin.includes('data-workforce-cloud-conflict-review') || !cloudPlugin.includes('data-workforce-cloud-conflict-resolve')) failures.push('The organisation cloud-sync plugin is missing its conflict review and explicit-resolution UI.');
   if (!cloudPlugin.includes("from '../js/workforce-trend-backup-engine-v805.js'")) failures.push('The organisation cloud-sync plugin must load the v8.5 verified recovery backup engine.');
+  if (!cloudPlugin.includes("from '../js/workforce-trend-cloud-health-engine-v806.js'")) failures.push('The organisation cloud-sync plugin must load the v8.6 read-only health-report engine.');
+  if (!cloudPlugin.includes('data-workforce-cloud-health-check') || !cloudPlugin.includes('runWorkforceTrendCloudHealthV806')) failures.push('The organisation cloud-sync plugin is missing the v8.6 diagnostic action.');
+  if (!cloudPlugin.includes("WORKFORCE_TREND_CLOUD_HEALTH_VERSION_V806 !== '8.6.0'")) failures.push('The organisation cloud-sync plugin must pin the v8.6 diagnostic engine version.');
   if (!cloudPlugin.includes('data-workforce-trend-backup-export') || !cloudPlugin.includes('data-workforce-trend-backup-import') || !cloudPlugin.includes('data-workforce-trend-backup-file')) failures.push('The workforce history UI must expose export and verified local-restore controls.');
   if (!cloudPlugin.includes('verifyWorkforceTrendBackupV805') || !cloudPlugin.includes('workforceTrendBackupOrgFingerprintV805')) failures.push('Recovery restore must verify integrity and the source organisation fingerprint before writing local history.');
   const expectedOrder = REQUIRED_MODULES.map((item) => item.plugin);

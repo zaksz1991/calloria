@@ -64,3 +64,56 @@
   .wth-cloud-sync-buttons { grid-template-columns: minmax(0, 1fr); }
   .wth-cloud-sync-buttons button { min-height: 46px; }
 }
+
+/* v8.6 read-only cloud health diagnostics */
+.wth-cloud-sync-buttons [data-workforce-cloud-health-check] {
+  border-color: var(--accent, rgba(96, 165, 250, .55));
+}
+.wth-cloud-health {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.wth-cloud-health-empty,
+.wth-cloud-health-meta,
+.wth-cloud-health-note {
+  margin: 0;
+  color: var(--muted, #94a3b8);
+  font-size: .8rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.wth-cloud-health-summary {
+  padding: 9px 11px;
+  border: 1px solid var(--line, rgba(148, 163, 184, .22));
+  border-radius: 10px;
+  font-size: .86rem;
+  font-weight: 750;
+}
+.wth-cloud-health-summary.is-healthy { color: var(--success, #34d399); }
+.wth-cloud-health-summary.is-attention { color: var(--warning, #fbbf24); }
+.wth-cloud-health-summary.is-blocked { color: var(--danger, #fb7185); }
+.wth-cloud-health-summary.is-incomplete { color: var(--muted, #94a3b8); }
+.wth-cloud-health-list { display: grid; gap: 7px; }
+.wth-cloud-health-row {
+  display: grid;
+  grid-template-columns: minmax(150px, .7fr) minmax(0, 1.5fr) auto;
+  gap: 7px 12px;
+  align-items: start;
+  padding: 9px 10px;
+  border: 1px solid var(--line, rgba(148, 163, 184, .18));
+  border-radius: 9px;
+  background: var(--surface, rgba(2, 6, 23, .18));
+  min-width: 0;
+}
+.wth-cloud-health-label { font-size: .78rem; }
+.wth-cloud-health-detail,
+.wth-cloud-health-count { color: var(--muted, #94a3b8); font-size: .76rem; line-height: 1.4; overflow-wrap: anywhere; }
+.wth-cloud-health-count { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.wth-cloud-health-row.is-failed { border-color: color-mix(in srgb, var(--danger, #fb7185) 55%, transparent); }
+.wth-cloud-health-row.is-warning { border-color: color-mix(in srgb, var(--warning, #fbbf24) 55%, transparent); }
+@media (max-width: 760px) {
+  .wth-cloud-health-row { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+  .wth-cloud-health-count { white-space: normal; }
+}

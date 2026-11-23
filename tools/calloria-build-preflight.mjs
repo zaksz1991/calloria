@@ -122,8 +122,10 @@ for (const file of [
   'supabase/migrations/202611220003_calloria_workforce_trend_conflict_archive.sql',
   'tests/workforce-trend-cloud-sync-v803.test.mjs',
   'js/workforce-trend-backup-engine-v805.js',
-  'tests/workforce-trend-backup-v805.test.mjs'
-]) requireFile(file, 'CALLORIA v8.5 verified workforce recovery backup requirement');
+  'tests/workforce-trend-backup-v805.test.mjs',
+  'js/workforce-trend-cloud-health-engine-v806.js',
+  'tests/workforce-trend-cloud-health-v806.test.mjs'
+]) requireFile(file, 'CALLORIA v8.6 read-only workforce cloud diagnostics requirement');
 if (mode === 'build') {
   for (const [name, expectedVersion] of [
     ['vite', '6.4.5'], ['three', '0.170.0'],
