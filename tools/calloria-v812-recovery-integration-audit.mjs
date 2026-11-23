@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * CALLORIA v8.12.1 — cumulative recovery-chain integration gate.
+ * CALLORIA v8.12.3 — cumulative recovery-chain integration gate.
  * Runs the v8.9–v8.12 regression suite and verifies the protected Vercel contract.
  * It is deliberately separate from prebuild/check so those protected scripts stay exact.
  */
@@ -20,6 +20,7 @@ const tests = [
   'tests/calloria-v810-recovery-handover-integration.test.mjs',
   'tests/workforce-trend-cloud-recovery-handover-v811.test.mjs',
   'tests/calloria-v811-recovery-handover-verification-integration.test.mjs',
+  'tests/calloria-v8123-migration-neutrality.test.mjs',
   'tests/workforce-trend-cloud-recovery-handover-comparison-v812.test.mjs',
   'tests/calloria-v812-recovery-handover-comparison-integration.test.mjs',
   'tests/calloria-v812-recovery-integration.test.mjs'
@@ -97,11 +98,11 @@ for (const marker of [
 ]) if (!pluginSource.includes(marker)) failures.push(`The integrated plugin is missing marker ${marker}.`);
 
 if (failures.length) {
-  console.error(`CALLORIA v8.12.1 recovery integration audit failed (${failures.length} issue(s)):`);
+  console.error(`CALLORIA v8.12.3 recovery integration audit failed (${failures.length} issue(s)):`);
   for (const failure of failures) console.error(`- ${failure}`);
   process.exitCode = 1;
 } else {
-  console.log('CALLORIA v8.12.1 static integration contract passed.');
+  console.log('CALLORIA v8.12.3 static integration contract passed.');
   console.log('Running the cumulative v8.9–v8.12 regression suite…');
   const run = spawnSync(process.execPath, ['--test', ...tests], { cwd: root, encoding: 'utf8' });
   if (run.stdout) process.stdout.write(run.stdout);
@@ -118,6 +119,6 @@ if (failures.length) {
     if (legacyAudit.stdout) process.stdout.write(legacyAudit.stdout);
     if (legacyAudit.stderr) process.stderr.write(legacyAudit.stderr);
     if (legacyAudit.error || legacyAudit.status !== 0) process.exitCode = legacyAudit.status || 1;
-    else console.log('CALLORIA v8.12.1 cumulative recovery integration passed.');
+    else console.log('CALLORIA v8.12.3 cumulative recovery integration passed.');
   }
 }

@@ -1,0 +1,28 @@
+CALLORIA v8.12.3 — TEST RESULTS
+
+Cumulative suite
+- Tests run: 52
+- Passed: 52
+- Failed: 0
+- Skipped: 0
+
+Specific v8.12.3 regression coverage
+1. v8.11 verifier passes when no Supabase migrations directory exists.
+2. v8.11 verifier passes when pre-existing CALLORIA and shared-product SQL migrations exist.
+3. Existing migration filenames and contents remain unchanged after verification.
+4. The cumulative production integration gate includes the v8.12.3 migration-neutrality test.
+
+Additional checks
+- Dedicated v8.9 portability audit passed (5 required files checked).
+- Cumulative v8.9–v8.12 integration audit passed.
+- JavaScript syntax checks passed for all modified test/audit files.
+- Protected Node 22 / dependency contracts and protected Vercel lifecycle scripts were not modified.
+- No migrations, secrets, environment variables or dependencies were added.
+- ZIP integrity checked after packaging.
+
+Not performed
+- Full repository npm test suite.
+- Full Vite production build against the complete GitHub checkout.
+- Vercel production deployment.
+- Live Supabase authentication, permissions or RLS tests.
+- Browser/phone acceptance testing.

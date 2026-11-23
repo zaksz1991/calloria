@@ -24,6 +24,7 @@ test('the cumulative audit covers v8.9 through v8.12 and preserves protected bui
     'workforce-trend-cloud-recovery-handover-v810.test.mjs',
     'workforce-trend-cloud-recovery-handover-v811.test.mjs',
     'workforce-trend-cloud-recovery-handover-comparison-v812.test.mjs',
+    'calloria-v8123-migration-neutrality.test.mjs',
     'expectedPrebuild',
     'expectedCheck'
   ]) assert.ok(audit.includes(marker), `missing integration audit marker: ${marker}`);
