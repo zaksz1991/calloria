@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "CALLORIA \u2014 multi-industry contact-centre career and operations simulator.",
+  "description": "CALLORIA — multi-industry contact-centre career and operations simulator.",
   "engines": {
     "node": "22.x"
   },
@@ -27,7 +27,8 @@
     "verify:workforce-cloud-recovery-portability": "node --test tests/workforce-trend-cloud-recovery-portability-v809.test.mjs tests/calloria-v89-recovery-portability-integration.test.mjs && node tools/calloria-v89-recovery-portability-audit.mjs",
     "verify:workforce-cloud-health": "node --test tests/workforce-trend-cloud-health-v806.test.mjs",
     "verify:workforce-cloud-handover": "node --test tests/workforce-trend-cloud-recovery-handover-v810.test.mjs tests/calloria-v810-recovery-handover-integration.test.mjs",
-    "verify:workforce-cloud-handover-verification": "node --test tests/workforce-trend-cloud-recovery-handover-v811.test.mjs tests/calloria-v811-recovery-handover-verification-integration.test.mjs"
+    "verify:workforce-cloud-handover-verification": "node --test tests/workforce-trend-cloud-recovery-handover-v811.test.mjs tests/calloria-v811-recovery-handover-verification-integration.test.mjs",
+    "verify:workforce-cloud-handover-comparison": "node --test tests/workforce-trend-cloud-recovery-handover-comparison-v812.test.mjs tests/calloria-v812-recovery-handover-comparison-integration.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.119.0",

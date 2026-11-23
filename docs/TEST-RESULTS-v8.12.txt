@@ -1,0 +1,28 @@
+CALLORIA v8.12 — TEST RESULTS
+
+Focused command:
+node --test tests/workforce-trend-cloud-recovery-handover-comparison-v812.test.mjs tests/calloria-v812-recovery-handover-comparison-integration.test.mjs
+
+Result: 12 passed, 0 failed.
+
+Coverage:
+- Verify both source handovers before comparing.
+- Chronological comparison and per-area deltas.
+- Detect improved, regressed, unchanged and mixed movement.
+- Reject checksum tampering and unsupported checklist shapes.
+- Show equal-timestamp ambiguity.
+- State that organisation identity cannot be proven by the report format.
+- Confirm local-only behaviour and no network/persistence implementation.
+- Confirm transformed Vite module syntax, plugin scoping and idempotence.
+- Confirm exact protected Vercel hooks, earlier verification commands and dependency pins.
+
+Additional checks:
+- JavaScript syntax checks passed for the new engine and updated Vite plugin.
+- Transformed main module syntax check passed.
+- package.json JSON parse passed.
+- ZIP integrity check passed.
+
+Not run:
+- Full CALLORIA test suite (complete repository source is not present in this overlay workspace).
+- Full Vite production build, because complete repository source and installed dependency tree are not present here.
+- Live Supabase checks, browser acceptance test or Vercel deployment.
