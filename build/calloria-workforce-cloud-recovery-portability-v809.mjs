@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process';
+
 /** CALLORIA v8.9 — post-transform portability controls for the v8.8 recovery checklist. */
 const MAIN_SUFFIX = '/js/main.js';
 const V808_MARKER = 'CALLORIA_V808_WORKFORCE_CLOUD_RECOVERY_PROGRESS';
@@ -337,9 +339,25 @@ function handlerSource() {
 }
 
 export function calloriaWorkforceCloudRecoveryPortabilityPluginV809() {
+  let runRecoveryBuildGate = false;
   return {
-    name: 'calloria-workforce-cloud-recovery-portability-v8-12',
+    name: 'calloria-workforce-cloud-recovery-portability-v8-9',
     enforce: 'post',
+    configResolved(config) {
+      runRecoveryBuildGate = config.command === 'build';
+    },
+    buildStart() {
+      if (!runRecoveryBuildGate) return;
+      // Run the cumulative recovery-chain gate inside Vite's build lifecycle.
+      // This preserves the exact protected npm prebuild/check command strings.
+      const result = spawnSync(
+        process.execPath,
+        ['tools/calloria-v812-recovery-integration-audit.mjs'],
+        { cwd: process.cwd(), stdio: 'inherit', timeout: 120000 }
+      );
+      if (result.error) this.error(`CALLORIA recovery integration gate could not start: ${result.error.message}`);
+      if (result.status !== 0) this.error(`CALLORIA recovery integration gate failed (exit ${result.status ?? 'unknown'}).`);
+    },
     transform(code, id) {
       if (!normaliseId(id).endsWith(MAIN_SUFFIX)) return null;
       if (!String(code).includes(V808_MARKER)) return null;

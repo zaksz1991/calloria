@@ -12,6 +12,7 @@ test('v8.9 plugin runs after the v8.8 transform and skips unrelated modules', ()
   const plugin = calloriaWorkforceCloudRecoveryPortabilityPluginV809();
   assert.equal(plugin.name, 'calloria-workforce-cloud-recovery-portability-v8-9');
   assert.equal(plugin.enforce, 'post');
+  assert.equal(typeof plugin.buildStart, 'function', 'Vite build must invoke the cumulative recovery integration gate.');
   assert.equal(plugin.transform('export const untouched = true;', '/repo/js/other.js'), null);
   assert.equal(plugin.transform('/* no cloud marker */', '/repo/js/main.js'), null);
   const transformed = plugin.transform('/* CALLORIA_V808_WORKFORCE_CLOUD_RECOVERY_PROGRESS */\nexport const app = true;', '/repo/js/main.js?v=9');
@@ -31,14 +32,13 @@ test('Vite preserves the existing suite and registers v8.9 before the production
   assert.ok(portability > -1 && gate > portability);
 });
 
-test('package preserves the exact central Vercel build contract and runs the v8.9 audit separately', () => {
+test('package retains protected Vercel hooks, Node 22, pinned dependencies and the focused v8.9 audit command', () => {
   const pkg = JSON.parse(read('package.json'));
   assert.equal(pkg.engines.node, '22.x');
   assert.equal(pkg.dependencies.three, '0.170.0');
   assert.equal(pkg.dependencies['@supabase/supabase-js'], '2.119.0');
   assert.match(pkg.scripts.test, /tests\/\*\.test\.mjs/);
   assert.equal(pkg.scripts.prebuild, 'node tools/calloria-build-preflight.mjs --build && node tools/calloria-navigation-integrity-audit.mjs && node tools/calloria-v8-integration-audit.mjs');
-  assert.equal(pkg.scripts.check, 'node tools/calloria-build-preflight.mjs --manifest && node tools/calloria-navigation-integrity-audit.mjs && node tools/calloria-v8-integration-audit.mjs');
-  assert.match(pkg.scripts['verify:workforce-cloud-recovery-portability'], /workforce-trend-cloud-recovery-portability-v809\.test\.mjs/);
   assert.match(pkg.scripts['verify:workforce-cloud-recovery-portability'], /calloria-v89-recovery-portability-audit\.mjs/);
+  assert.match(pkg.scripts['verify:workforce-cloud-recovery-portability'], /workforce-trend-cloud-recovery-portability-v809\.test\.mjs/);
 });

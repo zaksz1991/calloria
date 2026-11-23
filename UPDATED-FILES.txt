@@ -1,23 +1,19 @@
-CALLORIA v8.12 — UPDATED FILES ONLY
+CALLORIA v8.12.1 — UPDATED FILES ONLY
 
 REPLACE
-- build/calloria-workforce-cloud-recovery-portability-v809.mjs
-- styles/calloria-workforce-cloud-recovery-portability-v809.css
 - package.json
+- build/calloria-workforce-cloud-recovery-portability-v809.mjs
+- tests/calloria-v89-recovery-portability-integration.test.mjs
+- tools/calloria-v89-recovery-portability-audit.mjs
 
 ADD
-- js/workforce-trend-cloud-recovery-handover-comparison-engine-v812.js
-- tests/workforce-trend-cloud-recovery-handover-comparison-v812.test.mjs
-- tests/calloria-v812-recovery-handover-comparison-integration.test.mjs
-- CHANGELOG-v8.12.md
-- README-v8.12.md
-- docs/TEST-RESULTS-v8.12.txt
-- INSTALL-GITHUB-v8.12.md
+- tests/calloria-v812-recovery-integration.test.mjs
+- tools/calloria-v812-recovery-integration-audit.mjs
+- docs/TEST-RESULTS-v8.12.1.txt
+- CHANGELOG-v8.12.1.md
+- README-v8.12.1.md
+- INSTALL-GITHUB-v8.12.1.md
 
-PRESERVE
-- Existing Vite registration for calloriaWorkforceCloudRecoveryPortabilityPluginV809()
-- v8.9.2 exact Vercel prebuild/check hooks
-- v8.6, v8.9, v8.10 and v8.11 verification scripts
-- Node 22 pin and all dependency versions
-- public/assets/ and all GLB models
-- .git, .env, Supabase/Vercel configuration, migrations and other repository files
+This is a cumulative integration overlay for repositories where v8.9–v8.12
+feature files are already present. Do not delete .git, public/assets, GLB files,
+local environment files, or unrelated application files.

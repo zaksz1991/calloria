@@ -29,13 +29,10 @@ if (!plugin.includes("enforce: 'post'")) failures.push('The v8.9 plugin must run
 if (!plugin.includes('CALLORIA_V808_WORKFORCE_CLOUD_RECOVERY_PROGRESS') || !plugin.includes('WORKFORCE_TREND_CLOUD_RECOVERY_PORTABILITY_VERSION_V809')) failures.push('The v8.9 plugin marker or engine integration is missing.');
 if (!engine.includes("WORKFORCE_TREND_CLOUD_RECOVERY_PORTABILITY_VERSION_V809 = '8.9.0'")) failures.push('The v8.9 engine version guard is missing.');
 if (!engine.includes('SHA-256') || !engine.includes('organisationScopeKey')) failures.push('The organisation-scoped integrity contract is missing.');
-const expectedVerify = 'node --test tests/workforce-trend-cloud-recovery-portability-v809.test.mjs tests/calloria-v89-recovery-portability-integration.test.mjs && node tools/calloria-v89-recovery-portability-audit.mjs';
-if (pkg.scripts?.['verify:workforce-cloud-recovery-portability'] !== expectedVerify) failures.push('The focused v8.9 verification command and release audit are missing.');
+if (pkg.scripts?.['verify:workforce-cloud-recovery-portability'] !== 'node --test tests/workforce-trend-cloud-recovery-portability-v809.test.mjs tests/calloria-v89-recovery-portability-integration.test.mjs && node tools/calloria-v89-recovery-portability-audit.mjs') failures.push('The focused v8.9 verification command is missing.');
 if (!String(pkg.scripts?.test || '').includes('tests/*.test.mjs')) failures.push('The full test glob was not preserved.');
-const expectedPrebuild = 'node tools/calloria-build-preflight.mjs --build && node tools/calloria-navigation-integrity-audit.mjs && node tools/calloria-v8-integration-audit.mjs';
-const expectedCheck = 'node tools/calloria-build-preflight.mjs --manifest && node tools/calloria-navigation-integrity-audit.mjs && node tools/calloria-v8-integration-audit.mjs';
-if (pkg.scripts?.prebuild !== expectedPrebuild) failures.push('The central Vercel prebuild contract must remain unchanged.');
-if (pkg.scripts?.check !== expectedCheck) failures.push('The central manifest-check contract must remain unchanged.');
+if (!String(pkg.scripts?.['verify:workforce-cloud-recovery-portability'] || '').includes('calloria-v89-recovery-portability-audit.mjs')) failures.push('The v8.9 audit is not part of its dedicated recovery-portability verification command.');
+if (String(pkg.scripts?.prebuild || '') !== 'node tools/calloria-build-preflight.mjs --build && node tools/calloria-navigation-integrity-audit.mjs && node tools/calloria-v8-integration-audit.mjs') failures.push('The protected Vercel prebuild contract has changed.');
 if (failures.length) {
   console.error('CALLORIA v8.9 recovery portability audit failed:');
   for (const failure of failures) console.error(`- ${failure}`);

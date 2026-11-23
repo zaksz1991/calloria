@@ -1,0 +1,36 @@
+CALLORIA v8.12.1 — INTEGRATED RECOVERY BUILD GATE
+
+Verification performed against the cumulatively assembled v8.9, v8.10, v8.11 and v8.12 overlays.
+
+RESULTS
+- Cumulative v8.9–v8.12 regression suite: 49 passed, 0 failed.
+- Dedicated v8.9 portability audit: passed (5 required files checked).
+- New v8.12.1 integration audit: passed.
+- Vite plugin transform smoke tests: passed.
+- Vite buildStart smoke test: passed; production build mode runs the audit.
+- Vite serve mode smoke test: passed; the audit is not run in development mode.
+- JavaScript syntax checks for updated plugin, audit tools, test files and v8.9–v8.12 engines: passed.
+- package.json JSON parse and protected build-hook checks: passed.
+- Node 22 engine pin and Vite/Three.js/Supabase/esbuild dependency pins: preserved.
+
+ISSUES FOUND AND CORRECTED
+1. The package at the supplied Vercel failure commit did not expose the exact v8.6
+   verify:workforce-cloud-health script required by the v8 integration audit.
+   The cumulative package.json in this release restores that script.
+2. The v8.10–v8.12 updates had changed the shared v8.9 Vite plugin name, causing
+   the v8.9 integration test to fail. The shared plugin name is now stable.
+3. The v8.9 audit still required its release-specific audit to be appended to
+   prebuild. That contradicted the protected exact Vercel prebuild contract restored
+   by v8.9.1. The v8.9 audit is now called by its dedicated verification script.
+4. The cumulative recovery test suite was not automatically run by Vercel's Vite
+   build lifecycle. The plugin now invokes the v8.12.1 audit in buildStart only
+   when Vite command is 'build'. This does not change package prebuild/check hooks.
+
+LIMITS
+- This test run used the complete v8.9–v8.12 overlay chain, not the full CALLORIA
+  source checkout. It therefore does not certify the entire repository test suite.
+- Full Vite production build, final dist artifact audit, live Supabase Auth/RLS,
+  real browser/mobile rendering and Vercel deployment were not run here.
+- Vercel deployment is only confirmed when the user's next Production deployment
+  passes preinstall, prebuild, Vite buildStart recovery integration, vite build,
+  and postbuild artifact audit.
